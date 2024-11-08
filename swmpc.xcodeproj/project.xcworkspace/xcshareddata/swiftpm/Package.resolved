@@ -1,0 +1,24 @@
+{
+  "originHash" : "c7207d57292b50f961c1f2a5249553803c4a633c2da3722fff20119413ab3225",
+  "pins" : [
+    {
+      "identity" : "launchatlogin-modern",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sindresorhus/LaunchAtLogin-Modern",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc"
+      }
+    },
+    {
+      "identity" : "libmpdclient-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/zluo01/libmpdclient-swift",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1d0377437dd46c9517c988cc30efc70efe733d33"
+      }
+    }
+  ],
+  "version" : 3
+}

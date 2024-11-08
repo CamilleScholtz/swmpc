@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		91A1420A2CDE3B91000A74BC /* libmpdclient in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142092CDE3B91000A74BC /* libmpdclient */; };
+		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		91A141E02CDE3988000A74BC /* swmpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swmpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +28,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
+				91A1420A2CDE3B91000A74BC /* libmpdclient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +72,8 @@
 			);
 			name = swmpc;
 			packageProductDependencies = (
+				91A142092CDE3B91000A74BC /* libmpdclient */,
+				91A142142CDEA27E000A74BC /* LaunchAtLogin */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -94,6 +103,10 @@
 			);
 			mainGroup = 91A141D72CDE3987000A74BC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				91A142082CDE3B91000A74BC /* XCRemoteSwiftPackageReference "libmpdclient-swift" */,
+				91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
 			projectDirPath = "";
@@ -252,11 +265,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"swmpc/Preview Content\"";
 				DEVELOPMENT_TEAM = 9Y37TMD63Q;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -266,7 +279,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = camille.swmpc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -279,11 +292,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"swmpc/Preview Content\"";
 				DEVELOPMENT_TEAM = 9Y37TMD63Q;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -293,7 +306,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = camille.swmpc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -319,6 +332,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		91A142082CDE3B91000A74BC /* XCRemoteSwiftPackageReference "libmpdclient-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/zluo01/libmpdclient-swift";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		91A142092CDE3B91000A74BC /* libmpdclient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91A142082CDE3B91000A74BC /* XCRemoteSwiftPackageReference "libmpdclient-swift" */;
+			productName = libmpdclient;
+		};
+		91A142142CDEA27E000A74BC /* LaunchAtLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
+			productName = LaunchAtLogin;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 91A141D82CDE3987000A74BC /* Project object */;
 }
