@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct Artist: Identifiable, Sendable {
+struct Artist: Mediable, Identifiable, Sendable {
     var id: String
 
     var name: String

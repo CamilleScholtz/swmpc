@@ -7,21 +7,16 @@
 
 import SwiftUI
 
-// TODO: Uhh?
-extension NSImage: @unchecked @retroactive Sendable {}
-
-struct Album: Identifiable, Equatable, Sendable {
-    static func == (lhs: Album, rhs: Album) -> Bool {
-        lhs.id == rhs.id
-    }
-    
+struct Album: Mediable, Identifiable, Sendable {
     var id: String
 
     var artist: String?
     var title: String?
-    var year: String?
+    var date: String?
 
     var songs: [Song] = []
 
-    var artwork: NSImage?
+    var description: String {
+        "\(date ?? "Unknown date") - \(title ?? "Unknown title")"
+    }
 }

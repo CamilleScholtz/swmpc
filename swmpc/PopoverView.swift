@@ -32,14 +32,16 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Artwork(image: player.current?.album?.artwork)
+            let artwork = player.getArtwork(for: player.current?.id)?.image
+
+            Artwork(image: artwork)
                 .overlay(
                     previousArtwork != nil ? AnyView(Artwork(image: previousArtwork)
                         .opacity(isArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
                 )
                 .opacity(0.3)
 
-            Artwork(image: player.current?.album?.artwork)
+            Artwork(image: artwork)
                 .overlay(
                     previousArtwork != nil ? AnyView(Artwork(image: previousArtwork)
                         .opacity(isArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
@@ -79,7 +81,11 @@ struct PopoverView: View {
         .frame(width: 250, height: height)
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
-                // await player.current.setArtwork()
+                guard let current = player.current else {
+                    return
+                }
+
+                await player.setArtwork(for: current.id)
             }
             Task {
                 await player.status.trackElapsed()
@@ -92,18 +98,12 @@ struct PopoverView: View {
 
             removeCursorMonitor()
         }
-        .onChange(of: player.current?.id) { _, _ in
+        .onChange(of: player.current!) { previous, _ in
             guard AppDelegate.shared.popover.isShown else {
-                player.current?.album?.artwork = nil
                 return
             }
 
-            Task(priority: .userInitiated) {
-                // await player.current.setArtwork()
-            }
-        }
-        .onChange(of: player.current?.album?.artwork) { previous, _ in
-            previousArtwork = previous
+            previousArtwork = player.getArtwork(for: previous.id)?.image
 
             isBackgroundArtworkTransitioning = true
             withAnimation(.easeInOut(duration: 0.5)) {
@@ -114,7 +114,15 @@ struct PopoverView: View {
                 isArtworkTransitioning = false
             }
 
-            updateHeight()
+            Task(priority: .userInitiated) {
+                guard let current = player.current else {
+                    return
+                }
+
+                await player.setArtwork(for: current.id)
+
+                updateHeight()
+            }
         }
         .onHover { value in
             if !value {
@@ -182,12 +190,15 @@ struct PopoverView: View {
     }
 
     private func updateHeight() {
-        guard let artwork = player.current?.album?.artwork else {
-            height = 250
-            return
-        }
-
-        height = (Double(artwork.size.height) / Double(artwork.size.width) * 250).rounded(.down)
+//        guard player.current?.id != nil,
+//              let artwork = player.artworks[player.current!.id],
+//              let image = artwork.image
+//        else {
+//            height = 250
+//            return
+//        }
+//
+//        height = (Double(image.size.height) / Double(image.size.width) * 250).rounded(.down)
     }
 
     struct Artwork: View {

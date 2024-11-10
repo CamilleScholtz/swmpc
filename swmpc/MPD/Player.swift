@@ -14,6 +14,8 @@ import SwiftUI
 
     var current: Song?
 
+    private(set) var artworkCache: [String: Artwork] = [:]
+
     @ObservationIgnored let idleManager = ConnectionManager(idle: true)
     @ObservationIgnored let commandManager = ConnectionManager()
 
@@ -57,6 +59,41 @@ import SwiftUI
                 await idleManager.disconnect()
             }
         }
+    }
+
+    @MainActor
+    func setArtwork(for uri: String) async {
+        // TODO: Is there a smarter way of doing this? Is it even needed?
+        if artworkCache.count > 64 {
+            let oldest = artworkCache.min {
+                guard $0.value.timestamp != nil, $1.value.timestamp != nil else {
+                    return false
+                }
+
+                return $0.value.timestamp! < $1.value.timestamp!
+            }
+
+            oldest!.value.image = nil
+            artworkCache.removeValue(forKey: oldest!.key)
+        }
+
+        guard artworkCache[uri] == nil else {
+            return
+        }
+
+        let artwork = Artwork(uri: uri)
+        artworkCache[uri] = artwork
+
+        await artwork.set(using: commandManager)
+    }
+
+    @MainActor
+    func getArtwork(for uri: String?) -> Artwork? {
+        guard let uri else {
+            return nil
+        }
+
+        return artworkCache[uri]
     }
 
     @MainActor
@@ -200,19 +237,29 @@ actor ConnectionManager {
     }
 
     // TODO: Throw error if idle is true.
-    func getQueue(tag _: mpd_tag_type) async -> [Album] {
+    func getQueue(using type: MediaType) async -> [Mediable] {
         connect()
         defer { disconnect() }
 
+        guard mpd_search_queue_songs(connection, true) else {
+            return []
+        }
+
+        switch type {
+        case .album:
+            return getAlbums()
+        case .artist:
+            return getArtists()
+        default:
+            return getSongs()
+        }
+    }
+
+    func getAlbums() -> [Album] {
         var albums = [Album]()
 
-//        let queue = mpd_send_list_queue_range_meta(connection, UInt32(start), UInt32(end))
-//        guard queue else {
-//            return []
-//        }
-
-        guard mpd_search_queue_songs(connection, true),
-              mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_TRACK, "1"),
+        guard mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_TRACK, "1"),
+              mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_DISC, "1"),
               mpd_search_commit(connection)
         else {
             return []
@@ -240,15 +287,44 @@ actor ConnectionManager {
             }
 
             albums.append(Album(
-                // id: URL(fileURLWithPath: song.id).deletingLastPathComponent().path,
                 id: song.id,
                 artist: artist,
                 title: title,
-                year: date
+                date: date,
+                songs: [song]
             ))
         }
 
         return albums
+    }
+
+    func getArtists() -> [Artist] {
+        var artists = [Artist]()
+
+        for album in getAlbums() {
+            guard let artist = album.artist else {
+                continue
+            }
+
+            if let index = artists.firstIndex(where: { $0.name == artist }) {
+                artists[index].albums.append(album)
+            } else {
+                artists.append(Artist(
+                    id: album.id,
+                    name: artist,
+                    albums: [album]
+                )
+                )
+            }
+        }
+
+        return artists
+    }
+
+    func getSongs() -> [Song] {
+        var songs = [Song]()
+
+        return songs
     }
 
     func getSong(receive: OpaquePointer? = nil) -> Song? {
@@ -276,14 +352,14 @@ actor ConnectionManager {
         }
 
         let duration = Double(mpd_song_get_duration(recv))
-        let location = String(cString: mpd_song_get_uri(recv))
+        let uri = String(cString: mpd_song_get_uri(recv))
 
         if receive == nil {
             mpd_song_free(recv)
         }
 
         return Song(
-            id: location,
+            id: uri,
             artist: artist,
             title: title,
             duration: duration
@@ -301,11 +377,7 @@ actor ConnectionManager {
         return Double(mpd_status_get_elapsed_time(recv))
     }
 
-    func getArtwork(location: String?, embedded: Bool = false) -> NSImage? {
-        guard let location else {
-            return nil
-        }
-
+    func getArtwork(for uri: String, embedded: Bool = false) -> NSImage? {
         var data = Data()
         var offset: UInt32 = 0
         let bufferSize = 1024 * 1024
@@ -317,9 +389,9 @@ actor ConnectionManager {
         while true {
             let recv = buffer.withUnsafeMutableBytes { bufferPtr in
                 if embedded {
-                    mpd_run_albumart(connection, location, offset, bufferPtr.baseAddress, bufferSize)
+                    mpd_run_albumart(connection, uri, offset, bufferPtr.baseAddress, bufferSize)
                 } else {
-                    mpd_run_readpicture(connection, location, offset, bufferPtr.baseAddress, bufferSize)
+                    mpd_run_readpicture(connection, uri, offset, bufferPtr.baseAddress, bufferSize)
                 }
             }
             guard recv > 0 else {

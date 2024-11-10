@@ -9,10 +9,12 @@
 /* Begin PBXBuildFile section */
 		91A1420A2CDE3B91000A74BC /* libmpdclient in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142092CDE3B91000A74BC /* libmpdclient */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
+		91A142222CE16721000A74BC /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 91A142212CE1671D000A74BC /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		91A141E02CDE3988000A74BC /* swmpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swmpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		91A142212CE1671D000A74BC /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -39,6 +41,7 @@
 		91A141D72CDE3987000A74BC = {
 			isa = PBXGroup;
 			children = (
+				91A142212CE1671D000A74BC /* .gitignore */,
 				91A141E22CDE3988000A74BC /* swmpc */,
 				91A141E12CDE3988000A74BC /* Products */,
 			);
@@ -122,6 +125,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				91A142222CE16721000A74BC /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

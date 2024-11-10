@@ -21,36 +21,21 @@ struct ContentView: View {
     }
 
     struct Navigation: View {
-        struct Category: Hashable, Identifiable {
-            var id: Self { self }
-
-            let image: String
-            let name: String
-            // let destination: AnyView?
-        }
-
-        private let categories = [
-            Category(image: "music.note", name: "Albums"),
-            Category(image: "music.note", name: "Artists"),
-            Category(image: "music.note", name: "Songs"),
-        ]
-        @State private var selectedCategory: Category? = nil
-
-        init() {
-            selectedCategory = categories.first
-        }
-
         var body: some View {
             TextField("Search", text: .constant(""))
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(10)
 
-            List(selection: $selectedCategory) {
-                // NavigationLink(destination: Albums()) {
-                Label("Albums", systemImage: "square.stack")
-                Label("Artists", systemImage: "music.microphone")
-                Label("Songs", systemImage: "music.note")
-                // }
+            List {
+                NavigationLink(destination: Albums()) {
+                    Label("Albums", systemImage: "square.stack")
+                }
+                NavigationLink(destination: Artists()) {
+                    Label("Artists", systemImage: "music.microphone")
+                }
+                NavigationLink(destination: Albums()) {
+                    Label("Songs", systemImage: "music.note")
+                }
             }
         }
     }
@@ -222,14 +207,16 @@ struct ContentView: View {
                     ForEach(player.queue.albums) { album in
                         HStack(spacing: 15) {
                             ZStack {
-                                Artwork(image: album.artwork)
+                                let artwork = player.getArtwork(for: album.id)?.image
+
+                                Artwork(image: artwork)
                                     .scaleEffect(0.97)
                                     .blur(radius: 7)
                                     .offset(y: 1)
                                     .blendMode(.multiply)
                                     .opacity(0.5)
 
-                                Artwork(image: album.artwork)
+                                Artwork(image: artwork)
                             }
                             .frame(width: 60)
 
@@ -244,17 +231,56 @@ struct ContentView: View {
                             }
                         }
                         .onAppear {
-                            guard album.artwork == nil else {
-                                return
-                            }
-
-                            Task {
-                                await player.queue.setArtwork(album.id)
+                            Task(priority: .high) {
+                                await player.setArtwork(for: album.id)
                             }
                         }
                     }
                 }
                 .padding(.horizontal, 20)
+            }
+            .onAppear {
+                guard player.queue.albums.isEmpty else {
+                    return
+                }
+
+                Task(priority: .userInitiated) {
+                    await player.queue.set(using: .album)
+                }
+            }
+        }
+    }
+
+    struct Artists: View {
+        @Environment(Player.self) private var player
+
+        var body: some View {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    ForEach(player.queue.artists) { artist in
+                        HStack(spacing: 15) {
+                            VStack(alignment: .leading) {
+                                Text(artist.name)
+                                    .font(.headline)
+                                    .lineLimit(2)
+                                Text(artist.albums.count == 1 ? "1 album" : "\(artist.albums.count) albums")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+            .onAppear {
+                guard player.queue.artists.isEmpty else {
+                    return
+                }
+
+                Task(priority: .userInitiated) {
+                    await player.queue.set(using: .artist)
+                }
             }
         }
     }

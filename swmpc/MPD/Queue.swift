@@ -13,36 +13,21 @@ import SwiftUI
     private let commandManager: ConnectionManager
 
     var albums: [Album] = []
+    var artists: [Artist] = []
+    var songs: [Song] = []
 
     @MainActor
     init(idleManager: ConnectionManager, commandManager: ConnectionManager) {
         self.idleManager = idleManager
         self.commandManager = commandManager
-
+        
         Task {
-            await set()
+            albums = await idleManager.getQueue(using: .album) as! [Album]
         }
     }
 
     @MainActor
-    func set() async {
-        albums = await idleManager.getQueue(tag: MPD_TAG_ALBUM)
-    }
+    func set(using type: MediaType) async {
 
-    @MainActor
-    func setArtwork(_ id: String) async {
-        guard let index = albums.firstIndex(where: { $0.id == id }) else {
-            return
-        }
-
-        let artwork = await commandManager.getArtwork(location: id)
-        guard let artwork else {
-            return
-        }
-
-        var album = albums[index]
-        album.artwork = artwork
-
-        albums[index] = album
     }
 }
