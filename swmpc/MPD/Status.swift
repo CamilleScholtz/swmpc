@@ -15,7 +15,7 @@ import SwiftUI
     var isRandom: Bool?
     var isRepeat: Bool?
     var elapsed: Double?
-    
+
     @ObservationIgnored @MainActor var trackElapsed: Bool = false {
         didSet {
             if trackElapsed {
@@ -46,7 +46,7 @@ import SwiftUI
                 await startTrackingElapsed()
             }
         }
-        
+
         if isPlaying.update(to: data.isPlaying ?? false) {
             AppDelegate.shared.setPopoverAnchorImage(changed: data.isPlaying ?? false ? "play" : "pause")
 
@@ -67,7 +67,7 @@ import SwiftUI
         if let trackingTask, !trackingTask.isCancelled {
             return
         }
-        
+
         startTime = Date() - (elapsed ?? 0)
 
         trackingTask = Task { [weak self] in
@@ -75,12 +75,12 @@ import SwiftUI
                 return
             }
 
-            while !Task.isCancelled && trackElapsed {
+            while !Task.isCancelled, trackElapsed {
                 try? await Task.sleep(for: .seconds(0.75), tolerance: .seconds(0.25))
-                
+
                 let currentTime = Date()
-                if let startTime = self.startTime {
-                    self.elapsed = currentTime.timeIntervalSince(startTime)
+                if let startTime {
+                    elapsed = currentTime.timeIntervalSince(startTime)
                 }
             }
         }
@@ -88,7 +88,7 @@ import SwiftUI
 
     private func stopTrackingElapsed() {
         trackingTask?.cancel()
-        
+
         trackingTask = nil
         startTime = nil
     }

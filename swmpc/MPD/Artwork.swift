@@ -17,8 +17,7 @@ extension NSImage: @unchecked @retroactive Sendable {}
 
     var image: NSImage?
 
-    @ObservationIgnored var uri: URL?
-    @ObservationIgnored var timestamp: TimeInterval?
+    private var uri: URL?
 
     init(uri: URL) {
         self.uri = uri
@@ -31,6 +30,5 @@ extension NSImage: @unchecked @retroactive Sendable {}
         }
 
         image = await commandManager.getArtwork(for: uri)
-        timestamp = Date().timeIntervalSince1970
     }
 }

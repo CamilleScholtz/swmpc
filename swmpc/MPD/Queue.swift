@@ -26,10 +26,12 @@ import SwiftUI
 
     // TODO: This gets called twice on startup?
     @MainActor
-    func set(using type: MediaType, query: String? = nil) async {
+    func set(using type: MediaType) async {
+        search = nil
+
         switch type {
         case .album:
-            guard albums.isEmpty || query != nil else {
+            guard albums.isEmpty else {
                 return
             }
 
@@ -73,10 +75,16 @@ import SwiftUI
 
             search = albums.filter {
                 $0.artist?.range(of: query, options: .caseInsensitive) != nil ||
-                $0.title?.range(of: query, options: .caseInsensitive) != nil
+                    $0.title?.range(of: query, options: .caseInsensitive) != nil
             }
         case .artist:
-            print("D")
+            if artists.isEmpty {
+                await set(using: .artist)
+            }
+
+            search = artists.filter {
+                $0.name.range(of: query, options: .caseInsensitive) != nil
+            }
         default:
             print("D")
         }

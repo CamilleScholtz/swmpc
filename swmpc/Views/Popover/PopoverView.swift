@@ -89,13 +89,13 @@ struct PopoverView: View {
                 artwork = player.getArtwork(for: current.id)
             }
             Task {
-               // await player.status.trackElapsed()
+                // await player.status.trackElapsed()
             }
 
             setupCursorMonitor()
         }
         .onReceive(didCloseNotification) { _ in
-            //player.status.trackingTask?.cancel()
+            // player.status.trackingTask?.cancel()
 
             removeCursorMonitor()
         }

@@ -6,6 +6,7 @@
 //
 
 import libmpdclient
+import OrderedCollections
 import SwiftUI
 
 @Observable final class Player {
@@ -14,7 +15,7 @@ import SwiftUI
 
     var current: Song?
 
-    private(set) var artworkCache: [URL: Artwork] = [:]
+    private(set) var artworkCache = OrderedDictionary<URL, Artwork>()
 
     @ObservationIgnored let idleManager = ConnectionManager(idle: true)
     @ObservationIgnored let commandManager = ConnectionManager()
@@ -63,24 +64,13 @@ import SwiftUI
 
     @MainActor
     func setArtwork(for uri: URL) async {
-        guard artworkCache[uri] == nil else {
+        if let artwork = artworkCache.removeValue(forKey: uri) {
+            artworkCache[uri] = artwork
             return
         }
 
-        // TODO: Is there a smarter way of doing this? Is it even needed?
-        // TODO: Open artworks should be execmpt for clearing.
-        // TODO: Add a debounce.
-        if artworkCache.count > 64 {
-            let oldest = artworkCache.min {
-                guard $0.value.timestamp != nil, $1.value.timestamp != nil else {
-                    return false
-                }
-
-                return $0.value.timestamp! < $1.value.timestamp!
-            }
-
-            oldest!.value.image = nil
-            artworkCache.removeValue(forKey: oldest!.key)
+        if artworkCache.count >= 64 {
+            artworkCache.removeFirst()
         }
 
         let artwork = Artwork(uri: uri)

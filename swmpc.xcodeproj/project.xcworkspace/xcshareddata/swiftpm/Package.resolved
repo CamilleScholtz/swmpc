@@ -1,13 +1,13 @@
 {
-  "originHash" : "c7207d57292b50f961c1f2a5249553803c4a633c2da3722fff20119413ab3225",
+  "originHash" : "01e1cb4f9d19d3afca1a2b05fab46965d9ba5988a53178c651ec305153fae5d5",
   "pins" : [
     {
       "identity" : "launchatlogin-modern",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sindresorhus/LaunchAtLogin-Modern",
       "state" : {
-        "branch" : "main",
-        "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc"
+        "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc",
+        "version" : "1.1.0"
       }
     },
     {
@@ -17,6 +17,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "1d0377437dd46c9517c988cc30efc70efe733d33"
+      }
+    },
+    {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections.git",
+      "state" : {
+        "revision" : "671108c96644956dddcd89dd59c203dcdb36cec7",
+        "version" : "1.1.4"
       }
     }
   ],

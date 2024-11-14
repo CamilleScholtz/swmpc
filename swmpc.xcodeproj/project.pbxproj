@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9173AA012CE62A76001956BB /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 9173AA002CE62A76001956BB /* OrderedCollections */; };
 		91A1420A2CDE3B91000A74BC /* libmpdclient in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142092CDE3B91000A74BC /* libmpdclient */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 /* End PBXBuildFile section */
@@ -30,6 +31,7 @@
 			files = (
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
 				91A1420A2CDE3B91000A74BC /* libmpdclient in Frameworks */,
+				9173AA012CE62A76001956BB /* OrderedCollections in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,6 +76,7 @@
 			packageProductDependencies = (
 				91A142092CDE3B91000A74BC /* libmpdclient */,
 				91A142142CDEA27E000A74BC /* LaunchAtLogin */,
+				9173AA002CE62A76001956BB /* OrderedCollections */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -106,6 +109,7 @@
 			packageReferences = (
 				91A142082CDE3B91000A74BC /* XCRemoteSwiftPackageReference "libmpdclient-swift" */,
 				91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+				9173A9FF2CE62A76001956BB /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -334,6 +338,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		9173A9FF2CE62A76001956BB /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.4;
+			};
+		};
 		91A142082CDE3B91000A74BC /* XCRemoteSwiftPackageReference "libmpdclient-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/zluo01/libmpdclient-swift";
@@ -346,13 +358,18 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		9173AA002CE62A76001956BB /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9173A9FF2CE62A76001956BB /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
 		91A142092CDE3B91000A74BC /* libmpdclient */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 91A142082CDE3B91000A74BC /* XCRemoteSwiftPackageReference "libmpdclient-swift" */;
