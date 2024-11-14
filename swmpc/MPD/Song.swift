@@ -7,16 +7,16 @@
 
 import SwiftUI
 
-struct Song: Mediable, Identifiable, Equatable, Sendable {
+struct Song: Identifiable, Equatable, Sendable {
     static func == (lhs: Song, rhs: Song) -> Bool {
         lhs.id == rhs.id
     }
 
-    var id: String
+    let id: URL
 
-    var artist: String?
-    var title: String?
-    var duration: Double?
+    let artist: String?
+    let title: String?
+    let duration: Double?
 
     var description: String {
         "\(artist ?? "Unknown artist") - \(title ?? "Unknown title")"

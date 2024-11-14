@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct Artist: Mediable, Identifiable, Sendable {
-    var id: String
+struct Artist: Identifiable, Sendable {
+    let id: URL
 
-    var name: String
+    let name: String
     var albums: [Album] = []
 }

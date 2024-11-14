@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-struct Album: Mediable, Identifiable, Sendable {
-    var id: String
+struct Album: Identifiable, Sendable {
+    let id: URL
 
-    var artist: String?
-    var title: String?
-    var date: String?
+    let artist: String?
+    let title: String?
+    let date: String?
 
     var songs: [Song] = []
 

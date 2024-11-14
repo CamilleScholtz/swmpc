@@ -12,7 +12,9 @@ struct PopoverView: View {
 
     @State private var height = Double(250)
 
-    @State private var previousArtwork: NSImage?
+    @State private var artwork: Artwork?
+    @State private var previousArtwork: Artwork?
+
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
 
@@ -32,18 +34,16 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            let artwork = player.getArtwork(for: player.current?.id)?.image
-
-            Artwork(image: artwork)
+            ArtworkView(image: artwork?.image)
                 .overlay(
-                    previousArtwork != nil ? AnyView(Artwork(image: previousArtwork)
-                        .opacity(isArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
+                    previousArtwork?.image != nil ? AnyView(ArtworkView(image: previousArtwork!.image)
+                        .opacity(isBackgroundArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
                 )
                 .opacity(0.3)
 
-            Artwork(image: artwork)
+            ArtworkView(image: artwork?.image)
                 .overlay(
-                    previousArtwork != nil ? AnyView(Artwork(image: previousArtwork)
+                    previousArtwork?.image != nil ? AnyView(ArtworkView(image: previousArtwork!.image)
                         .opacity(isArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
                 )
                 .cornerRadius(10)
@@ -63,7 +63,7 @@ struct PopoverView: View {
                 .shadow(color: .black.opacity(0.2), radius: 16)
                 .background(.ultraThinMaterial)
 
-            Footer()
+            FooterView()
                 .frame(height: 80)
                 .offset(y: showInfo ? 0 : 80)
                 .animation(.spring, value: showInfo)
@@ -86,24 +86,33 @@ struct PopoverView: View {
                 }
 
                 await player.setArtwork(for: current.id)
+                artwork = player.getArtwork(for: current.id)
             }
             Task {
-                await player.status.trackElapsed()
+               // await player.status.trackElapsed()
             }
 
             setupCursorMonitor()
         }
         .onReceive(didCloseNotification) { _ in
-            player.status.trackingTask?.cancel()
+            //player.status.trackingTask?.cancel()
 
             removeCursorMonitor()
         }
-        .onChange(of: player.current!) { previous, _ in
-            guard AppDelegate.shared.popover.isShown else {
+        .onChange(of: player.current) {
+            guard let current = player.current, AppDelegate.shared.popover.isShown else {
                 return
             }
 
-            previousArtwork = player.getArtwork(for: previous.id)?.image
+            Task(priority: .userInitiated) {
+                await player.setArtwork(for: current.id)
+                artwork = player.getArtwork(for: current.id)
+
+                updateHeight()
+            }
+        }
+        .onChange(of: artwork) { previous, _ in
+            previousArtwork = previous
 
             isBackgroundArtworkTransitioning = true
             withAnimation(.easeInOut(duration: 0.5)) {
@@ -112,16 +121,6 @@ struct PopoverView: View {
             isArtworkTransitioning = true
             withAnimation(.easeInOut(duration: 0.1)) {
                 isArtworkTransitioning = false
-            }
-
-            Task(priority: .userInitiated) {
-                guard let current = player.current else {
-                    return
-                }
-
-                await player.setArtwork(for: current.id)
-
-                updateHeight()
             }
         }
         .onHover { value in
@@ -190,18 +189,15 @@ struct PopoverView: View {
     }
 
     private func updateHeight() {
-//        guard player.current?.id != nil,
-//              let artwork = player.artworks[player.current!.id],
-//              let image = artwork.image
-//        else {
-//            height = 250
-//            return
-//        }
-//
-//        height = (Double(image.size.height) / Double(image.size.width) * 250).rounded(.down)
+        guard let image = artwork?.image else {
+            height = 250
+            return
+        }
+
+        height = (Double(image.size.height) / Double(image.size.width) * 250).rounded(.down)
     }
 
-    struct Artwork: View {
+    struct ArtworkView: View {
         let image: NSImage?
 
         var body: some View {
@@ -220,31 +216,31 @@ struct PopoverView: View {
         }
     }
 
-    struct Footer: View {
+    struct FooterView: View {
         @Environment(Player.self) private var player
 
         var body: some View {
             ZStack(alignment: .top) {
-                Progress()
+                ProgressView()
 
                 VStack(spacing: 0) {
                     Spacer()
 
                     HStack(alignment: .center) {
-                        Repeat()
+                        RepeatView()
                             .offset(x: 10)
 
                         Spacer()
 
                         HStack {
-                            Previous()
-                            Pause()
-                            Next()
+                            PreviousView()
+                            PauseView()
+                            NextView()
                         }
 
                         Spacer()
 
-                        Random()
+                        RandomView()
                             .offset(x: -10)
                     }
 
@@ -257,7 +253,7 @@ struct PopoverView: View {
         }
     }
 
-    struct Progress: View {
+    struct ProgressView: View {
         @Environment(Player.self) private var player
 
         @State private var hover = false
@@ -309,7 +305,7 @@ struct PopoverView: View {
         }
     }
 
-    struct Pause: View {
+    struct PauseView: View {
         @Environment(Player.self) private var player
 
         @State private var hover = false
@@ -331,7 +327,7 @@ struct PopoverView: View {
         }
     }
 
-    struct Previous: View {
+    struct PreviousView: View {
         @Environment(Player.self) private var player
 
         @State private var hover = false
@@ -353,7 +349,7 @@ struct PopoverView: View {
         }
     }
 
-    struct Next: View {
+    struct NextView: View {
         @Environment(Player.self) private var player
 
         @State private var hover = false
@@ -375,7 +371,7 @@ struct PopoverView: View {
         }
     }
 
-    struct Random: View {
+    struct RandomView: View {
         @Environment(Player.self) private var player
 
         @State private var hover = false
@@ -399,7 +395,7 @@ struct PopoverView: View {
         }
     }
 
-    struct Repeat: View {
+    struct RepeatView: View {
         @Environment(Player.self) private var player
 
         @State private var hover = false

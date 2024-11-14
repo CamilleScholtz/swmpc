@@ -14,7 +14,7 @@ import SwiftUI
 
     var current: Song?
 
-    private(set) var artworkCache: [String: Artwork] = [:]
+    private(set) var artworkCache: [URL: Artwork] = [:]
 
     @ObservationIgnored let idleManager = ConnectionManager(idle: true)
     @ObservationIgnored let commandManager = ConnectionManager()
@@ -41,7 +41,7 @@ import SwiftUI
             if await (!idleManager.isConnected) {
                 await idleManager.connect()
                 if await (!idleManager.isConnected) {
-                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    try? await Task.sleep(for: .seconds(5))
                     continue
                 }
             }
@@ -62,8 +62,14 @@ import SwiftUI
     }
 
     @MainActor
-    func setArtwork(for uri: String) async {
+    func setArtwork(for uri: URL) async {
+        guard artworkCache[uri] == nil else {
+            return
+        }
+
         // TODO: Is there a smarter way of doing this? Is it even needed?
+        // TODO: Open artworks should be execmpt for clearing.
+        // TODO: Add a debounce.
         if artworkCache.count > 64 {
             let oldest = artworkCache.min {
                 guard $0.value.timestamp != nil, $1.value.timestamp != nil else {
@@ -77,10 +83,6 @@ import SwiftUI
             artworkCache.removeValue(forKey: oldest!.key)
         }
 
-        guard artworkCache[uri] == nil else {
-            return
-        }
-
         let artwork = Artwork(uri: uri)
         artworkCache[uri] = artwork
 
@@ -88,7 +90,7 @@ import SwiftUI
     }
 
     @MainActor
-    func getArtwork(for uri: String?) -> Artwork? {
+    func getArtwork(for uri: URL?) -> Artwork? {
         guard let uri else {
             return nil
         }
@@ -114,7 +116,6 @@ import SwiftUI
     @MainActor
     func seek(_ value: Double) async {
         await commandManager.runSeekCurrent(value)
-        status.elapsed = value
     }
 
     @MainActor
@@ -237,28 +238,14 @@ actor ConnectionManager {
     }
 
     // TODO: Throw error if idle is true.
-    func getQueue(using type: MediaType) async -> [Mediable] {
+    func getAlbums() -> [Album] {
         connect()
         defer { disconnect() }
 
-        guard mpd_search_queue_songs(connection, true) else {
-            return []
-        }
-
-        switch type {
-        case .album:
-            return getAlbums()
-        case .artist:
-            return getArtists()
-        default:
-            return getSongs()
-        }
-    }
-
-    func getAlbums() -> [Album] {
         var albums = [Album]()
 
-        guard mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_TRACK, "1"),
+        guard mpd_search_queue_songs(connection, true),
+              mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_TRACK, "1"),
               mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_DISC, "1"),
               mpd_search_commit(connection)
         else {
@@ -298,31 +285,27 @@ actor ConnectionManager {
         return albums
     }
 
-    func getArtists() -> [Artist] {
-        var artists = [Artist]()
+    // TODO: Throw error if idle is true.
+    func getSongs() -> [Song] {
+        connect()
+        defer { disconnect() }
 
-        for album in getAlbums() {
-            guard let artist = album.artist else {
+        var songs = [Song]()
+
+        guard mpd_search_queue_songs(connection, true),
+              mpd_search_commit(connection)
+        else {
+            return []
+        }
+
+        while let recv = mpd_recv_song(connection) {
+            let song = getSong(receive: recv)
+            guard let song else {
                 continue
             }
 
-            if let index = artists.firstIndex(where: { $0.name == artist }) {
-                artists[index].albums.append(album)
-            } else {
-                artists.append(Artist(
-                    id: album.id,
-                    name: artist,
-                    albums: [album]
-                )
-                )
-            }
+            songs.append(song)
         }
-
-        return artists
-    }
-
-    func getSongs() -> [Song] {
-        var songs = [Song]()
 
         return songs
     }
@@ -359,13 +342,14 @@ actor ConnectionManager {
         }
 
         return Song(
-            id: uri,
+            id: URL(string: uri)!,
             artist: artist,
             title: title,
             duration: duration
         )
     }
 
+    // TODO: Throw error if idle is true.
     func getElapsedData() -> Double? {
         connect()
         defer { disconnect() }
@@ -373,11 +357,13 @@ actor ConnectionManager {
         guard let connection, let recv = mpd_run_status(connection) else {
             return nil
         }
+        defer { mpd_status_free(recv) }
 
         return Double(mpd_status_get_elapsed_time(recv))
     }
 
-    func getArtwork(for uri: String, embedded: Bool = false) -> NSImage? {
+    // TODO: Throw error if idle is true.
+    func getArtwork(for uri: URL, embedded: Bool = false) -> NSImage? {
         var data = Data()
         var offset: UInt32 = 0
         let bufferSize = 1024 * 1024
@@ -389,9 +375,9 @@ actor ConnectionManager {
         while true {
             let recv = buffer.withUnsafeMutableBytes { bufferPtr in
                 if embedded {
-                    mpd_run_albumart(connection, uri, offset, bufferPtr.baseAddress, bufferSize)
+                    mpd_run_albumart(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
                 } else {
-                    mpd_run_readpicture(connection, uri, offset, bufferPtr.baseAddress, bufferSize)
+                    mpd_run_readpicture(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
                 }
             }
             guard recv > 0 else {

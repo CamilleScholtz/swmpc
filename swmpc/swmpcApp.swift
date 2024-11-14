@@ -13,7 +13,7 @@ struct swmpcApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppView()
                 .environment(appDelegate.player)
         }
         .windowStyle(.hiddenTitleBar)

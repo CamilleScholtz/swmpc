@@ -10,13 +10,17 @@ import SwiftUI
 // TODO: Uhh?
 extension NSImage: @unchecked @retroactive Sendable {}
 
-@Observable class Artwork {
+@Observable class Artwork: Equatable {
+    static func == (lhs: Artwork, rhs: Artwork) -> Bool {
+        lhs.uri == rhs.uri
+    }
+
     var image: NSImage?
 
-    @ObservationIgnored var uri: String?
+    @ObservationIgnored var uri: URL?
     @ObservationIgnored var timestamp: TimeInterval?
 
-    init(uri: String) {
+    init(uri: URL) {
         self.uri = uri
     }
 
