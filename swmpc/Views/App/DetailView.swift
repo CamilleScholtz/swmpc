@@ -88,6 +88,31 @@ struct DetailView: View {
                             }
                         }
                     )
+                    .overlay(
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.6), .clear],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                                .blendMode(.screen)
+
+                            RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.clear, Color.black.opacity(0.4)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                                .blendMode(.multiply)
+                        }
+                    )
                     .cornerRadius(10)
                     .shadow(color: .black.opacity(0.2), radius: 16)
                     .frame(width: 250)

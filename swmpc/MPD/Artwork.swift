@@ -29,6 +29,6 @@ extension NSImage: @unchecked @retroactive Sendable {}
             return
         }
 
-        image = await commandManager.getArtwork(for: uri)
+        image = try? await commandManager.getArtwork(for: uri)
     }
 }

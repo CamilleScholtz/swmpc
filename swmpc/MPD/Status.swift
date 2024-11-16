@@ -38,7 +38,7 @@ import SwiftUI
 
     @MainActor
     func set() async {
-        let data = await idleManager.getStatusData()
+        let data = try! await idleManager.getStatusData()
 
         if trackElapsed {
             if elapsed.update(to: data.elapsed ?? 0), data.isPlaying ?? false {

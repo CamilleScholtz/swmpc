@@ -37,6 +37,7 @@ struct AppView: View {
 
                 Section("Playlists") {}
             }
+            .toolbar(removing: .sidebarToggle)
             .navigationSplitViewColumnWidth(180)
         } content: {
             ContentView(for: selected)
@@ -47,6 +48,7 @@ struct AppView: View {
             }
             .padding(60)
         }
+
         .background(.background)
     }
 }

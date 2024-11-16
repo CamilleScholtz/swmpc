@@ -35,7 +35,7 @@ import SwiftUI
                 return
             }
 
-            albums = await commandManager.getAlbums()
+            albums = try! await commandManager.getAlbums()
         case .artist:
             guard artists.isEmpty else {
                 return
@@ -60,8 +60,7 @@ import SwiftUI
             guard songs.isEmpty else {
                 return
             }
-
-            songs = await commandManager.getSongs()
+            // songs = await commandManager.getSongs()
         }
     }
 
@@ -86,7 +85,7 @@ import SwiftUI
                 $0.name.range(of: query, options: .caseInsensitive) != nil
             }
         default:
-            print("D")
+            print("TODO")
         }
     }
 }
