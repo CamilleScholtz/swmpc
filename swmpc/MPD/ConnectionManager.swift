@@ -63,6 +63,12 @@ actor ConnectionManager {
         isConnected = false
     }
 
+    func runPlay(_ id: UInt32) {
+        try! run { _ in
+            mpd_run_play_id(connection, id)
+        }
+    }
+
     func runPause(_ value: Bool) {
         try! run { connection in
             mpd_run_pause(connection, value)
@@ -165,10 +171,10 @@ actor ConnectionManager {
 
             albums.append(Album(
                 id: song.id,
+                uri: song.uri,
                 artist: artist,
                 title: title,
-                date: date,
-                songs: [song]
+                date: date
             ))
         }
 
@@ -194,12 +200,18 @@ actor ConnectionManager {
             artist = String(cString: tag)
         }
 
+        var track: String?
+        if let tag = mpd_song_get_tag(recv, MPD_TAG_TRACK, 0) {
+            track = String(cString: tag)
+        }
+
         var title: String?
         if let tag = mpd_song_get_tag(recv, MPD_TAG_TITLE, 0) {
             title = String(cString: tag)
         }
 
         let duration = Double(mpd_song_get_duration(recv))
+        let id = mpd_song_get_id(recv)
         let uri = String(cString: mpd_song_get_uri(recv))
 
         if receive == nil {
@@ -207,8 +219,10 @@ actor ConnectionManager {
         }
 
         return Song(
-            id: URL(string: uri)!,
+            id: id,
+            uri: URL(string: uri)!,
             artist: artist,
+            track: track,
             title: title,
             duration: duration
         )
@@ -223,7 +237,7 @@ actor ConnectionManager {
         defer { disconnect() }
 
         guard mpd_search_queue_songs(connection, true),
-              mpd_search_add_uri_constraint(connection, MPD_OPERATOR_DEFAULT, album.id.deletingLastPathComponent().path),
+              mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_ALBUM, album.title),
               mpd_search_commit(connection)
         else {
             return []
@@ -258,14 +272,15 @@ actor ConnectionManager {
         return Double(mpd_status_get_elapsed_time(recv))
     }
 
-    func getArtwork(for uri: URL, embedded: Bool = false) throws -> NSImage? {
+    // TODO: instead of uri, use Song/Album here.
+    func getArtwork(for uri: URL, embedded: Bool = true) throws -> NSImage? {
         guard !idle else {
             throw ConnectionManagerError.idleStateError
         }
 
         var data = Data()
         var offset: UInt32 = 0
-        let bufferSize = 1024 * 1024
+        let bufferSize = 512 * 512
         var buffer = Data(count: bufferSize)
 
         try connect()
@@ -274,9 +289,9 @@ actor ConnectionManager {
         while true {
             let recv = buffer.withUnsafeMutableBytes { bufferPtr in
                 if embedded {
-                    mpd_run_albumart(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
-                } else {
                     mpd_run_readpicture(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
+                } else {
+                    mpd_run_albumart(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
                 }
             }
             guard recv > 0 else {

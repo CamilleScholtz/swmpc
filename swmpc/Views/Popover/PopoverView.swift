@@ -85,8 +85,8 @@ struct PopoverView: View {
                     return
                 }
 
-                await player.setArtwork(for: current.id)
-                artwork = player.getArtwork(for: current.id)
+                await player.setArtwork(for: current)
+                artwork = player.getArtwork(for: current)
             }
             Task {
                 // await player.status.trackElapsed()
@@ -105,8 +105,8 @@ struct PopoverView: View {
             }
 
             Task(priority: .userInitiated) {
-                await player.setArtwork(for: current.id)
-                artwork = player.getArtwork(for: current.id)
+                await player.setArtwork(for: current)
+                artwork = player.getArtwork(for: current)
 
                 updateHeight()
             }

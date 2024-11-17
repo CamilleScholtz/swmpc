@@ -41,6 +41,7 @@ struct AppView: View {
             .navigationSplitViewColumnWidth(180)
         } content: {
             ContentView(for: selected)
+                .navigationBarBackButtonHidden()
                 .navigationSplitViewColumnWidth(310)
         } detail: {
             ViewThatFits {
@@ -48,7 +49,9 @@ struct AppView: View {
             }
             .padding(60)
         }
-
         .background(.background)
+        .toolbar {
+            Color.clear
+        }
     }
 }

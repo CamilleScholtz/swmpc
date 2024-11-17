@@ -131,8 +131,8 @@ struct DetailView: View {
             }
 
             Task(priority: .userInitiated) {
-                await player.setArtwork(for: current.id)
-                artwork = player.getArtwork(for: current.id)
+                await player.setArtwork(for: current)
+                artwork = player.getArtwork(for: current)
             }
         }
         .onChange(of: artwork) { previous, _ in
@@ -170,7 +170,7 @@ struct DetailView: View {
                 Rectangle()
                     .fill(Color(.accent).opacity(0.1))
                     .aspectRatio(contentMode: .fit)
-                    .scaledToFill()
+                    .scaledToFit()
             }
         }
     }
@@ -180,7 +180,7 @@ struct DetailView: View {
 
         var body: some View {
             VStack(alignment: .leading, spacing: 7) {
-                Text(player.current?.title ?? "No track selected")
+                Text(player.current?.title ?? "Unknown song")
                     .font(.system(size: 18))
                     .fontWeight(.semibold)
                     .fontDesign(.rounded)

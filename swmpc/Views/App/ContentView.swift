@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(Player.self) private var player
+    @Environment(\.dismiss) private var dismiss
 
     private var type: MediaType = .album
 
@@ -19,6 +20,7 @@ struct ContentView: View {
 
     @State private var path = NavigationPath()
     @State private var showSearch: Bool = false
+    @State private var hover = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -38,12 +40,12 @@ struct ContentView: View {
                         }
                     }
                     .padding(.horizontal, 15)
+                    .padding(.bottom, 15)
                 }
                 .ignoresSafeArea(.all, edges: .top)
-                // TODO: This is called twice?
-                // TODO: First change of type, scrollToCurrent doesn't work.
                 .task(id: type) {
-                    await player.queue.set(using: type)
+                    // TODO: This is called twice?
+                    await player.queue.set(for: type)
                     // TODO: Sometimes doesn't work?
                     scrollToCurrent(proxy, using: type, animate: false)
                 }
@@ -55,27 +57,41 @@ struct ContentView: View {
                             return nil
                         }
 
-                        if event.charactersIgnoringModifiers?.lowercased() == "c" {
-                            scrollToCurrent(proxy, using: type)
-                            return nil
-                        }
+//                        if event.charactersIgnoringModifiers?.lowercased() == "c" {
+//                            scrollToCurrent(proxy, using: type)
+//                            return nil
+//                        }
 
                         return event
                     }
                 }
             }
-            .navigationDestination(for: URL.self) { id in
+            .navigationDestination(for: URL.self) { uri in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 15) {
+                    VStack(alignment: .leading, spacing: 15) {
+                        Image(systemName: "chevron.backward")
+                            .padding(10)
+                            .padding(.top, 25)
+                            .scaleEffect(hover ? 1.2 : 1)
+                            .animation(.interactiveSpring, value: hover)
+                            .onHover(perform: { value in
+                                hover = value
+                            })
+                            .onTapGesture {
+                                dismiss()
+                            }
+                        
                         switch type {
                         case .artist:
-                            ArtistAlbumsView(for: id, path: $path)
+                            ArtistAlbumsView(for: uri, path: $path)
                         default:
-                            AlbumSongsView(for: id)
+                            AlbumSongsView(for: player.queue.albums.first { $0.uri == uri }!)
                         }
                     }
                     .padding(.horizontal, 15)
+                    .padding(.bottom, 15)
                 }
+                .ignoresSafeArea(.all, edges: .top)
             }
         }
     }
@@ -99,13 +115,13 @@ struct ContentView: View {
     struct ArtistAlbumsView: View {
         @Environment(Player.self) private var player
 
-        private var id: URL?
+        private var uri: URL?
         private var artist: Artist? {
-            player.queue.artists.first { $0.id == id }
+            player.queue.artists.first { $0.uri == uri }
         }
 
-        init(for id: URL? = nil, path: Binding<NavigationPath>) {
-            self.id = id
+        init(for uri: URL? = nil, path: Binding<NavigationPath>) {
+            self.uri = uri
             _path = path
         }
 
@@ -141,22 +157,54 @@ struct ContentView: View {
     struct AlbumSongsView: View {
         @Environment(Player.self) private var player
 
-        private var id: URL?
-        private var album: Album? {
-            player.queue.albums.first { $0.id == id }
+        init(for album: Album) {
+            self.album = album
         }
 
-        init(for id: URL? = nil) {
-            self.id = id
-        }
-
+        @State var album: Album
+        
         var body: some View {
-            if let album {
-                VStack(spacing: 15) {
-                    ForEach(album.songs) { song in
-                        SongView(for: song)
+            VStack(alignment: .leading, spacing: 15) {
+                HStack(spacing: 15) {
+                    ZStack {
+                        ArtworkView(image: player.getArtwork(for: album)?.image)
+                            .frame(width: 80)
+                            .blur(radius: 20)
+                            .offset(y: 7)
+                        
+                        ArtworkView(image: player.getArtwork(for: album)?.image)
+                            .cornerRadius(5)
+                            .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+                            .frame(width: 100)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(album.title ?? "Unknown album")
+                            .font(.system(size: 18))
+                            .fontWeight(.semibold)
+                            .fontDesign(.rounded)
+                        
+                        Text(album.artist ?? "Unknown artist")
+                            .font(.system(size: 12))
+                            .fontWeight(.semibold)
+                        
+                        Text((album.songs.count > 1 ? "\(String(album.songs.count)) songs" : "1 song")
+                             + " • "
+                             // + (album.date ?? "s---")
+                             // + " • "
+                             + (album.duration?.timeString ?? "-:--"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     }
                 }
+                .padding(.bottom, 15)
+
+                ForEach(album.songs) { song in
+                    SongView(for: song)
+                }
+            }
+            .task {
+                album.add(songs: try! await player.commandManager.getSongs(for: album))
             }
         }
     }
@@ -164,23 +212,13 @@ struct ContentView: View {
     struct SongsView: View {
         @Environment(Player.self) private var player
 
-        private var artists: [Artist] {
-            player.queue.search as? [Artist] ?? player.queue.artists
+        private var songs: [Song] {
+            player.queue.search as? [Song] ?? player.queue.songs
         }
 
         var body: some View {
-            ForEach(artists) { artist in
-                HStack(spacing: 15) {
-                    VStack(alignment: .leading) {
-                        Text(artist.name)
-                            .font(.headline)
-                            .lineLimit(2)
-                        Text(artist.albums.count == 1 ? "1 album" : "\(artist.albums.count) albums")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-                }
+            ForEach(songs) { song in
+                SongView(for: song)
             }
         }
     }
@@ -286,13 +324,13 @@ struct ContentView: View {
         @Binding var path: NavigationPath
 
         var body: some View {
-            let dir = artist.id.deletingLastPathComponent().deletingLastPathComponent()
+            let uri = artist.uri.deletingLastPathComponent().deletingLastPathComponent()
 
             HStack(spacing: 15) {
                 VStack(alignment: .leading) {
                     Text(artist.name)
                         .font(.headline)
-                        .foregroundColor(player.current?.id.deletingLastPathComponent().deletingLastPathComponent() == dir ? .accentColor : .primary)
+                        .foregroundColor(player.current?.uri.deletingLastPathComponent().deletingLastPathComponent() == uri ? .accentColor : .primary)
                         .lineLimit(2)
                     Text(artist.albums.count == 1 ? "1 album" : "\(artist.albums.count) albums")
                         .font(.subheadline)
@@ -302,10 +340,10 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(dir)
+            .id(uri)
             .contentShape(Rectangle())
             .onTapGesture {
-                path.append(artist.id)
+                path.append(artist.uri)
             }
         }
     }
@@ -323,18 +361,18 @@ struct ContentView: View {
         @Binding var path: NavigationPath
 
         var body: some View {
-            let dir = album.id.deletingLastPathComponent()
+            let uri = album.uri.deletingLastPathComponent()
 
             HStack(spacing: 15) {
-                ArtworkView(image: player.getArtwork(for: album.id)?.image)
+                ArtworkView(image: player.getArtwork(for: album)?.image)
                     .cornerRadius(5)
                     .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                     .frame(width: 60)
-
+                
                 VStack(alignment: .leading) {
                     Text(album.title ?? "Unknown album")
                         .font(.headline)
-                        .foregroundColor(player.current?.id.deletingLastPathComponent() == dir ? .accentColor : .primary)
+                        .foregroundColor(player.current?.uri.deletingLastPathComponent() == uri ? .accentColor : .primary)
                         .lineLimit(2)
                     Text(album.artist ?? "Unknown artist")
                         .font(.subheadline)
@@ -344,19 +382,19 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(dir)
-            .task(id: dir) {
+            .id(uri)
+            .task(id: uri) {
                 // TODO: This can probably be made even a little snappier.
                 try? await Task.sleep(nanoseconds: 100_000_000)
                 guard !Task.isCancelled else {
                     return
                 }
 
-                await player.setArtwork(for: album.id)
+                await player.setArtwork(for: album)
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                path.append(album.id)
+                path.append(album.uri)
             }
         }
     }
@@ -371,15 +409,21 @@ struct ContentView: View {
         }
 
         var body: some View {
-            let dir = song.id
+            let uri = song.uri
 
             HStack(spacing: 15) {
+                Text(song.track ?? "-")
+                    .font(.title3)
+                    .fontWeight(.regular)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+
                 VStack(alignment: .leading) {
                     Text(song.title ?? "Unknown album")
                         .font(.headline)
-                        .foregroundColor(player.current?.id == dir ? .accentColor : .primary)
+                        .foregroundColor(player.current?.uri == uri ? .accentColor : .primary)
                         .lineLimit(2)
-                    Text(song.artist ?? "Unknown artist")
+                    Text((song.artist ?? "Unknown artist") + " • " + (song.duration?.timeString ?? "-:--"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -387,10 +431,12 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(dir)
+            .id(uri)
             .contentShape(Rectangle())
             .onTapGesture {
-                // player.play(song)
+                Task(priority: .userInitiated) {
+                    await player.play(song)
+                }
             }
         }
     }
@@ -417,42 +463,41 @@ struct ContentView: View {
                     .fill(Color(.accent).opacity(0.1))
                     .aspectRatio(contentMode: .fit)
                     .scaledToFill()
+                    .blur(radius: 10)
             }
         }
     }
 
     private func scrollToCurrent(_ proxy: ScrollViewProxy, using type: MediaType, animate: Bool = true) {
-        guard var id = player.current?.id else {
+        guard var uri = player.current?.uri else {
             return
         }
 
         switch type {
         case .artist:
-            id = id.deletingLastPathComponent().deletingLastPathComponent()
+            uri = uri.deletingLastPathComponent().deletingLastPathComponent()
         case .song:
             print("TODO")
         default:
-            id = id.deletingLastPathComponent()
+            uri = uri.deletingLastPathComponent()
         }
 
         if animate {
             withAnimation {
-                proxy.scrollTo(id, anchor: .center)
+                proxy.scrollTo(uri, anchor: .center)
             }
         } else {
-            proxy.scrollTo(id, anchor: .center)
+            proxy.scrollTo(uri, anchor: .center)
         }
     }
 
     private func scrollToTop(_ proxy: ScrollViewProxy, animate: Bool = true) {
-        let id = "top"
-
         if animate {
             withAnimation {
-                proxy.scrollTo(id, anchor: .center)
+                proxy.scrollTo("top", anchor: .center)
             }
         } else {
-            proxy.scrollTo(id, anchor: .center)
+            proxy.scrollTo("top", anchor: .center)
         }
     }
 }
