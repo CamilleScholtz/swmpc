@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PopoverView: View {
     @Environment(Player.self) private var player
+    @Environment(\.colorScheme) var colorScheme
 
     @State private var height = Double(250)
 
@@ -20,12 +21,6 @@ struct PopoverView: View {
 
     @State private var isHovering = false
     @State private var showInfo = false
-
-    @State private var cursorMonitor: Any?
-    @State private var cursorPosition: CGPoint = .zero
-
-    @State private var rotationX: Double = 0
-    @State private var rotationY: Double = 0
 
     private let willShowNotification = NotificationCenter.default
         .publisher(for: NSPopover.willShowNotification)
@@ -39,6 +34,7 @@ struct PopoverView: View {
                     previousArtwork?.image != nil ? AnyView(ArtworkView(image: previousArtwork!.image)
                         .opacity(isBackgroundArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
                 )
+                // .brightness(-0.4)
                 .opacity(0.3)
 
             ArtworkView(image: artwork?.image)
@@ -46,21 +42,36 @@ struct PopoverView: View {
                     previousArtwork?.image != nil ? AnyView(ArtworkView(image: previousArtwork!.image)
                         .opacity(isArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
                 )
+                .overlay(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.5
+                            )
+                            .blendMode(.screen)
+
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 0.5
+                            )
+                            .blendMode(.multiply)
+                    }
+                )
                 .cornerRadius(10)
-                .rotation3DEffect(
-                    Angle(degrees: rotationX),
-                    axis: (x: 1.0, y: 0.0, z: 0.0)
-                )
-                .rotation3DEffect(
-                    Angle(degrees: rotationY),
-                    axis: (x: 0.0, y: 1.0, z: 0.0)
-                )
-                .animation(.spring, value: rotationX)
-                .animation(.spring, value: rotationY)
                 .scaleEffect(showInfo ? 0.7 : 1)
                 .offset(y: showInfo ? -7 : 0)
                 .animation(.spring(response: 0.7, dampingFraction: 1, blendDuration: 0.7), value: showInfo)
-                .shadow(color: .black.opacity(0.2), radius: 16)
+                .shadow(color: .black.opacity(0.4), radius: 25)
                 .background(.ultraThinMaterial)
 
             FooterView()
@@ -91,13 +102,9 @@ struct PopoverView: View {
             Task {
                 // await player.status.trackElapsed()
             }
-
-            setupCursorMonitor()
         }
         .onReceive(didCloseNotification) { _ in
             // player.status.trackingTask?.cancel()
-
-            removeCursorMonitor()
         }
         .onChange(of: player.current) {
             guard let current = player.current, AppDelegate.shared.popover.isShown else {
@@ -135,57 +142,7 @@ struct PopoverView: View {
             }
 
             isHovering = value
-
-            if !value {
-                rotationX = 0
-                rotationY = 0
-            }
         }
-    }
-
-    private func setupCursorMonitor() {
-        var lastFireTime: DispatchTime = .now()
-        let debounceInterval: TimeInterval = 0.05
-
-        cursorMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { event in
-            let now = DispatchTime.now()
-
-            guard now > lastFireTime + debounceInterval, isHovering else {
-                return event
-            }
-
-            var location = event.locationInWindow
-
-            if event.window == nil {
-                guard let frame = NSApp.keyWindow?.frame else {
-                    return event
-                }
-
-                location = CGPoint(
-                    x: location.x - frame.origin.x,
-                    y: location.y - frame.origin.y
-                )
-            }
-
-            let xPercentage = Double(location.x / 250)
-            let yPercentage = Double(location.y / height)
-
-            rotationX = (yPercentage - 0.5) * -8
-            rotationY = (xPercentage - 0.5) * 8
-
-            lastFireTime = now
-
-            return event
-        }
-    }
-
-    private func removeCursorMonitor() {
-        guard let monitor = cursorMonitor else {
-            return
-        }
-
-        NSEvent.removeMonitor(monitor)
-        cursorMonitor = nil
     }
 
     private func updateHeight() {
@@ -220,36 +177,32 @@ struct PopoverView: View {
         @Environment(Player.self) private var player
 
         var body: some View {
-            ZStack(alignment: .top) {
+            VStack(spacing: 8) {
                 ProgressView()
 
-                VStack(spacing: 0) {
+                HStack(alignment: .center) {
+                    RepeatView()
+                        .offset(x: 10)
+
                     Spacer()
 
-                    HStack(alignment: .center) {
-                        RepeatView()
-                            .offset(x: 10)
-
-                        Spacer()
-
-                        HStack {
-                            PreviousView()
-                            PauseView()
-                            NextView()
-                        }
-
-                        Spacer()
-
-                        RandomView()
-                            .offset(x: -10)
+                    HStack {
+                        PreviousView()
+                        PauseView()
+                        NextView()
                     }
 
                     Spacer()
+
+                    RandomView()
+                        .offset(x: -10)
                 }
-                .offset(y: 2)
+                .offset(y: -1)
             }
             .frame(height: 80)
-            .background(.ultraThinMaterial)
+            .background(.thinMaterial)
+            .cornerRadius(10)
+            .shadow(radius: 20)
         }
     }
 
@@ -259,49 +212,45 @@ struct PopoverView: View {
         @State private var hover = false
 
         var body: some View {
-            VStack(spacing: 0) {
-                HStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color(.textColor))
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 2)
+                    .frame(width: 220, height: 3)
+
+                ZStack(alignment: .trailing) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color(.accent))
                         .frame(
-                            width: (player.status.elapsed ?? 0) / (player.current?.duration ?? 100) * 250,
-                            height: hover ? 8 : 4
+                            width: max(0, (player.status.elapsed ?? 0) / (player.current?.duration ?? 100) * 220) + 4,
+                            height: 3
                         )
-                        .animation(.spring, value: player.status.elapsed)
 
-                    Rectangle()
-                        .fill(Color(.textBackgroundColor))
-                        .frame(
-                            width: Double.maximum(0, 250 - ((player.status.elapsed ?? 0) / (player.current?.duration ?? 100) * 250)),
-                            height: hover ? 8 : 4
-                        )
-                        .animation(.spring, value: player.status.elapsed)
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 8, height: 8)
+                        .scaleEffect(hover ? 1.5 : 1)
+                        .animation(.spring, value: hover)
                 }
-                .blendMode(.softLight)
-                .gesture(DragGesture(minimumDistance: 0).onChanged { value in
-                    Task(priority: .userInitiated) {
-                        await player.seek((value.location.x / 250) * (player.current?.duration ?? 100))
-                    }
-                })
-
-                HStack(alignment: .center) {
-                    Text(player.status.elapsed?.timeString ?? "-:--")
-                        .font(.system(size: 10))
-                        .blendMode(.overlay)
-                        .offset(x: 5, y: 3)
-
-                    Spacer()
-
-                    Text(player.current?.duration?.timeString ?? "-:--")
-                        .font(.system(size: 10))
-                        .blendMode(.overlay)
-                        .offset(x: -5, y: 3)
-                }
+                .animation(.spring, value: player.status.elapsed)
             }
-            .animation(.interactiveSpring, value: hover)
+            .compositingGroup()
+            .blendMode(.overlay)
+            .padding(.vertical, 3)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                Task(priority: .userInitiated) {
+                    await player.seek((value.location.x / 220) * (player.current?.duration ?? 100))
+                }
+            })
             .onHover(perform: { value in
                 hover = value
             })
+            // TODO:
+//            .onAppear {
+//                player.status.trackElapsed = true
+//            }
+//            .onDisappear {
+//                player.status.trackElapsed = false
+//            }
         }
     }
 
@@ -377,21 +326,29 @@ struct PopoverView: View {
         @State private var hover = false
 
         var body: some View {
-            Image(systemName: "shuffle")
-                .foregroundColor(Color(player.status.isRandom ?? false ? .textBackgroundColor : .textColor))
-                .blendMode(.overlay)
-                .animation(.interactiveSpring, value: player.status.isRandom)
-                .padding(10)
-                .scaleEffect(hover ? 1.2 : 1)
-                .animation(.interactiveSpring, value: hover)
-                .onHover(perform: { value in
-                    hover = value
-                })
-                .onTapGesture(perform: {
-                    Task(priority: .userInitiated) {
-                        await player.setRandom(!(player.status.isRandom ?? false))
-                    }
-                })
+            ZStack {
+                Image(systemName: "shuffle")
+                    .foregroundColor(Color(.textColor))
+                    .padding(10)
+                    .scaleEffect(hover ? 1.2 : 1)
+                    .animation(.interactiveSpring, value: hover)
+                    .onHover(perform: { value in
+                        hover = value
+                    })
+                    .onTapGesture(perform: {
+                        Task(priority: .userInitiated) {
+                            await player.setRandom(!(player.status.isRandom ?? false))
+                        }
+                    })
+
+                if player.status.isRandom ?? false {
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 3.5, height: 3.5)
+                        .offset(y: 12)
+                }
+            }
+            .blendMode(.overlay)
         }
     }
 
@@ -401,21 +358,29 @@ struct PopoverView: View {
         @State private var hover = false
 
         var body: some View {
-            Image(systemName: "repeat")
-                .foregroundColor(Color(player.status.isRepeat ?? false ? .textBackgroundColor : .textColor))
-                .blendMode(.overlay)
-                .animation(.interactiveSpring, value: player.status.isRepeat)
-                .padding(10)
-                .scaleEffect(hover ? 1.2 : 1)
-                .animation(.interactiveSpring, value: hover)
-                .onHover(perform: { value in
-                    hover = value
-                })
-                .onTapGesture(perform: {
-                    Task(priority: .userInitiated) {
-                        await player.setRepeat(!(player.status.isRepeat ?? false))
-                    }
-                })
+            ZStack {
+                Image(systemName: "repeat")
+                    .foregroundColor(Color(.textColor))
+                    .padding(10)
+                    .scaleEffect(hover ? 1.2 : 1)
+                    .animation(.interactiveSpring, value: hover)
+                    .onHover(perform: { value in
+                        hover = value
+                    })
+                    .onTapGesture(perform: {
+                        Task(priority: .userInitiated) {
+                            await player.setRepeat(!(player.status.isRepeat ?? false))
+                        }
+                    })
+
+                if player.status.isRepeat ?? false {
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 3.5, height: 3.5)
+                        .offset(y: 12)
+                }
+            }
+            .blendMode(.overlay)
         }
     }
 }

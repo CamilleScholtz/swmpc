@@ -19,7 +19,7 @@ struct Artist: Mediable {
     let name: String
 
     var albums: [Album] = []
-    
+
     mutating func add(albums: [Album]) {
         self.albums.append(contentsOf: albums)
     }
@@ -42,7 +42,7 @@ struct Album: Mediable {
     var duration: Double? {
         songs.reduce(0) { $0 + ($1.duration ?? 0) }
     }
-    
+
     mutating func add(songs: [Song]) {
         self.songs.append(contentsOf: songs)
     }

@@ -228,7 +228,7 @@ actor ConnectionManager {
         )
     }
 
-    func getSongs(for album: Album) throws -> [Song] {
+    func getSongs(for album: Album? = nil) throws -> [Song] {
         guard !idle else {
             throw ConnectionManagerError.idleStateError
         }
@@ -236,11 +236,15 @@ actor ConnectionManager {
         try connect()
         defer { disconnect() }
 
-        guard mpd_search_queue_songs(connection, true),
-              mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_ALBUM, album.title),
-              mpd_search_commit(connection)
-        else {
-            return []
+        if let album {
+            guard mpd_search_queue_songs(connection, true),
+                  mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_ALBUM, album.title),
+                  mpd_search_commit(connection)
+            else {
+                return []
+            }
+        } else {
+            mpd_send_list_queue_meta(connection)
         }
 
         var songs = [Song]()

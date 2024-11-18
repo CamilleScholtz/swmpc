@@ -62,7 +62,7 @@ import SwiftUI
             }
         }
     }
-    
+
     @MainActor
     func setArtwork(for media: any Mediable) async {
         if let artwork = artworkCache.removeValue(forKey: media.id) {

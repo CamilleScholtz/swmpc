@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DetailView: View {
     @Environment(Player.self) private var player
+    @Environment(\.colorScheme) var colorScheme
 
     @State private var artwork: Artwork?
     @State private var previousArtwork: Artwork?
@@ -93,7 +94,7 @@ struct DetailView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .strokeBorder(
                                     LinearGradient(
-                                        colors: [Color.white.opacity(0.6), .clear],
+                                        colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
@@ -104,7 +105,7 @@ struct DetailView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .strokeBorder(
                                     LinearGradient(
-                                        colors: [Color.clear, Color.black.opacity(0.4)],
+                                        colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
@@ -125,6 +126,7 @@ struct DetailView: View {
             FooterView()
                 .frame(height: 80)
         }
+        .frame(minWidth: 520, minHeight: 520)
         .onChange(of: player.current) {
             guard let current = player.current else {
                 return
@@ -168,7 +170,7 @@ struct DetailView: View {
                     }
             } else {
                 Rectangle()
-                    .fill(Color(.accent).opacity(0.1))
+                    .fill(Color(.secondarySystemFill).opacity(0.3))
                     .aspectRatio(contentMode: .fit)
                     .scaledToFit()
             }
@@ -352,14 +354,13 @@ struct DetailView: View {
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(Color(.accent))
                                 .frame(
-                                    width: max(0, (player.status.elapsed ?? 0) / (player.current?.duration ?? 100) * geometry.size.width),
+                                    width: max(0, (player.status.elapsed ?? 0) / (player.current?.duration ?? 100) * geometry.size.width) + 4,
                                     height: 3
                                 )
 
                             Circle()
                                 .fill(Color(.accent))
                                 .frame(width: 8, height: 8)
-                                .offset(x: 4)
                                 .scaleEffect(hover ? 1.5 : 1)
                                 .animation(.spring, value: hover)
                         }
