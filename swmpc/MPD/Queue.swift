@@ -40,7 +40,7 @@ import SwiftUI
                 } else {
                     result.append(Artist(
                         id: album.id,
-                        uri: album.uri,
+                        artworkUri: album.artworkUri,
                         name: album.artist ?? "Unknown artist",
                         albums: [album]
                     ))
@@ -62,30 +62,28 @@ import SwiftUI
     }
 
     @MainActor
+    func get(for uri: URL, using type: MediaType) async -> (any Mediable)? {
+        await set(for: type)
+
+        return media.first(where: { $0.uri == uri })
+    }
+
+    // TODO: just return something instead of settig search.
+    @MainActor
     func search(for query: String, using type: MediaType) async {
+        await set(for: type)
+
         switch type {
         case .artist:
-            if media.isEmpty || !(media is [Artist]) {
-                await set(for: .artist)
-            }
-
             search = (media as! [Artist]).filter {
                 $0.name.range(of: query, options: .caseInsensitive) != nil
             }
         case .song:
-            if media.isEmpty || !(media is [Song]) {
-                await set(for: .song)
-            }
-            
             search = (media as! [Song]).filter {
                 $0.artist?.range(of: query, options: .caseInsensitive) != nil ||
                     $0.title?.range(of: query, options: .caseInsensitive) != nil
             }
         default:
-            if media.isEmpty || !(media is [Album]) {
-                await set(for: .album)
-            }
-
             search = (media as! [Album]).filter {
                 $0.artist?.range(of: query, options: .caseInsensitive) != nil ||
                     $0.title?.range(of: query, options: .caseInsensitive) != nil

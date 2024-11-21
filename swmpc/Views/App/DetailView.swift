@@ -11,6 +11,8 @@ struct DetailView: View {
     @Environment(Player.self) private var player
     @Environment(\.colorScheme) var colorScheme
 
+    @Binding var path: NavigationPath
+
     @State private var artwork: Artwork?
     @State private var previousArtwork: Artwork?
 
@@ -117,6 +119,19 @@ struct DetailView: View {
                     .cornerRadius(10)
                     .shadow(color: .black.opacity(0.2), radius: 16)
                     .frame(width: 250)
+                    .onTapGesture {
+                        guard let uri = player.current?.albumUri else {
+                            return
+                        }
+
+                        Task(priority: .userInitiated) {
+                            guard let media = await player.queue.get(for: uri, using: .album) else {
+                                return
+                            }
+                            
+                            path.append(media)
+                        }
+                    }
             }
             .offset(y: -25)
             .zIndex(100)

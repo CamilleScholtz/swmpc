@@ -171,7 +171,7 @@ actor ConnectionManager {
 
             albums.append(Album(
                 id: song.id,
-                uri: song.uri,
+                artworkUri: song.uri,
                 artist: artist,
                 title: title,
                 date: date
@@ -276,7 +276,6 @@ actor ConnectionManager {
         return Double(mpd_status_get_elapsed_time(recv))
     }
 
-    // TODO: instead of uri, use Song/Album here.
     func getArtwork(for uri: URL, embedded: Bool = true) throws -> NSImage? {
         guard !idle else {
             throw ConnectionManagerError.idleStateError

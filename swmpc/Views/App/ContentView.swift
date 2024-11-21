@@ -12,17 +12,16 @@ struct ContentView: View {
     @Environment(Player.self) private var player
     @Environment(\.dismiss) private var dismiss
 
-    private var type: MediaType = .album
+    @Binding var type: MediaType
+    @Binding var path: NavigationPath
 
-    init(for type: MediaType) {
-        self.type = type
+    init(for type: Binding<MediaType>, path: Binding<NavigationPath>) {
+        _type = type
+        _path = path
     }
 
-    @State private var path = NavigationPath()
     @State private var showSearch: Bool = false
     @State private var hover = false
-    
-    @State private var search: String = ""
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -68,27 +67,22 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationDestination(for: URL.self) { uri in
+            .navigationDestination(for: Artist.self) { artist in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 15) {
-                        Image(systemName: "chevron.backward")
-                            .padding(10)
-                            .padding(.top, 25)
-                            .scaleEffect(hover ? 1.2 : 1)
-                            .animation(.interactiveSpring, value: hover)
-                            .onHover(perform: { value in
-                                hover = value
-                            })
-                            .onTapGesture {
-                                dismiss()
-                            }
-
-                        switch type {
-                        case .artist:
-                            ArtistAlbumsView(for: uri, path: $path)
-                        default:
-                            AlbumSongsView(for: player.queue.media.first { $0.uri == uri }! as! Album)
-                        }
+                        backButton()
+                        ArtistAlbumsView(for: artist, path: $path)
+                    }
+                    .padding(.horizontal, 15)
+                    .padding(.bottom, 15)
+                }
+                .ignoresSafeArea(.all, edges: .top)
+            }
+            .navigationDestination(for: Album.self) { album in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 15) {
+                        backButton()
+                        AlbumSongsView(for: album)
                     }
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
@@ -96,6 +90,20 @@ struct ContentView: View {
                 .ignoresSafeArea(.all, edges: .top)
             }
         }
+    }
+
+    private func backButton() -> some View {
+        Image(systemName: "chevron.backward")
+            .padding(10)
+            .padding(.top, 25)
+            .scaleEffect(hover ? 1.2 : 1)
+            .animation(.interactiveSpring, value: hover)
+            .onHover(perform: { value in
+                hover = value
+            })
+            .onTapGesture {
+                dismiss()
+            }
     }
 
     struct ArtistsView: View {
@@ -117,24 +125,19 @@ struct ContentView: View {
     struct ArtistAlbumsView: View {
         @Environment(Player.self) private var player
 
-        private var uri: URL?
-        private var artist: Artist? {
-            player.queue.media.first { $0.uri == uri } as? Artist
-        }
+        private var artist: Artist
 
-        init(for uri: URL? = nil, path: Binding<NavigationPath>) {
-            self.uri = uri
+        init(for artist: Artist, path: Binding<NavigationPath>) {
+            self.artist = artist
             _path = path
         }
 
         @Binding var path: NavigationPath
 
         var body: some View {
-            if let artist {
-                VStack(spacing: 15) {
-                    ForEach(artist.albums) { album in
-                        AlbumView(for: album, path: $path)
-                    }
+            VStack(spacing: 15) {
+                ForEach(artist.albums) { album in
+                    AlbumView(for: album, path: $path)
                 }
             }
         }
@@ -160,15 +163,17 @@ struct ContentView: View {
         @Environment(Player.self) private var player
 
         init(for album: Album) {
-            self.album = album
+            _album = State(initialValue: album)
         }
 
-        @State var album: Album
+        @State private var album: Album
 
         var body: some View {
             VStack(alignment: .leading, spacing: 15) {
                 HStack(spacing: 15) {
-                    if let artwork = player.getArtwork(for: album)?.image {
+                    if player.current?.albumUri != album.uri,
+                       let artwork = player.getArtwork(for: album)?.image
+                    {
                         ZStack {
                             ArtworkView(image: artwork)
                                 .frame(width: 80)
@@ -328,13 +333,11 @@ struct ContentView: View {
         @Binding var path: NavigationPath
 
         var body: some View {
-            let uri = artist.uri.deletingLastPathComponent().deletingLastPathComponent()
-
             HStack(spacing: 15) {
                 VStack(alignment: .leading) {
                     Text(artist.name)
                         .font(.headline)
-                        .foregroundColor(player.current?.uri.deletingLastPathComponent().deletingLastPathComponent() == uri ? .accentColor : .primary)
+                        .foregroundColor(player.current?.artistUri == artist.uri ? .accentColor : .primary)
                         .lineLimit(2)
                     Text(artist.albums.count == 1 ? "1 album" : "\(artist.albums.count) albums")
                         .font(.subheadline)
@@ -344,10 +347,10 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(uri)
+            .id(artist.uri)
             .contentShape(Rectangle())
             .onTapGesture {
-                path.append(artist.uri)
+                path.append(artist)
             }
         }
     }
@@ -365,8 +368,6 @@ struct ContentView: View {
         @Binding var path: NavigationPath
 
         var body: some View {
-            let uri = album.uri.deletingLastPathComponent()
-
             HStack(spacing: 15) {
                 ArtworkView(image: player.getArtwork(for: album)?.image)
                     .cornerRadius(5)
@@ -376,7 +377,7 @@ struct ContentView: View {
                 VStack(alignment: .leading) {
                     Text(album.title ?? "Unknown album")
                         .font(.headline)
-                        .foregroundColor(player.current?.uri.deletingLastPathComponent() == uri ? .accentColor : .primary)
+                        .foregroundColor(player.current?.albumUri == album.uri ? .accentColor : .primary)
                         .lineLimit(2)
                     Text(album.artist ?? "Unknown artist")
                         .font(.subheadline)
@@ -386,10 +387,10 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(uri)
-            .task(id: uri) {
+            .id(album.uri)
+            .task(id: album.uri) {
                 // TODO: This can probably be made even a little snappier.
-                try? await Task.sleep(nanoseconds: 100_000_000)
+                try? await Task.sleep(nanoseconds: 10_000_000)
                 guard !Task.isCancelled else {
                     return
                 }
@@ -398,7 +399,7 @@ struct ContentView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                path.append(album.uri)
+                path.append(album)
             }
         }
     }
@@ -407,49 +408,47 @@ struct ContentView: View {
         @Environment(Player.self) private var player
 
         private let song: Song
-        private var animation: Animation {
-            .linear(duration: 0.5).repeatForever()
-        }
 
         init(for song: Song) {
             self.song = song
         }
 
-        @State private var animating = true
+        @State private var animating = false
         @State private var hover: Bool = false
 
         var body: some View {
-            let uri = song.uri
-
             HStack(spacing: 15) {
                 Group {
-                    if !hover, player.current?.uri != uri {
+                    if !hover, player.current?.uri != song.uri {
                         Text(song.track ?? "-")
                             .font(.title3)
                             .fontWeight(.regular)
                             .foregroundStyle(.secondary)
                             .frame(width: 20)
                     } else {
-                        let isPlaying = player.status.isPlaying ?? false
+                        if player.current?.uri == song.uri {
+                            let isPlaying = player.status.isPlaying ?? false
 
-                        if player.current?.uri == uri {
                             HStack(spacing: 1.5) {
                                 bar(low: 0.4)
-                                    .animation(isPlaying ? animation.speed(1.5) : .default, value: animating)
+                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.5).repeatForever() : .linear(duration: 0.5), value: animating)
                                 bar(low: 0.3)
-                                    .animation(isPlaying ? animation.speed(1.2) : .default, value: animating)
+                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.2).repeatForever() : .linear(duration: 0.5), value: animating)
                                 bar(low: 0.5)
-                                    .animation(isPlaying ? animation.speed(1.0) : .default, value: animating)
+                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: animating)
                                 bar(low: 0.3)
-                                    .animation(isPlaying ? animation.speed(1.7) : .default, value: animating)
+                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.7).repeatForever() : .linear(duration: 0.5), value: animating)
                                 bar(low: 0.5)
-                                    .animation(isPlaying ? animation.speed(1.0) : .default, value: animating)
+                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: animating)
                             }
                             .onAppear {
                                 animating = isPlaying
                             }
-                            .onChange(of: isPlaying) { _, _ in
-                                animating = isPlaying
+                            .onDisappear {
+                                animating = false
+                            }
+                            .onChange(of: isPlaying) { _, value in
+                                animating = value
                             }
                         } else {
                             Image(systemName: "play.fill")
@@ -463,7 +462,7 @@ struct ContentView: View {
                 VStack(alignment: .leading) {
                     Text(song.title ?? "Unknown album")
                         .font(.headline)
-                        .foregroundColor(player.current?.uri == uri ? .accentColor : .primary)
+                        .foregroundColor(player.current?.uri == song.uri ? .accentColor : .primary)
                         .lineLimit(2)
                     Text((song.artist ?? "Unknown artist") + " • " + (song.duration?.timeString ?? "-:--"))
                         .font(.subheadline)
@@ -473,7 +472,7 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(uri)
+            .id(song.uri)
             .contentShape(Rectangle())
             .onHover(perform: { value in
                 hover = value
@@ -489,8 +488,7 @@ struct ContentView: View {
             RoundedRectangle(cornerRadius: 2)
                 .fill(player.status.isPlaying ?? false ? .accent : .secondary)
                 .animation(.spring, value: player.status.isPlaying ?? false)
-                .frame(height: (animating ? high : low) * 12)
-                .frame(width: 2)
+                .frame(width: 2, height: (animating ? high : low) * 12)
         }
     }
 
@@ -521,15 +519,16 @@ struct ContentView: View {
     }
 
     private func scrollToCurrent(_ proxy: ScrollViewProxy, using type: MediaType, animate: Bool = true) {
-        guard var uri = player.current?.uri else {
+        guard let current = player.current else {
             return
         }
 
+        var uri = current.uri
         switch type {
         case .artist:
-            uri = uri.deletingLastPathComponent().deletingLastPathComponent()
+            uri = current.artistUri
         default:
-            uri = uri.deletingLastPathComponent()
+            uri = current.albumUri
         }
 
         if animate {

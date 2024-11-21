@@ -74,7 +74,7 @@ import SwiftUI
             artworkCache.removeFirst()
         }
 
-        let artwork = Artwork(uri: media.uri)
+        let artwork = Artwork(uri: media.artworkUri)
         artworkCache[media.id] = artwork
 
         await artwork.set(using: commandManager)

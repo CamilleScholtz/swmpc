@@ -50,12 +50,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
-    private func configureStatusItem() {
-        popoverAnchor.button!.sendAction(on: [.leftMouseDown, .rightMouseDown, .scrollWheel])
-        popoverAnchor.button!.action = #selector(buttonAction)
+    func applicationDockMenu(_: NSApplication) -> NSMenu? {
+        let menu = NSMenu()
 
-        statusItem.button!.sendAction(on: [.leftMouseDown, .rightMouseDown, .scrollWheel])
-        statusItem.button!.action = #selector(buttonAction)
+        menu.addItem(
+            withTitle: player.status.isPlaying == true ? "Pause" : "Play",
+            action: #selector(AppDelegate.handleMenuItemAction(_:)),
+            keyEquivalent: ""
+        )
+
+        menu.addItem(
+            withTitle: "Next song",
+            action: #selector(AppDelegate.handleMenuItemAction(_:)),
+            keyEquivalent: ""
+        )
+
+        menu.addItem(
+            withTitle: "Previous song",
+            action: #selector(AppDelegate.handleMenuItemAction(_:)),
+            keyEquivalent: ""
+        )
+
+        return menu
+    }
+
+    private func configureStatusItem() {
+        popoverAnchor.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
+        popoverAnchor.button!.action = #selector(handleButtonAction)
+
+        statusItem.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
+        statusItem.button!.action = #selector(handleButtonAction)
 
         setPopoverAnchorImage()
     }
@@ -137,12 +161,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.terminate(self)
     }
 
-    @objc private func buttonAction(_ sender: NSStatusBarButton?) {
+    @objc private func handleButtonAction(_ sender: NSStatusBarButton?) {
         guard let event = NSApp.currentEvent else {
             return
         }
 
-        // TODO: `case .scrollWheel` doesn't work.
         switch event.type {
         case .rightMouseDown:
             Task(priority: .userInitiated) { @MainActor in
@@ -150,6 +173,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         default:
             togglePopover(sender)
+        }
+    }
+
+    @objc private func handleMenuItemAction(_ sender: NSMenuItem) {
+        switch sender.title {
+        case "Play":
+            Task(priority: .userInitiated) { @MainActor in
+                await player.pause(false)
+            }
+        case "Pause":
+            Task(priority: .userInitiated) { @MainActor in
+                await player.pause(true)
+            }
+        case "Next song":
+            Task(priority: .userInitiated) { @MainActor in
+                await player.next()
+            }
+        case "Previous song":
+            Task(priority: .userInitiated) { @MainActor in
+                await player.previous()
+            }
+        default:
+            break
         }
     }
 }

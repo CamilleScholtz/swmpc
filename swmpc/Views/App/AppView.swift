@@ -24,6 +24,7 @@ struct AppView: View {
     ]
 
     @State private var selected: MediaType = .album
+    @State private var path = NavigationPath()
 
     var body: some View {
         NavigationSplitView {
@@ -40,12 +41,12 @@ struct AppView: View {
             .toolbar(removing: .sidebarToggle)
             .navigationSplitViewColumnWidth(180)
         } content: {
-            ContentView(for: selected)
+            ContentView(for: $selected, path: $path)
                 .navigationBarBackButtonHidden()
                 .navigationSplitViewColumnWidth(310)
         } detail: {
             ViewThatFits {
-                DetailView()
+                DetailView(path: $path)
             }
             .padding(60)
         }
