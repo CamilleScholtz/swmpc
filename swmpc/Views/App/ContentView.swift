@@ -40,10 +40,11 @@ struct ContentView: View {
                             AlbumsView(path: $path)
                         }
                     }
+                    .offset(y: -7.5)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
-                .ignoresSafeArea(.all, edges: .top)
+                .ignoresSafeArea(.all)
                 .task(id: type) {
                     // TODO: This is called twice on initialization.
                     await player.queue.set(for: type)
@@ -76,7 +77,7 @@ struct ContentView: View {
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
-                .ignoresSafeArea(.all, edges: .top)
+                .ignoresSafeArea(.all)
             }
             .navigationDestination(for: Album.self) { album in
                 ScrollView {
@@ -87,16 +88,19 @@ struct ContentView: View {
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
-                .ignoresSafeArea(.all, edges: .top)
+                .ignoresSafeArea(.all)
             }
         }
     }
 
     private func backButton() -> some View {
         Image(systemName: "chevron.backward")
-            .padding(10)
-            .padding(.top, 25)
-            .scaleEffect(hover ? 1.2 : 1)
+            .frame(width: 22, height: 22)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(hover ? Color(.secondarySystemFill): .clear)
+            )
+            .padding(.top, 12)
             .animation(.interactiveSpring, value: hover)
             .onHover(perform: { value in
                 hover = value
@@ -190,8 +194,14 @@ struct ContentView: View {
                                     .frame(width: 66, height: 66)
                                     .shadow(radius: 10)
                                     .overlay {
-                                        WaveView(colored: false)
+                                        Image(systemName: player.status.isPlaying ?? false ? "pause.fill" : "play.fill")
+                                            .font(.system(size: 22))
                                     }
+                            }
+                        }
+                        .onTapGesture {
+                            Task(priority: .userInitiated) {
+                                await player.pause(player.status.isPlaying ?? false)
                             }
                         }
                     }
@@ -208,8 +218,6 @@ struct ContentView: View {
 
                         Text((album.songs.count > 1 ? "\(String(album.songs.count)) songs" : "1 song")
                             + " • "
-//                            + (album.date ?? "1970")
-//                            + " • "
                             + (album.duration?.humanTimeString ?? "0m"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -269,18 +277,24 @@ struct ContentView: View {
                     Spacer()
 
                     Image(systemName: "magnifyingglass")
-                        .padding(10)
-                        .scaleEffect(hover ? 1.2 : 1)
+                        .frame(width: 22, height: 22)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(hover ? Color(.secondarySystemFill): .clear)
+                        )
                         .animation(.interactiveSpring, value: hover)
                         .onHover(perform: { value in
                             hover = value
                         })
                         .onTapGesture(perform: {
-                            startSearch()
+                            showSearch = true
                         })
                 } else {
-                    TextField("Search...", text: $query)
-                        .textFieldStyle(.roundedBorder)
+                    TextField("Search", text: $query)
+                        .textFieldStyle(.plain)
+                        .padding(8)
+                        .background(Color(.secondarySystemFill))
+                        .cornerRadius(4)
                         .disableAutocorrection(true)
                         .focused($focused)
                         .onSubmit {
@@ -293,40 +307,35 @@ struct ContentView: View {
                                 await player.queue.search(for: query, using: type)
                             }
                         }
+                        .onAppear {
+                            query = ""
+                            focused = true
+                        }
                         .onDisappear {
-                            player.queue.search = nil
+                            query = ""
+                            focused = false
                         }
 
                     Image(systemName: "xmark.circle")
-                        .padding(10)
-                        .scaleEffect(hover ? 1.2 : 1)
+                        .frame(width: 22, height: 22)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(hover ? Color(.secondarySystemFill): .clear)
+                        )
                         .animation(.interactiveSpring, value: hover)
                         .onHover(perform: { value in
                             hover = value
                         })
                         .onTapGesture(perform: {
-                            stopSearch()
+                            showSearch = false
                         })
                 }
             }
-            .padding(.top, 10)
-            .padding(.bottom, 5)
+            .frame(height: 50)
             .padding(.horizontal, 15)
             .onChange(of: type) {
-                stopSearch()
+                showSearch = false
             }
-        }
-
-        private func startSearch() {
-            query = ""
-            focused = true
-            showSearch = true
-        }
-
-        private func stopSearch() {
-            query = ""
-            focused = false
-            showSearch = false
         }
     }
 
@@ -502,8 +511,6 @@ struct ContentView: View {
     struct WaveView: View {
         @Environment(Player.self) private var player
 
-        var colored = true
-
         @State private var animating = false
 
         var body: some View {
@@ -534,7 +541,8 @@ struct ContentView: View {
 
         private func bar(low: CGFloat = 0.0, high: CGFloat = 1.0) -> some View {
             RoundedRectangle(cornerRadius: 2)
-                .fill(colored ? (player.status.isPlaying ?? false ? .accent : .secondary) : .primary)
+                // .fill(colored ? (player.status.isPlaying ?? false ? .accent : .secondary) : .primary)
+                .fill(.secondary)
                 .animation(.spring, value: player.status.isPlaying ?? false)
                 .frame(width: 2, height: (animating ? high : low) * 12)
         }

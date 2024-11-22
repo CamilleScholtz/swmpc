@@ -23,17 +23,22 @@ struct AppView: View {
         .init(type: MediaType.song, image: "music.note"),
     ]
 
-    @State private var selected: MediaType = .album
+    @State private var selected = MediaType.album
     @State private var path = NavigationPath()
+    @State private var search = ""
 
     var body: some View {
         NavigationSplitView {
             List(selection: $selected) {
-                Section("Library") {
-                    ForEach(categories) { category in
-                        Label(category.type.rawValue, systemImage: category.image)
-                            .tag(category.type)
-                    }
+                Text("swmpc")
+                    .font(.system(size: 18))
+                    .fontWeight(.semibold)
+                    .fontDesign(.rounded)
+                    .padding(.bottom, 15)
+
+                ForEach(categories) { category in
+                    Label(category.type.rawValue, systemImage: category.image)
+                        .tag(category.type)
                 }
 
                 Section("Playlists") {}

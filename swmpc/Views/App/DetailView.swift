@@ -195,15 +195,13 @@ struct DetailView: View {
                 .frame(height: 80)
         }
         .frame(minWidth: 520, minHeight: 520)
-        .onChange(of: player.current) {
+        .task(id: player.current) {
             guard let current = player.current else {
                 return
             }
 
-            Task(priority: .userInitiated) {
-                await player.setArtwork(for: current)
-                artwork = player.getArtwork(for: current)
-            }
+            await player.setArtwork(for: current)
+            artwork = player.getArtwork(for: current)
         }
         .onChange(of: artwork) { previous, _ in
             previousArtwork = previous
@@ -231,14 +229,14 @@ struct DetailView: View {
                     .aspectRatio(contentMode: .fit)
                     .scaledToFit()
                     .opacity(loaded ? 1 : 0)
-                    .background(Color(.accent).opacity(0.1))
+                    .background(Color(.secondarySystemFill))
                     .animation(.spring, value: loaded)
                     .onAppear {
                         loaded = true
                     }
             } else {
                 Rectangle()
-                    .fill(Color(.secondarySystemFill).opacity(0.3))
+                    .fill(Color(.secondarySystemFill))
                     .aspectRatio(contentMode: .fit)
                     .scaledToFit()
             }
