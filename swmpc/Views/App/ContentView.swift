@@ -167,13 +167,12 @@ struct ContentView: View {
         }
 
         @State private var album: Album
+        @State private var hover = false
 
         var body: some View {
             VStack(alignment: .leading, spacing: 15) {
                 HStack(spacing: 15) {
-                    if player.current?.albumUri != album.uri,
-                       let artwork = player.getArtwork(for: album)?.image
-                    {
+                    if let artwork = player.getArtwork(for: album)?.image {
                         ZStack {
                             ArtworkView(image: artwork)
                                 .frame(width: 80)
@@ -184,6 +183,16 @@ struct ContentView: View {
                                 .cornerRadius(5)
                                 .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                                 .frame(width: 100)
+
+                            if player.current?.albumUri == album.uri {
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .frame(width: 66, height: 66)
+                                    .shadow(radius: 10)
+                                    .overlay {
+                                        WaveView(colored: false)
+                                    }
+                            }
                         }
                     }
 
@@ -199,9 +208,9 @@ struct ContentView: View {
 
                         Text((album.songs.count > 1 ? "\(String(album.songs.count)) songs" : "1 song")
                             + " • "
-                            // + (album.date ?? "s---")
-                            // + " • "
-                            + (album.duration?.timeString ?? "-:--"))
+//                            + (album.date ?? "1970")
+//                            + " • "
+                            + (album.duration?.humanTimeString ?? "0m"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -214,6 +223,7 @@ struct ContentView: View {
             }
             .task {
                 await album.add(songs: try! player.commandManager.getSongs(for: album))
+                await player.setArtwork(for: album)
             }
         }
     }
@@ -245,8 +255,8 @@ struct ContentView: View {
 
         @Binding var showSearch: Bool
 
-        @State private var hover: Bool = false
-        @State private var query: String = ""
+        @State private var hover = false
+        @State private var query = ""
 
         @FocusState private var focused: Bool
 
@@ -390,7 +400,7 @@ struct ContentView: View {
             .id(album.uri)
             .task(id: album.uri) {
                 // TODO: This can probably be made even a little snappier.
-                try? await Task.sleep(nanoseconds: 10_000_000)
+                try? await Task.sleep(nanoseconds: 100_000_000)
                 guard !Task.isCancelled else {
                     return
                 }
@@ -427,29 +437,7 @@ struct ContentView: View {
                             .frame(width: 20)
                     } else {
                         if player.current?.uri == song.uri {
-                            let isPlaying = player.status.isPlaying ?? false
-
-                            HStack(spacing: 1.5) {
-                                bar(low: 0.4)
-                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.5).repeatForever() : .linear(duration: 0.5), value: animating)
-                                bar(low: 0.3)
-                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.2).repeatForever() : .linear(duration: 0.5), value: animating)
-                                bar(low: 0.5)
-                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: animating)
-                                bar(low: 0.3)
-                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.7).repeatForever() : .linear(duration: 0.5), value: animating)
-                                bar(low: 0.5)
-                                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: animating)
-                            }
-                            .onAppear {
-                                animating = isPlaying
-                            }
-                            .onDisappear {
-                                animating = false
-                            }
-                            .onChange(of: isPlaying) { _, value in
-                                animating = value
-                            }
+                            WaveView()
                         } else {
                             Image(systemName: "play.fill")
                                 .font(.title3)
@@ -483,13 +471,6 @@ struct ContentView: View {
                 }
             }
         }
-
-        private func bar(low: CGFloat = 0.0, high: CGFloat = 1.0) -> some View {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(player.status.isPlaying ?? false ? .accent : .secondary)
-                .animation(.spring, value: player.status.isPlaying ?? false)
-                .frame(width: 2, height: (animating ? high : low) * 12)
-        }
     }
 
     struct ArtworkView: View {
@@ -515,6 +496,47 @@ struct ContentView: View {
                     .aspectRatio(contentMode: .fit)
                     .scaledToFill()
             }
+        }
+    }
+
+    struct WaveView: View {
+        @Environment(Player.self) private var player
+
+        var colored = true
+
+        @State private var animating = false
+
+        var body: some View {
+            let isPlaying = player.status.isPlaying ?? false
+
+            HStack(spacing: 1.5) {
+                bar(low: 0.4)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.5).repeatForever() : .linear(duration: 0.5), value: animating)
+                bar(low: 0.3)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.2).repeatForever() : .linear(duration: 0.5), value: animating)
+                bar(low: 0.5)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: animating)
+                bar(low: 0.3)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.7).repeatForever() : .linear(duration: 0.5), value: animating)
+                bar(low: 0.5)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: animating)
+            }
+            .onAppear {
+                animating = isPlaying
+            }
+            .onDisappear {
+                animating = false
+            }
+            .onChange(of: isPlaying) { _, value in
+                animating = value
+            }
+        }
+
+        private func bar(low: CGFloat = 0.0, high: CGFloat = 1.0) -> some View {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(colored ? (player.status.isPlaying ?? false ? .accent : .secondary) : .primary)
+                .animation(.spring, value: player.status.isPlaying ?? false)
+                .frame(width: 2, height: (animating ? high : low) * 12)
         }
     }
 

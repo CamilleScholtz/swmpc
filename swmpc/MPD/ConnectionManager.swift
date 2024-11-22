@@ -18,7 +18,7 @@ actor ConnectionManager {
     @AppStorage(Setting.port) var port = 6600
 
     private var connection: OpaquePointer?
-    private(set) var isConnected: Bool = false
+    private(set) var isConnected = false
 
     private var idle: Bool
 

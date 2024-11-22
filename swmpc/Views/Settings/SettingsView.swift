@@ -11,41 +11,67 @@ import SwiftUI
 enum Setting {
     static let host = "host"
     static let port = "port"
+
+    static let showStatusBar = "showStatusBar"
+    static let showStatusbarSong = "showStatusbarSong"
+
+    static let showVinyl = "showVinyl"
 }
 
 struct SettingsView: View {
-    @AppStorage(Setting.host) var host = "localhost"
-    @AppStorage(Setting.port) var port = 6600
-
     var body: some View {
-        ZStack(alignment: .bottom) {
+        TabView {
+            Tab("General", systemImage: "gear") {
+                GeneralView()
+            }
+
+            Tab("Appearance", systemImage: "paintpalette") {
+                AppearanceView()
+            }
+        }
+        .padding()
+        .frame(width: 400, height: 300)
+    }
+
+    struct GeneralView: View {
+        @AppStorage(Setting.host) var host = "localhost"
+        @AppStorage(Setting.port) var port = 6600
+
+        var body: some View {
             Form {
-                Spacer()
+                Section(header: Text("Startup")) {
+                    LaunchAtLogin.Toggle()
+                }
 
-                LaunchAtLogin.Toggle()
-                    .padding(.bottom, 10)
+                Section(header: Text("Connection")) {
+                    TextField("Host", text: $host)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
 
-                TextField("MPD host", text: $host)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-
-                TextField("MPD port", value: $port, formatter: NumberFormatter())
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-
-                Spacer()
-
-                HStack {
-                    Button("Exit app") {
-                        NSApp.keyWindow?.close()
-                        NotificationCenter.default.post(
-                            name: NSApplication.willTerminateNotification,
-                            object: nil
-                        )
-                    }
-                    .background(.red.opacity(0.2))
-                    .cornerRadius(5)
+                    TextField("Port", value: $port, formatter: NumberFormatter())
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
             }
-            .padding(20)
+            .padding()
+        }
+    }
+
+    struct AppearanceView: View {
+        @AppStorage(Setting.showStatusBar) var showStatusBar = true
+        @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
+        @AppStorage(Setting.showVinyl) var showVinyl = true
+
+        var body: some View {
+            Form {
+                Section(header: Text("Status Bar")) {
+                    Toggle("Show Status Bar", isOn: $showStatusBar)
+                    Toggle("Show Song in Status Bar", isOn: $showStatusbarSong)
+                }
+
+                Section(header: Text("Player")) {
+                    Toggle("Show Vinyl", isOn: $showVinyl)
+                }
+            }
+            .padding()
         }
     }
 }

@@ -19,6 +19,8 @@ struct DetailView: View {
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
 
+    @State private var hover = false
+
     var body: some View {
         VStack {
             ZStack {
@@ -81,57 +83,108 @@ struct DetailView: View {
                 .offset(y: 105)
                 .blur(radius: 5)
 
-                ArtworkView(image: artwork?.image)
-                    .overlay(
-                        Group {
-                            if let image = previousArtwork?.image {
-                                ArtworkView(image: image)
-                                    .opacity(isArtworkTransitioning ? 1 : 0)
-                                    .transition(.opacity)
+                if UserDefaults.standard.bool(forKey: "showVinyl") {
+                    ArtworkView(image: artwork?.image)
+                        .overlay(
+                            Group {
+                                if let image = previousArtwork?.image {
+                                    ArtworkView(image: image)
+                                        .opacity(isArtworkTransitioning ? 1 : 0)
+                                        .transition(.opacity)
+                                }
                             }
-                        }
-                    )
-                    .overlay(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 0.5
-                                )
-                                .blendMode(.screen)
-
-                            RoundedRectangle(cornerRadius: 10)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 0.5
-                                )
-                                .blendMode(.multiply)
-                        }
-                    )
-                    .cornerRadius(10)
-                    .shadow(color: .black.opacity(0.2), radius: 16)
-                    .frame(width: 250)
-                    .onTapGesture {
-                        guard let uri = player.current?.albumUri else {
-                            return
-                        }
-
-                        Task(priority: .userInitiated) {
-                            guard let media = await player.queue.get(for: uri, using: .album) else {
+                        )
+                        .cornerRadius(3)
+                        .shadow(radius: 16)
+                        .frame(width: 250)
+                        .onHover(perform: { value in
+                            hover = value
+                        })
+                        .onTapGesture {
+                            guard let uri = player.current?.albumUri else {
                                 return
                             }
-                            
-                            path.append(media)
+
+                            Task(priority: .userInitiated) {
+                                guard let media = await player.queue.get(for: uri, using: .album) else {
+                                    return
+                                }
+
+                                path.append(media)
+                            }
                         }
-                    }
+                        .background(
+                            ZStack {
+                                Rectangle()
+                                    .fill(Color(.darkGray))
+                                    .cornerRadius(2)
+                                    .scaleEffect(0.95)
+                                    .offset(x: 10)
+
+                                VinylView()
+                                    .scaleEffect(0.9)
+                                    .shadow(radius: 30, x: 0, y: 10)
+                                    .rotationEffect(.degrees(hover ? 5 : 0))
+                                    .offset(x: hover ? 110 : 100)
+                            }
+                        )
+                        .offset(x: -35)
+                        .rotationEffect(.degrees(-1))
+                        .scaleEffect(hover ? 1.02 : 1)
+                        .animation(.spring, value: hover)
+                } else {
+                    ArtworkView(image: artwork?.image)
+                        .overlay(
+                            Group {
+                                if let image = previousArtwork?.image {
+                                    ArtworkView(image: image)
+                                        .opacity(isArtworkTransitioning ? 1 : 0)
+                                        .transition(.opacity)
+                                }
+                            }
+                        )
+                        .overlay(
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 0.5
+                                    )
+                                    .blendMode(.screen)
+
+                                RoundedRectangle(cornerRadius: 10)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 0.5
+                                    )
+                                    .blendMode(.multiply)
+                            }
+                        )
+                        .cornerRadius(10)
+                        .shadow(color: .black.opacity(0.2), radius: 16)
+                        .frame(width: 250)
+                        .onTapGesture {
+                            guard let uri = player.current?.albumUri else {
+                                return
+                            }
+
+                            Task(priority: .userInitiated) {
+                                guard let media = await player.queue.get(for: uri, using: .album) else {
+                                    return
+                                }
+
+                                path.append(media)
+                            }
+                        }
+                }
             }
             .offset(y: -25)
             .zIndex(100)
@@ -189,6 +242,104 @@ struct DetailView: View {
                     .aspectRatio(contentMode: .fit)
                     .scaledToFit()
             }
+        }
+    }
+
+    struct VinylView: View {
+        var body: some View {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.15, green: 0.15, blue: 0.15))
+                    .stroke(Color(red: 0.6, green: 0.6, blue: 0.6), lineWidth: 0.3)
+
+                ForEach(0 ..< 37) { i in
+                    let color = Double.random(in: 0.1 ..< 0.3)
+
+                    Circle()
+                        .stroke(Color(red: color, green: color, blue: color), lineWidth: 0.5)
+                        .scaleEffect(0.96 - CGFloat(i) * 0.015)
+                }
+
+                ForEach(0 ..< 5) { i in
+                    let color = 0.03
+                    let distance = Double.random(in: 0.11 ..< 0.13)
+
+                    Circle()
+                        .stroke(Color(red: color, green: color, blue: color), lineWidth: 0.8)
+                        .scaleEffect(0.95 - CGFloat(i) * distance)
+                }
+
+                Circle()
+                    .fill(Color.clear)
+                    .overlay(
+                        ZStack {
+                            HStack {
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: Color.clear, location: 0.38),
+                                        .init(color: Color(red: 0.58, green: 0.58, blue: 0.58), location: 0.5),
+                                        .init(color: Color.clear, location: 0.62),
+                                    ]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                                .rotation3DEffect(.degrees(80), axis: (x: 0, y: 1, z: 0), perspective: 3)
+                                .scaleEffect(x: 2.7)
+                                .offset(x: 35)
+
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: Color.clear, location: 0.38),
+                                        .init(color: Color(red: 0.55, green: 0.55, blue: 0.55), location: 0.5),
+                                        .init(color: Color.clear, location: 0.62),
+                                    ]),
+                                    startPoint: .bottom,
+                                    endPoint: .top
+                                )
+                                .rotation3DEffect(.degrees(-80), axis: (x: 0, y: 1, z: 0), perspective: 3)
+                                .scaleEffect(x: 2.7)
+                                .offset(x: -35)
+                            }
+                            .rotationEffect(.degrees(-30))
+
+                            HStack {
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: Color.clear, location: 0.38),
+                                        .init(color: Color(red: 0.5, green: 0.5, blue: 0.5), location: 0.5),
+                                        .init(color: Color.clear, location: 0.62),
+                                    ]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                                .rotation3DEffect(.degrees(80), axis: (x: 0, y: 1, z: 0), perspective: 3)
+                                .scaleEffect(x: 2.7)
+                                .offset(x: 35)
+
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: Color.clear, location: 0.38),
+                                        .init(color: Color(red: 0.51, green: 0.51, blue: 0.51), location: 0.5),
+                                        .init(color: Color.clear, location: 0.62),
+                                    ]),
+                                    startPoint: .bottom,
+                                    endPoint: .top
+                                )
+                                .rotation3DEffect(.degrees(-80), axis: (x: 0, y: 1, z: 0), perspective: 3)
+                                .scaleEffect(x: 2.7)
+                                .offset(x: -35)
+                            }
+                            .rotationEffect(.degrees(55))
+                        }
+                        .mask(Circle())
+                    )
+                    .blendMode(.difference)
+
+                Circle()
+                    .fill(Color(red: 0.13, green: 0.13, blue: 0.13).opacity(0.6))
+                    .frame(width: 84, height: 84)
+            }
+            .compositingGroup()
         }
     }
 

@@ -39,8 +39,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_: Notification) {
         AppDelegate.shared = self
 
-        configureStatusItem()
-        configurePopover()
+        if UserDefaults.standard.bool(forKey: "showStatusBar") {
+            configureStatusItem()
+            configurePopover()
+        }
 
         NotificationCenter.default.addObserver(
             self,
@@ -78,8 +80,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popoverAnchor.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
         popoverAnchor.button!.action = #selector(handleButtonAction)
 
-        statusItem.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
-        statusItem.button!.action = #selector(handleButtonAction)
+        if UserDefaults.standard.bool(forKey: "showStatusbarSong") {
+            statusItem.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
+            statusItem.button!.action = #selector(handleButtonAction)
+        }
 
         setPopoverAnchorImage()
     }
@@ -93,7 +97,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
-    public func setPopoverAnchorImage(changed: String? = nil) {
+    func setPopoverAnchorImage(changed: String? = nil) {
+        guard UserDefaults.standard.bool(forKey: "showStatusBar") else {
+            return
+        }
+
         switch changed {
         case "play":
             popoverAnchor.button!.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "play")
@@ -121,7 +129,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    public func setStatusItemTitle() {
+    func setStatusItemTitle() {
+        guard UserDefaults.standard.bool(forKey: "showStatusBar"), UserDefaults.standard.bool(forKey: "showStatusbarSong") else {
+            return
+        }
+
         guard var description = player.current?.description else {
             return
         }

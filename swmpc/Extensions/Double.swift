@@ -15,4 +15,16 @@ extension Double {
 
         return String(format: "%01d:%02d", Int(minutes), Int(seconds))
     }
+
+    var humanTimeString: String {
+        var hours = self / 3600
+        hours.round(.down)
+        let minutes = (self - hours * 3600) / 60
+
+        if hours < 1 {
+            return String(format: "%02dm", Int(minutes))
+        }
+
+        return String(format: "%01dh %02dm", Int(hours), Int(minutes))
+    }
 }
