@@ -10,7 +10,6 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(Player.self) private var player
-    @Environment(\.dismiss) private var dismiss
 
     @Binding var type: MediaType
     @Binding var path: NavigationPath
@@ -98,7 +97,7 @@ struct ContentView: View {
             .frame(width: 22, height: 22)
             .background(
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(hover ? Color(.secondarySystemFill): .clear)
+                    .fill(hover ? Color(.secondarySystemFill) : .clear)
             )
             .padding(.top, 12)
             .animation(.interactiveSpring, value: hover)
@@ -106,7 +105,7 @@ struct ContentView: View {
                 hover = value
             })
             .onTapGesture {
-                dismiss()
+                path.removeLast()
             }
     }
 
@@ -139,8 +138,23 @@ struct ContentView: View {
         @Binding var path: NavigationPath
 
         var body: some View {
-            VStack(spacing: 15) {
-                ForEach(artist.albums) { album in
+            VStack(alignment: .leading, spacing: 15) {
+                HStack(spacing: 15) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(artist.name)
+                            .font(.system(size: 18))
+                            .fontWeight(.semibold)
+                            .fontDesign(.rounded)
+                            .lineLimit(3)
+
+                        Text(artist.albums?.count ?? 0 > 1 ? "\(String(artist.albums!.count)) albums" : "1 album")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.bottom, 15)
+
+                ForEach(artist.albums ?? []) { album in
                     AlbumView(for: album, path: $path)
                 }
             }
@@ -207,16 +221,18 @@ struct ContentView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(album.title ?? "Unknown album")
+                        Text(album.title)
                             .font(.system(size: 18))
                             .fontWeight(.semibold)
                             .fontDesign(.rounded)
+                            .lineLimit(3)
 
-                        Text(album.artist ?? "Unknown artist")
+                        Text(album.artist)
                             .font(.system(size: 12))
                             .fontWeight(.semibold)
+                            .lineLimit(2)
 
-                        Text((album.songs.count > 1 ? "\(String(album.songs.count)) songs" : "1 song")
+                        Text((album.songsCount ?? 0 > 1 ? "\(String(album.songsCount!)) songs" : "1 song")
                             + " • "
                             + (album.duration?.humanTimeString ?? "0m"))
                             .font(.subheadline)
@@ -225,12 +241,23 @@ struct ContentView: View {
                 }
                 .padding(.bottom, 15)
 
-                ForEach(album.songs) { song in
-                    SongView(for: song)
+                if let songs = album.songs {
+                    ForEach(songs.keys.sorted(), id: \.self) { disc in
+                        VStack(alignment: .leading, spacing: 15) {
+                            if songs.keys.count > 1 {
+                                Text("Disc \(String(disc))")
+                                    .font(.headline)
+                                    .padding(.top, disc == songs.keys.sorted().first ? 0 : 10)
+                            }
+                            ForEach(songs[disc] ?? []) { song in
+                                SongView(for: song)
+                            }
+                        }
+                    }
                 }
             }
             .task {
-                await album.add(songs: try! player.commandManager.getSongs(for: album))
+                await album.set(songs: try! player.commandManager.getSongs(for: album))
                 await player.setArtwork(for: album)
             }
         }
@@ -250,7 +277,6 @@ struct ContentView: View {
         }
     }
 
-    // TODO: The frame and offset is kinda hacky.
     struct HeaderView: View {
         @Environment(Player.self) private var player
 
@@ -280,7 +306,7 @@ struct ContentView: View {
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(hover ? Color(.secondarySystemFill): .clear)
+                                .fill(hover ? Color(.secondarySystemFill) : .clear)
                         )
                         .animation(.interactiveSpring, value: hover)
                         .onHover(perform: { value in
@@ -320,7 +346,7 @@ struct ContentView: View {
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(hover ? Color(.secondarySystemFill): .clear)
+                                .fill(hover ? Color(.secondarySystemFill) : .clear)
                         )
                         .animation(.interactiveSpring, value: hover)
                         .onHover(perform: { value in
@@ -358,7 +384,7 @@ struct ContentView: View {
                         .font(.headline)
                         .foregroundColor(player.current?.artistUri == artist.uri ? .accentColor : .primary)
                         .lineLimit(2)
-                    Text(artist.albums.count == 1 ? "1 album" : "\(artist.albums.count) albums")
+                    Text(artist.albums?.count ?? 0 == 1 ? "1 album" : "\(artist.albums!.count) albums")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -394,11 +420,11 @@ struct ContentView: View {
                     .frame(width: 60)
 
                 VStack(alignment: .leading) {
-                    Text(album.title ?? "Unknown album")
+                    Text(album.title)
                         .font(.headline)
                         .foregroundColor(player.current?.albumUri == album.uri ? .accentColor : .primary)
                         .lineLimit(2)
-                    Text(album.artist ?? "Unknown artist")
+                    Text(album.artist)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -409,7 +435,7 @@ struct ContentView: View {
             .id(album.uri)
             .task(id: album.uri) {
                 // TODO: This can probably be made even a little snappier.
-                try? await Task.sleep(nanoseconds: 100_000_000)
+                try? await Task.sleep(nanoseconds: 25_000_000)
                 guard !Task.isCancelled else {
                     return
                 }
@@ -439,7 +465,7 @@ struct ContentView: View {
             HStack(spacing: 15) {
                 Group {
                     if !hover, player.current?.uri != song.uri {
-                        Text(song.track ?? "-")
+                        Text(String(song.track))
                             .font(.title3)
                             .fontWeight(.regular)
                             .foregroundStyle(.secondary)
@@ -457,11 +483,11 @@ struct ContentView: View {
                 .frame(width: 20)
 
                 VStack(alignment: .leading) {
-                    Text(song.title ?? "Unknown album")
+                    Text(song.title)
                         .font(.headline)
                         .foregroundColor(player.current?.uri == song.uri ? .accentColor : .primary)
                         .lineLimit(2)
-                    Text((song.artist ?? "Unknown artist") + " • " + (song.duration?.timeString ?? "-:--"))
+                    Text((song.artist) + " • " + song.duration.timeString)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -494,7 +520,7 @@ struct ContentView: View {
                     .aspectRatio(contentMode: .fit)
                     .scaledToFit()
                     .opacity(loaded ? 1 : 0)
-                    .background(Color(.accent).opacity(0.1))
+                    .background(Color(.secondarySystemFill).opacity(0.3))
                     .animation(.spring, value: loaded)
                     .onAppear {
                         loaded = true

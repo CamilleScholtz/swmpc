@@ -335,7 +335,7 @@ struct DetailView: View {
 
                 Circle()
                     .fill(Color(red: 0.13, green: 0.13, blue: 0.13).opacity(0.6))
-                    .frame(width: 84, height: 84)
+                    .frame(width: 95, height: 95)
             }
             .compositingGroup()
         }
@@ -548,7 +548,7 @@ struct DetailView: View {
 
                         Spacer()
 
-                        Text(player.current?.duration?.timeString ?? "-:--")
+                        Text(player.current?.duration.timeString ?? "-:--")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

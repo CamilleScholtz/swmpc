@@ -15,7 +15,7 @@ import SwiftUI
 
     var current: Song?
 
-    private(set) var artworkCache = OrderedDictionary<UInt32, Artwork>()
+    private(set) var artworkCache = OrderedDictionary<URL, Artwork>()
 
     @ObservationIgnored let idleManager = ConnectionManager(idle: true)
     @ObservationIgnored let commandManager = ConnectionManager()
@@ -65,8 +65,8 @@ import SwiftUI
 
     @MainActor
     func setArtwork(for media: any Mediable) async {
-        if let artwork = artworkCache.removeValue(forKey: media.id) {
-            artworkCache[media.id] = artwork
+        if let artwork = artworkCache.removeValue(forKey: media.artworkUri) {
+            artworkCache[media.artworkUri] = artwork
             return
         }
 
@@ -75,7 +75,7 @@ import SwiftUI
         }
 
         let artwork = Artwork(uri: media.artworkUri)
-        artworkCache[media.id] = artwork
+        artworkCache[media.artworkUri] = artwork
 
         await artwork.set(using: commandManager)
     }
@@ -86,7 +86,7 @@ import SwiftUI
             return nil
         }
 
-        return artworkCache[media.id]
+        return artworkCache[media.artworkUri]
     }
 
     @MainActor

@@ -15,7 +15,7 @@ protocol Mediable: Identifiable, Hashable, Sendable {
 
 struct Artist: Mediable {
     static func == (lhs: Artist, rhs: Artist) -> Bool {
-        lhs.id == rhs.id && lhs.albums.count == rhs.albums.count
+        lhs.id == rhs.id && lhs.albums?.count == rhs.albums?.count
     }
 
     let id: UInt32
@@ -23,30 +23,30 @@ struct Artist: Mediable {
 
     let name: String
 
-    var albums: [Album] = []
+    var albums: [Album]?
 
     var uri: URL {
         artworkUri.deletingLastPathComponent().deletingLastPathComponent()
     }
 
-    mutating func add(albums: [Album]) {
-        self.albums.append(contentsOf: albums)
+    mutating func set(albums: [Album]) {
+        self.albums = albums
     }
 }
 
 struct Album: Mediable {
     static func == (lhs: Album, rhs: Album) -> Bool {
-        lhs.id == rhs.id && lhs.songs.count == rhs.songs.count
+        lhs.id == rhs.id && lhs.songs?.count == rhs.songs?.count
     }
 
     let id: UInt32
     let artworkUri: URL
 
-    let artist: String?
-    let title: String?
-    let date: String?
+    let artist: String
+    let title: String
+    let date: String
 
-    var songs: [Song] = []
+    var songs: [Int: [Song]]?
 
     var uri: URL {
         artworkUri.deletingLastPathComponent()
@@ -57,30 +57,32 @@ struct Album: Mediable {
     }
 
     var description: String {
-        "\(date ?? "Unknown date") - \(title ?? "Unknown title")"
+        "\(date) - \(title)"
     }
 
     var duration: Double? {
-        songs.reduce(0) { $0 + ($1.duration ?? 0) }
+        songs?.values.flatMap { $0 }.reduce(0) { $0 + $1.duration }
     }
 
-    mutating func add(songs: [Song]) {
-        self.songs.append(contentsOf: songs)
+    var songsCount: Int? {
+        songs?.values.reduce(0) { $0 + $1.count }
+    }
+
+    mutating func set(songs: [Song]) {
+        self.songs = Dictionary(grouping: songs, by: { $0.disc })
     }
 }
 
 struct Song: Mediable {
-    static func == (lhs: Song, rhs: Song) -> Bool {
-        lhs.id == rhs.id
-    }
-
     let id: UInt32
     let uri: URL
 
-    let artist: String?
-    let track: String?
-    let title: String?
-    let duration: Double?
+    let artist: String
+    let title: String
+    let duration: Double
+
+    let disc: Int
+    let track: Int
 
     var artworkUri: URL {
         uri
@@ -95,6 +97,6 @@ struct Song: Mediable {
     }
 
     var description: String {
-        "\(artist ?? "Unknown artist") - \(title ?? "Unknown title")"
+        "\(artist) - \(title)"
     }
 }

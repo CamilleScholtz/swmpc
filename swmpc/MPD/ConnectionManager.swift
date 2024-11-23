@@ -172,9 +172,9 @@ actor ConnectionManager {
             albums.append(Album(
                 id: song.id,
                 artworkUri: song.uri,
-                artist: artist,
-                title: title,
-                date: date
+                artist: artist ?? "Unknown Artist",
+                title: title ?? "Unknown Title",
+                date: date ?? "1970"
             ))
         }
 
@@ -200,14 +200,19 @@ actor ConnectionManager {
             artist = String(cString: tag)
         }
 
-        var track: String?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_TRACK, 0) {
-            track = String(cString: tag)
-        }
-
         var title: String?
         if let tag = mpd_song_get_tag(recv, MPD_TAG_TITLE, 0) {
             title = String(cString: tag)
+        }
+
+        var track: Int?
+        if let tag = mpd_song_get_tag(recv, MPD_TAG_TRACK, 0) {
+            track = Int(String(cString: tag))
+        }
+
+        var disc: Int?
+        if let tag = mpd_song_get_tag(recv, MPD_TAG_DISC, 0) {
+            disc = Int(String(cString: tag))
         }
 
         let duration = Double(mpd_song_get_duration(recv))
@@ -221,10 +226,11 @@ actor ConnectionManager {
         return Song(
             id: id,
             uri: URL(string: uri)!,
-            artist: artist,
-            track: track,
-            title: title,
-            duration: duration
+            artist: artist ?? "Unknown Artist",
+            title: title ?? "Unknown Title",
+            duration: duration,
+            disc: disc ?? 1,
+            track: track ?? 1
         )
     }
 

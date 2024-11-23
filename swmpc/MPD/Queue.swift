@@ -33,19 +33,17 @@ import SwiftUI
             }
 
             let albums = try! await commandManager.getAlbums()
+            let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
 
-            media = albums.reduce(into: [Artist]()) { result, album in
-                if let index = result.firstIndex(where: { $0.name == album.artist }) {
-                    result[index].add(albums: [album])
-                } else {
-                    result.append(Artist(
-                        id: album.id,
-                        artworkUri: album.artworkUri,
-                        name: album.artist ?? "Unknown artist",
-                        albums: [album]
-                    ))
-                }
+            media = albumsByArtist.map { artist, albums in
+                Artist(
+                    id: albums.first!.id,
+                    artworkUri: albums.first!.artworkUri,
+                    name: artist,
+                    albums: albums
+                )
             }
+            .sorted { $0.name < $1.name }
         case .song:
             guard media.isEmpty || !(media is [Song]) else {
                 return
@@ -68,7 +66,6 @@ import SwiftUI
         return media.first(where: { $0.uri == uri })
     }
 
-    // TODO: just return something instead of settig search.
     @MainActor
     func search(for query: String, using type: MediaType) async {
         await set(for: type)
@@ -80,13 +77,13 @@ import SwiftUI
             }
         case .song:
             search = (media as! [Song]).filter {
-                $0.artist?.range(of: query, options: .caseInsensitive) != nil ||
-                    $0.title?.range(of: query, options: .caseInsensitive) != nil
+                $0.artist.range(of: query, options: .caseInsensitive) != nil ||
+                    $0.title.range(of: query, options: .caseInsensitive) != nil
             }
         default:
             search = (media as! [Album]).filter {
-                $0.artist?.range(of: query, options: .caseInsensitive) != nil ||
-                    $0.title?.range(of: query, options: .caseInsensitive) != nil
+                $0.artist.range(of: query, options: .caseInsensitive) != nil ||
+                    $0.title.range(of: query, options: .caseInsensitive) != nil
             }
         }
     }
