@@ -134,7 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        guard var description = player.current?.description else {
+        guard var description = player.currentSong?.description else {
             return
         }
 

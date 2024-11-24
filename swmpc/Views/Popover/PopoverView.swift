@@ -92,12 +92,12 @@ struct PopoverView: View {
         .frame(width: 250, height: height)
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
-                guard let current = player.current else {
+                guard let song = player.currentSong else {
                     return
                 }
 
-                await player.setArtwork(for: current)
-                artwork = player.getArtwork(for: current)
+                await player.setArtwork(for: song)
+                artwork = player.getArtwork(for: song)
             }
             Task {
                 // await player.status.trackElapsed()
@@ -106,14 +106,14 @@ struct PopoverView: View {
         .onReceive(didCloseNotification) { _ in
             // player.status.trackingTask?.cancel()
         }
-        .onChange(of: player.current) {
-            guard let current = player.current, AppDelegate.shared.popover.isShown else {
+        .onChange(of: player.currentSong) {
+            guard let song = player.currentSong, AppDelegate.shared.popover.isShown else {
                 return
             }
 
             Task(priority: .userInitiated) {
-                await player.setArtwork(for: current)
-                artwork = player.getArtwork(for: current)
+                await player.setArtwork(for: song)
+                artwork = player.getArtwork(for: song)
 
                 updateHeight()
             }
@@ -220,7 +220,7 @@ struct PopoverView: View {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(Color(.accent))
                         .frame(
-                            width: max(0, (player.status.elapsed ?? 0) / (player.current?.duration ?? 100) * 220) + 4,
+                            width: max(0, (player.status.elapsed ?? 0) / (player.currentSong?.duration ?? 100) * 220) + 4,
                             height: 3
                         )
 
@@ -238,7 +238,7 @@ struct PopoverView: View {
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                 Task(priority: .userInitiated) {
-                    await player.seek((value.location.x / 220) * (player.current?.duration ?? 100))
+                    await player.seek((value.location.x / 220) * (player.currentSong?.duration ?? 100))
                 }
             })
             .onHover(perform: { value in

@@ -101,15 +101,12 @@ struct DetailView: View {
                             hover = value
                         })
                         .onTapGesture {
-                            guard let uri = player.current?.albumUri else {
-                                return
-                            }
-
                             Task(priority: .userInitiated) {
-                                guard let media = await player.queue.get(for: uri, using: .album) else {
+                                guard let media = player.currentMedia else {
                                     return
                                 }
 
+                                // TODO: Check if last in path is not the same as current media.
                                 path.append(media)
                             }
                         }
@@ -172,15 +169,12 @@ struct DetailView: View {
                         .shadow(color: .black.opacity(0.2), radius: 16)
                         .frame(width: 250)
                         .onTapGesture {
-                            guard let uri = player.current?.albumUri else {
-                                return
-                            }
-
                             Task(priority: .userInitiated) {
-                                guard let media = await player.queue.get(for: uri, using: .album) else {
+                                guard let media = player.currentMedia else {
                                     return
                                 }
 
+                                // TODO: Check if last in path is not the same as current media.
                                 path.append(media)
                             }
                         }
@@ -195,13 +189,13 @@ struct DetailView: View {
                 .frame(height: 80)
         }
         .frame(minWidth: 520, minHeight: 520)
-        .task(id: player.current) {
-            guard let current = player.current else {
+        .task(id: player.currentSong) {
+            guard let song = player.currentSong else {
                 return
             }
 
-            await player.setArtwork(for: current)
-            artwork = player.getArtwork(for: current)
+            await player.setArtwork(for: song)
+            artwork = player.getArtwork(for: song)
         }
         .onChange(of: artwork) { previous, _ in
             previousArtwork = previous
@@ -346,7 +340,7 @@ struct DetailView: View {
 
         var body: some View {
             VStack(alignment: .leading, spacing: 7) {
-                Text(player.current?.title ?? "Unknown song")
+                Text(player.currentSong?.title ?? "Unknown song")
                     .font(.system(size: 18))
                     .fontWeight(.semibold)
                     .fontDesign(.rounded)
@@ -518,7 +512,7 @@ struct DetailView: View {
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(Color(.accent))
                                 .frame(
-                                    width: max(0, (player.status.elapsed ?? 0) / (player.current?.duration ?? 100) * geometry.size.width) + 4,
+                                    width: max(0, (player.status.elapsed ?? 0) / (player.currentSong?.duration ?? 100) * geometry.size.width) + 4,
                                     height: 3
                                 )
 
@@ -534,7 +528,7 @@ struct DetailView: View {
                     .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                         Task(priority: .userInitiated) {
-                            await player.seek((value.location.x / geometry.size.width) * (player.current?.duration ?? 100))
+                            await player.seek((value.location.x / geometry.size.width) * (player.currentSong?.duration ?? 100))
                         }
                     })
                     .onHover(perform: { value in
@@ -548,7 +542,7 @@ struct DetailView: View {
 
                         Spacer()
 
-                        Text(player.current?.duration.timeString ?? "-:--")
+                        Text(player.currentSong?.duration.timeString ?? "-:--")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

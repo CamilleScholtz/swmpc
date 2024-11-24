@@ -13,7 +13,8 @@ import SwiftUI
     let status: Status
     let queue: Queue
 
-    var current: Song?
+    var currentSong: Song?
+    var currentMedia: (any Mediable)?
 
     private(set) var artworkCache = OrderedDictionary<URL, Artwork>()
 
@@ -49,7 +50,7 @@ import SwiftUI
             }
 
             await status.set()
-            if await current.update(to: idleManager.getSong()) {
+            if await currentSong.update(to: try? idleManager.getCurrentSong()) {
                 AppDelegate.shared.setStatusItemTitle()
             }
 
@@ -65,8 +66,8 @@ import SwiftUI
 
     @MainActor
     func setArtwork(for media: any Mediable) async {
-        if let artwork = artworkCache.removeValue(forKey: media.artworkUri) {
-            artworkCache[media.artworkUri] = artwork
+        if let artwork = artworkCache.removeValue(forKey: media.uri) {
+            artworkCache[media.uri] = artwork
             return
         }
 
@@ -74,8 +75,8 @@ import SwiftUI
             artworkCache.removeFirst()
         }
 
-        let artwork = Artwork(uri: media.artworkUri)
-        artworkCache[media.artworkUri] = artwork
+        let artwork = Artwork(uri: media.uri)
+        artworkCache[media.uri] = artwork
 
         await artwork.set(using: commandManager)
     }
@@ -86,7 +87,7 @@ import SwiftUI
             return nil
         }
 
-        return artworkCache[media.artworkUri]
+        return artworkCache[media.uri]
     }
 
     @MainActor

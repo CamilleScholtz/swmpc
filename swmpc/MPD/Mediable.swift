@@ -10,7 +10,6 @@ import SwiftUI
 protocol Mediable: Identifiable, Hashable, Sendable {
     var id: UInt32 { get }
     var uri: URL { get }
-    var artworkUri: URL { get }
 }
 
 struct Artist: Mediable {
@@ -19,15 +18,11 @@ struct Artist: Mediable {
     }
 
     let id: UInt32
-    let artworkUri: URL
+    let uri: URL
 
     let name: String
 
     var albums: [Album]?
-
-    var uri: URL {
-        artworkUri.deletingLastPathComponent().deletingLastPathComponent()
-    }
 
     mutating func set(albums: [Album]) {
         self.albums = albums
@@ -40,25 +35,13 @@ struct Album: Mediable {
     }
 
     let id: UInt32
-    let artworkUri: URL
+    let uri: URL
 
     let artist: String
     let title: String
     let date: String
 
     var songs: [Int: [Song]]?
-
-    var uri: URL {
-        artworkUri.deletingLastPathComponent()
-    }
-
-    var artistUri: URL {
-        artworkUri.deletingLastPathComponent().deletingLastPathComponent()
-    }
-
-    var description: String {
-        "\(date) - \(title)"
-    }
 
     var duration: Double? {
         songs?.values.flatMap { $0 }.reduce(0) { $0 + $1.duration }
@@ -83,18 +66,6 @@ struct Song: Mediable {
 
     let disc: Int
     let track: Int
-
-    var artworkUri: URL {
-        uri
-    }
-
-    var albumUri: URL {
-        uri.deletingLastPathComponent()
-    }
-
-    var artistUri: URL {
-        uri.deletingLastPathComponent().deletingLastPathComponent()
-    }
 
     var description: String {
         "\(artist) - \(title)"

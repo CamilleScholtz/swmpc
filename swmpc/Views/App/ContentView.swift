@@ -39,6 +39,7 @@ struct ContentView: View {
                             AlbumsView(path: $path)
                         }
                     }
+                    .id(type)
                     .offset(y: -7.5)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
@@ -49,6 +50,19 @@ struct ContentView: View {
                     await player.queue.set(for: type)
                     // TODO: Sometimes doesn't work?
                     scrollToCurrent(proxy, using: type, animate: false)
+
+                    guard type != .song, let song = player.currentSong else {
+                        return
+                    }
+
+                    player.currentMedia = await player.queue.get(type: type, using: song)
+                }
+                .task(id: player.currentSong) {
+                    guard type != .song, let song = player.currentSong else {
+                        return
+                    }
+
+                    player.currentMedia = await player.queue.get(type: type, using: song)
                 }
                 .onAppear {
                     NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
@@ -202,7 +216,7 @@ struct ContentView: View {
                                 .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                                 .frame(width: 100)
 
-                            if player.current?.albumUri == album.uri {
+                            if player.currentMedia?.id == album.id {
                                 Circle()
                                     .fill(.ultraThinMaterial)
                                     .frame(width: 66, height: 66)
@@ -330,7 +344,7 @@ struct ContentView: View {
                             }
 
                             Task(priority: .userInitiated) {
-                                await player.queue.search(for: query, using: type)
+                                await player.queue.setSearch(for: query, using: type)
                             }
                         }
                         .onAppear {
@@ -382,7 +396,7 @@ struct ContentView: View {
                 VStack(alignment: .leading) {
                     Text(artist.name)
                         .font(.headline)
-                        .foregroundColor(player.current?.artistUri == artist.uri ? .accentColor : .primary)
+                        .foregroundColor(player.currentMedia?.id == artist.id ? .accentColor : .primary)
                         .lineLimit(2)
                     Text(artist.albums?.count ?? 0 == 1 ? "1 album" : "\(artist.albums!.count) albums")
                         .font(.subheadline)
@@ -392,7 +406,7 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(artist.uri)
+            .id(artist.id)
             .contentShape(Rectangle())
             .onTapGesture {
                 path.append(artist)
@@ -422,7 +436,7 @@ struct ContentView: View {
                 VStack(alignment: .leading) {
                     Text(album.title)
                         .font(.headline)
-                        .foregroundColor(player.current?.albumUri == album.uri ? .accentColor : .primary)
+                        .foregroundColor(player.currentMedia?.id == album.id ? .accentColor : .primary)
                         .lineLimit(2)
                     Text(album.artist)
                         .font(.subheadline)
@@ -432,8 +446,8 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(album.uri)
-            .task(id: album.uri) {
+            .id(album.id)
+            .task(id: album.id) {
                 // TODO: This can probably be made even a little snappier.
                 try? await Task.sleep(nanoseconds: 25_000_000)
                 guard !Task.isCancelled else {
@@ -464,14 +478,14 @@ struct ContentView: View {
         var body: some View {
             HStack(spacing: 15) {
                 Group {
-                    if !hover, player.current?.uri != song.uri {
+                    if !hover, player.currentSong != song {
                         Text(String(song.track))
                             .font(.title3)
                             .fontWeight(.regular)
                             .foregroundStyle(.secondary)
                             .frame(width: 20)
                     } else {
-                        if player.current?.uri == song.uri {
+                        if player.currentSong == song {
                             WaveView()
                         } else {
                             Image(systemName: "play.fill")
@@ -485,7 +499,7 @@ struct ContentView: View {
                 VStack(alignment: .leading) {
                     Text(song.title)
                         .font(.headline)
-                        .foregroundColor(player.current?.uri == song.uri ? .accentColor : .primary)
+                        .foregroundColor(player.currentSong == song ? .accentColor : .primary)
                         .lineLimit(2)
                     Text((song.artist) + " • " + song.duration.timeString)
                         .font(.subheadline)
@@ -495,7 +509,7 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(song.uri)
+            .id(song.id)
             .contentShape(Rectangle())
             .onHover(perform: { value in
                 hover = value
@@ -574,25 +588,17 @@ struct ContentView: View {
         }
     }
 
-    private func scrollToCurrent(_ proxy: ScrollViewProxy, using type: MediaType, animate: Bool = true) {
-        guard let current = player.current else {
+    private func scrollToCurrent(_ proxy: ScrollViewProxy, using _: MediaType, animate: Bool = true) {
+        guard let song = player.currentSong else {
             return
-        }
-
-        var uri = current.uri
-        switch type {
-        case .artist:
-            uri = current.artistUri
-        default:
-            uri = current.albumUri
         }
 
         if animate {
             withAnimation {
-                proxy.scrollTo(uri, anchor: .center)
+                proxy.scrollTo(song.id, anchor: .center)
             }
         } else {
-            proxy.scrollTo(uri, anchor: .center)
+            proxy.scrollTo(song.id, anchor: .center)
         }
     }
 

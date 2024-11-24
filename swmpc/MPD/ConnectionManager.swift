@@ -149,7 +149,7 @@ actor ConnectionManager {
         }
 
         while let recv = mpd_recv_song(connection) {
-            let song = getSong(receive: recv)
+            let song = getSong(recv: recv)
             guard let song else {
                 continue
             }
@@ -171,7 +171,7 @@ actor ConnectionManager {
 
             albums.append(Album(
                 id: song.id,
-                artworkUri: song.uri,
+                uri: song.uri,
                 artist: artist ?? "Unknown Artist",
                 title: title ?? "Unknown Title",
                 date: date ?? "1970"
@@ -181,16 +181,7 @@ actor ConnectionManager {
         return albums
     }
 
-    func getSong(receive: OpaquePointer? = nil) -> Song? {
-        var recv = receive
-        if receive == nil {
-            guard let connection else {
-                return nil
-            }
-
-            recv = mpd_run_current_song(connection)
-        }
-
+    func getSong(recv: OpaquePointer?) -> Song? {
         guard recv != nil else {
             return nil
         }
@@ -219,10 +210,6 @@ actor ConnectionManager {
         let id = mpd_song_get_id(recv)
         let uri = String(cString: mpd_song_get_uri(recv))
 
-        if receive == nil {
-            mpd_song_free(recv)
-        }
-
         return Song(
             id: id,
             uri: URL(string: uri)!,
@@ -232,6 +219,21 @@ actor ConnectionManager {
             disc: disc ?? 1,
             track: track ?? 1
         )
+    }
+
+    func getCurrentSong() throws -> Song? {
+        guard idle else {
+            throw ConnectionManagerError.idleStateError
+        }
+
+        guard let connection, let recv = mpd_run_current_song(connection) else {
+            return nil
+        }
+        defer { mpd_song_free(recv) }
+
+        let song = getSong(recv: recv)
+
+        return song
     }
 
     func getSongs(for album: Album? = nil) throws -> [Song] {
@@ -255,7 +257,7 @@ actor ConnectionManager {
 
         var songs = [Song]()
         while let recv = mpd_recv_song(connection) {
-            let song = getSong(receive: recv)
+            let song = getSong(recv: recv)
             guard let song else {
                 continue
             }
