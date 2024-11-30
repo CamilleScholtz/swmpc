@@ -63,9 +63,9 @@ actor ConnectionManager {
         isConnected = false
     }
 
-    func runPlay(_ id: UInt32) {
+    func runPlay(_ media: any Mediable) {
         try! run { _ in
-            mpd_run_play_id(connection, id)
+            mpd_run_play_id(connection, media.id)
         }
     }
 
@@ -102,6 +102,12 @@ actor ConnectionManager {
     func runRepeat(_ value: Bool) {
         try! run { connection in
             mpd_run_repeat(connection, value)
+        }
+    }
+
+    func runFavorite(for song: Song, _ value: Bool) {
+        try! run { connection in
+            mpd_run_sticker_set(connection, "song", song.uri.path, "favorite", value ? "1" : "0")
         }
     }
 
@@ -186,6 +192,9 @@ actor ConnectionManager {
             return nil
         }
 
+        let id = mpd_song_get_id(recv)
+        let uri = String(cString: mpd_song_get_uri(recv))
+
         var artist: String?
         if let tag = mpd_song_get_tag(recv, MPD_TAG_ARTIST, 0) {
             artist = String(cString: tag)
@@ -207,8 +216,6 @@ actor ConnectionManager {
         }
 
         let duration = Double(mpd_song_get_duration(recv))
-        let id = mpd_song_get_id(recv)
-        let uri = String(cString: mpd_song_get_uri(recv))
 
         return Song(
             id: id,
@@ -266,6 +273,45 @@ actor ConnectionManager {
         }
 
         return songs
+    }
+
+    func getPlaylists() throws -> [Playlist] {
+        guard !idle else {
+            throw ConnectionManagerError.idleStateError
+        }
+
+        try connect()
+        defer { disconnect() }
+
+        guard let connection, mpd_send_list_playlists(connection) else {
+            return []
+        }
+
+        var playlists = [Playlist]()
+        var index = UInt32(0)
+        while let recv = mpd_recv_playlist(connection) {
+            defer { mpd_playlist_free(recv) }
+
+            index += 1
+
+            playlists.append(Playlist(
+                id: index,
+                name: String(cString: mpd_playlist_get_path(recv))
+            ))
+        }
+
+        return playlists
+    }
+
+    func createPlaylist(_ name: String) throws {
+        guard !idle else {
+            throw ConnectionManagerError.idleStateError
+        }
+
+        try connect()
+        defer { disconnect() }
+
+        mpd_run_save(connection, name)
     }
 
     func getElapsedData() throws -> Double? {

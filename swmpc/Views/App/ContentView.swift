@@ -33,7 +33,7 @@ struct ContentView: View {
                         switch type {
                         case .artist:
                             ArtistsView(path: $path)
-                        case .song:
+                        case .song, .playlist:
                             SongsView()
                         default:
                             AlbumsView(path: $path)
@@ -96,7 +96,7 @@ struct ContentView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 15) {
                         backButton()
-                        AlbumSongsView(for: album)
+                        AlbumSongsView(for: album, path: $path)
                     }
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
@@ -193,11 +193,15 @@ struct ContentView: View {
 
     struct AlbumSongsView: View {
         @Environment(Player.self) private var player
+        @Environment(\.colorScheme) var colorScheme
 
-        init(for album: Album) {
+        init(for album: Album,  path: Binding<NavigationPath>) {
             _album = State(initialValue: album)
+            _path = path
         }
 
+        @Binding var path: NavigationPath
+        
         @State private var album: Album
         @State private var hover = false
 
@@ -205,31 +209,61 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 15) {
                 HStack(spacing: 15) {
                     if let artwork = player.getArtwork(for: album)?.image {
-                        ZStack {
+                        ZStack(alignment: .bottom) {
                             ArtworkView(image: artwork)
                                 .frame(width: 80)
                                 .blur(radius: 17)
                                 .offset(y: 7)
+                                .saturation(1.5)
+                                .blendMode(colorScheme == .dark ? .softLight : .normal)
+                                .opacity(0.5)
 
                             ArtworkView(image: artwork)
-                                .cornerRadius(5)
+                                .cornerRadius(10)
                                 .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                                 .frame(width: 100)
+                                .overlay(
+                                    ZStack(alignment: .bottomLeading) {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(.ultraThinMaterial)
+                                            .frame(width: 100)
+                                            .mask(
+                                                LinearGradient(
+                                                    gradient: Gradient(stops: [
+                                                        .init(color: .black, location: 0.3),
+                                                        .init(color: .black.opacity(0), location: 1.0),
+                                                    ]),
+                                                    startPoint: .bottom,
+                                                    endPoint: .top
+                                                )
+                                            )
 
-                            if player.currentMedia?.id == album.id {
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                                    .frame(width: 66, height: 66)
-                                    .shadow(radius: 10)
-                                    .overlay {
-                                        Image(systemName: player.status.isPlaying ?? false ? "pause.fill" : "play.fill")
-                                            .font(.system(size: 22))
+                                        HStack(spacing: 5) {
+                                            Image(systemName: "play.fill")
+                                            Text("Playing")
+                                        }
+
+                                        .font(.caption2)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.black)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(.white)
+                                        .cornerRadius(100)
+                                        .padding(10)
                                     }
-                            }
+                                    .opacity(player.currentMedia?.id == album.id ? 1 : 0)
+                                    .animation(.interactiveSpring, value: player.currentMedia?.id == album.id)
+                                )
                         }
+                        .onHover(perform: { value in
+                            hover = value
+                        })
                         .onTapGesture {
                             Task(priority: .userInitiated) {
-                                await player.pause(player.status.isPlaying ?? false)
+                                if player.currentMedia?.id != album.id {
+                                    await player.play(album)
+                                }
                             }
                         }
                     }
@@ -245,8 +279,17 @@ struct ContentView: View {
                             .font(.system(size: 12))
                             .fontWeight(.semibold)
                             .lineLimit(2)
+                            .onTapGesture {
+                                Task(priority: .userInitiated) {
+                                    guard let media = await player.queue.get(type: .artist, using: album) else {
+                                        return
+                                    }
+                                    
+                                    path.append(media)
+                                }
+                            }
 
-                        Text((album.songsCount ?? 0 > 1 ? "\(String(album.songsCount!)) songs" : "1 song")
+                        Text((album.tracks ?? 0 > 1 ? "\(String(album.tracks!)) songs" : "1 song")
                             + " • "
                             + (album.duration?.humanTimeString ?? "0m"))
                             .font(.subheadline)
@@ -406,7 +449,7 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(artist.id)
+            .id(artist)
             .contentShape(Rectangle())
             .onTapGesture {
                 path.append(artist)
@@ -446,8 +489,8 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(album.id)
-            .task(id: album.id) {
+            .id(album)
+            .task(id: album) {
                 // TODO: This can probably be made even a little snappier.
                 try? await Task.sleep(nanoseconds: 25_000_000)
                 guard !Task.isCancelled else {
@@ -501,6 +544,7 @@ struct ContentView: View {
                         .font(.headline)
                         .foregroundColor(player.currentSong == song ? .accentColor : .primary)
                         .lineLimit(2)
+
                     Text((song.artist) + " • " + song.duration.timeString)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -509,7 +553,7 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .id(song.id)
+            .id(song)
             .contentShape(Rectangle())
             .onHover(perform: { value in
                 hover = value
@@ -581,9 +625,7 @@ struct ContentView: View {
 
         private func bar(low: CGFloat = 0.0, high: CGFloat = 1.0) -> some View {
             RoundedRectangle(cornerRadius: 2)
-                // .fill(colored ? (player.status.isPlaying ?? false ? .accent : .secondary) : .primary)
                 .fill(.secondary)
-                .animation(.spring, value: player.status.isPlaying ?? false)
                 .frame(width: 2, height: (animating ? high : low) * 12)
         }
     }
@@ -595,10 +637,10 @@ struct ContentView: View {
 
         if animate {
             withAnimation {
-                proxy.scrollTo(song.id, anchor: .center)
+                proxy.scrollTo(song, anchor: .center)
             }
         } else {
-            proxy.scrollTo(song.id, anchor: .center)
+            proxy.scrollTo(song, anchor: .center)
         }
     }
 

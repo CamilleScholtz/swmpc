@@ -9,6 +9,9 @@ import SwiftUI
 
 protocol Mediable: Identifiable, Hashable, Sendable {
     var id: UInt32 { get }
+}
+
+protocol Artworkable {
     var uri: URL { get }
 }
 
@@ -18,7 +21,6 @@ struct Artist: Mediable {
     }
 
     let id: UInt32
-    let uri: URL
 
     let name: String
 
@@ -29,7 +31,7 @@ struct Artist: Mediable {
     }
 }
 
-struct Album: Mediable {
+struct Album: Mediable, Artworkable {
     static func == (lhs: Album, rhs: Album) -> Bool {
         lhs.id == rhs.id && lhs.songs?.count == rhs.songs?.count
     }
@@ -44,10 +46,10 @@ struct Album: Mediable {
     var songs: [Int: [Song]]?
 
     var duration: Double? {
-        songs?.values.flatMap { $0 }.reduce(0) { $0 + $1.duration }
+        songs?.values.flatMap(\.self).reduce(0) { $0 + $1.duration }
     }
 
-    var songsCount: Int? {
+    var tracks: Int? {
         songs?.values.reduce(0) { $0 + $1.count }
     }
 
@@ -56,7 +58,7 @@ struct Album: Mediable {
     }
 }
 
-struct Song: Mediable {
+struct Song: Mediable, Artworkable {
     let id: UInt32
     let uri: URL
 
@@ -71,3 +73,24 @@ struct Song: Mediable {
         "\(artist) - \(title)"
     }
 }
+
+struct Playlist: Mediable {
+    static func == (lhs: Playlist, rhs: Playlist) -> Bool {
+        lhs.id == rhs.id && lhs.songs?.count == rhs.songs?.count
+    }
+
+    let id: UInt32
+
+    let name: String
+
+    var songs: [Int: [Song]]?
+
+    var tracks: Int? {
+        songs?.values.reduce(0) { $0 + $1.count }
+    }
+
+    mutating func set(songs: [Song]) {
+        self.songs = Dictionary(grouping: songs, by: { $0.disc })
+    }
+}
+

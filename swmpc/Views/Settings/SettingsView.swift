@@ -14,8 +14,6 @@ enum Setting {
 
     static let showStatusBar = "showStatusBar"
     static let showStatusbarSong = "showStatusbarSong"
-
-    static let showVinyl = "showVinyl"
 }
 
 struct SettingsView: View {
@@ -58,17 +56,12 @@ struct SettingsView: View {
     struct AppearanceView: View {
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-        @AppStorage(Setting.showVinyl) var showVinyl = true
 
         var body: some View {
             Form {
                 Section(header: Text("Status Bar")) {
                     Toggle("Show Status Bar", isOn: $showStatusBar)
                     Toggle("Show Song in Status Bar", isOn: $showStatusbarSong)
-                }
-
-                Section(header: Text("Player")) {
-                    Toggle("Show Vinyl", isOn: $showVinyl)
                 }
             }
             .padding()

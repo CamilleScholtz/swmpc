@@ -9,4 +9,5 @@ enum MediaType: String {
     case album = "Albums"
     case artist = "Artists"
     case song = "Songs"
+    case playlist = "Playlists"
 }

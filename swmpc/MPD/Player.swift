@@ -16,6 +16,8 @@ import SwiftUI
     var currentSong: Song?
     var currentMedia: (any Mediable)?
 
+    var playlists: [Playlist]?
+
     private(set) var artworkCache = OrderedDictionary<URL, Artwork>()
 
     @ObservationIgnored let idleManager = ConnectionManager(idle: true)
@@ -39,33 +41,65 @@ import SwiftUI
 
     @MainActor
     private func updateLoop() async {
+        while await !idleManager.isConnected {
+            do {
+                try await idleManager.connect()
+            } catch {
+                try? await Task.sleep(for: .seconds(5))
+            }
+        }
+
+        await performUpdates(for: mpd_idle(
+            MPD_IDLE_PLAYER.rawValue |
+                MPD_IDLE_OPTIONS.rawValue |
+                MPD_IDLE_STORED_PLAYLIST.rawValue
+        ))
+
         while !Task.isCancelled {
             if await !idleManager.isConnected {
                 do {
                     try await idleManager.connect()
                 } catch {
-                    try! await Task.sleep(for: .seconds(5))
+                    try? await Task.sleep(for: .seconds(5))
                     continue
                 }
             }
 
-            await status.set()
-            if await currentSong.update(to: try? idleManager.getCurrentSong()) {
-                AppDelegate.shared.setStatusItemTitle()
-            }
-
             let idleResult = await idleManager.runIdleMask(
-                mask: mpd_idle(MPD_IDLE_PLAYER.rawValue | MPD_IDLE_OPTIONS.rawValue)
+                mask: mpd_idle(
+                    MPD_IDLE_PLAYER.rawValue |
+                        MPD_IDLE_OPTIONS.rawValue |
+                        MPD_IDLE_STORED_PLAYLIST.rawValue
+                )
             )
 
-            if idleResult == mpd_idle(0) {
-                await idleManager.disconnect()
-            }
+            await performUpdates(for: idleResult)
         }
     }
 
     @MainActor
-    func setArtwork(for media: any Mediable) async {
+    private func performUpdates(for idleResult: mpd_idle) async {
+        guard idleResult != mpd_idle(0) else {
+            await idleManager.disconnect()
+            return
+        }
+        
+        if (idleResult.rawValue & MPD_IDLE_PLAYER.rawValue) != 0 ||
+            (idleResult.rawValue & MPD_IDLE_OPTIONS.rawValue) != 0
+        {
+            await status.set()
+            if await currentSong.update(to: try? idleManager.getCurrentSong()) {
+                AppDelegate.shared.setStatusItemTitle()
+            }
+        }
+
+        if (idleResult.rawValue & MPD_IDLE_STORED_PLAYLIST.rawValue) != 0 {
+            await setPlaylists()
+        }
+    }
+
+    @MainActor
+    func setArtwork(for media: any Artworkable) async {
         if let artwork = artworkCache.removeValue(forKey: media.uri) {
             artworkCache[media.uri] = artwork
             return
@@ -82,17 +116,27 @@ import SwiftUI
     }
 
     @MainActor
-    func getArtwork(for media: (any Mediable)?) -> Artwork? {
+    func getArtwork(for media: (any Artworkable)?) -> Artwork? {
         guard let media else {
             return nil
         }
 
         return artworkCache[media.uri]
     }
+    
+    @MainActor
+    func setPlaylists() async {
+        playlists = try? await commandManager.getPlaylists()
+    }
 
     @MainActor
-    func play(_ song: Song) async {
-        await commandManager.runPlay(song.id)
+    func createPlaylist(_ name: String) async {
+        try? await commandManager.createPlaylist(name)
+    }
+
+    @MainActor
+    func play(_ media: any Mediable) async {
+        await commandManager.runPlay(media)
     }
 
     @MainActor

@@ -38,7 +38,6 @@ import SwiftUI
             media = albumsByArtist.map { artist, albums in
                 Artist(
                     id: albums.first!.id,
-                    uri: albums.first!.uri,
                     name: artist,
                     albums: albums
                 )
@@ -82,15 +81,15 @@ import SwiftUI
     }
 
     @MainActor
-    func get(type: MediaType, using song: Song) async -> (any Mediable)? {
+    func get(type: MediaType, using media: any Mediable) async -> (any Mediable)? {
         guard type != .song else {
-            return song
+            return media
         }
 
         await set(for: type)
 
-        if let index = media.firstIndex(where: { $0.id > song.id }), index > 0 {
-            return media[index - 1]
+        if let index = self.media.firstIndex(where: { $0.id > media.id }), index > 0 {
+            return self.media[index - 1]
         }
 
         return nil

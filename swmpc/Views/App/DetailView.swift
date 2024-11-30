@@ -25,160 +25,127 @@ struct DetailView: View {
         VStack {
             ZStack {
                 ZStack {
-                    ArtworkView(image: artwork?.image)
-                        .overlay(
-                            Group {
-                                if let image = previousArtwork?.image {
-                                    ArtworkView(image: image)
-                                        .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
-                                        .transition(.opacity)
+                    ZStack {
+                        ArtworkView(image: artwork?.image)
+                            .overlay(
+                                Group {
+                                    if let image = previousArtwork?.image {
+                                        ArtworkView(image: image)
+                                            .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
+                                            .transition(.opacity)
+                                    }
                                 }
-                            }
-                        )
+                            )
 
-                    Rectangle()
-                        .opacity(0)
-                        .background(.ultraThinMaterial)
-                }
-                .scaledToFit()
-                .mask(
-                    RadialGradient(
-                        gradient: Gradient(colors: [.white, .clear]),
-                        center: .center,
-                        startRadius: -25,
-                        endRadius: 225
+                        Rectangle()
+                            .opacity(0)
+                            .background(.ultraThinMaterial)
+                    }
+                    .scaledToFit()
+                    .mask(
+                        RadialGradient(
+                            gradient: Gradient(colors: [.white, .clear]),
+                            center: .center,
+                            startRadius: -25,
+                            endRadius: 225
+                        )
                     )
-                )
-                .offset(y: 20)
+                    .offset(y: 20)
+                    .blur(radius: 20)
+                    .opacity(0.6)
+
+                    ZStack {
+                        ArtworkView(image: artwork?.image)
+                            .overlay(
+                                Group {
+                                    if let image = previousArtwork?.image {
+                                        ArtworkView(image: image)
+                                            .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
+                                            .transition(.opacity)
+                                    }
+                                }
+                            )
+
+                        Rectangle()
+                            .opacity(0)
+                            .background(.ultraThinMaterial)
+                    }
+                    .scaledToFit()
+                    .mask(
+                        RadialGradient(
+                            gradient: Gradient(colors: [.white, .clear]),
+                            center: .center,
+                            startRadius: -25,
+                            endRadius: 225
+                        )
+                    )
+                    .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
+                    .offset(y: 105)
+                    .blur(radius: 5)
+                }
                 .saturation(1.5)
-                .blur(radius: 20)
-                .opacity(0.6)
+                .blendMode(colorScheme == .dark ? .softLight : .normal)
 
-                ZStack {
-                    ArtworkView(image: artwork?.image)
-                        .overlay(
-                            Group {
-                                if let image = previousArtwork?.image {
-                                    ArtworkView(image: image)
-                                        .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
-                                        .transition(.opacity)
-                                }
+                ArtworkView(image: artwork?.image)
+                    .overlay(
+                        Group {
+                            if let image = previousArtwork?.image {
+                                ArtworkView(image: image)
+                                    .opacity(isArtworkTransitioning ? 1 : 0)
+                                    .transition(.opacity)
                             }
-                        )
-
-                    Rectangle()
-                        .opacity(0)
-                        .background(.ultraThinMaterial)
-                }
-                .scaledToFit()
-                .mask(
-                    RadialGradient(
-                        gradient: Gradient(colors: [.white, .clear]),
-                        center: .center,
-                        startRadius: -25,
-                        endRadius: 225
+                        }
                     )
-                )
-                .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
-                .offset(y: 105)
-                .blur(radius: 5)
+                    .overlay(
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 20)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                                .blendMode(.screen)
 
-                if UserDefaults.standard.bool(forKey: "showVinyl") {
-                    ArtworkView(image: artwork?.image)
-                        .overlay(
-                            Group {
-                                if let image = previousArtwork?.image {
-                                    ArtworkView(image: image)
-                                        .opacity(isArtworkTransitioning ? 1 : 0)
-                                        .transition(.opacity)
-                                }
-                            }
-                        )
-                        .cornerRadius(3)
-                        .shadow(radius: 16)
-                        .frame(width: 250)
-                        .onHover(perform: { value in
-                            hover = value
-                        })
-                        .onTapGesture {
-                            Task(priority: .userInitiated) {
-                                guard let media = player.currentMedia else {
-                                    return
-                                }
-
-                                // TODO: Check if last in path is not the same as current media.
-                                path.append(media)
-                            }
+                            RoundedRectangle(cornerRadius: 20)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                                .blendMode(.multiply)
                         }
-                        .background(
-                            ZStack {
-                                Rectangle()
-                                    .fill(Color(.darkGray))
-                                    .cornerRadius(2)
-                                    .scaleEffect(0.95)
-                                    .offset(x: 10)
+                    )
+                    .cornerRadius(20)
+                    .shadow(color: .black.opacity(0.2), radius: 16)
+                    .frame(width: 250)
+                    .scaleEffect(hover ? 1.02 : 1)
+                    .animation(.spring, value: hover)
+                    .onHover(perform: { value in
+                        hover = value
+                    })
+                    .onTapGesture {
+                        Task(priority: .userInitiated) {
+                            guard let song = player.currentSong else {
+                                return
+                            }
 
-                                VinylView()
-                                    .scaleEffect(0.9)
-                                    .shadow(radius: 30, x: 0, y: 10)
-                                    .rotationEffect(.degrees(hover ? 5 : 0))
-                                    .offset(x: hover ? 110 : 100)
+                            guard let media = await player.queue.get(type: .album, using: song) else {
+                                return
                             }
-                        )
-                        .offset(x: -35)
-                        .rotationEffect(.degrees(-1))
-                        .scaleEffect(hover ? 1.02 : 1)
-                        .animation(.spring, value: hover)
-                } else {
-                    ArtworkView(image: artwork?.image)
-                        .overlay(
-                            Group {
-                                if let image = previousArtwork?.image {
-                                    ArtworkView(image: image)
-                                        .opacity(isArtworkTransitioning ? 1 : 0)
-                                        .transition(.opacity)
-                                }
-                            }
-                        )
-                        .overlay(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 0.5
-                                    )
-                                    .blendMode(.screen)
 
-                                RoundedRectangle(cornerRadius: 10)
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 0.5
-                                    )
-                                    .blendMode(.multiply)
-                            }
-                        )
-                        .cornerRadius(10)
-                        .shadow(color: .black.opacity(0.2), radius: 16)
-                        .frame(width: 250)
-                        .onTapGesture {
-                            Task(priority: .userInitiated) {
-                                guard let media = player.currentMedia else {
-                                    return
-                                }
-
-                                // TODO: Check if last in path is not the same as current media.
-                                path.append(media)
-                            }
+                            // TODO: Check if last in path is not the same as current media.
+                            // TODO: Very hacky?
+                            path.removeLast(path.count)
+                            try? await Task.sleep(for: .milliseconds(1))
+                            path.append(media)
                         }
-                }
+                    }
             }
             .offset(y: -25)
             .zIndex(100)
@@ -188,6 +155,7 @@ struct DetailView: View {
             FooterView()
                 .frame(height: 80)
         }
+        .ignoresSafeArea(.all)
         .frame(minWidth: 520, minHeight: 520)
         .task(id: player.currentSong) {
             guard let song = player.currentSong else {
@@ -238,6 +206,8 @@ struct DetailView: View {
     }
 
     struct VinylView: View {
+        @Environment(Player.self) private var player
+
         var body: some View {
             ZStack {
                 Circle()
@@ -329,9 +299,8 @@ struct DetailView: View {
 
                 Circle()
                     .fill(Color(red: 0.13, green: 0.13, blue: 0.13).opacity(0.6))
-                    .frame(width: 95, height: 95)
+                    .frame(width: 97, height: 97)
             }
-            .compositingGroup()
         }
     }
 

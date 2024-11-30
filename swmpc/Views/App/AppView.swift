@@ -41,7 +41,14 @@ struct AppView: View {
                         .tag(category.type)
                 }
 
-                Section("Playlists") {}
+                Section("Playlists") {
+                    ForEach(player.playlists ?? []) { playlist in
+                        Label(playlist.name, systemImage: "music.note.list")
+                    }
+                }
+                .contextMenu {
+                    Button("New Playlist") {}
+                }
             }
             .toolbar(removing: .sidebarToggle)
             .navigationSplitViewColumnWidth(180)
