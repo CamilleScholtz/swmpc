@@ -238,7 +238,7 @@ struct PopoverView: View {
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                 Task(priority: .userInitiated) {
-                    await player.seek((value.location.x / 220) * (player.currentSong?.duration ?? 100))
+                    await CommandManager.shared.seek((value.location.x / 220) * (player.currentSong?.duration ?? 100))
                 }
             })
             .onHover(perform: { value in
@@ -270,15 +270,13 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await player.pause(player.status.isPlaying ?? false)
+                        await CommandManager.shared.pause(player.status.isPlaying ?? false)
                     }
                 })
         }
     }
 
     struct PreviousView: View {
-        @Environment(Player.self) private var player
-
         @State private var hover = false
 
         var body: some View {
@@ -292,15 +290,13 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await player.previous()
+                        await CommandManager.shared.previous()
                     }
                 })
         }
     }
 
     struct NextView: View {
-        @Environment(Player.self) private var player
-
         @State private var hover = false
 
         var body: some View {
@@ -314,7 +310,7 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await player.next()
+                        await CommandManager.shared.next()
                     }
                 })
         }
@@ -337,7 +333,7 @@ struct PopoverView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            await player.setRandom(!(player.status.isRandom ?? false))
+                            await CommandManager.shared.random(!(player.status.isRandom ?? false))
                         }
                     })
 
@@ -369,7 +365,7 @@ struct PopoverView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            await player.setRepeat(!(player.status.isRepeat ?? false))
+                            await CommandManager.shared.repeat(!(player.status.isRepeat ?? false))
                         }
                     })
 

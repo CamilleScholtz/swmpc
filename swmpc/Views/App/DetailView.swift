@@ -129,7 +129,7 @@ struct DetailView: View {
                     .onHover(perform: { value in
                         hover = value
                     })
-                    .onTapGesture {
+                    .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             guard let song = player.currentSong else {
                                 return
@@ -145,7 +145,7 @@ struct DetailView: View {
                             try? await Task.sleep(for: .milliseconds(1))
                             path.append(media)
                         }
-                    }
+                    })
             }
             .offset(y: -25)
             .zIndex(100)
@@ -354,15 +354,13 @@ struct DetailView: View {
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    await player.pause(player.status.isPlaying ?? false)
+                    await CommandManager.shared.pause(player.status.isPlaying ?? false)
                 }
             })
         }
     }
 
     struct PreviousView: View {
-        @Environment(Player.self) private var player
-
         @State private var hover = false
 
         var body: some View {
@@ -376,15 +374,13 @@ struct DetailView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await player.previous()
+                        await CommandManager.shared.previous()
                     }
                 })
         }
     }
 
     struct NextView: View {
-        @Environment(Player.self) private var player
-
         @State private var hover = false
 
         var body: some View {
@@ -398,7 +394,7 @@ struct DetailView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await player.next()
+                        await CommandManager.shared.next()
                     }
                 })
         }
@@ -420,7 +416,7 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            await player.setRandom(!(player.status.isRandom ?? false))
+                            await CommandManager.shared.random(!(player.status.isRandom ?? false))
                         }
                     })
 
@@ -450,7 +446,7 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            await player.setRepeat(!(player.status.isRepeat ?? false))
+                            await CommandManager.shared.repeat(!(player.status.isRepeat ?? false))
                         }
                     })
 
@@ -497,7 +493,7 @@ struct DetailView: View {
                     .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                         Task(priority: .userInitiated) {
-                            await player.seek((value.location.x / geometry.size.width) * (player.currentSong?.duration ?? 100))
+                            await CommandManager.shared.seek((value.location.x / geometry.size.width) * (player.currentSong?.duration ?? 100))
                         }
                     })
                     .onHover(perform: { value in

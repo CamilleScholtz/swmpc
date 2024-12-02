@@ -118,9 +118,9 @@ struct ContentView: View {
             .onHover(perform: { value in
                 hover = value
             })
-            .onTapGesture {
+            .onTapGesture(perform: {
                 path.removeLast()
-            }
+            })
     }
 
     struct ArtistsView: View {
@@ -195,13 +195,13 @@ struct ContentView: View {
         @Environment(Player.self) private var player
         @Environment(\.colorScheme) var colorScheme
 
-        init(for album: Album,  path: Binding<NavigationPath>) {
+        init(for album: Album, path: Binding<NavigationPath>) {
             _album = State(initialValue: album)
             _path = path
         }
 
         @Binding var path: NavigationPath
-        
+
         @State private var album: Album
         @State private var hover = false
 
@@ -259,13 +259,13 @@ struct ContentView: View {
                         .onHover(perform: { value in
                             hover = value
                         })
-                        .onTapGesture {
+                        .onTapGesture(perform: {
                             Task(priority: .userInitiated) {
                                 if player.currentMedia?.id != album.id {
-                                    await player.play(album)
+                                    await CommandManager.shared.play(album)
                                 }
                             }
-                        }
+                        })
                     }
 
                     VStack(alignment: .leading, spacing: 3) {
@@ -279,15 +279,15 @@ struct ContentView: View {
                             .font(.system(size: 12))
                             .fontWeight(.semibold)
                             .lineLimit(2)
-                            .onTapGesture {
+                            .onTapGesture(perform: {
                                 Task(priority: .userInitiated) {
                                     guard let media = await player.queue.get(type: .artist, using: album) else {
                                         return
                                     }
-                                    
+
                                     path.append(media)
                                 }
-                            }
+                            })
 
                         Text((album.tracks ?? 0 > 1 ? "\(String(album.tracks!)) songs" : "1 song")
                             + " • "
@@ -314,7 +314,7 @@ struct ContentView: View {
                 }
             }
             .task {
-                await album.set(songs: try! player.commandManager.getSongs(for: album))
+                await album.set(songs: try! CommandManager.shared.getSongs(for: album))
                 await player.setArtwork(for: album)
             }
         }
@@ -451,9 +451,9 @@ struct ContentView: View {
             }
             .id(artist)
             .contentShape(Rectangle())
-            .onTapGesture {
+            .onTapGesture(perform: {
                 path.append(artist)
-            }
+            })
         }
     }
 
@@ -500,9 +500,9 @@ struct ContentView: View {
                 await player.setArtwork(for: album)
             }
             .contentShape(Rectangle())
-            .onTapGesture {
+            .onTapGesture(perform: {
                 path.append(album)
-            }
+            })
         }
     }
 
@@ -516,7 +516,8 @@ struct ContentView: View {
         }
 
         @State private var animating = false
-        @State private var hover: Bool = false
+        @State private var hover = false
+        @State private var editingPlaylist = false
 
         var body: some View {
             HStack(spacing: 15) {
@@ -558,9 +559,22 @@ struct ContentView: View {
             .onHover(perform: { value in
                 hover = value
             })
-            .onTapGesture {
+            .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    await player.play(song)
+                    await CommandManager.shared.play(song)
+                }
+            })
+            .contextMenu {
+                if let playlists = player.playlists {
+                    Menu("Add to Playlist") {
+                        ForEach(playlists) { playlist in
+                            Button(playlist.name) {
+                                Task {
+                                    try? await CommandManager.shared.addToPlaylist([song], playlist: playlist)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

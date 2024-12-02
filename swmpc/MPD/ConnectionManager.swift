@@ -10,32 +10,63 @@ import SwiftUI
 
 enum ConnectionManagerError: Error {
     case connectionError
-    case idleStateError
 }
 
-actor ConnectionManager {
+protocol ConnectionManager {}
+
+extension ConnectionManager {
+    func getSong(recv: OpaquePointer?) -> Song? {
+        guard recv != nil else {
+            return nil
+        }
+
+        let id = mpd_song_get_id(recv)
+        let uri = String(cString: mpd_song_get_uri(recv))
+
+        var artist: String?
+        if let tag = mpd_song_get_tag(recv, MPD_TAG_ARTIST, 0) {
+            artist = String(cString: tag)
+        }
+
+        var title: String?
+        if let tag = mpd_song_get_tag(recv, MPD_TAG_TITLE, 0) {
+            title = String(cString: tag)
+        }
+
+        var track: Int?
+        if let tag = mpd_song_get_tag(recv, MPD_TAG_TRACK, 0) {
+            track = Int(String(cString: tag))
+        }
+
+        var disc: Int?
+        if let tag = mpd_song_get_tag(recv, MPD_TAG_DISC, 0) {
+            disc = Int(String(cString: tag))
+        }
+
+        let duration = Double(mpd_song_get_duration(recv))
+
+        return Song(
+            id: id,
+            uri: URL(string: uri)!,
+            artist: artist ?? "Unknown Artist",
+            title: title ?? "Unknown Title",
+            duration: duration,
+            disc: disc ?? 1,
+            track: track ?? 1
+        )
+    }
+}
+
+actor IdleManager: ConnectionManager {
+    static let shared = IdleManager()
+
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
 
     private var connection: OpaquePointer?
     private(set) var isConnected = false
 
-    private var idle: Bool
-
-    init(idle: Bool = false) {
-        self.idle = idle
-    }
-
-    private func run(_ action: (OpaquePointer) -> Void) throws {
-        try? connect()
-        defer { disconnect() }
-
-        guard let connection else {
-            throw ConnectionManagerError.connectionError
-        }
-
-        action(connection)
-    }
+    private init() {}
 
     func connect() throws {
         disconnect()
@@ -45,11 +76,9 @@ actor ConnectionManager {
             throw ConnectionManagerError.connectionError
         }
 
-        isConnected = true
+        mpd_connection_set_keepalive(connection, true)
 
-        if idle {
-            mpd_connection_set_keepalive(connection, true)
-        }
+        isConnected = true
     }
 
     func disconnect() {
@@ -63,66 +92,15 @@ actor ConnectionManager {
         isConnected = false
     }
 
-    func runPlay(_ media: any Mediable) {
-        try! run { _ in
-            mpd_run_play_id(connection, media.id)
-        }
-    }
-
-    func runPause(_ value: Bool) {
-        try! run { connection in
-            mpd_run_pause(connection, value)
-        }
-    }
-
-    func runPrevious() {
-        try! run { connection in
-            mpd_run_previous(connection)
-        }
-    }
-
-    func runNext() {
-        try! run { connection in
-            mpd_run_next(connection)
-        }
-    }
-
-    func runSeekCurrent(_ value: Double) {
-        try! run { connection in
-            mpd_run_seek_current(connection, Float(value), false)
-        }
-    }
-
-    func runRandom(_ value: Bool) {
-        try! run { connection in
-            mpd_run_random(connection, value)
-        }
-    }
-
-    func runRepeat(_ value: Bool) {
-        try! run { connection in
-            mpd_run_repeat(connection, value)
-        }
-    }
-
-    func runFavorite(for song: Song, _ value: Bool) {
-        try! run { connection in
-            mpd_run_sticker_set(connection, "song", song.uri.path, "favorite", value ? "1" : "0")
-        }
-    }
-
     func runIdleMask(mask: mpd_idle) -> mpd_idle {
         guard let connection else {
             return mpd_idle(0)
         }
+
         return mpd_run_idle_mask(connection, mask)
     }
 
     func getStatusData() throws -> (isPlaying: Bool?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?) {
-        guard idle else {
-            throw ConnectionManagerError.idleStateError
-        }
-
         guard let connection, let recv = mpd_run_status(connection) else {
             return (nil, nil, nil, nil)
         }
@@ -136,11 +114,126 @@ actor ConnectionManager {
         return (isPlaying, isRandom, isRepeat, elapsed)
     }
 
-    func getAlbums() throws -> [Album] {
-        guard !idle else {
-            throw ConnectionManagerError.idleStateError
+    func getCurrentSong() throws -> Song? {
+        guard let connection, let recv = mpd_run_current_song(connection) else {
+            return nil
+        }
+        defer { mpd_song_free(recv) }
+
+        let song = getSong(recv: recv)
+
+        return song
+    }
+
+    func getPlaylists() throws -> [Playlist] {
+        guard let connection, mpd_send_list_playlists(connection) else {
+            return []
         }
 
+        var playlists = [Playlist]()
+        var index = UInt32(0)
+        while let recv = mpd_recv_playlist(connection) {
+            defer { mpd_playlist_free(recv) }
+
+            index += 1
+
+            playlists.append(Playlist(
+                id: index,
+                name: String(cString: mpd_playlist_get_path(recv))
+            ))
+        }
+
+        return playlists
+    }
+}
+
+actor CommandManager: ConnectionManager {
+    static let shared = CommandManager()
+
+    @AppStorage(Setting.host) var host = "localhost"
+    @AppStorage(Setting.port) var port = 6600
+
+    private var connection: OpaquePointer?
+    private(set) var isConnected = false
+
+    private init() {}
+    
+    func connect() throws {
+        disconnect()
+
+        connection = mpd_connection_new(host, UInt32(port), 0)
+        guard mpd_connection_get_error(connection) == MPD_ERROR_SUCCESS else {
+            throw ConnectionManagerError.connectionError
+        }
+
+        isConnected = true
+    }
+
+    func disconnect() {
+        guard let connection else {
+            return
+        }
+
+        mpd_connection_free(connection)
+        self.connection = nil
+
+        isConnected = false
+    }
+
+    private func run(_ action: (OpaquePointer) -> Void) async throws {
+        try connect()
+        defer { disconnect() }
+
+        guard let connection else {
+            throw ConnectionManagerError.connectionError
+        }
+
+        action(connection)
+    }
+
+    func play(_ media: any Mediable) async {
+        try? await run { _ in
+            mpd_run_play_id(connection, media.id)
+        }
+    }
+
+    func pause(_ value: Bool) async {
+        try? await run { connection in
+            mpd_run_pause(connection, value)
+        }
+    }
+
+    func previous() async {
+        try? await run { connection in
+            mpd_run_previous(connection)
+        }
+    }
+
+    func next() async {
+        try? await run { connection in
+            mpd_run_next(connection)
+        }
+    }
+
+    func seek(_ value: Double) async {
+        try? await run { connection in
+            mpd_run_seek_current(connection, Float(value), false)
+        }
+    }
+
+    func random(_ value: Bool) async {
+        try? await run { connection in
+            mpd_run_random(connection, value)
+        }
+    }
+
+    func `repeat`(_ value: Bool) async {
+        try? await run { connection in
+            mpd_run_repeat(connection, value)
+        }
+    }
+
+    func getAlbums() async throws -> [Album] {
         try connect()
         defer { disconnect() }
 
@@ -187,67 +280,7 @@ actor ConnectionManager {
         return albums
     }
 
-    func getSong(recv: OpaquePointer?) -> Song? {
-        guard recv != nil else {
-            return nil
-        }
-
-        let id = mpd_song_get_id(recv)
-        let uri = String(cString: mpd_song_get_uri(recv))
-
-        var artist: String?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_ARTIST, 0) {
-            artist = String(cString: tag)
-        }
-
-        var title: String?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_TITLE, 0) {
-            title = String(cString: tag)
-        }
-
-        var track: Int?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_TRACK, 0) {
-            track = Int(String(cString: tag))
-        }
-
-        var disc: Int?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_DISC, 0) {
-            disc = Int(String(cString: tag))
-        }
-
-        let duration = Double(mpd_song_get_duration(recv))
-
-        return Song(
-            id: id,
-            uri: URL(string: uri)!,
-            artist: artist ?? "Unknown Artist",
-            title: title ?? "Unknown Title",
-            duration: duration,
-            disc: disc ?? 1,
-            track: track ?? 1
-        )
-    }
-
-    func getCurrentSong() throws -> Song? {
-        guard idle else {
-            throw ConnectionManagerError.idleStateError
-        }
-
-        guard let connection, let recv = mpd_run_current_song(connection) else {
-            return nil
-        }
-        defer { mpd_song_free(recv) }
-
-        let song = getSong(recv: recv)
-
-        return song
-    }
-
-    func getSongs(for album: Album? = nil) throws -> [Song] {
-        guard !idle else {
-            throw ConnectionManagerError.idleStateError
-        }
-
+    func getSongs(for album: Album? = nil) async throws -> [Song] {
         try connect()
         defer { disconnect() }
 
@@ -275,50 +308,7 @@ actor ConnectionManager {
         return songs
     }
 
-    func getPlaylists() throws -> [Playlist] {
-        guard !idle else {
-            throw ConnectionManagerError.idleStateError
-        }
-
-        try connect()
-        defer { disconnect() }
-
-        guard let connection, mpd_send_list_playlists(connection) else {
-            return []
-        }
-
-        var playlists = [Playlist]()
-        var index = UInt32(0)
-        while let recv = mpd_recv_playlist(connection) {
-            defer { mpd_playlist_free(recv) }
-
-            index += 1
-
-            playlists.append(Playlist(
-                id: index,
-                name: String(cString: mpd_playlist_get_path(recv))
-            ))
-        }
-
-        return playlists
-    }
-
-    func createPlaylist(_ name: String) throws {
-        guard !idle else {
-            throw ConnectionManagerError.idleStateError
-        }
-
-        try connect()
-        defer { disconnect() }
-
-        mpd_run_save(connection, name)
-    }
-
     func getElapsedData() throws -> Double? {
-        guard !idle else {
-            throw ConnectionManagerError.idleStateError
-        }
-
         try connect()
         defer { disconnect() }
 
@@ -330,11 +320,7 @@ actor ConnectionManager {
         return Double(mpd_status_get_elapsed_time(recv))
     }
 
-    func getArtwork(for uri: URL, embedded: Bool = true) throws -> NSImage? {
-        guard !idle else {
-            throw ConnectionManagerError.idleStateError
-        }
-
+    func getArtwork(for uri: URL, embedded: Bool = true) async throws -> NSImage? {
         var data = Data()
         var offset: UInt32 = 0
         let bufferSize = 512 * 512
@@ -360,5 +346,21 @@ actor ConnectionManager {
         }
 
         return NSImage(data: data)
+    }
+
+    func createPlaylist(named name: String) throws {
+        try connect()
+        defer { disconnect() }
+
+        mpd_run_save(connection, name)
+    }
+
+    func addToPlaylist(_ songs: [Song], playlist: Playlist) throws {
+        try connect()
+        defer { disconnect() }
+
+        for song in songs {
+            mpd_run_playlist_add(connection, playlist.name, song.uri.path)
+        }
     }
 }

@@ -9,17 +9,8 @@ import libmpdclient
 import SwiftUI
 
 @Observable final class Queue {
-    private let idleManager: ConnectionManager
-    private let commandManager: ConnectionManager
-
     var media: [any Mediable] = []
     var search: [any Mediable]?
-
-    @MainActor
-    init(idleManager: ConnectionManager, commandManager: ConnectionManager) {
-        self.idleManager = idleManager
-        self.commandManager = commandManager
-    }
 
     // TODO: This gets called twice on startup?
     @MainActor
@@ -32,7 +23,7 @@ import SwiftUI
                 return
             }
 
-            let albums = try! await commandManager.getAlbums()
+            let albums = try! await CommandManager.shared.getAlbums()
             let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
 
             media = albumsByArtist.map { artist, albums in
@@ -48,13 +39,13 @@ import SwiftUI
                 return
             }
 
-            media = try! await commandManager.getSongs()
+            media = try! await CommandManager.shared.getSongs()
         default:
             guard media.isEmpty || !(media is [Album]) else {
                 return
             }
 
-            media = try! await commandManager.getAlbums()
+            media = try! await CommandManager.shared.getAlbums()
         }
     }
 

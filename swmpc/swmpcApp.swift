@@ -28,10 +28,11 @@ struct swmpcApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) static var shared: AppDelegate!
 
-    public var player = Player()
+    let player = Player()
 
     private lazy var popoverAnchor = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+
     let popover = NSPopover()
 
     private var changeImageWorkItem: DispatchWorkItem?
@@ -181,7 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch event.type {
         case .rightMouseDown:
             Task(priority: .userInitiated) { @MainActor in
-                await player.pause(player.status.isPlaying ?? false)
+                await CommandManager.shared.pause(player.status.isPlaying ?? false)
             }
         default:
             togglePopover(sender)
@@ -192,19 +193,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch sender.title {
         case "Play":
             Task(priority: .userInitiated) { @MainActor in
-                await player.pause(false)
+                await CommandManager.shared.pause(false)
             }
         case "Pause":
             Task(priority: .userInitiated) { @MainActor in
-                await player.pause(true)
+                await CommandManager.shared.pause(true)
             }
         case "Next song":
             Task(priority: .userInitiated) { @MainActor in
-                await player.next()
+                await CommandManager.shared.next()
             }
         case "Previous song":
             Task(priority: .userInitiated) { @MainActor in
-                await player.previous()
+                await CommandManager.shared.previous()
             }
         default:
             break

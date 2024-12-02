@@ -8,9 +8,6 @@
 import SwiftUI
 
 @Observable final class Status {
-    private let idleManager: ConnectionManager
-    private let commandManager: ConnectionManager
-
     var isPlaying: Bool?
     var isRandom: Bool?
     var isRepeat: Bool?
@@ -31,14 +28,9 @@ import SwiftUI
     private var trackingTask: Task<Void, Never>?
     private var startTime: Date?
 
-    init(idleManager: ConnectionManager, commandManager: ConnectionManager) {
-        self.idleManager = idleManager
-        self.commandManager = commandManager
-    }
-
     @MainActor
     func set() async {
-        let data = try! await idleManager.getStatusData()
+        let data = try! await IdleManager.shared.getStatusData()
 
         if trackElapsed {
             if elapsed.update(to: data.elapsed ?? 0), data.isPlaying ?? false {

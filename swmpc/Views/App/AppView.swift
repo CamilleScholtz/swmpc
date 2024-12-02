@@ -27,6 +27,10 @@ struct AppView: View {
     @State private var path = NavigationPath()
     @State private var search = ""
 
+    @State private var editingPlaylist = false
+    @State private var playlistName = ""
+    @FocusState private var playlistFocus: Bool
+
     var body: some View {
         NavigationSplitView {
             List(selection: $selected) {
@@ -44,10 +48,28 @@ struct AppView: View {
                 Section("Playlists") {
                     ForEach(player.playlists ?? []) { playlist in
                         Label(playlist.name, systemImage: "music.note.list")
+                            .tag(playlist)
                     }
-                }
-                .contextMenu {
-                    Button("New Playlist") {}
+
+                    if editingPlaylist {
+                        TextField("Untitled Playlist", text: $playlistName)
+                            .focused($playlistFocus)
+                            .onSubmit {
+                                Task {
+                                    try? await CommandManager.shared.createPlaylist(named: playlistName)
+
+                                    editingPlaylist = false
+                                    playlistName = ""
+                                    playlistFocus = false
+                                }
+                            }
+                    }
+
+                    Label("New Playlist", systemImage: "plus")
+                        .onTapGesture(perform: {
+                            editingPlaylist = true
+                            playlistFocus = true
+                        })
                 }
             }
             .toolbar(removing: .sidebarToggle)

@@ -24,11 +24,11 @@ extension NSImage: @unchecked @retroactive Sendable {}
     }
 
     @MainActor
-    func set(using commandManager: ConnectionManager) async {
+    func set() async {
         guard let uri else {
             return
         }
 
-        image = try? await commandManager.getArtwork(for: uri)
+        image = try? await CommandManager.shared.getArtwork(for: uri)
     }
 }
