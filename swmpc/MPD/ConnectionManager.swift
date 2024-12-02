@@ -47,7 +47,7 @@ extension ConnectionManager {
         isolation.isConnected = false
     }
 
-    func getSong(isolation _: isolated ConnectionManager = #isolation, recv: OpaquePointer?) async -> Song? {
+    func getSong(isolation _: isolated ConnectionManager = #isolation, recv: OpaquePointer?) -> Song? {
         guard recv != nil else {
             return nil
         }
@@ -108,7 +108,7 @@ actor IdleManager: ConnectionManager {
         return mpd_run_idle_mask(connection, mask)
     }
 
-    func getStatusData() async throws -> (isPlaying: Bool?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?) {
+    func getStatusData() throws -> (isPlaying: Bool?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?) {
         guard let connection, let recv = mpd_run_status(connection) else {
             return (nil, nil, nil, nil)
         }
@@ -122,13 +122,13 @@ actor IdleManager: ConnectionManager {
         return (isPlaying, isRandom, isRepeat, elapsed)
     }
 
-    func getCurrentSong() async throws -> Song? {
+    func getCurrentSong() throws -> Song? {
         guard let connection, let recv = mpd_run_current_song(connection) else {
             return nil
         }
         defer { mpd_song_free(recv) }
 
-        let song = await getSong(recv: recv)
+        let song = getSong(recv: recv)
 
         return song
     }
@@ -166,7 +166,7 @@ actor CommandManager: ConnectionManager {
 
     private init() {}
 
-    private func run(_ action: (OpaquePointer) -> Void) async throws {
+    private func run(_ action: (OpaquePointer) -> Void) throws {
         try connect()
         defer { disconnect() }
 
@@ -177,44 +177,44 @@ actor CommandManager: ConnectionManager {
         action(connection)
     }
 
-    func play(_ media: any Mediable) async {
-        try? await run { _ in
+    func play(_ media: any Mediable) {
+        try? run { _ in
             mpd_run_play_id(connection, media.id)
         }
     }
 
-    func pause(_ value: Bool) async {
-        try? await run { connection in
+    func pause(_ value: Bool) {
+        try? run { connection in
             mpd_run_pause(connection, value)
         }
     }
 
-    func previous() async {
-        try? await run { connection in
+    func previous() {
+        try? run { connection in
             mpd_run_previous(connection)
         }
     }
 
-    func next() async {
-        try? await run { connection in
+    func next() {
+        try? run { connection in
             mpd_run_next(connection)
         }
     }
 
-    func seek(_ value: Double) async {
-        try? await run { connection in
+    func seek(_ value: Double) {
+        try? run { connection in
             mpd_run_seek_current(connection, Float(value), false)
         }
     }
 
-    func random(_ value: Bool) async {
-        try? await run { connection in
+    func random(_ value: Bool) {
+        try? run { connection in
             mpd_run_random(connection, value)
         }
     }
 
-    func `repeat`(_ value: Bool) async {
-        try? await run { connection in
+    func `repeat`(_ value: Bool) {
+        try? run { connection in
             mpd_run_repeat(connection, value)
         }
     }
@@ -223,8 +223,6 @@ actor CommandManager: ConnectionManager {
         try connect()
         defer { disconnect() }
 
-        var albums = [Album]()
-
         guard mpd_search_queue_songs(connection, true),
               mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_TRACK, "1"),
               mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_DISC, "1"),
@@ -232,38 +230,49 @@ actor CommandManager: ConnectionManager {
         else {
             return []
         }
-
+        
+        var tasks = [Task<Album?, Never>]()
+        var albums = [Album]()
+        
         while let recv = mpd_recv_song(connection) {
-            let song = await getSong(recv: recv)
-            guard let song else {
-                continue
-            }
-
-            var artist: String?
-            if let tag = mpd_song_get_tag(recv, MPD_TAG_ALBUM_ARTIST, 0) {
-                artist = String(cString: tag)
-            }
-
-            var title: String?
-            if let tag = mpd_song_get_tag(recv, MPD_TAG_ALBUM, 0) {
-                title = String(cString: tag)
-            }
-
-            var date: String?
-            if let tag = mpd_song_get_tag(recv, MPD_TAG_DATE, 0) {
-                date = String(cString: tag)
-            }
-
-            albums.append(Album(
-                id: song.id,
-                uri: song.uri,
-                artist: artist ?? "Unknown Artist",
-                title: title ?? "Unknown Title",
-                date: date ?? "1970"
-            ))
+            tasks.append(Task {
+                let song = getSong(recv: recv)
+                guard let song else {
+                    return nil
+                }
+                
+                var artist: String?
+                if let tag = mpd_song_get_tag(recv, MPD_TAG_ALBUM_ARTIST, 0) {
+                    artist = String(cString: tag)
+                }
+                
+                var title: String?
+                if let tag = mpd_song_get_tag(recv, MPD_TAG_ALBUM, 0) {
+                    title = String(cString: tag)
+                }
+                
+                var date: String?
+                if let tag = mpd_song_get_tag(recv, MPD_TAG_DATE, 0) {
+                    date = String(cString: tag)
+                }
+                
+                return Album(
+                    id: song.id,
+                    uri: song.uri,
+                    artist: artist ?? "Unknown Artist",
+                    title: title ?? "Unknown Title",
+                    date: date ?? "1970"
+                )
+            })
         }
 
-        return albums
+         for task in tasks {
+             if let album = await task.value {
+                 albums.append(album)
+             }
+         }
+
+         return albums
     }
 
     func getSongs(for album: Album? = nil) async throws -> [Song] {
@@ -281,20 +290,25 @@ actor CommandManager: ConnectionManager {
             mpd_send_list_queue_meta(connection)
         }
 
+        var tasks = [Task<Song?, Never>]()
         var songs = [Song]()
+        
         while let recv = mpd_recv_song(connection) {
-            let song = await getSong(recv: recv)
-            guard let song else {
-                continue
-            }
-
-            songs.append(song)
+            tasks.append(Task {
+                return getSong(recv: recv)
+            })
         }
 
+        for task in tasks {
+            if let song = await task.value {
+                songs.append(song)
+            }
+        }
+        
         return songs
     }
 
-    func getElapsedData() async throws -> Double? {
+    func getElapsedData() throws -> Double? {
         try connect()
         defer { disconnect() }
 
@@ -306,7 +320,7 @@ actor CommandManager: ConnectionManager {
         return Double(mpd_status_get_elapsed_time(recv))
     }
 
-    func getArtwork(for uri: URL, embedded: Bool = true) async throws -> NSImage? {
+    func getArtwork(for uri: URL, embedded: Bool = true) throws -> NSImage? {
         var data = Data()
         var offset: UInt32 = 0
         let bufferSize = 512 * 512
@@ -334,14 +348,14 @@ actor CommandManager: ConnectionManager {
         return NSImage(data: data)
     }
 
-    func createPlaylist(named name: String) async throws {
+    func createPlaylist(named name: String) throws {
         try connect()
         defer { disconnect() }
 
         mpd_run_save(connection, name)
     }
 
-    func addToPlaylist(_ songs: [Song], playlist: Playlist) async throws {
+    func addToPlaylist(_ songs: [Song], playlist: Playlist) throws {
         try connect()
         defer { disconnect() }
 
