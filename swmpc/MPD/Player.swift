@@ -37,7 +37,7 @@ import SwiftUI
     private func updateLoop() async {
         while await !IdleManager.shared.isConnected {
             do {
-                try await IdleManager.shared.connect()
+                try await IdleManager.shared.connect(isolation: IdleManager.shared, idle: true)
             } catch {
                 try? await Task.sleep(for: .seconds(5))
             }
@@ -52,7 +52,7 @@ import SwiftUI
         while !Task.isCancelled {
             if await !IdleManager.shared.isConnected {
                 do {
-                    try await IdleManager.shared.connect()
+                    try await IdleManager.shared.connect(isolation: IdleManager.shared, idle: true)
                 } catch {
                     try? await Task.sleep(for: .seconds(5))
                     continue
@@ -74,8 +74,7 @@ import SwiftUI
     @MainActor
     private func performUpdates(for idleResult: mpd_idle) async {
         guard idleResult != mpd_idle(0) else {
-            await IdleManager.shared.disconnect()
-            return
+            return await IdleManager.shared.disconnect(isolation: IdleManager.shared)
         }
 
         if (idleResult.rawValue & MPD_IDLE_PLAYER.rawValue) != 0 ||

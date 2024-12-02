@@ -13,7 +13,7 @@ protocol Mediable: Identifiable, Hashable, Sendable {
 
 protocol Artworkable {
     var uri: URL { get }
-    //var artwork: NSImage? { get }
+    // var artwork: NSImage? { get }
 }
 
 struct Artist: Mediable {
@@ -54,7 +54,7 @@ struct Album: Mediable, Artworkable {
         songs?.values.reduce(0) { $0 + $1.count }
     }
 
-    //lazy var artwork: NSImage? = try? CommandManager.shared.getArtwork(for: uri)
+    // lazy var artwork: NSImage? = try? CommandManager.shared.getArtwork(for: uri)
 
     mutating func set(songs: [Song]) {
         self.songs = Dictionary(grouping: songs, by: { $0.disc })

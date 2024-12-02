@@ -12,10 +12,42 @@ enum ConnectionManagerError: Error {
     case connectionError
 }
 
-protocol ConnectionManager {}
+protocol ConnectionManager: Actor {
+    var host: String { get }
+    var port: Int { get }
+
+    var connection: OpaquePointer? { get set }
+    var isConnected: Bool { get set }
+}
 
 extension ConnectionManager {
-    func getSong(recv: OpaquePointer?) -> Song? {
+    func connect(isolation: isolated ConnectionManager = #isolation, idle: Bool = false) throws {
+        disconnect()
+
+        isolation.connection = mpd_connection_new(isolation.host, UInt32(isolation.port), 0)
+        guard mpd_connection_get_error(isolation.connection) == MPD_ERROR_SUCCESS else {
+            throw ConnectionManagerError.connectionError
+        }
+
+        if idle {
+            mpd_connection_set_keepalive(isolation.connection, true)
+        }
+
+        isolation.isConnected = true
+    }
+
+    func disconnect(isolation: isolated ConnectionManager = #isolation) {
+        guard isolation.connection != nil else {
+            return
+        }
+
+        mpd_connection_free(isolation.connection)
+        isolation.connection = nil
+
+        isolation.isConnected = false
+    }
+
+    func getSong(isolation _: isolated ConnectionManager = #isolation, recv: OpaquePointer?) async -> Song? {
         guard recv != nil else {
             return nil
         }
@@ -63,34 +95,10 @@ actor IdleManager: ConnectionManager {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
 
-    private var connection: OpaquePointer?
-    private(set) var isConnected = false
+    var connection: OpaquePointer?
+    var isConnected = false
 
     private init() {}
-
-    func connect() throws {
-        disconnect()
-
-        connection = mpd_connection_new(host, UInt32(port), 0)
-        guard mpd_connection_get_error(connection) == MPD_ERROR_SUCCESS else {
-            throw ConnectionManagerError.connectionError
-        }
-
-        mpd_connection_set_keepalive(connection, true)
-
-        isConnected = true
-    }
-
-    func disconnect() {
-        guard let connection else {
-            return
-        }
-
-        mpd_connection_free(connection)
-        self.connection = nil
-
-        isConnected = false
-    }
 
     func runIdleMask(mask: mpd_idle) -> mpd_idle {
         guard let connection else {
@@ -100,7 +108,7 @@ actor IdleManager: ConnectionManager {
         return mpd_run_idle_mask(connection, mask)
     }
 
-    func getStatusData() throws -> (isPlaying: Bool?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?) {
+    func getStatusData() async throws -> (isPlaying: Bool?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?) {
         guard let connection, let recv = mpd_run_status(connection) else {
             return (nil, nil, nil, nil)
         }
@@ -114,18 +122,18 @@ actor IdleManager: ConnectionManager {
         return (isPlaying, isRandom, isRepeat, elapsed)
     }
 
-    func getCurrentSong() throws -> Song? {
+    func getCurrentSong() async throws -> Song? {
         guard let connection, let recv = mpd_run_current_song(connection) else {
             return nil
         }
         defer { mpd_song_free(recv) }
 
-        let song = getSong(recv: recv)
+        let song = await getSong(recv: recv)
 
         return song
     }
 
-    func getPlaylists() throws -> [Playlist] {
+    func getPlaylists() async throws -> [Playlist] {
         guard let connection, mpd_send_list_playlists(connection) else {
             return []
         }
@@ -153,32 +161,10 @@ actor CommandManager: ConnectionManager {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
 
-    private var connection: OpaquePointer?
-    private(set) var isConnected = false
+    var connection: OpaquePointer?
+    var isConnected = false
 
     private init() {}
-    
-    func connect() throws {
-        disconnect()
-
-        connection = mpd_connection_new(host, UInt32(port), 0)
-        guard mpd_connection_get_error(connection) == MPD_ERROR_SUCCESS else {
-            throw ConnectionManagerError.connectionError
-        }
-
-        isConnected = true
-    }
-
-    func disconnect() {
-        guard let connection else {
-            return
-        }
-
-        mpd_connection_free(connection)
-        self.connection = nil
-
-        isConnected = false
-    }
 
     private func run(_ action: (OpaquePointer) -> Void) async throws {
         try connect()
@@ -248,7 +234,7 @@ actor CommandManager: ConnectionManager {
         }
 
         while let recv = mpd_recv_song(connection) {
-            let song = getSong(recv: recv)
+            let song = await getSong(recv: recv)
             guard let song else {
                 continue
             }
@@ -297,7 +283,7 @@ actor CommandManager: ConnectionManager {
 
         var songs = [Song]()
         while let recv = mpd_recv_song(connection) {
-            let song = getSong(recv: recv)
+            let song = await getSong(recv: recv)
             guard let song else {
                 continue
             }
@@ -308,7 +294,7 @@ actor CommandManager: ConnectionManager {
         return songs
     }
 
-    func getElapsedData() throws -> Double? {
+    func getElapsedData() async throws -> Double? {
         try connect()
         defer { disconnect() }
 
@@ -348,14 +334,14 @@ actor CommandManager: ConnectionManager {
         return NSImage(data: data)
     }
 
-    func createPlaylist(named name: String) throws {
+    func createPlaylist(named name: String) async throws {
         try connect()
         defer { disconnect() }
 
         mpd_run_save(connection, name)
     }
 
-    func addToPlaylist(_ songs: [Song], playlist: Playlist) throws {
+    func addToPlaylist(_ songs: [Song], playlist: Playlist) async throws {
         try connect()
         defer { disconnect() }
 

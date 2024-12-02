@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import AsyncAlgorithms
 import SwiftUI
 
 @Observable final class Status {
@@ -16,9 +17,7 @@ import SwiftUI
     @ObservationIgnored @MainActor var trackElapsed: Bool = false {
         didSet {
             if trackElapsed {
-                Task {
-                    await self.startTrackingElapsed()
-                }
+                startTrackingElapsed()
             } else {
                 stopTrackingElapsed()
             }
@@ -30,12 +29,14 @@ import SwiftUI
 
     @MainActor
     func set() async {
-        let data = try! await IdleManager.shared.getStatusData()
+        guard let data = try? await IdleManager.shared.getStatusData() else {
+            return
+        }
 
         if trackElapsed {
             if elapsed.update(to: data.elapsed ?? 0), data.isPlaying ?? false {
                 stopTrackingElapsed()
-                await startTrackingElapsed()
+                startTrackingElapsed()
             }
         }
 
@@ -43,7 +44,7 @@ import SwiftUI
             AppDelegate.shared.setPopoverAnchorImage(changed: data.isPlaying ?? false ? "play" : "pause")
 
             if trackElapsed {
-                data.isPlaying ?? false ? await startTrackingElapsed() : stopTrackingElapsed()
+                data.isPlaying ?? false ? startTrackingElapsed() : stopTrackingElapsed()
             }
         }
         if isRandom.update(to: data.isRandom ?? false) {
@@ -55,7 +56,7 @@ import SwiftUI
     }
 
     @MainActor
-    private func startTrackingElapsed() async {
+    private func startTrackingElapsed() {
         if let trackingTask, !trackingTask.isCancelled {
             return
         }
@@ -67,17 +68,20 @@ import SwiftUI
                 return
             }
 
-            while !Task.isCancelled, trackElapsed {
-                try? await Task.sleep(for: .seconds(0.75), tolerance: .seconds(0.25))
+            let timer = AsyncTimerSequence(interval: .seconds(1), tolerance: .seconds(0.1), clock: .suspending)
+            for await _ in timer {
+                guard trackElapsed else {
+                    break
+                }
 
-                let currentTime = Date()
                 if let startTime {
-                    elapsed = currentTime.timeIntervalSince(startTime)
+                    elapsed = Date().timeIntervalSince(startTime)
                 }
             }
         }
     }
 
+    @MainActor
     private func stopTrackingElapsed() {
         trackingTask?.cancel()
 
