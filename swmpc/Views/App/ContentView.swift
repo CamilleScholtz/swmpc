@@ -5,19 +5,12 @@
 //  Created by Camille Scholtz on 14/11/2024.
 //
 
-import Combine
 import SwiftUI
 
 struct ContentView: View {
     @Environment(Player.self) private var player
 
-    @Binding var type: MediaType
     @Binding var path: NavigationPath
-
-    init(for type: Binding<MediaType>, path: Binding<NavigationPath>) {
-        _type = type
-        _path = path
-    }
 
     @State private var showSearch: Bool = false
     @State private var hover = false
@@ -26,11 +19,11 @@ struct ContentView: View {
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    HeaderView(for: type, showSearch: $showSearch)
+                    HeaderView(showSearch: $showSearch)
                         .id("top")
 
                     LazyVStack(alignment: .leading, spacing: 15) {
-                        switch type {
+                        switch player.queue.type {
                         case .artist:
                             ArtistsView(path: $path)
                         case .song, .playlist:
@@ -39,31 +32,35 @@ struct ContentView: View {
                             AlbumsView(path: $path)
                         }
                     }
-                    .id(type)
+                    .id(player.queue.type)
                     .offset(y: -7.5)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
                 .ignoresSafeArea(.all)
-                .task(id: type) {
-                    // TODO: This is called twice on initialization.
-                    await player.queue.set(for: type)
-                    // TODO: Sometimes doesn't work?
-                    scrollToCurrent(proxy, using: type, animate: false)
-
-                    guard type != .song, let song = player.currentSong else {
+                .task(id: player.queue.type) {
+                    guard !Task.isCancelled else {
+                        print("cancelled")
                         return
                     }
 
-                    player.currentMedia = await player.queue.get(type: type, using: song)
-                }
-                .task(id: player.currentSong) {
-                    guard type != .song, let song = player.currentSong else {
+                    guard let song = player.currentSong else {
                         return
                     }
 
-                    player.currentMedia = await player.queue.get(type: type, using: song)
+                    player.currentMedia = await player.queue.get(using: song)
                 }
+//                .task(id: player.currentSong) {
+//                    guard !Task.isCancelled else {
+//                        return
+//                    }
+//
+//                    guard type != .song, let song = player.currentSong else {
+//                        return
+//                    }
+//
+//                    player.currentMedia = await player.queue.get(type: type, using: song)
+//                }
                 .onAppear {
                     NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
                         if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "f" {
@@ -203,12 +200,15 @@ struct ContentView: View {
         @Binding var path: NavigationPath
 
         @State private var album: Album
+        @State private var artwork: NSImage?
+        @State private var songs: [Int: [Song]]?
+
         @State private var hover = false
 
         var body: some View {
             VStack(alignment: .leading, spacing: 15) {
                 HStack(spacing: 15) {
-                    if let artwork = player.getArtwork(for: album)?.image {
+                    if let artwork {
                         ZStack(alignment: .bottom) {
                             ArtworkView(image: artwork)
                                 .frame(width: 80)
@@ -281,7 +281,8 @@ struct ContentView: View {
                             .lineLimit(2)
                             .onTapGesture(perform: {
                                 Task(priority: .userInitiated) {
-                                    guard let media = await player.queue.get(type: .artist, using: album) else {
+                                    // TODO: Set the type here first
+                                    guard let media = await player.queue.get(using: album) else {
                                         return
                                     }
 
@@ -289,16 +290,20 @@ struct ContentView: View {
                                 }
                             })
 
-                        Text((album.tracks ?? 0 > 1 ? "\(String(album.tracks!)) songs" : "1 song")
-                            + " • "
-                            + (album.duration?.humanTimeString ?? "0m"))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        if let songs {
+                            let flat = songs.values.flatMap(\.self)
+
+                            Text((flat.count > 1 ? "\(String(flat.count)) songs" : "1 song")
+                                + " • "
+                                + (flat.reduce(0) { $0 + $1.duration }.humanTimeString))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 .padding(.bottom, 15)
 
-                if let songs = album.songs {
+                if let songs {
                     ForEach(songs.keys.sorted(), id: \.self) { disc in
                         VStack(alignment: .leading, spacing: 15) {
                             if songs.keys.count > 1 {
@@ -306,6 +311,7 @@ struct ContentView: View {
                                     .font(.headline)
                                     .padding(.top, disc == songs.keys.sorted().first ? 0 : 10)
                             }
+
                             ForEach(songs[disc] ?? []) { song in
                                 SongView(for: song)
                             }
@@ -314,8 +320,11 @@ struct ContentView: View {
                 }
             }
             .task {
-                await album.set(songs: try! CommandManager.shared.getSongs(for: album))
-                await player.setArtwork(for: album)
+                async let artworkDataTask = CommandManager.shared.getArtworkData(for: album.uri)
+                async let songsTask = CommandManager.shared.getSongs(for: album)
+
+                artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
+                songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
         }
     }
@@ -337,13 +346,6 @@ struct ContentView: View {
     struct HeaderView: View {
         @Environment(Player.self) private var player
 
-        private var type: MediaType
-
-        init(for type: MediaType, showSearch: Binding<Bool>) {
-            self.type = type
-            _showSearch = showSearch
-        }
-
         @Binding var showSearch: Bool
 
         @State private var hover = false
@@ -354,7 +356,7 @@ struct ContentView: View {
         var body: some View {
             HStack {
                 if !showSearch {
-                    Text(type.rawValue)
+                    Text(player.queue.label)
                         .font(.headline)
 
                     Spacer()
@@ -380,16 +382,16 @@ struct ContentView: View {
                         .cornerRadius(4)
                         .disableAutocorrection(true)
                         .focused($focused)
-                        .onSubmit {
-                            guard !query.isEmpty else {
-                                player.queue.search = nil
-                                return
-                            }
-
-                            Task(priority: .userInitiated) {
-                                await player.queue.setSearch(for: query, using: type)
-                            }
-                        }
+//                        .onSubmit {
+//                            guard !query.isEmpty else {
+//                                player.queue.search = nil
+//                                return
+//                            }
+//
+//                            Task(priority: .userInitiated) {
+//                                await player.queue.setSearch(for: query, using: type)
+//                            }
+//                        }
                         .onAppear {
                             query = ""
                             focused = true
@@ -416,9 +418,9 @@ struct ContentView: View {
             }
             .frame(height: 50)
             .padding(.horizontal, 15)
-            .onChange(of: type) {
-                showSearch = false
-            }
+//            .onChange(of: queue.type) {
+//                showSearch = false
+//            }
         }
     }
 
@@ -469,9 +471,11 @@ struct ContentView: View {
 
         @Binding var path: NavigationPath
 
+        @State private var artwork: NSImage?
+
         var body: some View {
             HStack(spacing: 15) {
-                ArtworkView(image: player.getArtwork(for: album)?.image)
+                ArtworkView(image: artwork)
                     .cornerRadius(5)
                     .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                     .frame(width: 60)
@@ -497,7 +501,7 @@ struct ContentView: View {
                     return
                 }
 
-                await player.setArtwork(for: album)
+                artwork = await NSImage(data: try! CommandManager.shared.getArtworkData(for: album.uri))
             }
             .contentShape(Rectangle())
             .onTapGesture(perform: {
@@ -570,7 +574,7 @@ struct ContentView: View {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    try? await CommandManager.shared.addToPlaylist([song], playlist: playlist)
+                                    try? await CommandManager.shared.addToPlaylist(playlist, songs: [song])
                                 }
                             }
                         }
@@ -644,17 +648,17 @@ struct ContentView: View {
         }
     }
 
-    private func scrollToCurrent(_ proxy: ScrollViewProxy, using _: MediaType, animate: Bool = true) {
-        guard let song = player.currentSong else {
+    private func scrollToCurrent(_ proxy: ScrollViewProxy, animate: Bool = true) {
+        guard let media = player.currentMedia else {
             return
         }
 
         if animate {
             withAnimation {
-                proxy.scrollTo(song, anchor: .center)
+                proxy.scrollTo(media, anchor: .center)
             }
         } else {
-            proxy.scrollTo(song, anchor: .center)
+            proxy.scrollTo(media, anchor: .center)
         }
     }
 

@@ -10,25 +10,13 @@ import SwiftUI
 struct AppView: View {
     @Environment(Player.self) private var player
 
-    struct Category: Identifiable, Hashable {
-        let id = UUID()
-
-        let type: MediaType
-        let image: String
-    }
-
-    private let categories: [Category] = [
-        .init(type: MediaType.album, image: "square.stack"),
-        .init(type: MediaType.artist, image: "music.microphone"),
-        .init(type: MediaType.song, image: "music.note"),
-    ]
-
     @State private var selected = MediaType.album
+    @State private var playlist: Playlist?
     @State private var path = NavigationPath()
-    @State private var search = ""
 
     @State private var editingPlaylist = false
     @State private var playlistName = ""
+
     @FocusState private var playlistFocus: Bool
 
     var body: some View {
@@ -40,15 +28,18 @@ struct AppView: View {
                     .fontDesign(.rounded)
                     .padding(.bottom, 15)
 
-                ForEach(categories) { category in
-                    Label(category.type.rawValue, systemImage: category.image)
-                        .tag(category.type)
+                ForEach(player.queue.categories.filter(\.list)) { category in
+                    Label(category.label, systemImage: category.image)
+                        .tag(category.id)
                 }
 
                 Section("Playlists") {
                     ForEach(player.playlists ?? []) { playlist in
                         Label(playlist.name, systemImage: "music.note.list")
-                            .tag(playlist)
+                            .onTapGesture {
+                                self.playlist = playlist
+                                selected = .playlist
+                            }
                     }
 
                     if editingPlaylist {
@@ -74,8 +65,15 @@ struct AppView: View {
             }
             .toolbar(removing: .sidebarToggle)
             .navigationSplitViewColumnWidth(180)
+            .task(id: selected) {
+                guard selected != .playlist else {
+                    return await player.queue.set(for: selected, using: playlist)
+                }
+
+                await player.queue.set(for: selected)
+            }
         } content: {
-            ContentView(for: $selected, path: $path)
+            ContentView(path: $path)
                 .navigationBarBackButtonHidden()
                 .navigationSplitViewColumnWidth(310)
         } detail: {

@@ -13,52 +13,24 @@ protocol Mediable: Identifiable, Hashable, Sendable {
 
 protocol Artworkable {
     var uri: URL { get }
-    // var artwork: NSImage? { get }
 }
 
 struct Artist: Mediable {
-    static func == (lhs: Artist, rhs: Artist) -> Bool {
-        lhs.id == rhs.id && lhs.albums?.count == rhs.albums?.count
-    }
-
     let id: UInt32
 
     let name: String
 
+    // TODO: I don't really like this...
     var albums: [Album]?
-
-    mutating func set(albums: [Album]) {
-        self.albums = albums
-    }
 }
 
 struct Album: Mediable, Artworkable {
-    static func == (lhs: Album, rhs: Album) -> Bool {
-        lhs.id == rhs.id && lhs.songs?.count == rhs.songs?.count
-    }
-
     let id: UInt32
     let uri: URL
 
     let artist: String
     let title: String
     let date: String
-
-    var songs: [Int: [Song]]?
-
-    var duration: Double? {
-        songs?.values.flatMap(\.self).reduce(0) { $0 + $1.duration }
-    }
-
-    var tracks: Int? {
-        songs?.values.reduce(0) { $0 + $1.count }
-    }
-
-    // lazy var artwork: NSImage? = try? CommandManager.shared.getArtwork(for: uri)
-
-    mutating func set(songs: [Song]) {
-        self.songs = Dictionary(grouping: songs, by: { $0.disc })
-    }
 }
 
 struct Song: Mediable, Artworkable {
@@ -78,21 +50,7 @@ struct Song: Mediable, Artworkable {
 }
 
 struct Playlist: Mediable {
-    static func == (lhs: Playlist, rhs: Playlist) -> Bool {
-        lhs.id == rhs.id && lhs.songs?.count == rhs.songs?.count
-    }
-
     let id: UInt32
 
     let name: String
-
-    var songs: [Int: [Song]]?
-
-    var tracks: Int? {
-        songs?.values.reduce(0) { $0 + $1.count }
-    }
-
-    mutating func set(songs: [Song]) {
-        self.songs = Dictionary(grouping: songs, by: { $0.disc })
-    }
 }

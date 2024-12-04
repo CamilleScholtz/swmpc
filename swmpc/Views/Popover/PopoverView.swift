@@ -13,8 +13,8 @@ struct PopoverView: View {
 
     @State private var height = Double(250)
 
-    @State private var artwork: Artwork?
-    @State private var previousArtwork: Artwork?
+    @State private var artwork: NSImage?
+    @State private var previousArtwork: NSImage?
 
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
@@ -29,19 +29,20 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ArtworkView(image: artwork?.image)
-                .overlay(
-                    previousArtwork?.image != nil ? AnyView(ArtworkView(image: previousArtwork!.image)
-                        .opacity(isBackgroundArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
-                )
-                // .brightness(-0.4)
+            ArtworkView(image: artwork)
+                // TODO:
+//                .overlay(
+//                    previousArtwork != nil ? AnyView(ArtworkView(image: previousArtwork)
+//                        .opacity(isBackgroundArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
+//                )
                 .opacity(0.3)
 
-            ArtworkView(image: artwork?.image)
-                .overlay(
-                    previousArtwork?.image != nil ? AnyView(ArtworkView(image: previousArtwork!.image)
-                        .opacity(isArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
-                )
+            ArtworkView(image: artwork)
+                // TODO:
+//                .overlay(
+//                    previousArtwork?.image != nil ? AnyView(ArtworkView(image: previousArtwork!.image)
+//                        .opacity(isArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
+//                )
                 .overlay(
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
@@ -96,10 +97,12 @@ struct PopoverView: View {
                     return
                 }
 
-                await player.setArtwork(for: song)
-                artwork = player.getArtwork(for: song)
+                // TODO:
+//                await player.setArtwork(for: song)
+//                artwork = player.getArtwork(for: song)
             }
             Task {
+                // TODO:
                 // await player.status.trackElapsed()
             }
         }
@@ -112,8 +115,9 @@ struct PopoverView: View {
             }
 
             Task(priority: .userInitiated) {
-                await player.setArtwork(for: song)
-                artwork = player.getArtwork(for: song)
+                // TODO:
+//                await player.setArtwork(for: song)
+//                artwork = player.getArtwork(for: song)
 
                 updateHeight()
             }
@@ -146,12 +150,12 @@ struct PopoverView: View {
     }
 
     private func updateHeight() {
-        guard let image = artwork?.image else {
+        guard let artwork else {
             height = 250
             return
         }
 
-        height = (Double(image.size.height) / Double(image.size.width) * 250).rounded(.down)
+        height = (Double(artwork.size.height) / Double(artwork.size.width) * 250).rounded(.down)
     }
 
     struct ArtworkView: View {

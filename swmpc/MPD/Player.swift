@@ -6,19 +6,18 @@
 //
 
 import libmpdclient
-import OrderedCollections
 import SwiftUI
 
 @Observable final class Player {
     let status = Status()
     let queue = Queue()
 
+    // TODO: Make these half private
     var currentSong: Song?
+    // TODO: Add a setter for this
     var currentMedia: (any Mediable)?
 
     var playlists: [Playlist]?
-
-    private(set) var artworkCache = OrderedDictionary<URL, Artwork>()
 
     private var updateLoopTask: Task<Void, Never>?
 
@@ -89,31 +88,5 @@ import SwiftUI
         if (idleResult.rawValue & MPD_IDLE_STORED_PLAYLIST.rawValue) != 0 {
             playlists = try? await IdleManager.shared.getPlaylists()
         }
-    }
-
-    @MainActor
-    func setArtwork(for media: any Artworkable) async {
-        if let artwork = artworkCache.removeValue(forKey: media.uri) {
-            artworkCache[media.uri] = artwork
-            return
-        }
-
-        if artworkCache.count >= 64 {
-            artworkCache.removeFirst()
-        }
-
-        let artwork = Artwork(uri: media.uri)
-        artworkCache[media.uri] = artwork
-
-        await artwork.set()
-    }
-
-    @MainActor
-    func getArtwork(for media: (any Artworkable)?) -> Artwork? {
-        guard let media else {
-            return nil
-        }
-
-        return artworkCache[media.uri]
     }
 }

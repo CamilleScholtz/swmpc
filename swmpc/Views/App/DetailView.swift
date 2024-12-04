@@ -13,8 +13,8 @@ struct DetailView: View {
 
     @Binding var path: NavigationPath
 
-    @State private var artwork: Artwork?
-    @State private var previousArtwork: Artwork?
+    @State private var artwork: NSImage?
+    @State private var previousArtwork: NSImage?
 
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
@@ -26,11 +26,11 @@ struct DetailView: View {
             ZStack {
                 ZStack {
                     ZStack {
-                        ArtworkView(image: artwork?.image)
+                        ArtworkView(image: artwork)
                             .overlay(
                                 Group {
-                                    if let image = previousArtwork?.image {
-                                        ArtworkView(image: image)
+                                    if let previousArtwork {
+                                        ArtworkView(image: previousArtwork)
                                             .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
                                             .transition(.opacity)
                                     }
@@ -55,11 +55,11 @@ struct DetailView: View {
                     .opacity(0.6)
 
                     ZStack {
-                        ArtworkView(image: artwork?.image)
+                        ArtworkView(image: artwork)
                             .overlay(
                                 Group {
-                                    if let image = previousArtwork?.image {
-                                        ArtworkView(image: image)
+                                    if let previousArtwork {
+                                        ArtworkView(image: previousArtwork)
                                             .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
                                             .transition(.opacity)
                                     }
@@ -86,11 +86,11 @@ struct DetailView: View {
                 .saturation(1.5)
                 .blendMode(colorScheme == .dark ? .softLight : .normal)
 
-                ArtworkView(image: artwork?.image)
+                ArtworkView(image: artwork)
                     .overlay(
                         Group {
-                            if let image = previousArtwork?.image {
-                                ArtworkView(image: image)
+                            if let previousArtwork {
+                                ArtworkView(image: previousArtwork)
                                     .opacity(isArtworkTransitioning ? 1 : 0)
                                     .transition(.opacity)
                             }
@@ -135,7 +135,8 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let media = await player.queue.get(type: .album, using: song) else {
+                            // TODO: Set the type first
+                            guard let media = await player.queue.get(using: song) else {
                                 return
                             }
 
@@ -162,8 +163,7 @@ struct DetailView: View {
                 return
             }
 
-            await player.setArtwork(for: song)
-            artwork = player.getArtwork(for: song)
+            artwork = await NSImage(data: try! CommandManager.shared.getArtworkData(for: song.uri, shouldCache: false))
         }
         .onChange(of: artwork) { previous, _ in
             previousArtwork = previous

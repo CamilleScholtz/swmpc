@@ -6,6 +6,7 @@
 //
 
 import libmpdclient
+import OrderedCollections
 import SwiftUI
 
 enum ConnectionManagerError: Error {
@@ -48,11 +49,15 @@ extension ConnectionManager {
     }
 
     func getSong(isolation _: isolated ConnectionManager = #isolation, recv: OpaquePointer?) -> Song? {
-        guard recv != nil else {
+        guard let recv else {
             return nil
         }
 
-        let id = mpd_song_get_id(recv)
+        var id = mpd_song_get_id(recv)
+        if id == 0 {
+            id = UInt32.random(in: 0 ..< UInt32.max)
+        }
+
         let uri = String(cString: mpd_song_get_uri(recv))
 
         var artist: String?
@@ -133,7 +138,7 @@ actor IdleManager: ConnectionManager {
         return song
     }
 
-    func getPlaylists() async throws -> [Playlist] {
+    func getPlaylists() throws -> [Playlist] {
         guard let connection, mpd_send_list_playlists(connection) else {
             return []
         }
@@ -163,6 +168,9 @@ actor CommandManager: ConnectionManager {
 
     var connection: OpaquePointer?
     var isConnected = false
+
+    private var artworkCache = OrderedDictionary<URL, Data>()
+    private let maxCacheSize = 64
 
     private init() {}
 
@@ -230,32 +238,32 @@ actor CommandManager: ConnectionManager {
         else {
             return []
         }
-        
+
         var tasks = [Task<Album?, Never>]()
         var albums = [Album]()
-        
+
         while let recv = mpd_recv_song(connection) {
             tasks.append(Task {
                 let song = getSong(recv: recv)
                 guard let song else {
                     return nil
                 }
-                
+
                 var artist: String?
                 if let tag = mpd_song_get_tag(recv, MPD_TAG_ALBUM_ARTIST, 0) {
                     artist = String(cString: tag)
                 }
-                
+
                 var title: String?
                 if let tag = mpd_song_get_tag(recv, MPD_TAG_ALBUM, 0) {
                     title = String(cString: tag)
                 }
-                
+
                 var date: String?
                 if let tag = mpd_song_get_tag(recv, MPD_TAG_DATE, 0) {
                     date = String(cString: tag)
                 }
-                
+
                 return Album(
                     id: song.id,
                     uri: song.uri,
@@ -266,36 +274,46 @@ actor CommandManager: ConnectionManager {
             })
         }
 
-         for task in tasks {
-             if let album = await task.value {
-                 albums.append(album)
-             }
-         }
+        for task in tasks {
+            if let album = await task.value {
+                albums.append(album)
+            }
+        }
 
-         return albums
+        return albums
     }
 
-    func getSongs(for album: Album? = nil) async throws -> [Song] {
+    func getSongs(for media: (any Mediable)? = nil) async throws -> [Song] {
         try connect()
         defer { disconnect() }
 
-        if let album {
+        switch media {
+        case let artist as Artist:
+            guard mpd_search_queue_songs(connection, true),
+                  mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_ALBUM_ARTIST, artist.name),
+                  mpd_search_commit(connection)
+            else {
+                return []
+            }
+        case let album as Album:
             guard mpd_search_queue_songs(connection, true),
                   mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_ALBUM, album.title),
                   mpd_search_commit(connection)
             else {
                 return []
             }
-        } else {
-            mpd_send_list_queue_meta(connection)
+        default:
+            guard mpd_send_list_queue_meta(connection) else {
+                return []
+            }
         }
 
         var tasks = [Task<Song?, Never>]()
         var songs = [Song]()
-        
+
         while let recv = mpd_recv_song(connection) {
             tasks.append(Task {
-                return getSong(recv: recv)
+                getSong(recv: recv)
             })
         }
 
@@ -304,7 +322,7 @@ actor CommandManager: ConnectionManager {
                 songs.append(song)
             }
         }
-        
+
         return songs
     }
 
@@ -320,7 +338,12 @@ actor CommandManager: ConnectionManager {
         return Double(mpd_status_get_elapsed_time(recv))
     }
 
-    func getArtwork(for uri: URL, embedded: Bool = true) throws -> NSImage? {
+    func getArtworkData(for uri: URL, shouldCache: Bool = true) throws -> Data {
+        if shouldCache, let cache = artworkCache.removeValue(forKey: uri) {
+            artworkCache[uri] = cache
+            return cache
+        }
+
         var data = Data()
         var offset: UInt32 = 0
         let bufferSize = 512 * 512
@@ -331,11 +354,7 @@ actor CommandManager: ConnectionManager {
 
         while true {
             let recv = buffer.withUnsafeMutableBytes { bufferPtr in
-                if embedded {
-                    mpd_run_readpicture(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
-                } else {
-                    mpd_run_albumart(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
-                }
+                mpd_run_readpicture(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
             }
             guard recv > 0 else {
                 break
@@ -345,7 +364,14 @@ actor CommandManager: ConnectionManager {
             offset += UInt32(recv)
         }
 
-        return NSImage(data: data)
+        if shouldCache {
+            if artworkCache.count > maxCacheSize {
+                artworkCache.removeFirst()
+            }
+            artworkCache[uri] = data
+        }
+
+        return data
     }
 
     func createPlaylist(named name: String) throws {
@@ -355,7 +381,20 @@ actor CommandManager: ConnectionManager {
         mpd_run_save(connection, name)
     }
 
-    func addToPlaylist(_ songs: [Song], playlist: Playlist) throws {
+    func loadPlaylist(_ playlist: Playlist?) throws {
+        try connect()
+        defer { disconnect() }
+
+        mpd_run_clear(connection)
+
+        if let playlist {
+            mpd_run_load(connection, playlist.name)
+        } else {
+            mpd_run_add(connection, "/")
+        }
+    }
+
+    func addToPlaylist(_ playlist: Playlist, songs: [Song]) throws {
         try connect()
         defer { disconnect() }
 
