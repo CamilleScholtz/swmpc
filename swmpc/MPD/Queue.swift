@@ -9,6 +9,12 @@ import libmpdclient
 import SwiftUI
 
 @Observable final class Queue {
+    init() {
+        Task {
+            try? await CommandManager.shared.loadPlaylist(nil)
+        }
+    }
+    
     let categories: [Category] = [
         .init(id: MediaType.album, label: "Albums", image: "square.stack"),
         .init(id: MediaType.artist, label: "Artists", image: "music.microphone"),
@@ -40,8 +46,6 @@ import SwiftUI
             return
         }
         self.type = type
-
-        print("change")
         
         switch type {
         case .artist:

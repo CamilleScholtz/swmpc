@@ -309,7 +309,7 @@ struct DetailView: View {
 
         var body: some View {
             VStack(alignment: .leading, spacing: 7) {
-                Text(player.currentSong?.title ?? "Unknown song")
+                Text(player.currentSong?.title ?? "No song playing")
                     .font(.system(size: 18))
                     .fontWeight(.semibold)
                     .fontDesign(.rounded)
@@ -501,13 +501,13 @@ struct DetailView: View {
                     })
 
                     HStack(alignment: .center) {
-                        Text(player.status.elapsed?.timeString ?? "-:--")
+                        Text(player.status.elapsed?.timeString ?? "0:00")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
                         Spacer()
 
-                        Text(player.currentSong?.duration.timeString ?? "-:--")
+                        Text(player.currentSong?.duration.timeString ?? "0:00")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

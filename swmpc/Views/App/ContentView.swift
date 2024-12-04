@@ -38,29 +38,6 @@ struct ContentView: View {
                     .padding(.bottom, 15)
                 }
                 .ignoresSafeArea(.all)
-                .task(id: player.queue.type) {
-                    guard !Task.isCancelled else {
-                        print("cancelled")
-                        return
-                    }
-
-                    guard let song = player.currentSong else {
-                        return
-                    }
-
-                    player.currentMedia = await player.queue.get(using: song)
-                }
-//                .task(id: player.currentSong) {
-//                    guard !Task.isCancelled else {
-//                        return
-//                    }
-//
-//                    guard type != .song, let song = player.currentSong else {
-//                        return
-//                    }
-//
-//                    player.currentMedia = await player.queue.get(type: type, using: song)
-//                }
                 .onAppear {
                     NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
                         if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "f" {
@@ -569,13 +546,22 @@ struct ContentView: View {
                 }
             })
             .contextMenu {
-                if let playlists = player.playlists {
+                if let playlists = (player.queue.playlist != nil) ? player.playlists?.filter({ $0 != player.queue.playlist }) : player.playlists {
                     Menu("Add to Playlist") {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
                                     try? await CommandManager.shared.addToPlaylist(playlist, songs: [song])
                                 }
+                            }
+                        }
+                    }
+
+                    if let playlist = player.queue.playlist {
+                        Button("Remove from Playlist") {
+                            Task {
+                                print("d")
+                                // try? await CommandManager.shared.addToPlaylist(playlist, songs: [song])
                             }
                         }
                     }

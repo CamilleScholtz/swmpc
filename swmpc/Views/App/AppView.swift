@@ -36,6 +36,7 @@ struct AppView: View {
                 Section("Playlists") {
                     ForEach(player.playlists ?? []) { playlist in
                         Label(playlist.name, systemImage: "music.note.list")
+                            .tag(MediaType.playlist)
                             .onTapGesture {
                                 self.playlist = playlist
                                 selected = .playlist
@@ -71,6 +72,19 @@ struct AppView: View {
                 }
 
                 await player.queue.set(for: selected)
+                
+                guard let song = player.currentSong else {
+                    return
+                }
+
+                player.currentMedia = await player.queue.get(using: song)
+            }
+            .task(id: player.currentSong) {
+                guard let song = player.currentSong else {
+                    return
+                }
+
+                player.currentMedia = await player.queue.get(using: song)
             }
         } content: {
             ContentView(path: $path)
