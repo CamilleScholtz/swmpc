@@ -94,10 +94,12 @@ import SwiftUI
     }
 
     @MainActor
-    func get(using media: any Mediable) async -> (any Mediable)? {
+    func get(for type: MediaType, using media: any Mediable) async -> (any Mediable)? {
         guard type != .song else {
             return media
         }
+        
+        await set(for: type, using: playlist)
 
         if let index = self.media.firstIndex(where: { $0.id > media.id }), index > 0 {
             return self.media[index - 1]

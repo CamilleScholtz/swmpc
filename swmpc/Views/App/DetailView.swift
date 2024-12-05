@@ -135,8 +135,7 @@ struct DetailView: View {
                                 return
                             }
 
-                            // TODO: Set the type first
-                            guard let media = await player.queue.get(using: song) else {
+                            guard let media = await player.queue.get(for: .album, using: song) else {
                                 return
                             }
 

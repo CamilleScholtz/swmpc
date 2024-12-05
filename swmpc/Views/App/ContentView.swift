@@ -259,7 +259,7 @@ struct ContentView: View {
                             .onTapGesture(perform: {
                                 Task(priority: .userInitiated) {
                                     // TODO: Set the type here first
-                                    guard let media = await player.queue.get(using: album) else {
+                                    guard let media = await player.queue.get(for: .artist, using: album) else {
                                         return
                                     }
 

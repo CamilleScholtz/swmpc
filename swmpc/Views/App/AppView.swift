@@ -77,14 +77,14 @@ struct AppView: View {
                     return
                 }
 
-                player.currentMedia = await player.queue.get(using: song)
+                player.currentMedia = await player.queue.get(for: selected, using: song)
             }
             .task(id: player.currentSong) {
                 guard let song = player.currentSong else {
                     return
                 }
 
-                player.currentMedia = await player.queue.get(using: song)
+                player.currentMedia = await player.queue.get(for: selected, using: song)
             }
         } content: {
             ContentView(path: $path)
