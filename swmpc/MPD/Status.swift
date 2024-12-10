@@ -29,7 +29,7 @@ import SwiftUI
 
     @MainActor
     func set() async {
-        guard let data = try? await IdleManager.shared.getStatusData() else {
+        guard let data = try? await ConnectionManager.idle.getStatusData() else {
             return
         }
 

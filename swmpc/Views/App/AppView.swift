@@ -48,7 +48,8 @@ struct AppView: View {
                             .focused($playlistFocus)
                             .onSubmit {
                                 Task {
-                                    try? await CommandManager.shared.createPlaylist(named: playlistName)
+                                    // TODOA
+                                    // try? await CommandManager.shared.createPlaylist(named: playlistName)
 
                                     editingPlaylist = false
                                     playlistName = ""
@@ -72,7 +73,7 @@ struct AppView: View {
                 }
 
                 await player.queue.set(for: selected)
-                
+
                 guard let song = player.currentSong else {
                     return
                 }

@@ -239,7 +239,8 @@ struct ContentView: View {
                         .onTapGesture(perform: {
                             Task(priority: .userInitiated) {
                                 if player.currentMedia?.id != album.id {
-                                    await CommandManager.shared.play(album)
+                                    // TODOA
+                                    // await CommandManager.shared.play(album)
                                 }
                             }
                         })
@@ -297,10 +298,11 @@ struct ContentView: View {
                 }
             }
             .task {
-                async let artworkDataTask = CommandManager.shared.getArtworkData(for: album.uri)
-                async let songsTask = CommandManager.shared.getSongs(for: album)
-
-                artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
+                // TODOA
+//                async let artworkDataTask = CommandManager.shared.getArtworkData(for: album.uri)
+                async let songsTask = ConnectionManager.command.getSongs(for: album)
+//
+//                artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
         }
@@ -478,7 +480,8 @@ struct ContentView: View {
                     return
                 }
 
-                artwork = await NSImage(data: try! CommandManager.shared.getArtworkData(for: album.uri))
+                // TODOA
+                // artwork = await NSImage(data: try! CommandManager.shared.getArtworkData(for: album.uri))
             }
             .contentShape(Rectangle())
             .onTapGesture(perform: {
@@ -542,7 +545,8 @@ struct ContentView: View {
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    await CommandManager.shared.play(song)
+                    // TODOA
+                    // await CommandManager.shared.play(song)
                 }
             })
             .contextMenu {
@@ -551,7 +555,8 @@ struct ContentView: View {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    try? await CommandManager.shared.addToPlaylist(playlist, songs: [song])
+                                    // TODOA
+                                    // try? await CommandManager.shared.addToPlaylist(playlist, songs: [song])
                                 }
                             }
                         }

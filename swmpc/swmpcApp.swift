@@ -182,7 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch event.type {
         case .rightMouseDown:
             Task(priority: .userInitiated) { @MainActor in
-                await CommandManager.shared.pause(player.status.isPlaying ?? false)
+                try? await ConnectionManager.command.pause(player.status.isPlaying ?? false)
             }
         default:
             togglePopover(sender)
@@ -193,19 +193,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch sender.title {
         case "Play":
             Task(priority: .userInitiated) { @MainActor in
-                await CommandManager.shared.pause(false)
+                try? await ConnectionManager.command.pause(false)
             }
         case "Pause":
             Task(priority: .userInitiated) { @MainActor in
-                await CommandManager.shared.pause(true)
+                try? await ConnectionManager.command.pause(true)
             }
         case "Next song":
             Task(priority: .userInitiated) { @MainActor in
-                await CommandManager.shared.next()
+                try? await ConnectionManager.command.next()
             }
         case "Previous song":
             Task(priority: .userInitiated) { @MainActor in
-                await CommandManager.shared.previous()
+                try? await ConnectionManager.command.previous()
             }
         default:
             break

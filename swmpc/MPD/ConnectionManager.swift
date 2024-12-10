@@ -5,401 +5,651 @@
 //  Created by Camille Scholtz on 16/11/2024.
 //
 
-import libmpdclient
+import Network
 import OrderedCollections
 import SwiftUI
 
 enum ConnectionManagerError: Error {
     case connectionError
+    case notConnected
+    case connectionClosed
+
+    case protocolError(String)
+
+    case wrongMode
 }
 
-protocol ConnectionManager: Actor {
-    var host: String { get }
-    var port: Int { get }
+actor ConnectionManager {
+    static let idle = ConnectionManager(idle: true)
+    static let command = ConnectionManager(idle: false)
 
-    var connection: OpaquePointer? { get set }
-    var isConnected: Bool { get set }
-}
+    private(set) var idle: Bool
+    private(set) var connection: NWConnection?
 
-extension ConnectionManager {
-    func connect(isolation: isolated ConnectionManager = #isolation, idle: Bool = false) throws {
-        disconnect()
-
-        isolation.connection = mpd_connection_new(isolation.host, UInt32(isolation.port), 0)
-        guard mpd_connection_get_error(isolation.connection) == MPD_ERROR_SUCCESS else {
-            throw ConnectionManagerError.connectionError
-        }
-
-        if idle {
-            mpd_connection_set_keepalive(isolation.connection, true)
-        }
-
-        isolation.isConnected = true
+    private init(idle: Bool) {
+        self.idle = idle
     }
 
-    func disconnect(isolation: isolated ConnectionManager = #isolation) {
-        guard isolation.connection != nil else {
+    // MARK: - Connection API
+
+    func connect() async throws {
+        guard connection == nil else {
             return
         }
 
-        mpd_connection_free(isolation.connection)
-        isolation.connection = nil
+        connection = NWConnection(host: NWEndpoint.Host("localhost"), port: NWEndpoint.Port(rawValue: 6600)!, using: .tcp)
+        guard let connection else {
+            throw ConnectionManagerError.connectionError
+        }
 
-        isolation.isConnected = false
+        connection.start(queue: .global())
+        try await waitForConnectionReady()
+
+        var buffer = Data()
+        let lines = try await readUntilOK(&buffer)
+        guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
+            throw ConnectionManagerError.connectionError
+        }
     }
 
-    func getSong(isolation _: isolated ConnectionManager = #isolation, recv: OpaquePointer?) -> Song? {
-        guard let recv else {
+    func disconnect() {
+        connection?.cancel()
+        connection = nil
+    }
+
+    func run(_ commands: [String]) async throws -> [String] {
+        var commands = commands
+
+        if commands.count > 1 {
+            commands.insert("command_list_begin", at: 0)
+            commands.append("command_list_end")
+        }
+
+        try await writeLine(commands.joined(separator: "\n"))
+
+        var buffer = Data()
+        let lines = try await readUntilOKOrACK(&buffer)
+        if let ackLine = lines.first(where: { $0.hasPrefix("ACK") }) {
+            throw ConnectionManagerError.protocolError(ackLine)
+        }
+
+        return lines
+    }
+
+    func idleForEvents(mask: [String]) async throws -> String {
+        guard idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        let lines = try await run(["idle \(mask.joined(separator: " "))"])
+
+        return String((lines.first! as String).dropFirst(9))
+    }
+
+    // MARK: - Connection lifecycle
+
+    private func waitForConnectionReady() async throws {
+        guard let connection else {
+            throw ConnectionManagerError.connectionError
+        }
+
+        let states = AsyncStream<NWConnection.State> { continuation in
+            connection.stateUpdateHandler = { state in
+                continuation.yield(state)
+
+                if case .cancelled = state {
+                    continuation.finish()
+                }
+            }
+        }
+
+        for await state in states {
+            switch state {
+            case .ready:
+                return
+            case let .failed(error):
+                throw error
+            case .cancelled:
+                throw ConnectionManagerError.connectionClosed
+            default:
+                continue
+            }
+        }
+
+        throw ConnectionManagerError.connectionError
+    }
+
+    private func ensureConnectionReady() throws -> NWConnection {
+        guard let connection, connection.state == .ready else {
+            throw ConnectionManagerError.notConnected
+        }
+
+        return connection
+    }
+
+    // MARK: - Writing
+
+    private func writeLine(_ line: String) async throws {
+        let connection = try ensureConnectionReady()
+
+        let data = (line.appending("\n")).data(using: .utf8)!
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            connection.send(content: data, completion: .contentProcessed { error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            })
+        }
+    }
+
+    private func filter(key: String, value: String, comparator: String, quote: Bool = true) -> String {
+        let escapedValue = value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\\\'")
+            .replacingOccurrences(of: "\"", with: "\\\\\\\"")
+
+        let clause = "(\(key) \(comparator) '\(escapedValue)')"
+
+        return quote ? "\"\(clause)\"" : clause
+    }
+
+    // MARK: - Reading
+
+    private func readLine(_ buffer: inout Data) async throws -> String? {
+        if let line = extractLineFromBuffer(&buffer) {
+            return line
+        }
+
+        let connection = try ensureConnectionReady()
+
+        guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, isComplete, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if isComplete || data == nil {
+                    continuation.resume(returning: nil)
+                } else {
+                    continuation.resume(returning: data)
+                }
+            }
+        }) else {
             return nil
         }
 
-        var id = mpd_song_get_id(recv)
-        if id == 0 {
-            id = UInt32.random(in: 0 ..< UInt32.max)
+        buffer.append(chunk)
+        return extractLineFromBuffer(&buffer)
+    }
+
+    private func extractLineFromBuffer(_ buffer: inout Data) -> String? {
+        guard let newlineRange = buffer.firstRange(of: Data([0x0A])) else {
+            return nil
         }
 
-        let uri = String(cString: mpd_song_get_uri(recv))
+        let lineData = buffer[..<newlineRange.lowerBound]
+        let line = String(data: lineData, encoding: .utf8)?.trimmingCharacters(in: .newlines)
 
+        buffer.removeSubrange(buffer.startIndex ..< newlineRange.upperBound)
+
+        return line
+    }
+
+    private func readUntil(_ buffer: inout Data, _ condition: @escaping (String) -> Bool) async throws -> [String] {
+        var lines: [String] = []
+
+        while let line = try await readLine(&buffer) {
+            lines.append(line)
+            log(severity: "LINE", line)
+
+            if condition(line) {
+                return lines
+            }
+        }
+
+        print(lines)
+        throw ConnectionManagerError.connectionClosed
+    }
+
+    private func readUntilOK(_ buffer: inout Data) async throws -> [String] {
+        try await readUntil(&buffer) { $0.hasPrefix("OK") }
+    }
+
+    private func readUntilOKOrACK(_ buffer: inout Data) async throws -> [String] {
+        try await readUntil(&buffer) { $0.hasPrefix("OK") || $0.hasPrefix("ACK") }
+    }
+
+    // MARK: - Parsing
+
+    private func parseMediaResponse(_ lines: [String], using media: MediaType) -> (any Mediable)? {
+        var id: UInt32 = 0
+        var uri: URL?
         var artist: String?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_ARTIST, 0) {
-            artist = String(cString: tag)
-        }
-
+        var album: String?
         var title: String?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_TITLE, 0) {
-            title = String(cString: tag)
-        }
-
         var track: Int?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_TRACK, 0) {
-            track = Int(String(cString: tag))
-        }
-
+        var date: String?
         var disc: Int?
-        if let tag = mpd_song_get_tag(recv, MPD_TAG_DISC, 0) {
-            disc = Int(String(cString: tag))
+        var albumArtist: String?
+        var duration: Double = 0
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let parts = line.split(separator: ":", maxSplits: 1).map {
+                $0.trimmingCharacters(in: .whitespaces)
+            }
+            guard parts.count == 2 else {
+                continue
+            }
+
+            let key = parts[0].lowercased()
+            let value = parts[1]
+
+            switch key {
+            case "id":
+                id = UInt32(value) ?? 0
+            case "file":
+                uri = URL(string: value)
+            case "artist":
+                artist = value
+            case "album":
+                album = value
+            case "title":
+                title = value
+            case "track":
+                track = Int(value)
+            case "date":
+                date = value
+            case "disc":
+                disc = Int(value)
+            case "albumartist":
+                albumArtist = value
+            case "duration":
+                duration = Double(value) ?? 0
+            default:
+                break
+            }
         }
 
-        let duration = Double(mpd_song_get_duration(recv))
-
-        return Song(
-            id: id,
-            uri: URL(string: uri)!,
-            artist: artist ?? "Unknown Artist",
-            title: title ?? "Unknown Title",
-            duration: duration,
-            disc: disc ?? 1,
-            track: track ?? 1
-        )
+        switch media {
+        case .album:
+            return Album(
+                id: id,
+                uri: uri ?? URL(string: "unknown:///")!,
+                artist: albumArtist ?? "Unknown Artist",
+                title: album ?? "Unknown Title",
+                date: date ?? "1970"
+            )
+        default:
+            return Song(
+                id: id,
+                uri: uri ?? URL(string: "unknown:///")!,
+                artist: artist ?? "Unknown Artist",
+                title: title ?? "Unknown Title",
+                duration: duration,
+                disc: disc ?? 1,
+                track: track ?? 1
+            )
+        }
     }
-}
 
-actor IdleManager: ConnectionManager {
-    static let shared = IdleManager()
+    private func parseBinaryResponse(_ lines: [String]) -> Data? {
+        var totalSize: Int?
+        var binaryChunkSize: Int?
 
-    @AppStorage(Setting.host) var host = "localhost"
-    @AppStorage(Setting.port) var port = 6600
+        // We're not returning until "OK" or "ACK" is encountered, so let's parse metadata first.
+        for line in lines {
+            let trimmedLine = line.trimmed()
+            guard trimmedLine != "OK" else {
+                // We've reached the end of this particular response.
+                // If we never got binary data, return nil.
+                return nil
+            }
 
-    var connection: OpaquePointer?
-    var isConnected = false
+            // Split key/value pairs
+            let parts = trimmedLine.split(separator: ":", maxSplits: 1).map { String($0).trimmed() }
+            guard parts.count == 2 else { continue }
 
-    private init() {}
+            let key = parts[0].lowercased()
+            let value = parts[1]
 
-    func runIdleMask(mask: mpd_idle) -> mpd_idle {
-        guard let connection else {
-            return mpd_idle(0)
+            switch key {
+            case "size":
+                totalSize = Int(value)
+            case "binary":
+                binaryChunkSize = Int(value)
+            default:
+                break
+            }
         }
 
-        return mpd_run_idle_mask(connection, mask)
+        // If there's a binary chunk expected, read it now
+        if let chunkSize = binaryChunkSize, chunkSize > 0 {
+            // Reserve capacity if total size is known
+            var binaryData = Data()
+            binaryData.reserveCapacity(totalSize ?? chunkSize)
+
+            // At this point, we must read exactly `chunkSize` bytes of binary data from the connection
+            // after the textual lines have been read.
+            let connection = try ensureConnectionReady()
+            let receivedData = try await readExactBytes(count: chunkSize, from: connection, buffer: &buffer)
+            binaryData.append(receivedData)
+            return binaryData
+        }
+
+        // No binary data
+        return nil
     }
 
-    func getStatusData() throws -> (isPlaying: Bool?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?) {
-        guard let connection, let recv = mpd_run_status(connection) else {
-            return (nil, nil, nil, nil)
-        }
-        defer { mpd_status_free(recv) }
+    // MARK: - Command API
 
-        let isPlaying = mpd_status_get_state(recv) == MPD_STATE_PLAY
-        let isRandom = mpd_status_get_random(recv)
-        let isRepeat = mpd_status_get_repeat(recv)
-        let elapsed = Double(mpd_status_get_elapsed_time(recv))
+    func getCurrentSong() async throws -> Song? {
+        guard idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        let lines = try await run(["currentsong"])
+
+        return parseMediaResponse(lines, using: .song) as? Song
+    }
+
+    func getStatusData() async throws -> (isPlaying: Bool?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?) {
+        guard idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        let lines = try await run(["status"])
+
+        var isPlaying: Bool?
+        var isRandom: Bool?
+        var isRepeat: Bool?
+        var elapsed: Double?
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let parts = line.split(separator: ":", maxSplits: 1).map {
+                $0.trimmingCharacters(in: .whitespaces)
+            }
+            guard parts.count == 2 else {
+                continue
+            }
+
+            let key = parts[0].lowercased()
+            let value = parts[1]
+
+            switch key {
+            case "state":
+                isPlaying = (value == "play")
+            case "random":
+                isRandom = (value == "1")
+            case "repeat":
+                isRepeat = (value == "1")
+            case "elapsed":
+                elapsed = Double(value)
+            default:
+                break
+            }
+        }
 
         return (isPlaying, isRandom, isRepeat, elapsed)
     }
 
-    func getCurrentSong() throws -> Song? {
-        guard let connection, let recv = mpd_run_current_song(connection) else {
-            return nil
-        }
-        defer { mpd_song_free(recv) }
-
-        let song = getSong(recv: recv)
-
-        return song
-    }
-
-    func getPlaylists() throws -> [Playlist] {
-        guard let connection, mpd_send_list_playlists(connection) else {
-            return []
+    func loadPlaylist(_ playlist: Playlist?) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
         }
 
-        var playlists = [Playlist]()
-        var index = UInt32(0)
-        while let recv = mpd_recv_playlist(connection) {
-            defer { mpd_playlist_free(recv) }
-
-            index += 1
-
-            playlists.append(Playlist(
-                id: index,
-                name: String(cString: mpd_playlist_get_path(recv))
-            ))
-        }
-
-        return playlists
-    }
-}
-
-actor CommandManager: ConnectionManager {
-    static let shared = CommandManager()
-
-    @AppStorage(Setting.host) var host = "localhost"
-    @AppStorage(Setting.port) var port = 6600
-
-    var connection: OpaquePointer?
-    var isConnected = false
-
-    private var artworkCache = OrderedDictionary<URL, Data>()
-    private let maxCacheSize = 64
-
-    private init() {}
-
-    private func run(_ action: (OpaquePointer) -> Void) throws {
-        try connect()
+        try await connect()
         defer { disconnect() }
 
-        guard let connection else {
-            throw ConnectionManagerError.connectionError
+        if let playlist {
+            _ = try await run(["clear", "load \(playlist.name)"])
+        } else {
+            _ = try await run(["clear", "add /"])
         }
-
-        action(connection)
-    }
-
-    func play(_ media: any Mediable) {
-        try? run { _ in
-            mpd_run_play_id(connection, media.id)
-        }
-    }
-
-    func pause(_ value: Bool) {
-        try? run { connection in
-            mpd_run_pause(connection, value)
-        }
-    }
-
-    func previous() {
-        try? run { connection in
-            mpd_run_previous(connection)
-        }
-    }
-
-    func next() {
-        try? run { connection in
-            mpd_run_next(connection)
-        }
-    }
-
-    func seek(_ value: Double) {
-        try? run { connection in
-            mpd_run_seek_current(connection, Float(value), false)
-        }
-    }
-
-    func random(_ value: Bool) {
-        try? run { connection in
-            mpd_run_random(connection, value)
-        }
-    }
-
-    func `repeat`(_ value: Bool) {
-        try? run { connection in
-            mpd_run_repeat(connection, value)
-        }
-    }
-
-    func getAlbums() async throws -> [Album] {
-        try connect()
-        defer { disconnect() }
-
-        guard mpd_search_queue_songs(connection, true),
-              mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_TRACK, "1"),
-              mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_DISC, "1"),
-              mpd_search_commit(connection)
-        else {
-            return []
-        }
-
-        var tasks = [Task<Album?, Never>]()
-        var albums = [Album]()
-
-        while let recv = mpd_recv_song(connection) {
-            tasks.append(Task {
-                let song = getSong(recv: recv)
-                guard let song else {
-                    return nil
-                }
-
-                var artist: String?
-                if let tag = mpd_song_get_tag(recv, MPD_TAG_ALBUM_ARTIST, 0) {
-                    artist = String(cString: tag)
-                }
-
-                var title: String?
-                if let tag = mpd_song_get_tag(recv, MPD_TAG_ALBUM, 0) {
-                    title = String(cString: tag)
-                }
-
-                var date: String?
-                if let tag = mpd_song_get_tag(recv, MPD_TAG_DATE, 0) {
-                    date = String(cString: tag)
-                }
-
-                return Album(
-                    id: song.id,
-                    uri: song.uri,
-                    artist: artist ?? "Unknown Artist",
-                    title: title ?? "Unknown Title",
-                    date: date ?? "1970"
-                )
-            })
-        }
-
-        for task in tasks {
-            if let album = await task.value {
-                albums.append(album)
-            }
-        }
-
-        return albums
     }
 
     func getSongs(for media: (any Mediable)? = nil) async throws -> [Song] {
-        try connect()
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
         defer { disconnect() }
 
-        switch media {
+        let lines: [String] = switch media {
         case let artist as Artist:
-            guard mpd_search_queue_songs(connection, true),
-                  mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_ALBUM_ARTIST, artist.name),
-                  mpd_search_commit(connection)
-            else {
-                return []
-            }
+            try await run(["playlistfind \(filter(key: "albumArtist", value: artist.name, comparator: "=="))"])
         case let album as Album:
-            guard mpd_search_queue_songs(connection, true),
-                  mpd_search_add_tag_constraint(connection, MPD_OPERATOR_DEFAULT, MPD_TAG_ALBUM, album.title),
-                  mpd_search_commit(connection)
-            else {
-                return []
-            }
+            try await run(["playlistfind \(filter(key: "artist", value: album.title, comparator: "=="))"])
         default:
-            guard mpd_send_list_queue_meta(connection) else {
-                return []
-            }
+            try await run(["playlistinfo"])
         }
 
-        var tasks = [Task<Song?, Never>]()
         var songs = [Song]()
+        var chunks = [[String]]()
+        var chunk = [String]()
 
-        while let recv = mpd_recv_song(connection) {
-            tasks.append(Task {
-                getSong(recv: recv)
-            })
+        for line in lines {
+            if line.hasPrefix("Id"), !chunk.isEmpty {
+                chunks.append(chunk)
+                chunk = []
+            }
+
+            chunk.append(line)
         }
 
-        for task in tasks {
-            if let song = await task.value {
-                songs.append(song)
-            }
+        for chunk in chunks {
+            songs.append(parseMediaResponse(chunk, using: .song) as! Song)
         }
 
         return songs
     }
 
-    func getElapsedData() throws -> Double? {
-        try connect()
+    func getAlbums() async throws -> [Album] {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
         defer { disconnect() }
 
-        guard let connection, let recv = mpd_run_status(connection) else {
-            return nil
-        }
-        defer { mpd_status_free(recv) }
+        let lines = try await run(["playlistfind \"(\(filter(key: "track", value: "1", comparator: "==", quote: false)) AND \(filter(key: "disc", value: "1", comparator: "==", quote: false)))\""])
 
-        return Double(mpd_status_get_elapsed_time(recv))
+        var albums = [Album]()
+        var chunks = [[String]]()
+        var chunk = [String]()
+
+        for line in lines {
+            if line.hasPrefix("Id"), !chunk.isEmpty {
+                chunks.append(chunk)
+                chunk = []
+            }
+
+            chunk.append(line)
+        }
+
+        for chunk in chunks {
+            albums.append(parseMediaResponse(chunk, using: .album) as! Album)
+        }
+
+        return albums
     }
 
-    func getArtworkData(for uri: URL, shouldCache: Bool = true) throws -> Data {
-        if shouldCache, let cache = artworkCache.removeValue(forKey: uri) {
-            artworkCache[uri] = cache
-            return cache
-        }
-
-        var data = Data()
-        var offset: UInt32 = 0
-        let bufferSize = 512 * 512
-        var buffer = Data(count: bufferSize)
-
-        try connect()
+    func getArtworkData(for uri: URL) async throws -> Data {
+        try await connect()
         defer { disconnect() }
 
+        // Start reading from offset 0. You can modify this logic to read in chunks if needed.
+        var offset = 0
+        var completeData = Data()
+
+        // The protocol allows reading partial data. We can loop until we've fetched all.
+        // For demonstration, we read the whole image in chunks until fully retrieved.
         while true {
-            let recv = buffer.withUnsafeMutableBytes { bufferPtr in
-                mpd_run_readpicture(connection, uri.path, offset, bufferPtr.baseAddress, bufferSize)
-            }
-            guard recv > 0 else {
+            // Issue the readpicture command
+            try await writeLine("readpicture \(uri.path) \(offset)")
+
+            var buffer = Data()
+            let lines = try await readUntilOKOrACK(&buffer)
+
+            // Parse binary response (if any)
+            guard let chunk = try await parseBinaryResponse(lines: lines, buffer: &buffer) else {
+                // No binary data returned. If offset == 0 and no data, no artwork available.
+                // Otherwise, we've retrieved all chunks.
                 break
             }
 
-            data.append(buffer.prefix(Int(recv)))
-            offset += UInt32(recv)
-        }
+            completeData.append(chunk)
+            offset += chunk.count
 
-        if shouldCache {
-            if artworkCache.count > maxCacheSize {
-                artworkCache.removeFirst()
+            // If the chunk is smaller than some large chunk size (indicating we've got everything),
+            // or no more binary lines returned, we can break.
+            // Here we rely on `size:` to determine if we've reached the end.
+            // If `size` was known, we could check if offset >= size and break.
+            // For simplicity, assume that if we got a chunk smaller than the requested chunk size or no binary next time, we're done.
+            if chunk.isEmpty {
+                break
             }
-            artworkCache[uri] = data
         }
 
-        return data
+        return completeData
     }
 
-    func createPlaylist(named name: String) throws {
-        try connect()
-        defer { disconnect() }
-
-        mpd_run_save(connection, name)
-    }
-
-    func loadPlaylist(_ playlist: Playlist?) throws {
-        try connect()
-        defer { disconnect() }
-
-        mpd_run_clear(connection)
-
-        if let playlist {
-            mpd_run_load(connection, playlist.name)
-        } else {
-            mpd_run_add(connection, "/")
+    func pause(_ value: Bool) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
         }
-    }
 
-    func addToPlaylist(_ playlist: Playlist, songs: [Song]) throws {
-        try connect()
+        try await connect()
         defer { disconnect() }
 
-        for song in songs {
-            mpd_run_playlist_add(connection, playlist.name, song.uri.path)
+        _ = try await run([value ? "pause 1" : "pause 0"])
+    }
+
+    func previous() async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
         }
+
+        try await connect()
+        defer { disconnect() }
+
+        _ = try await run(["previous"])
+    }
+
+    func next() async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        _ = try await run(["next"])
+    }
+
+    func `repeat`(_ value: Bool) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        _ = try await run([value ? "repeat 1" : "repeat 0"])
+    }
+
+    func random(_ value: Bool) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        _ = try await run([value ? "random 1" : "random 0"])
+    }
+
+    func seek(_ value: Double) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        _ = try await run(["seekcur \(value)"])
+    }
+
+    private func log(severity: String, _ message: String) {
+        if severity == "LINE" {
+            return
+        }
+
+        print(severity + " " + (idle ? "IDLE" : "COMMAND") + ": " + message)
     }
 }
+
+// actor CommandManager: ConnectionManager {
+//    private func run(_ action: (OpaquePointer) -> Void) throws {
+//        try connect()
+//        defer { disconnect() }
+//
+//        guard let connection else {
+//            throw ConnectionManagerError.connectionError
+//        }
+//
+//        action(connection)
+//    }
+//
+//    func getElapsedData() throws -> Double? {
+//        try connect()
+//        defer { disconnect() }
+//
+//        guard let connection, let recv = mpd_run_status(connection) else {
+//            return nil
+//        }
+//        defer { mpd_status_free(recv) }
+//
+//        return Double(mpd_status_get_elapsed_time(recv))
+//    }
+//
+
+//
+//    func createPlaylist(named name: String) throws {
+//        try connect()
+//        defer { disconnect() }
+//
+//        mpd_run_save(connection, name)
+//    }
+//
+//    func loadPlaylist(_ playlist: Playlist?) throws {
+//        try connect()
+//        defer { disconnect() }
+//
+//        mpd_run_clear(connection)
+//
+//        if let playlist {
+//            mpd_run_load(connection, playlist.name)
+//        } else {
+//            mpd_run_add(connection, "/")
+//        }
+//    }
+//
+//    func addToPlaylist(_ playlist: Playlist, songs: [Song]) throws {
+//        try connect()
+//        defer { disconnect() }
+//
+//        for song in songs {
+//            mpd_run_playlist_add(connection, playlist.name, song.uri.path)
+//        }
+//    }
+// }

@@ -1,5 +1,5 @@
 {
-  "originHash" : "618dd9884e9ad966423ae56d24175b3f6c98de2e1234b317e62f8ed3a89a95f2",
+  "originHash" : "6e42f2755d11b672d4dfcd7cf68d03e67a473a4fa6028c293f355b286cce8f41",
   "pins" : [
     {
       "identity" : "launchatlogin-modern",
@@ -8,15 +8,6 @@
       "state" : {
         "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc",
         "version" : "1.1.0"
-      }
-    },
-    {
-      "identity" : "libmpdclient-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/zluo01/libmpdclient-swift",
-      "state" : {
-        "branch" : "main",
-        "revision" : "05b518fcc599bb06759e93563341fffcfcd62b32"
       }
     },
     {

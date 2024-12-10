@@ -240,9 +240,10 @@ struct PopoverView: View {
             .blendMode(.overlay)
             .padding(.vertical, 3)
             .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+            .gesture(DragGesture(minimumDistance: 0).onChanged { _ in
                 Task(priority: .userInitiated) {
-                    await CommandManager.shared.seek((value.location.x / 220) * (player.currentSong?.duration ?? 100))
+                    // TODOA
+                    // await CommandManager.shared.seek((value.location.x / 220) * (player.currentSong?.duration ?? 100))
                 }
             })
             .onHover(perform: { value in
@@ -274,7 +275,8 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await CommandManager.shared.pause(player.status.isPlaying ?? false)
+                        // TODOA
+                        // await CommandManager.shared.pause(player.status.isPlaying ?? false)
                     }
                 })
         }
@@ -294,7 +296,8 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await CommandManager.shared.previous()
+                        // TODOA
+                        // await CommandManager.shared.previous()
                     }
                 })
         }
@@ -314,7 +317,8 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await CommandManager.shared.next()
+                        // TODOA
+                        // await CommandManager.shared.next()
                     }
                 })
         }
@@ -337,7 +341,8 @@ struct PopoverView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            await CommandManager.shared.random(!(player.status.isRandom ?? false))
+                            // TODOA
+                            // await CommandManager.shared.random(!(player.status.isRandom ?? false))
                         }
                     })
 
@@ -369,7 +374,8 @@ struct PopoverView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            await CommandManager.shared.repeat(!(player.status.isRepeat ?? false))
+                            // TODOA
+                            // await CommandManager.shared.repeat(!(player.status.isRepeat ?? false))
                         }
                     })
 

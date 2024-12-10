@@ -5,7 +5,6 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
-import libmpdclient
 import SwiftUI
 
 @Observable final class Player {
@@ -34,59 +33,67 @@ import SwiftUI
 
     @MainActor
     private func updateLoop() async {
-        while await !IdleManager.shared.isConnected {
+        while await ConnectionManager.idle.connection?.state != .ready {
             do {
-                try await IdleManager.shared.connect(isolation: IdleManager.shared, idle: true)
+                try await ConnectionManager.idle.connect()
+                print("INFO: Connected")
+
             } catch {
                 try? await Task.sleep(for: .seconds(5))
             }
         }
 
-        await performUpdates(for: mpd_idle(
-            MPD_IDLE_PLAYER.rawValue |
-                MPD_IDLE_OPTIONS.rawValue |
-                MPD_IDLE_STORED_PLAYLIST.rawValue
-        ))
+        await performUpdates(for: "player")
 
         while !Task.isCancelled {
-            if await !IdleManager.shared.isConnected {
+            if await ConnectionManager.idle.connection?.state != .ready {
                 do {
-                    try await IdleManager.shared.connect(isolation: IdleManager.shared, idle: true)
+                    try await ConnectionManager.idle.connect()
                 } catch {
                     try? await Task.sleep(for: .seconds(5))
                     continue
                 }
             }
 
-            let idleResult = await IdleManager.shared.runIdleMask(
-                mask: mpd_idle(
-                    MPD_IDLE_PLAYER.rawValue |
-                        MPD_IDLE_OPTIONS.rawValue |
-                        MPD_IDLE_STORED_PLAYLIST.rawValue
-                )
-            )
+            let changes = try? await ConnectionManager.idle.idleForEvents(mask: ["playlist", "player", "options"])
+            guard let changes else {
+                continue
+            }
+            print(changes)
 
-            await performUpdates(for: idleResult)
+            await performUpdates(for: changes)
         }
     }
 
     @MainActor
-    private func performUpdates(for idleResult: mpd_idle) async {
-        guard idleResult != mpd_idle(0) else {
-            return await IdleManager.shared.disconnect(isolation: IdleManager.shared)
+    private func performUpdates(for change: String) async {
+        switch change {
+        case "playlist":
+            await updatePlaylist()
+        case "player":
+            await updateOptions()
+            await updatePlayer()
+        case "options":
+            await updateOptions()
+        default:
+            break
         }
+    }
 
-        if (idleResult.rawValue & MPD_IDLE_PLAYER.rawValue) != 0 ||
-            (idleResult.rawValue & MPD_IDLE_OPTIONS.rawValue) != 0
-        {
-            await status.set()
-            if await currentSong.update(to: try? IdleManager.shared.getCurrentSong()) {
-                AppDelegate.shared.setStatusItemTitle()
-            }
-        }
+    @MainActor
+    private func updatePlaylist() async {
+        // playlists = try? await IdleManager.shared.getPlaylists()
+    }
 
-        if (idleResult.rawValue & MPD_IDLE_STORED_PLAYLIST.rawValue) != 0 {
-            playlists = try? await IdleManager.shared.getPlaylists()
+    @MainActor
+    private func updatePlayer() async {
+        if await currentSong.update(to: try? ConnectionManager.idle.getCurrentSong()) {
+            AppDelegate.shared.setStatusItemTitle()
         }
+    }
+
+    @MainActor
+    private func updateOptions() async {
+        await status.set()
     }
 }

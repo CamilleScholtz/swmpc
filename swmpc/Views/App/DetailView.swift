@@ -162,7 +162,10 @@ struct DetailView: View {
                 return
             }
 
-            artwork = await NSImage(data: try! CommandManager.shared.getArtworkData(for: song.uri, shouldCache: false))
+            guard let data = try? await ConnectionManager.command.getArtworkData(for: song.uri) else {
+                return
+            }
+            artwork = NSImage(data: data)
         }
         .onChange(of: artwork) { previous, _ in
             previousArtwork = previous
@@ -353,7 +356,7 @@ struct DetailView: View {
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    await CommandManager.shared.pause(player.status.isPlaying ?? false)
+                    try? await ConnectionManager.command.pause(player.status.isPlaying ?? false)
                 }
             })
         }
@@ -373,7 +376,7 @@ struct DetailView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await CommandManager.shared.previous()
+                        try? await ConnectionManager.command.previous()
                     }
                 })
         }
@@ -393,7 +396,7 @@ struct DetailView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        await CommandManager.shared.next()
+                        try? await ConnectionManager.command.next()
                     }
                 })
         }
@@ -415,7 +418,7 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            await CommandManager.shared.random(!(player.status.isRandom ?? false))
+                            try? await ConnectionManager.command.random(!(player.status.isRandom ?? false))
                         }
                     })
 
@@ -445,7 +448,7 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            await CommandManager.shared.repeat(!(player.status.isRepeat ?? false))
+                            try? await ConnectionManager.command.repeat(!(player.status.isRepeat ?? false))
                         }
                     })
 
@@ -492,7 +495,7 @@ struct DetailView: View {
                     .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                         Task(priority: .userInitiated) {
-                            await CommandManager.shared.seek((value.location.x / geometry.size.width) * (player.currentSong?.duration ?? 100))
+                            try? await ConnectionManager.command.seek((value.location.x / geometry.size.width) * (player.currentSong?.duration ?? 100))
                         }
                     })
                     .onHover(perform: { value in

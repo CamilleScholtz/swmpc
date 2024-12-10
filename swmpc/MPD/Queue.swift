@@ -5,16 +5,16 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
-import libmpdclient
 import SwiftUI
 
 @Observable final class Queue {
     init() {
         Task {
-            try? await CommandManager.shared.loadPlaylist(nil)
+            // TODOA
+            // try? await ConnectionManager.command.loadPlaylist(nil)
         }
     }
-    
+
     let categories: [Category] = [
         .init(id: MediaType.album, label: "Albums", image: "square.stack"),
         .init(id: MediaType.artist, label: "Artists", image: "music.microphone"),
@@ -39,17 +39,17 @@ import SwiftUI
     func set(for type: MediaType, using playlist: Playlist? = nil) async {
         if self.playlist != playlist {
             self.playlist = playlist
-            try? await CommandManager.shared.loadPlaylist(playlist)
+            try? await ConnectionManager.command.loadPlaylist(playlist)
         }
-        
-        guard self.type != type else  {
+
+        guard self.type != type else {
             return
         }
         self.type = type
-        
+
         switch type {
         case .artist:
-            guard let albums = try? await CommandManager.shared.getAlbums() else {
+            guard let albums = try? await ConnectionManager.command.getAlbums() else {
                 return
             }
             let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
@@ -63,11 +63,11 @@ import SwiftUI
             }
             .sorted { $0.name < $1.name }
         case .song:
-            media = await (try? CommandManager.shared.getSongs()) ?? []
+            media = await (try? ConnectionManager.command.getSongs()) ?? []
         case .playlist:
-            media = await (try? CommandManager.shared.getSongs(for: playlist)) ?? []
+            media = await (try? ConnectionManager.command.getSongs(for: playlist)) ?? []
         default:
-            media = await (try? CommandManager.shared.getAlbums()) ?? []
+            media = await (try? ConnectionManager.command.getAlbums()) ?? []
         }
     }
 
@@ -98,7 +98,7 @@ import SwiftUI
         guard type != .song else {
             return media
         }
-        
+
         await set(for: type, using: playlist)
 
         if let index = self.media.firstIndex(where: { $0.id > media.id }), index > 0 {
