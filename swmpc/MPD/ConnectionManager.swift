@@ -16,7 +16,11 @@ enum ConnectionManagerError: Error {
 
     case protocolError(String)
 
+    case readUntilConditionNotMet
+    case malformedResponse
     case wrongMode
+
+    case invalidBinaryLength
 }
 
 actor ConnectionManager {
@@ -25,6 +29,8 @@ actor ConnectionManager {
 
     private(set) var idle: Bool
     private(set) var connection: NWConnection?
+
+    private var buffer = Data()
 
     private init(idle: Bool) {
         self.idle = idle
@@ -45,8 +51,7 @@ actor ConnectionManager {
         connection.start(queue: .global())
         try await waitForConnectionReady()
 
-        var buffer = Data()
-        let lines = try await readUntilOK(&buffer)
+        let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
             throw ConnectionManagerError.connectionError
         }
@@ -55,6 +60,8 @@ actor ConnectionManager {
     func disconnect() {
         connection?.cancel()
         connection = nil
+
+        buffer.removeAll()
     }
 
     func run(_ commands: [String]) async throws -> [String] {
@@ -67,8 +74,7 @@ actor ConnectionManager {
 
         try await writeLine(commands.joined(separator: "\n"))
 
-        var buffer = Data()
-        let lines = try await readUntilOKOrACK(&buffer)
+        let lines = try await readUntilOKOrACK()
         if let ackLine = lines.first(where: { $0.hasPrefix("ACK") }) {
             throw ConnectionManagerError.protocolError(ackLine)
         }
@@ -82,8 +88,11 @@ actor ConnectionManager {
         }
 
         let lines = try await run(["idle \(mask.joined(separator: " "))"])
+        guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
+            throw ConnectionManagerError.protocolError("No changed line")
+        }
 
-        return String((lines.first! as String).dropFirst(9))
+        return String(changedLine.dropFirst("changed: ".count))
     }
 
     // MARK: - Connection lifecycle
@@ -158,66 +167,72 @@ actor ConnectionManager {
 
     // MARK: - Reading
 
-    private func readLine(_ buffer: inout Data) async throws -> String? {
-        if let line = extractLineFromBuffer(&buffer) {
+    private func readLine() async throws -> String? {
+        // TODO: Possibly use try here?
+        if let line = try? extractLineFromBuffer() {
             return line
         }
 
+        try await readMoreData()
+        
+        return try extractLineFromBuffer()
+    }
+
+    private func extractLineFromBuffer() throws -> String? {
+        guard let newlineRange = buffer.firstRange(of: Data([0x0A])) else {
+            return nil
+        }
+
+        let lineData = buffer[..<newlineRange.lowerBound]
+        buffer.removeSubrange(buffer.startIndex ..< newlineRange.upperBound)
+
+        guard let line = String(data: lineData, encoding: .utf8) else {
+            throw ConnectionManagerError.malformedResponse
+        }
+
+        return line.trimmingCharacters(in: .newlines)
+    }
+
+    private func readMoreData() async throws {
         let connection = try ensureConnectionReady()
 
         guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
             connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, isComplete, error in
                 if let error {
                     continuation.resume(throwing: error)
-                } else if isComplete || data == nil {
+                } else if isComplete {
                     continuation.resume(returning: nil)
                 } else {
                     continuation.resume(returning: data)
                 }
             }
         }) else {
-            return nil
+            throw ConnectionManagerError.connectionClosed
         }
 
         buffer.append(chunk)
-        return extractLineFromBuffer(&buffer)
     }
 
-    private func extractLineFromBuffer(_ buffer: inout Data) -> String? {
-        guard let newlineRange = buffer.firstRange(of: Data([0x0A])) else {
-            return nil
-        }
-
-        let lineData = buffer[..<newlineRange.lowerBound]
-        let line = String(data: lineData, encoding: .utf8)?.trimmingCharacters(in: .newlines)
-
-        buffer.removeSubrange(buffer.startIndex ..< newlineRange.upperBound)
-
-        return line
-    }
-
-    private func readUntil(_ buffer: inout Data, _ condition: @escaping (String) -> Bool) async throws -> [String] {
+    private func readUntil(_ condition: @escaping (String) -> Bool) async throws -> [String] {
         var lines: [String] = []
 
-        while let line = try await readLine(&buffer) {
+        while let line = try await readLine() {
             lines.append(line)
-            log(severity: "LINE", line)
 
             if condition(line) {
                 return lines
             }
         }
 
-        print(lines)
-        throw ConnectionManagerError.connectionClosed
+        throw ConnectionManagerError.readUntilConditionNotMet
     }
 
-    private func readUntilOK(_ buffer: inout Data) async throws -> [String] {
-        try await readUntil(&buffer) { $0.hasPrefix("OK") }
+    private func readUntilOK() async throws -> [String] {
+        try await readUntil { $0.hasPrefix("OK") }
     }
 
-    private func readUntilOKOrACK(_ buffer: inout Data) async throws -> [String] {
-        try await readUntil(&buffer) { $0.hasPrefix("OK") || $0.hasPrefix("ACK") }
+    private func readUntilOKOrACK() async throws -> [String] {
+        try await readUntil { $0.hasPrefix("OK") || $0.hasPrefix("ACK") }
     }
 
     // MARK: - Parsing
@@ -297,52 +312,37 @@ actor ConnectionManager {
         }
     }
 
-    private func parseBinaryResponse(_ lines: [String]) -> Data? {
-        var totalSize: Int?
-        var binaryChunkSize: Int?
+    private func parseBinaryResponse(_ lines: [String]) -> (size: Int?, binary: Int?) {
+        var size: Int?
+        var binary: Int?
 
-        // We're not returning until "OK" or "ACK" is encountered, so let's parse metadata first.
         for line in lines {
-            let trimmedLine = line.trimmed()
-            guard trimmedLine != "OK" else {
-                // We've reached the end of this particular response.
-                // If we never got binary data, return nil.
-                return nil
+            if line.hasPrefix("OK") {
+                break
             }
 
-            // Split key/value pairs
-            let parts = trimmedLine.split(separator: ":", maxSplits: 1).map { String($0).trimmed() }
-            guard parts.count == 2 else { continue }
+            let parts = line.split(separator: ":", maxSplits: 1).map {
+                $0.trimmingCharacters(in: .whitespaces)
+            }
+
+            guard parts.count == 2 else {
+                continue
+            }
 
             let key = parts[0].lowercased()
             let value = parts[1]
 
             switch key {
             case "size":
-                totalSize = Int(value)
+                size = Int(value)
             case "binary":
-                binaryChunkSize = Int(value)
+                binary = Int(value)
             default:
                 break
             }
         }
 
-        // If there's a binary chunk expected, read it now
-        if let chunkSize = binaryChunkSize, chunkSize > 0 {
-            // Reserve capacity if total size is known
-            var binaryData = Data()
-            binaryData.reserveCapacity(totalSize ?? chunkSize)
-
-            // At this point, we must read exactly `chunkSize` bytes of binary data from the connection
-            // after the textual lines have been read.
-            let connection = try ensureConnectionReady()
-            let receivedData = try await readExactBytes(count: chunkSize, from: connection, buffer: &buffer)
-            binaryData.append(receivedData)
-            return binaryData
-        }
-
-        // No binary data
-        return nil
+        return (size, binary)
     }
 
     // MARK: - Command API
@@ -487,40 +487,112 @@ actor ConnectionManager {
         try await connect()
         defer { disconnect() }
 
-        // Start reading from offset 0. You can modify this logic to read in chunks if needed.
+        print("dd")
+
+        let connection = connection
+
+        var data = Data()
         var offset = 0
-        var completeData = Data()
+        var totalSize: Int? = nil
 
-        // The protocol allows reading partial data. We can loop until we've fetched all.
-        // For demonstration, we read the whole image in chunks until fully retrieved.
-        while true {
-            // Issue the readpicture command
-            try await writeLine("readpicture \(uri.path) \(offset)")
+        fetchLoop: while true {
+            // Send the command
+            let command = "readpicture \(uri.path) \(offset)"
+            try await writeLine(command)
 
-            var buffer = Data()
-            let lines = try await readUntilOKOrACK(&buffer)
+            var linesBeforeBinary: [String] = []
+            var binaryLength: Int? = nil
 
-            // Parse binary response (if any)
-            guard let chunk = try await parseBinaryResponse(lines: lines, buffer: &buffer) else {
-                // No binary data returned. If offset == 0 and no data, no artwork available.
-                // Otherwise, we've retrieved all chunks.
+            // Read lines until we hit a binary line or OK/ACK
+            linesLoop: while let line = try await readLine() {
+                if line.hasPrefix("ACK") {
+                    throw ConnectionManagerError.protocolError(line)
+                }
+
+                if line.lowercased().hasPrefix("binary:") {
+                    // Extract binary length
+                    let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+                    guard parts.count == 2, let length = Int(parts[1]), length > 0 else {
+                        throw ConnectionManagerError.invalidBinaryLength
+                    }
+                    binaryLength = length
+                    break linesLoop
+                }
+
+                if line.hasPrefix("OK") {
+                    // No binary data line encountered
+                    linesBeforeBinary.append(line)
+                    // Parse what we have to see if there's a size
+                    let (size, _) = parseBinaryResponse(linesBeforeBinary)
+                    if let s = size {
+                        totalSize = s
+                    }
+                    // If no binary data, then either no artwork or no more data to fetch
+                    break fetchLoop
+                }
+
+                linesBeforeBinary.append(line)
+            }
+
+            // Parse to get size and binaryLength (if not already got from binary line)
+            let (size, binLengthFromBefore) = parseBinaryResponse(linesBeforeBinary)
+            if let s = size {
+                totalSize = s
+            }
+
+            if binaryLength == nil {
+                binaryLength = binLengthFromBefore
+            }
+
+            guard let expectedBinaryLength = binaryLength, expectedBinaryLength > 0 else {
+                // No binary data means either no artwork or we are done
                 break
             }
 
-            completeData.append(chunk)
-            offset += chunk.count
+            // Read the binary data (expectedBinaryLength bytes)
+            var binaryData = Data()
+            binaryData.reserveCapacity(expectedBinaryLength)
 
-            // If the chunk is smaller than some large chunk size (indicating we've got everything),
-            // or no more binary lines returned, we can break.
-            // Here we rely on `size:` to determine if we've reached the end.
-            // If `size` was known, we could check if offset >= size and break.
-            // For simplicity, assume that if we got a chunk smaller than the requested chunk size or no binary next time, we're done.
-            if chunk.isEmpty {
+            while binaryData.count < expectedBinaryLength {
+                if buffer.isEmpty {
+                    guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
+                        connection?.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, isComplete, error in
+                            if let error {
+                                continuation.resume(throwing: error)
+                            } else if isComplete || data == nil {
+                                continuation.resume(returning: nil)
+                            } else {
+                                continuation.resume(returning: data)
+                            }
+                        }
+                    }) else {
+                        throw ConnectionManagerError.connectionClosed
+                    }
+                    buffer.append(chunk)
+                }
+
+                let needed = expectedBinaryLength - binaryData.count
+                let toAppend = buffer.prefix(needed)
+                binaryData.append(toAppend)
+                buffer.removeFirst(toAppend.count)
+            }
+
+            // After reading binary data, we should read until OK (one line)
+            let afterBinaryLines = try await readUntil { $0.hasPrefix("OK") }
+
+            // Append the chunk we got
+            data.append(binaryData)
+            offset += binaryData.count
+
+            // If we know the total size and have reached it, stop
+            if let total = totalSize, offset >= total {
                 break
             }
+
+            // Otherwise, continue fetching until done
         }
 
-        return completeData
+        return data
     }
 
     func pause(_ value: Bool) async throws {
@@ -587,14 +659,6 @@ actor ConnectionManager {
         defer { disconnect() }
 
         _ = try await run(["seekcur \(value)"])
-    }
-
-    private func log(severity: String, _ message: String) {
-        if severity == "LINE" {
-            return
-        }
-
-        print(severity + " " + (idle ? "IDLE" : "COMMAND") + ": " + message)
     }
 }
 
