@@ -19,6 +19,7 @@ import SwiftUI
     var elapsed: Double?
 
     var song: Song?
+    // TODO: Create setter for this
     var media: (any Mediable)?
     var playlist: Playlist?
 
@@ -41,12 +42,12 @@ import SwiftUI
             return
         }
 
-//        if trackElapsed {
-//            if elapsed.update(to: data.elapsed ?? 0), data.isPlaying ?? false {
-//                stopTrackingElapsed()
-//                startTrackingElapsed()
-//            }
-//        }
+        if trackElapsed {
+            if elapsed.update(to: data.elapsed ?? 0), data.state == .play {
+                stopTrackingElapsed()
+                startTrackingElapsed()
+            }
+        }
 
         if state.update(to: data.state) {
             let image = switch data.state {
@@ -60,9 +61,9 @@ import SwiftUI
 
             AppDelegate.shared.setPopoverAnchorImage(changed: image)
 
-            // if trackElapsed {
-            //     data.state == .play ? startTrackingElapsed() : stopTrackingElapsed()
-            // }
+            if trackElapsed {
+                data.state == .play ? startTrackingElapsed() : stopTrackingElapsed()
+            }
         }
 
         if isRandom.update(to: data.isRandom ?? false) {
@@ -74,7 +75,7 @@ import SwiftUI
         }
 
         if song.update(to: data.song) {
-            media = song
+            AppDelegate.shared.setStatusItemTitle()
         }
     }
 

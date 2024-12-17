@@ -381,7 +381,7 @@ actor ConnectionManager {
             case "elapsed":
                 elapsed = Double(value)
             case "playlist":
-                print("TODO")
+                print("TODO1")
             case "songid":
                 let lines = try await run(["playlistid \(value)"])
 
@@ -429,16 +429,20 @@ actor ConnectionManager {
 
         var chunks = [[String]]()
         var chunk = [String]()
-                
-        for line in lines {
+
+        for line in lines.dropLast() {
             if line.hasPrefix("file"), !chunk.isEmpty {
                 chunks.append(chunk)
                 chunk.removeAll(keepingCapacity: true)
             }
-            
+
             chunk.append(line)
         }
-        
+
+        if !chunk.isEmpty {
+            chunks.append(chunk)
+        }
+
         return try chunks.map { chunk in
             try parseMediaResponse(chunk, using: .song) as! Song
         }
@@ -457,15 +461,19 @@ actor ConnectionManager {
         var chunks = [[String]]()
         var chunk = [String]()
 
-        for line in lines {
+        for line in lines.dropLast() {
             if line.hasPrefix("file"), !chunk.isEmpty {
                 chunks.append(chunk)
                 chunk.removeAll(keepingCapacity: true)
             }
-            
+
             chunk.append(line)
         }
 
+        if !chunk.isEmpty {
+            chunks.append(chunk)
+        }
+        
         return try chunks.map { chunk in
             try parseMediaResponse(chunk, using: .album) as! Album
         }
