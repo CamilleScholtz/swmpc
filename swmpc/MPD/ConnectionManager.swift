@@ -19,20 +19,18 @@ enum ConnectionManagerError: Error {
     case readUntilConditionNotMet
     case malformedResponse
     case wrongMode
-
-    case invalidBinaryLength
 }
 
 actor ConnectionManager {
-    static let idle = ConnectionManager(idle: true)
-    static let command = ConnectionManager(idle: false)
+    static let shared = ConnectionManager(idle: true)
 
     private(set) var idle: Bool
     private(set) var connection: NWConnection?
 
     private var buffer = Data()
+    // private let semaphore = DispatchSemaphore(value: 1)
 
-    private init(idle: Bool) {
+    init(idle: Bool = false) {
         self.idle = idle
     }
 
@@ -64,6 +62,14 @@ actor ConnectionManager {
         buffer.removeAll()
     }
 
+    func ensureConnectionReady() throws -> NWConnection {
+        guard let connection, connection.state == .ready else {
+            throw ConnectionManagerError.notConnected
+        }
+
+        return connection
+    }
+
     func run(_ commands: [String]) async throws -> [String] {
         var commands = commands
 
@@ -72,11 +78,20 @@ actor ConnectionManager {
             commands.append("command_list_end")
         }
 
+        // TODO: Is this still needed?
+        // await withCheckedContinuation { continuation in
+        //     DispatchQueue.global().async {
+        //         self.semaphore.wait()
+        //         continuation.resume()
+        //     }
+        // }
+        // defer { semaphore.signal() }
+
         try await writeLine(commands.joined(separator: "\n"))
 
         let lines = try await readUntilOKOrACK()
-        if let ackLine = lines.first(where: { $0.hasPrefix("ACK") }) {
-            throw ConnectionManagerError.protocolError(ackLine)
+        if let ack = lines.first(where: { $0.hasPrefix("ACK") }) {
+            throw ConnectionManagerError.protocolError(ack)
         }
 
         return lines
@@ -128,14 +143,6 @@ actor ConnectionManager {
         throw ConnectionManagerError.connectionError
     }
 
-    private func ensureConnectionReady() throws -> NWConnection {
-        guard let connection, connection.state == .ready else {
-            throw ConnectionManagerError.notConnected
-        }
-
-        return connection
-    }
-
     // MARK: - Writing
 
     private func writeLine(_ line: String) async throws {
@@ -168,32 +175,49 @@ actor ConnectionManager {
     // MARK: - Reading
 
     private func readLine() async throws -> String? {
-        // TODO: Possibly use try here?
         if let line = try? extractLineFromBuffer() {
             return line
         }
 
-        try await readMoreData()
-        
+        try await receiveDataChunk()
+
         return try extractLineFromBuffer()
     }
 
+    private func readFixedLengthData(_ length: Int) async throws -> Data {
+        var data = Data()
+
+        while data.count < length {
+            if buffer.isEmpty {
+                try await receiveDataChunk()
+            }
+
+            let needed = length - data.count
+            let chunk = buffer.prefix(needed)
+
+            data.append(chunk)
+            buffer.removeFirst(chunk.count)
+        }
+
+        return data
+    }
+
     private func extractLineFromBuffer() throws -> String? {
-        guard let newlineRange = buffer.firstRange(of: Data([0x0A])) else {
+        guard let range = buffer.firstRange(of: Data([0x0A])) else {
             return nil
         }
 
-        let lineData = buffer[..<newlineRange.lowerBound]
-        buffer.removeSubrange(buffer.startIndex ..< newlineRange.upperBound)
+        let data = buffer[..<range.lowerBound]
+        buffer.removeSubrange(buffer.startIndex ..< range.upperBound)
 
-        guard let line = String(data: lineData, encoding: .utf8) else {
+        guard let string = String(data: data, encoding: .utf8) else {
             throw ConnectionManagerError.malformedResponse
         }
 
-        return line.trimmingCharacters(in: .newlines)
+        return string.trimmingCharacters(in: .newlines)
     }
 
-    private func readMoreData() async throws {
+    private func receiveDataChunk() async throws {
         let connection = try ensureConnectionReady()
 
         guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
@@ -237,7 +261,19 @@ actor ConnectionManager {
 
     // MARK: - Parsing
 
-    private func parseMediaResponse(_ lines: [String], using media: MediaType) -> (any Mediable)? {
+    private func parseLine(_ line: String) throws -> (String, String) {
+        let parts = line.split(separator: ":", maxSplits: 1).map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
+
+        guard parts.count == 2 else {
+            throw ConnectionManagerError.malformedResponse
+        }
+
+        return (parts[0].lowercased(), parts[1])
+    }
+
+    private func parseMediaResponse(_ lines: [String], using media: MediaType) throws -> (any Mediable)? {
         var id: UInt32 = 0
         var uri: URL?
         var artist: String?
@@ -254,15 +290,7 @@ actor ConnectionManager {
                 break
             }
 
-            let parts = line.split(separator: ":", maxSplits: 1).map {
-                $0.trimmingCharacters(in: .whitespaces)
-            }
-            guard parts.count == 2 else {
-                continue
-            }
-
-            let key = parts[0].lowercased()
-            let value = parts[1]
+            let (key, value) = try parseLine(line)
 
             switch key {
             case "id":
@@ -312,93 +340,58 @@ actor ConnectionManager {
         }
     }
 
-    private func parseBinaryResponse(_ lines: [String]) -> (size: Int?, binary: Int?) {
-        var size: Int?
-        var binary: Int?
-
-        for line in lines {
-            if line.hasPrefix("OK") {
-                break
-            }
-
-            let parts = line.split(separator: ":", maxSplits: 1).map {
-                $0.trimmingCharacters(in: .whitespaces)
-            }
-
-            guard parts.count == 2 else {
-                continue
-            }
-
-            let key = parts[0].lowercased()
-            let value = parts[1]
-
-            switch key {
-            case "size":
-                size = Int(value)
-            case "binary":
-                binary = Int(value)
-            default:
-                break
-            }
-        }
-
-        return (size, binary)
-    }
-
     // MARK: - Command API
 
-    func getCurrentSong() async throws -> Song? {
-        guard idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
-        let lines = try await run(["currentsong"])
-
-        return parseMediaResponse(lines, using: .song) as? Song
-    }
-
-    func getStatusData() async throws -> (isPlaying: Bool?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?) {
+    func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?, song: Song?) {
         guard idle else {
             throw ConnectionManagerError.wrongMode
         }
 
         let lines = try await run(["status"])
 
-        var isPlaying: Bool?
+        var state: PlayerState?
         var isRandom: Bool?
         var isRepeat: Bool?
         var elapsed: Double?
+        var song: Song?
 
         for line in lines {
             guard line != "OK" else {
                 break
             }
 
-            let parts = line.split(separator: ":", maxSplits: 1).map {
-                $0.trimmingCharacters(in: .whitespaces)
-            }
-            guard parts.count == 2 else {
-                continue
-            }
-
-            let key = parts[0].lowercased()
-            let value = parts[1]
+            let (key, value) = try parseLine(line)
 
             switch key {
             case "state":
-                isPlaying = (value == "play")
+                state = switch value {
+                case "play":
+                    .play
+                case "pause":
+                    .pause
+                case "stop":
+                    .stop
+                default:
+                    throw ConnectionManagerError.malformedResponse
+                }
             case "random":
                 isRandom = (value == "1")
             case "repeat":
                 isRepeat = (value == "1")
             case "elapsed":
                 elapsed = Double(value)
+            case "playlist":
+                print("TODO")
+            case "songid":
+                let lines = try await run(["playlistid \(value)"])
+
+                song = try parseMediaResponse(lines, using: .song) as? Song
             default:
                 break
             }
         }
 
-        return (isPlaying, isRandom, isRepeat, elapsed)
+        return (state, isRandom, isRepeat, elapsed, song)
     }
 
     func loadPlaylist(_ playlist: Playlist?) async throws {
@@ -428,29 +421,27 @@ actor ConnectionManager {
         case let artist as Artist:
             try await run(["playlistfind \(filter(key: "albumArtist", value: artist.name, comparator: "=="))"])
         case let album as Album:
-            try await run(["playlistfind \(filter(key: "artist", value: album.title, comparator: "=="))"])
+            // TODO: Probably doesn't work with two albums with the same name.
+            try await run(["playlistfind \(filter(key: "album", value: album.title, comparator: "=="))"])
         default:
             try await run(["playlistinfo"])
         }
 
-        var songs = [Song]()
         var chunks = [[String]]()
         var chunk = [String]()
-
+                
         for line in lines {
-            if line.hasPrefix("Id"), !chunk.isEmpty {
+            if line.hasPrefix("file"), !chunk.isEmpty {
                 chunks.append(chunk)
-                chunk = []
+                chunk.removeAll(keepingCapacity: true)
             }
-
+            
             chunk.append(line)
         }
-
-        for chunk in chunks {
-            songs.append(parseMediaResponse(chunk, using: .song) as! Song)
+        
+        return try chunks.map { chunk in
+            try parseMediaResponse(chunk, using: .song) as! Song
         }
-
-        return songs
     }
 
     func getAlbums() async throws -> [Album] {
@@ -463,136 +454,88 @@ actor ConnectionManager {
 
         let lines = try await run(["playlistfind \"(\(filter(key: "track", value: "1", comparator: "==", quote: false)) AND \(filter(key: "disc", value: "1", comparator: "==", quote: false)))\""])
 
-        var albums = [Album]()
         var chunks = [[String]]()
         var chunk = [String]()
 
         for line in lines {
-            if line.hasPrefix("Id"), !chunk.isEmpty {
+            if line.hasPrefix("file"), !chunk.isEmpty {
                 chunks.append(chunk)
-                chunk = []
+                chunk.removeAll(keepingCapacity: true)
             }
-
+            
             chunk.append(line)
         }
 
-        for chunk in chunks {
-            albums.append(parseMediaResponse(chunk, using: .album) as! Album)
+        return try chunks.map { chunk in
+            try parseMediaResponse(chunk, using: .album) as! Album
         }
-
-        return albums
     }
 
     func getArtworkData(for uri: URL) async throws -> Data {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
         try await connect()
         defer { disconnect() }
 
-        print("dd")
-
-        let connection = connection
-
         var data = Data()
         var offset = 0
-        var totalSize: Int? = nil
+        var totalSize: Int?
 
-        fetchLoop: while true {
-            // Send the command
-            let command = "readpicture \(uri.path) \(offset)"
-            try await writeLine(command)
+        while true {
+            try await writeLine("readpicture \"\(uri.path)\" \(offset)")
 
-            var linesBeforeBinary: [String] = []
-            var binaryLength: Int? = nil
+            var chunkSize: Int?
 
-            // Read lines until we hit a binary line or OK/ACK
-            linesLoop: while let line = try await readLine() {
-                if line.hasPrefix("ACK") {
-                    throw ConnectionManagerError.protocolError(line)
-                }
-
-                if line.lowercased().hasPrefix("binary:") {
-                    // Extract binary length
-                    let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-                    guard parts.count == 2, let length = Int(parts[1]), length > 0 else {
-                        throw ConnectionManagerError.invalidBinaryLength
-                    }
-                    binaryLength = length
-                    break linesLoop
+            while chunkSize == nil {
+                guard let line = try? await readLine() else {
+                    throw ConnectionManagerError.malformedResponse
                 }
 
                 if line.hasPrefix("OK") {
-                    // No binary data line encountered
-                    linesBeforeBinary.append(line)
-                    // Parse what we have to see if there's a size
-                    let (size, _) = parseBinaryResponse(linesBeforeBinary)
-                    if let s = size {
-                        totalSize = s
-                    }
-                    // If no binary data, then either no artwork or no more data to fetch
-                    break fetchLoop
+                    break
                 }
 
-                linesBeforeBinary.append(line)
-            }
+                let (key, value) = try parseLine(line)
 
-            // Parse to get size and binaryLength (if not already got from binary line)
-            let (size, binLengthFromBefore) = parseBinaryResponse(linesBeforeBinary)
-            if let s = size {
-                totalSize = s
-            }
-
-            if binaryLength == nil {
-                binaryLength = binLengthFromBefore
-            }
-
-            guard let expectedBinaryLength = binaryLength, expectedBinaryLength > 0 else {
-                // No binary data means either no artwork or we are done
-                break
-            }
-
-            // Read the binary data (expectedBinaryLength bytes)
-            var binaryData = Data()
-            binaryData.reserveCapacity(expectedBinaryLength)
-
-            while binaryData.count < expectedBinaryLength {
-                if buffer.isEmpty {
-                    guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
-                        connection?.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, isComplete, error in
-                            if let error {
-                                continuation.resume(throwing: error)
-                            } else if isComplete || data == nil {
-                                continuation.resume(returning: nil)
-                            } else {
-                                continuation.resume(returning: data)
-                            }
-                        }
-                    }) else {
-                        throw ConnectionManagerError.connectionClosed
-                    }
-                    buffer.append(chunk)
+                switch key {
+                case "size":
+                    totalSize = Int(value)
+                case "binary":
+                    chunkSize = Int(value)
+                default:
+                    break
                 }
-
-                let needed = expectedBinaryLength - binaryData.count
-                let toAppend = buffer.prefix(needed)
-                binaryData.append(toAppend)
-                buffer.removeFirst(toAppend.count)
             }
 
-            // After reading binary data, we should read until OK (one line)
-            let afterBinaryLines = try await readUntil { $0.hasPrefix("OK") }
-
-            // Append the chunk we got
-            data.append(binaryData)
-            offset += binaryData.count
-
-            // If we know the total size and have reached it, stop
-            if let total = totalSize, offset >= total {
-                break
+            guard let chunkSize else {
+                throw ConnectionManagerError.malformedResponse
             }
 
-            // Otherwise, continue fetching until done
+            let binaryChunk = try await readFixedLengthData(chunkSize)
+            data.append(binaryChunk)
+            buffer.removeAll()
+
+            offset += chunkSize
+
+            if offset >= (totalSize ?? 0) {
+                return data
+            }
+        }
+    }
+
+    func play(_ media: any Mediable) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
         }
 
-        return data
+        try await connect()
+        defer { disconnect() }
+
+        print(media.id)
+
+        _ = try await run(["playid \(media.id)"])
     }
 
     func pause(_ value: Bool) async throws {
@@ -662,18 +605,6 @@ actor ConnectionManager {
     }
 }
 
-// actor CommandManager: ConnectionManager {
-//    private func run(_ action: (OpaquePointer) -> Void) throws {
-//        try connect()
-//        defer { disconnect() }
-//
-//        guard let connection else {
-//            throw ConnectionManagerError.connectionError
-//        }
-//
-//        action(connection)
-//    }
-//
 //    func getElapsedData() throws -> Double? {
 //        try connect()
 //        defer { disconnect() }
@@ -686,26 +617,11 @@ actor ConnectionManager {
 //        return Double(mpd_status_get_elapsed_time(recv))
 //    }
 //
-
-//
 //    func createPlaylist(named name: String) throws {
 //        try connect()
 //        defer { disconnect() }
 //
 //        mpd_run_save(connection, name)
-//    }
-//
-//    func loadPlaylist(_ playlist: Playlist?) throws {
-//        try connect()
-//        defer { disconnect() }
-//
-//        mpd_run_clear(connection)
-//
-//        if let playlist {
-//            mpd_run_load(connection, playlist.name)
-//        } else {
-//            mpd_run_add(connection, "/")
-//        }
 //    }
 //
 //    func addToPlaylist(_ playlist: Playlist, songs: [Song]) throws {
@@ -716,4 +632,3 @@ actor ConnectionManager {
 //            mpd_run_playlist_add(connection, playlist.name, song.uri.path)
 //        }
 //    }
-// }

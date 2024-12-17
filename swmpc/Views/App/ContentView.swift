@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(Player.self) private var player
+    @Environment(MPD.self) private var mpd
 
     @Binding var path: NavigationPath
 
@@ -23,7 +23,7 @@ struct ContentView: View {
                         .id("top")
 
                     LazyVStack(alignment: .leading, spacing: 15) {
-                        switch player.queue.type {
+                        switch mpd.queue.type {
                         case .artist:
                             ArtistsView(path: $path)
                         case .song, .playlist:
@@ -32,7 +32,7 @@ struct ContentView: View {
                             AlbumsView(path: $path)
                         }
                     }
-                    .id(player.queue.type)
+                    .id(mpd.queue.type)
                     .offset(y: -7.5)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
@@ -98,12 +98,12 @@ struct ContentView: View {
     }
 
     struct ArtistsView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @Binding var path: NavigationPath
 
         private var artists: [Artist] {
-            player.queue.search as? [Artist] ?? player.queue.media as? [Artist] ?? []
+            mpd.queue.search as? [Artist] ?? mpd.queue.media as? [Artist] ?? []
         }
 
         var body: some View {
@@ -114,7 +114,7 @@ struct ContentView: View {
     }
 
     struct ArtistAlbumsView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         private var artist: Artist
 
@@ -150,12 +150,12 @@ struct ContentView: View {
     }
 
     struct AlbumsView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @Binding var path: NavigationPath
 
         private var albums: [Album] {
-            player.queue.search as? [Album] ?? player.queue.media as? [Album] ?? []
+            mpd.queue.search as? [Album] ?? mpd.queue.media as? [Album] ?? []
         }
 
         var body: some View {
@@ -166,7 +166,7 @@ struct ContentView: View {
     }
 
     struct AlbumSongsView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
         @Environment(\.colorScheme) var colorScheme
 
         init(for album: Album, path: Binding<NavigationPath>) {
@@ -229,8 +229,8 @@ struct ContentView: View {
                                         .cornerRadius(100)
                                         .padding(10)
                                     }
-                                    .opacity(player.currentMedia?.id == album.id ? 1 : 0)
-                                    .animation(.interactiveSpring, value: player.currentMedia?.id == album.id)
+                                    .opacity(mpd.status.media?.id == album.id ? 1 : 0)
+                                    .animation(.interactiveSpring, value: mpd.status.media?.id == album.id)
                                 )
                         }
                         .onHover(perform: { value in
@@ -238,9 +238,8 @@ struct ContentView: View {
                         })
                         .onTapGesture(perform: {
                             Task(priority: .userInitiated) {
-                                if player.currentMedia?.id != album.id {
-                                    // TODOA
-                                    // await CommandManager.shared.play(album)
+                                if mpd.status.media?.id != album.id {
+                                    try? await ConnectionManager().play(album)
                                 }
                             }
                         })
@@ -260,7 +259,7 @@ struct ContentView: View {
                             .onTapGesture(perform: {
                                 Task(priority: .userInitiated) {
                                     // TODO: Set the type here first
-                                    guard let media = await player.queue.get(for: .artist, using: album) else {
+                                    guard let media = await mpd.queue.get(for: .artist, using: album) else {
                                         return
                                     }
 
@@ -298,21 +297,20 @@ struct ContentView: View {
                 }
             }
             .task {
-                // TODOA
-//                async let artworkDataTask = CommandManager.shared.getArtworkData(for: album.uri)
-                async let songsTask = ConnectionManager.command.getSongs(for: album)
-//
-//                artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
+                async let artworkDataTask = ConnectionManager().getArtworkData(for: album.uri)
+                async let songsTask = ConnectionManager().getSongs(for: album)
+
+                artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
         }
     }
 
     struct SongsView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         private var songs: [Song] {
-            player.queue.search as? [Song] ?? player.queue.media as? [Song] ?? []
+            mpd.queue.search as? [Song] ?? mpd.queue.media as? [Song] ?? []
         }
 
         var body: some View {
@@ -323,7 +321,7 @@ struct ContentView: View {
     }
 
     struct HeaderView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @Binding var showSearch: Bool
 
@@ -335,7 +333,7 @@ struct ContentView: View {
         var body: some View {
             HStack {
                 if !showSearch {
-                    Text(player.queue.label)
+                    Text(mpd.queue.label)
                         .font(.headline)
 
                     Spacer()
@@ -363,12 +361,12 @@ struct ContentView: View {
                         .focused($focused)
 //                        .onSubmit {
 //                            guard !query.isEmpty else {
-//                                player.queue.search = nil
+//                                mpd.queue.search = nil
 //                                return
 //                            }
 //
 //                            Task(priority: .userInitiated) {
-//                                await player.queue.setSearch(for: query, using: type)
+//                                await mpd.queue.setSearch(for: query, using: type)
 //                            }
 //                        }
                         .onAppear {
@@ -404,7 +402,7 @@ struct ContentView: View {
     }
 
     struct ArtistView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         private let artist: Artist
 
@@ -420,7 +418,7 @@ struct ContentView: View {
                 VStack(alignment: .leading) {
                     Text(artist.name)
                         .font(.headline)
-                        .foregroundColor(player.currentMedia?.id == artist.id ? .accentColor : .primary)
+                        .foregroundColor(mpd.status.media?.id == artist.id ? .accentColor : .primary)
                         .lineLimit(2)
                     Text(artist.albums?.count ?? 0 == 1 ? "1 album" : "\(artist.albums!.count) albums")
                         .font(.subheadline)
@@ -439,7 +437,7 @@ struct ContentView: View {
     }
 
     struct AlbumView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         private let album: Album
 
@@ -462,7 +460,7 @@ struct ContentView: View {
                 VStack(alignment: .leading) {
                     Text(album.title)
                         .font(.headline)
-                        .foregroundColor(player.currentMedia?.id == album.id ? .accentColor : .primary)
+                        .foregroundColor(mpd.status.media?.id == album.id ? .accentColor : .primary)
                         .lineLimit(2)
                     Text(album.artist)
                         .font(.subheadline)
@@ -480,8 +478,7 @@ struct ContentView: View {
                     return
                 }
 
-                // TODOA
-                // artwork = await NSImage(data: try! CommandManager.shared.getArtworkData(for: album.uri))
+                artwork = await NSImage(data: (try? ConnectionManager().getArtworkData(for: album.uri)) ?? Data())
             }
             .contentShape(Rectangle())
             .onTapGesture(perform: {
@@ -491,7 +488,7 @@ struct ContentView: View {
     }
 
     struct SongView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         private let song: Song
 
@@ -506,14 +503,14 @@ struct ContentView: View {
         var body: some View {
             HStack(spacing: 15) {
                 Group {
-                    if !hover, player.currentSong != song {
+                    if !hover, mpd.status.song != song {
                         Text(String(song.track))
                             .font(.title3)
                             .fontWeight(.regular)
                             .foregroundStyle(.secondary)
                             .frame(width: 20)
                     } else {
-                        if player.currentSong == song {
+                        if mpd.status.song == song {
                             WaveView()
                         } else {
                             Image(systemName: "play.fill")
@@ -527,7 +524,7 @@ struct ContentView: View {
                 VStack(alignment: .leading) {
                     Text(song.title)
                         .font(.headline)
-                        .foregroundColor(player.currentSong == song ? .accentColor : .primary)
+                        .foregroundColor(mpd.status.song == song ? .accentColor : .primary)
                         .lineLimit(2)
 
                     Text((song.artist) + " • " + song.duration.timeString)
@@ -545,12 +542,11 @@ struct ContentView: View {
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    // TODOA
-                    // await CommandManager.shared.play(song)
+                    try? await ConnectionManager().play(song)
                 }
             })
             .contextMenu {
-                if let playlists = (player.queue.playlist != nil) ? player.playlists?.filter({ $0 != player.queue.playlist }) : player.playlists {
+                if let playlists = (mpd.queue.playlist != nil) ? mpd.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.playlists {
                     Menu("Add to Playlist") {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
@@ -562,7 +558,7 @@ struct ContentView: View {
                         }
                     }
 
-                    if let playlist = player.queue.playlist {
+                    if let playlist = mpd.queue.playlist {
                         Button("Remove from Playlist") {
                             Task {
                                 print("d")
@@ -602,12 +598,12 @@ struct ContentView: View {
     }
 
     struct WaveView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var animating = false
 
         var body: some View {
-            let isPlaying = player.status.isPlaying ?? false
+            let isPlaying = mpd.status.isPlaying ?? false
 
             HStack(spacing: 1.5) {
                 bar(low: 0.4)
@@ -640,7 +636,7 @@ struct ContentView: View {
     }
 
     private func scrollToCurrent(_ proxy: ScrollViewProxy, animate: Bool = true) {
-        guard let media = player.currentMedia else {
+        guard let media = mpd.status.media else {
             return
         }
 

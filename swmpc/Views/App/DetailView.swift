@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct DetailView: View {
-    @Environment(Player.self) private var player
+    @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) var colorScheme
 
     @Binding var path: NavigationPath
@@ -131,11 +131,11 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            guard let song = player.currentSong else {
+                            guard let song = mpd.status.song else {
                                 return
                             }
 
-                            guard let media = await player.queue.get(for: .album, using: song) else {
+                            guard let media = await mpd.queue.get(for: .album, using: song) else {
                                 return
                             }
 
@@ -157,12 +157,12 @@ struct DetailView: View {
         }
         .ignoresSafeArea(.all)
         .frame(minWidth: 520, minHeight: 520)
-        .task(id: player.currentSong) {
-            guard let song = player.currentSong else {
+        .task(id: mpd.status.song) {
+            guard let song = mpd.status.song else {
                 return
             }
 
-            guard let data = try? await ConnectionManager.command.getArtworkData(for: song.uri) else {
+            guard let data = try? await ConnectionManager().getArtworkData(for: song.uri) else {
                 return
             }
             artwork = NSImage(data: data)
@@ -208,7 +208,7 @@ struct DetailView: View {
     }
 
     struct VinylView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         var body: some View {
             ZStack {
@@ -307,11 +307,11 @@ struct DetailView: View {
     }
 
     struct FooterView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         var body: some View {
             VStack(alignment: .leading, spacing: 7) {
-                Text(player.currentSong?.title ?? "No song playing")
+                Text(mpd.status.song?.title ?? "No song playing")
                     .font(.system(size: 18))
                     .fontWeight(.semibold)
                     .fontDesign(.rounded)
@@ -336,7 +336,7 @@ struct DetailView: View {
     }
 
     struct PauseView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var hover = false
 
@@ -346,7 +346,7 @@ struct DetailView: View {
                     .fill(.thinMaterial)
                     .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
 
-                Image(systemName: ((player.status.isPlaying ?? false) ? "pause" : "play") + ".fill")
+                Image(systemName: ((mpd.status.isPlaying ?? false) ? "pause" : "play") + ".fill")
                     .font(.system(size: 30))
             }
             .scaleEffect(hover ? 1.2 : 1)
@@ -356,7 +356,7 @@ struct DetailView: View {
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command.pause(player.status.isPlaying ?? false)
+                    try? await ConnectionManager().pause(mpd.status.isPlaying ?? false)
                 }
             })
         }
@@ -376,7 +376,7 @@ struct DetailView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command.previous()
+                        try? await ConnectionManager().previous()
                     }
                 })
         }
@@ -396,14 +396,14 @@ struct DetailView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command.next()
+                        try? await ConnectionManager().next()
                     }
                 })
         }
     }
 
     struct RandomView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var hover = false
 
@@ -418,11 +418,11 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command.random(!(player.status.isRandom ?? false))
+                            try? await ConnectionManager().random(!(mpd.status.isRandom ?? false))
                         }
                     })
 
-                if player.status.isRandom ?? false {
+                if mpd.status.isRandom ?? false {
                     Circle()
                         .fill(Color(.accent))
                         .frame(width: 3.5, height: 3.5)
@@ -433,7 +433,7 @@ struct DetailView: View {
     }
 
     struct RepeatView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var hover = false
 
@@ -448,11 +448,11 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command.repeat(!(player.status.isRepeat ?? false))
+                            try? await ConnectionManager().repeat(!(mpd.status.isRepeat ?? false))
                         }
                     })
 
-                if player.status.isRepeat ?? false {
+                if mpd.status.isRepeat ?? false {
                     Circle()
                         .fill(Color(.accent))
                         .frame(width: 3.5, height: 3.5)
@@ -463,7 +463,7 @@ struct DetailView: View {
     }
 
     struct ProgressView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var hover = false
 
@@ -479,7 +479,7 @@ struct DetailView: View {
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(Color(.accent))
                                 .frame(
-                                    width: max(0, (player.status.elapsed ?? 0) / (player.currentSong?.duration ?? 100) * geometry.size.width) + 4,
+                                    width: max(0, (mpd.status.elapsed ?? 0) / (mpd.status.song?.duration ?? 100) * geometry.size.width) + 4,
                                     height: 3
                                 )
 
@@ -489,13 +489,13 @@ struct DetailView: View {
                                 .scaleEffect(hover ? 1.5 : 1)
                                 .animation(.spring, value: hover)
                         }
-                        .animation(.spring, value: player.status.elapsed)
+                        .animation(.spring, value: mpd.status.elapsed)
                     }
                     .padding(.vertical, 3)
                     .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command.seek((value.location.x / geometry.size.width) * (player.currentSong?.duration ?? 100))
+                            try? await ConnectionManager().seek((value.location.x / geometry.size.width) * (mpd.status.song?.duration ?? 100))
                         }
                     })
                     .onHover(perform: { value in
@@ -503,23 +503,23 @@ struct DetailView: View {
                     })
 
                     HStack(alignment: .center) {
-                        Text(player.status.elapsed?.timeString ?? "0:00")
+                        Text(mpd.status.elapsed?.timeString ?? "0:00")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
                         Spacer()
 
-                        Text(player.currentSong?.duration.timeString ?? "0:00")
+                        Text(mpd.status.song?.duration.timeString ?? "0:00")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
                 }
             }
             .onAppear {
-                player.status.trackElapsed = true
+                mpd.status.trackElapsed = true
             }
             .onDisappear {
-                player.status.trackElapsed = false
+                mpd.status.trackElapsed = false
             }
         }
     }

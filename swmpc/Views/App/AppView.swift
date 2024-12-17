@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AppView: View {
-    @Environment(Player.self) private var player
+    @Environment(MPD.self) private var mpd
 
     @State private var selected = MediaType.album
     @State private var playlist: Playlist?
@@ -28,13 +28,13 @@ struct AppView: View {
                     .fontDesign(.rounded)
                     .padding(.bottom, 15)
 
-                ForEach(player.queue.categories.filter(\.list)) { category in
+                ForEach(mpd.queue.categories.filter(\.list)) { category in
                     Label(category.label, systemImage: category.image)
                         .tag(category.id)
                 }
 
                 Section("Playlists") {
-                    ForEach(player.playlists ?? []) { playlist in
+                    ForEach(mpd.playlists ?? []) { playlist in
                         Label(playlist.name, systemImage: "music.note.list")
                             .tag(MediaType.playlist)
                             .onTapGesture {
@@ -69,23 +69,23 @@ struct AppView: View {
             .navigationSplitViewColumnWidth(180)
             .task(id: selected) {
                 guard selected != .playlist else {
-                    return await player.queue.set(for: selected, using: playlist)
+                    return await mpd.queue.set(for: selected, using: playlist)
                 }
 
-                await player.queue.set(for: selected)
+                await mpd.queue.set(for: selected)
 
-                guard let song = player.currentSong else {
+                guard let song = mpd.status.song else {
                     return
                 }
 
-                player.currentMedia = await player.queue.get(for: selected, using: song)
+                mpd.status.media = await mpd.queue.get(for: selected, using: song)
             }
-            .task(id: player.currentSong) {
-                guard let song = player.currentSong else {
+            .task(id: mpd.status.song) {
+                guard let song = mpd.status.song else {
                     return
                 }
 
-                player.currentMedia = await player.queue.get(for: selected, using: song)
+                mpd.status.media = await mpd.queue.get(for: selected, using: song)
             }
         } content: {
             ContentView(path: $path)

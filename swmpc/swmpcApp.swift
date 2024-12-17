@@ -14,7 +14,7 @@ struct swmpcApp: App {
     var body: some Scene {
         WindowGroup {
             AppView()
-                .environment(appDelegate.player)
+                .environment(appDelegate.mpd)
         }
         .windowStyle(.hiddenTitleBar)
 
@@ -28,7 +28,7 @@ struct swmpcApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) static var shared: AppDelegate!
 
-    let player = Player()
+    let mpd = MPD()
 
     private lazy var popoverAnchor = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -57,7 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
 
         menu.addItem(
-            withTitle: player.status.isPlaying == true ? "Pause" : "Play",
+            withTitle: mpd.status.isPlaying == true ? "Pause" : "Play",
             action: #selector(AppDelegate.handleMenuItemAction(_:)),
             keyEquivalent: ""
         )
@@ -94,7 +94,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController = NSViewController()
         popover.contentViewController!.view = NSHostingView(
             rootView: PopoverView()
-                .environment(player)
+                .environment(mpd)
         )
     }
 
@@ -108,6 +108,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popoverAnchor.button!.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "play")
         case "pause":
             popoverAnchor.button!.image = NSImage(systemSymbolName: "pause.fill", accessibilityDescription: "pause")
+        case "stop":
+            popoverAnchor.button!.image = NSImage(systemSymbolName: "stop.fill", accessibilityDescription: "stop")
         case "random":
             popoverAnchor.button!.image = NSImage(systemSymbolName: "shuffle", accessibilityDescription: "random")
         case "sequential":
@@ -135,7 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        guard var description = player.currentSong?.description else {
+        guard var description = mpd.status.song?.description else {
             return
         }
 
@@ -182,7 +184,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch event.type {
         case .rightMouseDown:
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.pause(player.status.isPlaying ?? false)
+                try? await ConnectionManager().pause(mpd.status.isPlaying ?? false)
             }
         default:
             togglePopover(sender)
@@ -193,19 +195,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch sender.title {
         case "Play":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.pause(false)
+                try? await ConnectionManager().pause(false)
             }
         case "Pause":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.pause(true)
+                try? await ConnectionManager().pause(true)
             }
         case "Next song":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.next()
+                try? await ConnectionManager().next()
             }
         case "Previous song":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.previous()
+                try? await ConnectionManager().previous()
             }
         default:
             break

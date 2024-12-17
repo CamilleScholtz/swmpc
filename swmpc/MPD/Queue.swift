@@ -39,7 +39,7 @@ import SwiftUI
     func set(for type: MediaType, using playlist: Playlist? = nil) async {
         if self.playlist != playlist {
             self.playlist = playlist
-            try? await ConnectionManager.command.loadPlaylist(playlist)
+            try? await ConnectionManager().loadPlaylist(playlist)
         }
 
         guard self.type != type else {
@@ -49,7 +49,7 @@ import SwiftUI
 
         switch type {
         case .artist:
-            guard let albums = try? await ConnectionManager.command.getAlbums() else {
+            guard let albums = try? await ConnectionManager().getAlbums() else {
                 return
             }
             let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
@@ -63,11 +63,11 @@ import SwiftUI
             }
             .sorted { $0.name < $1.name }
         case .song:
-            media = await (try? ConnectionManager.command.getSongs()) ?? []
+            media = await (try? ConnectionManager().getSongs()) ?? []
         case .playlist:
-            media = await (try? ConnectionManager.command.getSongs(for: playlist)) ?? []
+            media = await (try? ConnectionManager().getSongs(for: playlist)) ?? []
         default:
-            media = await (try? ConnectionManager.command.getAlbums()) ?? []
+            media = await (try? ConnectionManager().getAlbums()) ?? []
         }
     }
 

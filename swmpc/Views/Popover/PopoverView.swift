@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PopoverView: View {
-    @Environment(Player.self) private var player
+    @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) var colorScheme
 
     @State private var height = Double(250)
@@ -93,7 +93,7 @@ struct PopoverView: View {
         .frame(width: 250, height: height)
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
-                guard let song = player.currentSong else {
+                guard let song = mpd.status.song else {
                     return
                 }
 
@@ -103,14 +103,14 @@ struct PopoverView: View {
             }
             Task {
                 // TODO:
-                // await player.status.trackElapsed()
+                // await mpd.status.trackElapsed()
             }
         }
         .onReceive(didCloseNotification) { _ in
-            // player.status.trackingTask?.cancel()
+            // mpd.status.trackingTask?.cancel()
         }
-        .onChange(of: player.currentSong) {
-            guard let song = player.currentSong, AppDelegate.shared.popover.isShown else {
+        .onChange(of: mpd.status.song) {
+            guard let song = mpd.status.song, AppDelegate.shared.popover.isShown else {
                 return
             }
 
@@ -138,7 +138,7 @@ struct PopoverView: View {
             if !value {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     if !isHovering {
-                        showInfo = false || !(player.status.isPlaying ?? false)
+                        showInfo = false || !(mpd.status.isPlaying ?? false)
                     }
                 }
             } else {
@@ -178,7 +178,7 @@ struct PopoverView: View {
     }
 
     struct FooterView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         var body: some View {
             VStack(spacing: 8) {
@@ -211,7 +211,7 @@ struct PopoverView: View {
     }
 
     struct ProgressView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var hover = false
 
@@ -224,7 +224,7 @@ struct PopoverView: View {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(Color(.accent))
                         .frame(
-                            width: max(0, (player.status.elapsed ?? 0) / (player.currentSong?.duration ?? 100) * 220) + 4,
+                            width: max(0, (mpd.status.elapsed ?? 0) / (mpd.status.song?.duration ?? 100) * 220) + 4,
                             height: 3
                         )
 
@@ -234,16 +234,15 @@ struct PopoverView: View {
                         .scaleEffect(hover ? 1.5 : 1)
                         .animation(.spring, value: hover)
                 }
-                .animation(.spring, value: player.status.elapsed)
+                .animation(.spring, value: mpd.status.elapsed)
             }
             .compositingGroup()
             .blendMode(.overlay)
             .padding(.vertical, 3)
             .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 0).onChanged { _ in
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                 Task(priority: .userInitiated) {
-                    // TODOA
-                    // await CommandManager.shared.seek((value.location.x / 220) * (player.currentSong?.duration ?? 100))
+                    try? await ConnectionManager().seek((value.location.x / 220) * (mpd.status.song?.duration ?? 100))
                 }
             })
             .onHover(perform: { value in
@@ -251,21 +250,21 @@ struct PopoverView: View {
             })
             // TODO:
 //            .onAppear {
-//                player.status.trackElapsed = true
+//                mpd.status.trackElapsed = true
 //            }
 //            .onDisappear {
-//                player.status.trackElapsed = false
+//                mpd.status.trackElapsed = false
 //            }
         }
     }
 
     struct PauseView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var hover = false
 
         var body: some View {
-            Image(systemName: ((player.status.isPlaying ?? false) ? "pause" : "play") + ".circle.fill")
+            Image(systemName: ((mpd.status.isPlaying ?? false) ? "pause" : "play") + ".circle.fill")
                 .font(.system(size: 35))
                 .blendMode(.overlay)
                 .scaleEffect(hover ? 1.2 : 1)
@@ -275,8 +274,7 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        // TODOA
-                        // await CommandManager.shared.pause(player.status.isPlaying ?? false)
+                        try? await ConnectionManager().pause(mpd.status.isPlaying ?? false)
                     }
                 })
         }
@@ -296,8 +294,7 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        // TODOA
-                        // await CommandManager.shared.previous()
+                        try? await ConnectionManager().previous()
                     }
                 })
         }
@@ -317,15 +314,14 @@ struct PopoverView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        // TODOA
-                        // await CommandManager.shared.next()
+                        try? await ConnectionManager().next()
                     }
                 })
         }
     }
 
     struct RandomView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var hover = false
 
@@ -341,12 +337,11 @@ struct PopoverView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            // TODOA
-                            // await CommandManager.shared.random(!(player.status.isRandom ?? false))
+                            try? await ConnectionManager().random(!(mpd.status.isRandom ?? false))
                         }
                     })
 
-                if player.status.isRandom ?? false {
+                if mpd.status.isRandom ?? false {
                     Circle()
                         .fill(Color(.accent))
                         .frame(width: 3.5, height: 3.5)
@@ -358,7 +353,7 @@ struct PopoverView: View {
     }
 
     struct RepeatView: View {
-        @Environment(Player.self) private var player
+        @Environment(MPD.self) private var mpd
 
         @State private var hover = false
 
@@ -374,12 +369,11 @@ struct PopoverView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            // TODOA
-                            // await CommandManager.shared.repeat(!(player.status.isRepeat ?? false))
+                            try? await ConnectionManager().repeat(!(mpd.status.isRepeat ?? false))
                         }
                     })
 
-                if player.status.isRepeat ?? false {
+                if mpd.status.isRepeat ?? false {
                     Circle()
                         .fill(Color(.accent))
                         .frame(width: 3.5, height: 3.5)

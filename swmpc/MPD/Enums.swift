@@ -1,11 +1,17 @@
 //
-//  Category.swift
+//  Enums.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 10/11/2024.
 //
 
 import SwiftUI
+
+enum PlayerState {
+    case play
+    case pause
+    case stop
+}
 
 enum MediaType {
     case album
