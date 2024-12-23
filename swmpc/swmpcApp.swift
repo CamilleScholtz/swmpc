@@ -17,6 +17,41 @@ struct swmpcApp: App {
                 .environment(appDelegate.mpd)
         }
         .windowStyle(.hiddenTitleBar)
+        .commands {
+            CommandMenu("Controls") {
+                Button(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
+                    Task {
+                        try? await ConnectionManager().pause(appDelegate.mpd.status.isPlaying ?? false)
+                    }
+                }
+                // TODO: Space doesn't work?
+                .keyboardShortcut(.space, modifiers: [])
+
+                Button("Next Song") {
+                    Task {
+                        try? await ConnectionManager().next()
+                    }
+                }
+
+                Button("Previous Song") {
+                    Task {
+                        try? await ConnectionManager().previous()
+                    }
+                }
+
+                Divider()
+
+                Button("Go to Current Song") {
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: nil)
+                }
+                .keyboardShortcut("c", modifiers: [])
+
+                Button("Search") {
+                    NotificationCenter.default.post(name: .startSearchingNotication, object: nil)
+                }
+                .keyboardShortcut("f", modifiers: [.command])
+            }
+        }
 
         Settings {
             SettingsView()

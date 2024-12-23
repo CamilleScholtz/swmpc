@@ -19,7 +19,8 @@ import SwiftUI
     var elapsed: Double?
 
     var song: Song?
-    // TODO: Create setter for this
+    // TODO: I currently set this in AppView, I'd rather want to do it here,
+    // but I don't have access to either `selected` nor `mpd.queue`...
     var media: (any Mediable)?
     var playlist: Playlist?
 

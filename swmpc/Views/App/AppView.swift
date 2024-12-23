@@ -36,7 +36,7 @@ struct AppView: View {
                 Section("Playlists") {
                     ForEach(mpd.playlists ?? []) { playlist in
                         Label(playlist.name, systemImage: "music.note.list")
-                            .tag(MediaType.playlist)
+                            .tag(playlist.id)
                             .onTapGesture {
                                 self.playlist = playlist
                                 selected = .playlist
@@ -48,8 +48,7 @@ struct AppView: View {
                             .focused($playlistFocus)
                             .onSubmit {
                                 Task {
-                                    // TODOA
-                                    // try? await CommandManager.shared.createPlaylist(named: playlistName)
+                                    try? await ConnectionManager().createPlaylist(named: playlistName)
 
                                     editingPlaylist = false
                                     playlistName = ""

@@ -6,7 +6,6 @@
 //
 
 import Network
-import OrderedCollections
 import SwiftUI
 
 enum ConnectionManagerError: Error {
@@ -24,11 +23,14 @@ enum ConnectionManagerError: Error {
 actor ConnectionManager {
     static let shared = ConnectionManager(idle: true)
 
+    // TODO: Use these.
+    @AppStorage(Setting.host) var host = "localhost"
+    @AppStorage(Setting.port) var port = 6600
+
     private(set) var idle: Bool
     private(set) var connection: NWConnection?
 
     private var buffer = Data()
-    // private let semaphore = DispatchSemaphore(value: 1)
 
     init(idle: Bool = false) {
         self.idle = idle
@@ -78,15 +80,6 @@ actor ConnectionManager {
             commands.append("command_list_end")
         }
 
-        // TODO: Is this still needed?
-        // await withCheckedContinuation { continuation in
-        //     DispatchQueue.global().async {
-        //         self.semaphore.wait()
-        //         continuation.resume()
-        //     }
-        // }
-        // defer { semaphore.signal() }
-
         try await writeLine(commands.joined(separator: "\n"))
 
         let lines = try await readUntilOKOrACK()
@@ -97,17 +90,17 @@ actor ConnectionManager {
         return lines
     }
 
-    func idleForEvents(mask: [String]) async throws -> String {
+    func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
         guard idle else {
             throw ConnectionManagerError.wrongMode
         }
 
-        let lines = try await run(["idle \(mask.joined(separator: " "))"])
+        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
         guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
             throw ConnectionManagerError.protocolError("No changed line")
         }
 
-        return String(changedLine.dropFirst("changed: ".count))
+        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: ".count)))!
     }
 
     // MARK: - Connection lifecycle
@@ -148,7 +141,7 @@ actor ConnectionManager {
     private func writeLine(_ line: String) async throws {
         let connection = try ensureConnectionReady()
 
-        let data = (line.appending("\n")).data(using: .utf8)!
+        let data = (line + "\n").data(using: .utf8)!
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             connection.send(content: data, completion: .contentProcessed { error in
@@ -274,8 +267,9 @@ actor ConnectionManager {
     }
 
     private func parseMediaResponse(_ lines: [String], using media: MediaType) throws -> (any Mediable)? {
-        var id: UInt32 = 0
-        var uri: URL?
+        var id: UInt32?
+        var position: UInt32?
+        var url: URL?
         var artist: String?
         var album: String?
         var title: String?
@@ -295,8 +289,10 @@ actor ConnectionManager {
             switch key {
             case "id":
                 id = UInt32(value) ?? 0
+            case "pos":
+                position = UInt32(value)
             case "file":
-                uri = URL(string: value)
+                url = URL(string: value)
             case "artist":
                 artist = value
             case "album":
@@ -321,16 +317,18 @@ actor ConnectionManager {
         switch media {
         case .album:
             return Album(
-                id: id,
-                uri: uri ?? URL(string: "unknown:///")!,
+                id: id ?? 0,
+                position: position ?? 0,
+                url: url ?? URL(string: "unknown:///")!,
                 artist: albumArtist ?? "Unknown Artist",
                 title: album ?? "Unknown Title",
                 date: date ?? "1970"
             )
         default:
             return Song(
-                id: id,
-                uri: uri ?? URL(string: "unknown:///")!,
+                id: id ?? 0,
+                position: position ?? 0,
+                url: url ?? URL(string: "unknown:///")!,
                 artist: artist ?? "Unknown Artist",
                 title: title ?? "Unknown Title",
                 duration: duration,
@@ -380,8 +378,6 @@ actor ConnectionManager {
                 isRepeat = (value == "1")
             case "elapsed":
                 elapsed = Double(value)
-            case "playlist":
-                print("TODO1")
             case "songid":
                 let lines = try await run(["playlistid \(value)"])
 
@@ -392,21 +388,6 @@ actor ConnectionManager {
         }
 
         return (state, isRandom, isRepeat, elapsed, song)
-    }
-
-    func loadPlaylist(_ playlist: Playlist?) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
-        try await connect()
-        defer { disconnect() }
-
-        if let playlist {
-            _ = try await run(["clear", "load \(playlist.name)"])
-        } else {
-            _ = try await run(["clear", "add /"])
-        }
     }
 
     func getSongs(for media: (any Mediable)? = nil) async throws -> [Song] {
@@ -473,13 +454,13 @@ actor ConnectionManager {
         if !chunk.isEmpty {
             chunks.append(chunk)
         }
-        
+
         return try chunks.map { chunk in
             try parseMediaResponse(chunk, using: .album) as! Album
         }
     }
 
-    func getArtworkData(for uri: URL) async throws -> Data {
+    func getArtworkData(for url: URL) async throws -> Data {
         guard !idle else {
             throw ConnectionManagerError.wrongMode
         }
@@ -492,7 +473,7 @@ actor ConnectionManager {
         var totalSize: Int?
 
         while true {
-            try await writeLine("readpicture \"\(uri.path)\" \(offset)")
+            try await writeLine("readpicture \"\(url.path)\" \(offset)")
 
             var chunkSize: Int?
 
@@ -533,7 +514,37 @@ actor ConnectionManager {
         }
     }
 
-    func play(_ media: any Mediable) async throws {
+    func getPlaylists() async throws -> [Playlist] {
+        guard idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        let lines = try await run(["listplaylists"])
+        var index: UInt32 = 0
+        var playlists = [Playlist]()
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let (key, value) = try parseLine(line)
+
+            if key == "playlist" {
+                playlists.append(Playlist(
+                    id: index,
+                    position: index,
+                    name: value
+                ))
+
+                index += 1
+            }
+        }
+
+        return playlists
+    }
+
+    func loadPlaylist(_ playlist: Playlist?) async throws {
         guard !idle else {
             throw ConnectionManagerError.wrongMode
         }
@@ -541,7 +552,68 @@ actor ConnectionManager {
         try await connect()
         defer { disconnect() }
 
-        print(media.id)
+        if let playlist {
+            _ = try await run(["clear", "load \(playlist.name)"])
+        } else {
+            _ = try await run(["clear", "add /"])
+        }
+    }
+
+    func createPlaylist(named name: String) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        _ = try await run(["save \(name)", "playlistclear \(name)"])
+    }
+
+    func removePlaylist(_ playlist: Playlist) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        _ = try await run(["rm \(playlist.name)"])
+    }
+
+    func addToPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        for song in songs {
+            _ = try await run(["playlistadd \(playlist.name) \(song.url.path)"])
+        }
+    }
+
+    func removeFromPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        for song in songs {
+            _ = try await run(["playlistdelete \(playlist.name) \(song.position)"])
+        }
+    }
+
+    func play(_ media: any Mediable) async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
 
         _ = try await run(["playid \(media.id)"])
     }
@@ -612,31 +684,3 @@ actor ConnectionManager {
         _ = try await run(["seekcur \(value)"])
     }
 }
-
-//    func getElapsedData() throws -> Double? {
-//        try connect()
-//        defer { disconnect() }
-//
-//        guard let connection, let recv = mpd_run_status(connection) else {
-//            return nil
-//        }
-//        defer { mpd_status_free(recv) }
-//
-//        return Double(mpd_status_get_elapsed_time(recv))
-//    }
-//
-//    func createPlaylist(named name: String) throws {
-//        try connect()
-//        defer { disconnect() }
-//
-//        mpd_run_save(connection, name)
-//    }
-//
-//    func addToPlaylist(_ playlist: Playlist, songs: [Song]) throws {
-//        try connect()
-//        defer { disconnect() }
-//
-//        for song in songs {
-//            mpd_run_playlist_add(connection, playlist.name, song.uri.path)
-//        }
-//    }

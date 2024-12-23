@@ -20,6 +20,13 @@ enum MediaType {
     case playlist
 }
 
+enum IdleEvent: String {
+    case playlists = "stored_playlist"
+    case queue = "playlist"
+    case options
+    case player
+}
+
 struct Category: Identifiable, Hashable {
     let id: MediaType
     let label: String

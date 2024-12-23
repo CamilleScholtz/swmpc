@@ -162,7 +162,7 @@ struct DetailView: View {
                 return
             }
 
-            guard let data = try? await ConnectionManager().getArtworkData(for: song.uri) else {
+            guard let data = try? await ArtworkManager.shared.get(using: song.url, shouldCache: false) else {
                 return
             }
             artwork = NSImage(data: data)

@@ -8,12 +8,11 @@
 import SwiftUI
 
 @Observable final class Queue {
-    init() {
-        Task {
-            // TODOA
-            // try? await ConnectionManager.command.loadPlaylist(nil)
-        }
-    }
+//    init() {
+//        Task {
+//            try? await ConnectionManager().loadPlaylist(nil)
+//        }
+//    }
 
     let categories: [Category] = [
         .init(id: MediaType.album, label: "Albums", image: "square.stack"),
@@ -45,7 +44,7 @@ import SwiftUI
         guard self.type != type else {
             return
         }
-        self.type = type
+        defer { self.type = type }
 
         switch type {
         case .artist:
@@ -57,11 +56,12 @@ import SwiftUI
             media = albumsByArtist.map { artist, albums in
                 Artist(
                     id: albums.first!.id,
+                    position: albums.first!.position,
                     name: artist,
                     albums: albums
                 )
             }
-            .sorted { $0.name < $1.name }
+            .sorted { $0.position < $1.position }
         case .song:
             media = await (try? ConnectionManager().getSongs()) ?? []
         case .playlist:

@@ -9,14 +9,16 @@ import SwiftUI
 
 protocol Mediable: Identifiable, Hashable, Sendable {
     var id: UInt32 { get }
+    var position: UInt32 { get }
 }
 
 protocol Artworkable {
-    var uri: URL { get }
+    var url: URL { get }
 }
 
 struct Artist: Mediable {
     let id: UInt32
+    let position: UInt32
 
     let name: String
 
@@ -26,7 +28,8 @@ struct Artist: Mediable {
 
 struct Album: Mediable, Artworkable {
     let id: UInt32
-    let uri: URL
+    let position: UInt32
+    let url: URL
 
     let artist: String
     let title: String
@@ -35,7 +38,8 @@ struct Album: Mediable, Artworkable {
 
 struct Song: Mediable, Artworkable {
     let id: UInt32
-    let uri: URL
+    let position: UInt32
+    let url: URL
 
     let artist: String
     let title: String
@@ -51,6 +55,7 @@ struct Song: Mediable, Artworkable {
 
 struct Playlist: Mediable {
     let id: UInt32
+    let position: UInt32
 
     let name: String
 }

@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
-		91F55B3D2CFF7B830027BBFE /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B3C2CFF7B830027BBFE /* Collections */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,7 +29,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
-				91F55B3D2CFF7B830027BBFE /* Collections in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -76,7 +74,6 @@
 			packageProductDependencies = (
 				91A142142CDEA27E000A74BC /* LaunchAtLogin */,
 				91F55B392CFE5D300027BBFE /* AsyncAlgorithms */,
-				91F55B3C2CFF7B830027BBFE /* Collections */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -109,7 +106,6 @@
 			packageReferences = (
 				91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 				91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
-				91F55B3B2CFF7B830027BBFE /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -354,14 +350,6 @@
 				minimumVersion = 1.0.2;
 			};
 		};
-		91F55B3B2CFF7B830027BBFE /* XCRemoteSwiftPackageReference "swift-collections" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-collections.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.4;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -374,11 +362,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
 			productName = AsyncAlgorithms;
-		};
-		91F55B3C2CFF7B830027BBFE /* Collections */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91F55B3B2CFF7B830027BBFE /* XCRemoteSwiftPackageReference "swift-collections" */;
-			productName = Collections;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

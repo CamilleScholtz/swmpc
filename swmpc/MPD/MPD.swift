@@ -36,7 +36,8 @@ import SwiftUI
             }
         }
 
-        await performUpdates(for: "player")
+        await performUpdates(for: .playlists)
+        await performUpdates(for: .player)
 
         while !Task.isCancelled {
             if await (try? ConnectionManager.shared.ensureConnectionReady()) == nil {
@@ -48,7 +49,12 @@ import SwiftUI
                 }
             }
 
-            let changes = try? await ConnectionManager.shared.idleForEvents(mask: ["playlist", "player", "options"])
+            let changes = try? await ConnectionManager.shared.idleForEvents(mask: [
+                .playlists,
+                .queue,
+                .player,
+                .options,
+            ])
             guard let changes else {
                 continue
             }
@@ -58,17 +64,16 @@ import SwiftUI
     }
 
     @MainActor
-    private func performUpdates(for change: String) async {
+    private func performUpdates(for change: IdleEvent) async {
         switch change {
-        case "playlist":
-            print("TODO")
-        // playlists = try? await IdleManager.shared.getPlaylists()
-        case "player":
+        case .playlists:
+            playlists = try? await ConnectionManager.shared.getPlaylists()
+        case .queue:
+            print("queue")
+        case .player:
             await status.set()
-        case "options":
+        case .options:
             await status.set()
-        default:
-            break
         }
     }
 }

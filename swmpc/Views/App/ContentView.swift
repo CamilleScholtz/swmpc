@@ -15,6 +15,11 @@ struct ContentView: View {
     @State private var showSearch: Bool = false
     @State private var hover = false
 
+    private let scrollToCurrentNotifcation = NotificationCenter.default
+        .publisher(for: .scrollToCurrentNotification)
+    private let startSearchingNotication = NotificationCenter.default
+        .publisher(for: .startSearchingNotication)
+
     var body: some View {
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
@@ -38,21 +43,20 @@ struct ContentView: View {
                     .padding(.bottom, 15)
                 }
                 .ignoresSafeArea(.all)
-                .onAppear {
-                    NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
-                        if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "f" {
-                            scrollToTop(proxy)
-                            showSearch = true
-                            return nil
-                        }
-
-//                        if event.charactersIgnoringModifiers?.lowercased() == "c" {
-//                            scrollToCurrent(proxy, using: type)
-//                            return nil
-//                        }
-
-                        return event
+                .task(id: mpd.queue.type) {
+                    guard !Task.isCancelled else {
+                        return
                     }
+
+                    scrollToCurrent(proxy, animate: false)
+                }
+                .onReceive(scrollToCurrentNotifcation) { _ in
+                    scrollToCurrent(proxy)
+                }
+                .onReceive(startSearchingNotication) { _ in
+                    scrollToTop(proxy)
+
+                    showSearch = true
                 }
             }
             .navigationDestination(for: Artist.self) { artist in
@@ -243,6 +247,27 @@ struct ContentView: View {
                                 }
                             }
                         })
+                        .contextMenu {
+                            if let playlists = (mpd.queue.playlist != nil) ? mpd.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.playlists {
+                                Menu("Add Album to Playlist") {
+                                    ForEach(playlists) { playlist in
+                                        Button(playlist.name) {
+                                            Task {
+                                                try? await ConnectionManager().addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if let playlist = mpd.queue.playlist {
+                                    Button("Remove Album from Playlist") {
+                                        Task {
+                                            try? await ConnectionManager().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 3) {
@@ -297,7 +322,7 @@ struct ContentView: View {
                 }
             }
             .task {
-                async let artworkDataTask = ConnectionManager().getArtworkData(for: album.uri)
+                async let artworkDataTask = ArtworkManager.shared.get(using: album.url, shouldCache: true)
                 async let songsTask = ConnectionManager().getSongs(for: album)
 
                 artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
@@ -478,7 +503,7 @@ struct ContentView: View {
                     return
                 }
 
-                artwork = await NSImage(data: (try? ConnectionManager().getArtworkData(for: album.uri)) ?? Data())
+                artwork = await NSImage(data: (try? ArtworkManager.shared.get(using: album.url)) ?? Data())
             }
             .contentShape(Rectangle())
             .onTapGesture(perform: {
@@ -547,22 +572,20 @@ struct ContentView: View {
             })
             .contextMenu {
                 if let playlists = (mpd.queue.playlist != nil) ? mpd.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.playlists {
-                    Menu("Add to Playlist") {
+                    Menu("Add Song to Playlist") {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    // TODOA
-                                    // try? await CommandManager.shared.addToPlaylist(playlist, songs: [song])
+                                    try? await ConnectionManager().addToPlaylist(playlist, songs: [song])
                                 }
                             }
                         }
                     }
 
                     if let playlist = mpd.queue.playlist {
-                        Button("Remove from Playlist") {
+                        Button("Remove Song from Playlist") {
                             Task {
-                                print("d")
-                                // try? await CommandManager.shared.addToPlaylist(playlist, songs: [song])
+                                try? await ConnectionManager().removeFromPlaylist(playlist, songs: [song])
                             }
                         }
                     }
