@@ -50,6 +50,14 @@ struct swmpcApp: App {
                     NotificationCenter.default.post(name: .startSearchingNotication, object: nil)
                 }
                 .keyboardShortcut("f", modifiers: [.command])
+
+                Divider()
+
+                Button("Update Library") {
+                    Task {
+                        try? await ConnectionManager().update()
+                    }
+                }
             }
         }
 

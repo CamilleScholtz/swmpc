@@ -135,7 +135,7 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let media = await mpd.queue.get(for: .album, using: song) else {
+                            guard let media = try? await mpd.queue.get(for: .album, using: song) else {
                                 return
                             }
 
@@ -155,7 +155,7 @@ struct DetailView: View {
             FooterView()
                 .frame(height: 80)
         }
-        .ignoresSafeArea(.all)
+        .ignoresSafeArea()
         .frame(minWidth: 520, minHeight: 520)
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {

@@ -11,7 +11,20 @@ import SwiftUI
     let status = Status()
     let queue = Queue()
 
-    var playlists: [Playlist]?
+    let categories: [Category] = [
+        .init(id: MediaType.album, label: "Albums", image: "square.stack"),
+        .init(id: MediaType.artist, label: "Artists", image: "music.microphone"),
+        .init(id: MediaType.song, label: "Songs", image: "music.note"),
+        .init(id: MediaType.playlist, label: "Playlists", image: "music.note.list", list: false),
+    ]
+
+    var label: String {
+        categories.first { $0.id == queue.type }?.label ?? ""
+    }
+
+    var image: String {
+        categories.first { $0.id == queue.type }?.image ?? ""
+    }
 
     private var updateLoopTask: Task<Void, Never>?
 
@@ -36,8 +49,8 @@ import SwiftUI
             }
         }
 
-        await performUpdates(for: .playlists)
-        await performUpdates(for: .player)
+        try? await performUpdates(for: .playlists)
+        try? await performUpdates(for: .player)
 
         while !Task.isCancelled {
             if await (try? ConnectionManager.shared.ensureConnectionReady()) == nil {
@@ -59,21 +72,22 @@ import SwiftUI
                 continue
             }
 
-            await performUpdates(for: changes)
+            try? await performUpdates(for: changes)
         }
     }
 
     @MainActor
-    private func performUpdates(for change: IdleEvent) async {
+    private func performUpdates(for change: IdleEvent) async throws {
         switch change {
         case .playlists:
-            playlists = try? await ConnectionManager.shared.getPlaylists()
+            try await queue.setPlaylists()
         case .queue:
             print("queue")
+            try await queue.set()
         case .player:
-            await status.set()
+            try await status.set()
         case .options:
-            await status.set()
+            try await status.set()
         }
     }
 }

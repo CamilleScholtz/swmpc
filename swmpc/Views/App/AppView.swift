@@ -28,13 +28,23 @@ struct AppView: View {
                     .fontDesign(.rounded)
                     .padding(.bottom, 15)
 
-                ForEach(mpd.queue.categories.filter(\.list)) { category in
-                    Label(category.label, systemImage: category.image)
-                        .tag(category.id)
+                ForEach(mpd.categories.filter(\.list)) { category in
+                    NavigationLink {
+                        
+                    } label: {
+                        Label(category.label, systemImage: category.image)
+                    }
                 }
 
                 Section("Playlists") {
-                    ForEach(mpd.playlists ?? []) { playlist in
+                    Label("Favorites", systemImage: "heart")
+                        .tag(MediaType.playlist)
+                        .onTapGesture {
+                            //playlist = "Favorites"
+                            selected = .playlist
+                        }
+
+                    ForEach(mpd.queue.playlists ?? []) { playlist in
                         Label(playlist.name, systemImage: "music.note.list")
                             .tag(playlist.id)
                             .onTapGesture {
@@ -64,27 +74,27 @@ struct AppView: View {
                         })
                 }
             }
-            .toolbar(removing: .sidebarToggle)
             .navigationSplitViewColumnWidth(180)
+            .toolbar(removing: .sidebarToggle)
             .task(id: selected) {
-                guard selected != .playlist else {
-                    return await mpd.queue.set(for: selected, using: playlist)
+                if selected != .playlist {
+                    playlist = nil
                 }
-
-                await mpd.queue.set(for: selected)
+                
+                try? await mpd.queue.set(for: selected, using: playlist)
 
                 guard let song = mpd.status.song else {
                     return
                 }
 
-                mpd.status.media = await mpd.queue.get(for: selected, using: song)
+                mpd.status.media = try? await mpd.queue.get(for: selected, using: song)
             }
             .task(id: mpd.status.song) {
                 guard let song = mpd.status.song else {
                     return
                 }
 
-                mpd.status.media = await mpd.queue.get(for: selected, using: song)
+                mpd.status.media = try? await mpd.queue.get(for: selected, using: song)
             }
         } content: {
             ContentView(path: $path)

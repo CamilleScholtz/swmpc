@@ -38,10 +38,8 @@ import SwiftUI
     }
 
     @MainActor
-    func set() async {
-        guard let data = try? await ConnectionManager.shared.getStatusData() else {
-            return
-        }
+    func set() async throws {
+        let data = try await ConnectionManager.shared.getStatusData()
 
         if trackElapsed {
             if elapsed.update(to: data.elapsed ?? 0), data.state == .play {

@@ -91,38 +91,20 @@ struct PopoverView: View {
             .scaleEffect(x: 1.5)
         )
         .frame(width: 250, height: height)
-        .onReceive(willShowNotification) { _ in
-            Task(priority: .userInitiated) {
-                guard let song = mpd.status.song else {
-                    return
-                }
-
-                // TODO:
-//                await player.setArtwork(for: song)
-//                artwork = player.getArtwork(for: song)
-            }
-            Task {
-                // TODO:
-                // await mpd.status.trackElapsed()
-            }
-        }
-        .onReceive(didCloseNotification) { _ in
-            // mpd.status.trackingTask?.cancel()
-        }
-        .onChange(of: mpd.status.song) {
-            guard let song = mpd.status.song, AppDelegate.shared.popover.isShown else {
+        .task(id: mpd.status.song) {
+            guard AppDelegate.shared.popover.isShown, let song = mpd.status.song else {
                 return
             }
+            print("pop")
 
-            Task(priority: .userInitiated) {
-                // TODO:
-//                await player.setArtwork(for: song)
-//                artwork = player.getArtwork(for: song)
-
-                updateHeight()
+            guard let data = try? await ArtworkManager.shared.get(using: song.url, shouldCache: false) else {
+                return
             }
+            artwork = NSImage(data: data)
         }
         .onChange(of: artwork) { previous, _ in
+            updateHeight()
+            
             previousArtwork = previous
 
             isBackgroundArtworkTransitioning = true
@@ -248,13 +230,6 @@ struct PopoverView: View {
             .onHover(perform: { value in
                 hover = value
             })
-            // TODO:
-//            .onAppear {
-//                mpd.status.trackElapsed = true
-//            }
-//            .onDisappear {
-//                mpd.status.trackElapsed = false
-//            }
         }
     }
 

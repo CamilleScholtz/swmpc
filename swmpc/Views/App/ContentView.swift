@@ -38,11 +38,9 @@ struct ContentView: View {
                         }
                     }
                     .id(mpd.queue.type)
-                    .offset(y: -7.5)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
-                .ignoresSafeArea(.all)
                 .task(id: mpd.queue.type) {
                     guard !Task.isCancelled else {
                         return
@@ -59,6 +57,7 @@ struct ContentView: View {
                     showSearch = true
                 }
             }
+            .ignoresSafeArea()
             .navigationDestination(for: Artist.self) { artist in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 15) {
@@ -68,7 +67,7 @@ struct ContentView: View {
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
-                .ignoresSafeArea(.all)
+                .ignoresSafeArea()
             }
             .navigationDestination(for: Album.self) { album in
                 ScrollView {
@@ -79,7 +78,7 @@ struct ContentView: View {
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
-                .ignoresSafeArea(.all)
+                .ignoresSafeArea()
             }
         }
     }
@@ -248,8 +247,14 @@ struct ContentView: View {
                             }
                         })
                         .contextMenu {
-                            if let playlists = (mpd.queue.playlist != nil) ? mpd.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.playlists {
+                            if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
                                 Menu("Add Album to Playlist") {
+                                    Button("Favorites") {
+                                        Task {
+                                            try? await ConnectionManager().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
+                                        }
+                                    }
+                                    
                                     ForEach(playlists) { playlist in
                                         Button(playlist.name) {
                                             Task {
@@ -284,7 +289,7 @@ struct ContentView: View {
                             .onTapGesture(perform: {
                                 Task(priority: .userInitiated) {
                                     // TODO: Set the type here first
-                                    guard let media = await mpd.queue.get(for: .artist, using: album) else {
+                                    guard let media = try? await mpd.queue.get(for: .artist, using: album) else {
                                         return
                                     }
 
@@ -358,7 +363,7 @@ struct ContentView: View {
         var body: some View {
             HStack {
                 if !showSearch {
-                    Text(mpd.queue.label)
+                    Text(mpd.label)
                         .font(.headline)
 
                     Spacer()
@@ -384,16 +389,20 @@ struct ContentView: View {
                         .cornerRadius(4)
                         .disableAutocorrection(true)
                         .focused($focused)
-//                        .onSubmit {
-//                            guard !query.isEmpty else {
-//                                mpd.queue.search = nil
-//                                return
-//                            }
-//
-//                            Task(priority: .userInitiated) {
-//                                await mpd.queue.setSearch(for: query, using: type)
-//                            }
-//                        }
+                        .onSubmit {
+                            guard let type = mpd.queue.type else {
+                                return
+                            }
+
+                            guard !query.isEmpty else {
+                                mpd.queue.clearSearch()
+                                return
+                            }
+
+                            Task(priority: .userInitiated) {
+                                try? await mpd.queue.setSearch(for: query, using: type)
+                            }
+                        }
                         .onAppear {
                             query = ""
                             focused = true
@@ -418,8 +427,9 @@ struct ContentView: View {
                         })
                 }
             }
-            .frame(height: 50)
+            .frame(height: 50 - 7.5)
             .padding(.horizontal, 15)
+            .padding(.top, 7.5)
 //            .onChange(of: queue.type) {
 //                showSearch = false
 //            }
@@ -509,6 +519,19 @@ struct ContentView: View {
             .onTapGesture(perform: {
                 path.append(album)
             })
+            .contextMenu {
+                if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
+                    Menu("Add Album to Playlist") {
+                        ForEach(playlists) { playlist in
+                            Button(playlist.name) {
+                                Task {
+                                    try? await ConnectionManager().addToPlaylist(playlist, songs: ConnectionManager().getSongs(for: album))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -571,7 +594,7 @@ struct ContentView: View {
                 }
             })
             .contextMenu {
-                if let playlists = (mpd.queue.playlist != nil) ? mpd.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.playlists {
+                if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
                     Menu("Add Song to Playlist") {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {

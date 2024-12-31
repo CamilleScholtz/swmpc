@@ -23,17 +23,19 @@ enum ConnectionManagerError: Error {
 actor ConnectionManager {
     static let shared = ConnectionManager(idle: true)
 
-    // TODO: Use these.
-    @AppStorage(Setting.host) var host = "localhost"
-    @AppStorage(Setting.port) var port = 6600
-
     private(set) var idle: Bool
     private(set) var connection: NWConnection?
 
+    private(set) var host: String
+    private(set) var port: UInt16
+    
     private var buffer = Data()
 
     init(idle: Bool = false) {
         self.idle = idle
+        
+        host = UserDefaults.standard.string(forKey: "host")!
+        port = UInt16(UserDefaults.standard.integer(forKey: "port"))
     }
 
     // MARK: - Connection API
@@ -43,7 +45,7 @@ actor ConnectionManager {
             return
         }
 
-        connection = NWConnection(host: NWEndpoint.Host("localhost"), port: NWEndpoint.Port(rawValue: 6600)!, using: .tcp)
+        connection = NWConnection(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port)!, using: .tcp)
         guard let connection else {
             throw ConnectionManagerError.connectionError
         }
@@ -605,6 +607,25 @@ actor ConnectionManager {
         for song in songs {
             _ = try await run(["playlistdelete \(playlist.name) \(song.position)"])
         }
+    }
+
+    func addToFavorites(songs: [Song]) async throws {
+        try await addToPlaylist(Playlist(id: 0, position: 0, name: "Favorites"), songs: songs)
+    }
+
+    func removeFromFavorites(songs: [Song]) async throws {
+        try await removeFromPlaylist(Playlist(id: 0, position: 0, name: "Favorites"), songs: songs)
+    }
+
+    func update() async throws {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        _ = try await run(["update"])
     }
 
     func play(_ media: any Mediable) async throws {
