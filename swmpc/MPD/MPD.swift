@@ -11,20 +11,21 @@ import SwiftUI
     let status = Status()
     let queue = Queue()
 
-    let categories: [Category] = [
-        .init(id: MediaType.album, label: "Albums", image: "square.stack"),
-        .init(id: MediaType.artist, label: "Artists", image: "music.microphone"),
-        .init(id: MediaType.song, label: "Songs", image: "music.note"),
-        .init(id: MediaType.playlist, label: "Playlists", image: "music.note.list", list: false),
-    ]
-
-    var label: String {
-        categories.first { $0.id == queue.type }?.label ?? ""
-    }
-
-    var image: String {
-        categories.first { $0.id == queue.type }?.image ?? ""
-    }
+    // TODO: Move this.
+//    let categories: [Category] = [
+//        .init(id: MediaType.album, label: "Albums", image: "square.stack"),
+//        .init(id: MediaType.artist, label: "Artists", image: "music.microphone"),
+//        .init(id: MediaType.song, label: "Songs", image: "music.note"),
+//        .init(id: MediaType.playlist, label: "Playlists", image: "music.note.list", list: false),
+//    ]
+//
+//    var label: String {
+//        categories.first { $0.id == queue.type }?.label ?? ""
+//    }
+//
+//    var image: String {
+//        categories.first { $0.id == queue.type }?.image ?? ""
+//    }
 
     private var updateLoopTask: Task<Void, Never>?
 
@@ -81,9 +82,9 @@ import SwiftUI
         switch change {
         case .playlists:
             try await queue.setPlaylists()
-        case .queue:
+        case .database, .queue:
             print("queue")
-            try await queue.set()
+            //try await queue.set()
         case .player:
             try await status.set()
         case .options:

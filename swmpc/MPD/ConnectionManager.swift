@@ -20,22 +20,34 @@ enum ConnectionManagerError: Error {
     case wrongMode
 }
 
+struct ConnectionManagerConfig {
+    static let shared = ConnectionManagerConfig()
+
+    let host: String
+    let port: UInt16
+
+    private init() {
+        let defaults = UserDefaults.standard
+        
+        self.host = defaults.string(forKey: "host")!
+        self.port = UInt16(defaults.integer(forKey: "port"))
+    }
+}
+
 actor ConnectionManager {
     static let shared = ConnectionManager(idle: true)
 
+    private let host = ConnectionManagerConfig.shared.host
+    private let port = ConnectionManagerConfig.shared.port
+    
     private(set) var idle: Bool
     private(set) var connection: NWConnection?
-
-    private(set) var host: String
-    private(set) var port: UInt16
     
     private var buffer = Data()
+    private let connectionQueue = DispatchQueue(label: "com.swmpc.connection")
 
     init(idle: Bool = false) {
         self.idle = idle
-        
-        host = UserDefaults.standard.string(forKey: "host")!
-        port = UInt16(UserDefaults.standard.integer(forKey: "port"))
     }
 
     // MARK: - Connection API
@@ -50,7 +62,7 @@ actor ConnectionManager {
             throw ConnectionManagerError.connectionError
         }
 
-        connection.start(queue: .global())
+        connection.start(queue: connectionQueue)
         try await waitForConnectionReady()
 
         let lines = try await readUntilOK()
@@ -156,13 +168,15 @@ actor ConnectionManager {
         }
     }
 
-    private func filter(key: String, value: String, comparator: String, quote: Bool = true) -> String {
-        let escapedValue = value
+    private func escape(_ string: String) -> String {
+        string
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "'", with: "\\\\'")
             .replacingOccurrences(of: "\"", with: "\\\\\\\"")
+    }
 
-        let clause = "(\(key) \(comparator) '\(escapedValue)')"
+    private func filter(key: String, value: String, comparator: String, quote: Bool = true) -> String {
+        let clause = "(\(key) \(comparator) '\(escape(value))')"
 
         return quote ? "\"\(clause)\"" : clause
     }
@@ -181,17 +195,21 @@ actor ConnectionManager {
 
     private func readFixedLengthData(_ length: Int) async throws -> Data {
         var data = Data()
-
-        while data.count < length {
+        data.reserveCapacity(length)
+        
+        var remaining = length
+        
+        while remaining > 0 {
             if buffer.isEmpty {
                 try await receiveDataChunk()
             }
 
-            let needed = length - data.count
-            let chunk = buffer.prefix(needed)
+            let chunkCount = min(buffer.count, remaining)
+            
+            data.append(buffer.prefix(chunkCount))
+            buffer.removeFirst(chunkCount)
 
-            data.append(chunk)
-            buffer.removeFirst(chunk.count)
+            remaining -= chunkCount
         }
 
         return data
@@ -209,14 +227,14 @@ actor ConnectionManager {
             throw ConnectionManagerError.malformedResponse
         }
 
-        return string.trimmingCharacters(in: .newlines)
+        return string
     }
 
     private func receiveDataChunk() async throws {
         let connection = try ensureConnectionReady()
 
         guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, isComplete, error in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { data, _, isComplete, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else if isComplete {
@@ -546,6 +564,47 @@ actor ConnectionManager {
         return playlists
     }
 
+    func getPlaylist(_ playlist: Playlist) async throws -> [Song] {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        let lines = try await run(["listplaylistinfo \(playlist.name)"])
+        var chunks = [[String]]()
+        var chunk = [String]()
+
+        for line in lines.dropLast() {
+            if line.hasPrefix("file"), !chunk.isEmpty {
+                chunks.append(chunk)
+                chunk.removeAll(keepingCapacity: true)
+            }
+
+            chunk.append(line)
+        }
+
+        if !chunk.isEmpty {
+            chunks.append(chunk)
+        }
+
+        return try chunks.enumerated().map { index, chunk in
+            let song = try parseMediaResponse(chunk, using: .song) as! Song
+
+            return Song(
+                id: UInt32(index),
+                position: UInt32(index),
+                url: song.url,
+                artist: song.artist,
+                title: song.title,
+                duration: song.duration,
+                disc: song.disc,
+                track: song.track
+            )
+        }
+    }
+
     func loadPlaylist(_ playlist: Playlist?) async throws {
         guard !idle else {
             throw ConnectionManagerError.wrongMode
@@ -592,7 +651,7 @@ actor ConnectionManager {
         defer { disconnect() }
 
         for song in songs {
-            _ = try await run(["playlistadd \(playlist.name) \(song.url.path)"])
+            _ = try await run(["playlistadd \(playlist.name) \"\(song.url.path)\""])
         }
     }
 

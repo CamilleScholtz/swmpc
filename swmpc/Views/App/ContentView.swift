@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(MPD.self) private var mpd
 
+    @Binding var media: [any Mediable]?
     @Binding var path: NavigationPath
 
     @State private var showSearch: Bool = false
@@ -30,11 +31,11 @@ struct ContentView: View {
                     LazyVStack(alignment: .leading, spacing: 15) {
                         switch mpd.queue.type {
                         case .artist:
-                            ArtistsView(path: $path)
+                            ArtistsView(media: $media, path: $path)
                         case .song, .playlist:
-                            SongsView()
+                            SongsView(media: $media)
                         default:
-                            AlbumsView(path: $path)
+                            AlbumsView(media: $media, path: $path)
                         }
                     }
                     .id(mpd.queue.type)
@@ -103,10 +104,11 @@ struct ContentView: View {
     struct ArtistsView: View {
         @Environment(MPD.self) private var mpd
 
+        @Binding var media: [any Mediable]?
         @Binding var path: NavigationPath
 
         private var artists: [Artist] {
-            mpd.queue.search as? [Artist] ?? mpd.queue.media as? [Artist] ?? []
+            media as? [Artist] ?? []
         }
 
         var body: some View {
@@ -155,10 +157,11 @@ struct ContentView: View {
     struct AlbumsView: View {
         @Environment(MPD.self) private var mpd
 
+        @Binding var media: [any Mediable]?
         @Binding var path: NavigationPath
 
         private var albums: [Album] {
-            mpd.queue.search as? [Album] ?? mpd.queue.media as? [Album] ?? []
+            media as? [Album] ?? []
         }
 
         var body: some View {
@@ -254,7 +257,7 @@ struct ContentView: View {
                                             try? await ConnectionManager().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                                         }
                                     }
-                                    
+
                                     ForEach(playlists) { playlist in
                                         Button(playlist.name) {
                                             Task {
@@ -339,8 +342,10 @@ struct ContentView: View {
     struct SongsView: View {
         @Environment(MPD.self) private var mpd
 
+        @Binding var media: [any Mediable]?
+        
         private var songs: [Song] {
-            mpd.queue.search as? [Song] ?? mpd.queue.media as? [Song] ?? []
+            media as? [Song] ?? []
         }
 
         var body: some View {
@@ -363,8 +368,9 @@ struct ContentView: View {
         var body: some View {
             HStack {
                 if !showSearch {
-                    Text(mpd.label)
-                        .font(.headline)
+                    // TODO
+//                    Text(mpd.label)
+//                        .font(.headline)
 
                     Spacer()
 
@@ -389,18 +395,19 @@ struct ContentView: View {
                         .cornerRadius(4)
                         .disableAutocorrection(true)
                         .focused($focused)
-                        .onSubmit {
+                        .onChange(of: query) {
                             guard let type = mpd.queue.type else {
                                 return
                             }
 
                             guard !query.isEmpty else {
-                                mpd.queue.clearSearch()
+                                // mpd.queue.clearSearch()
                                 return
                             }
 
                             Task(priority: .userInitiated) {
-                                try? await mpd.queue.setSearch(for: query, using: type)
+                                // TODO
+                                try? await mpd.queue.search(for: query, using: type)
                             }
                         }
                         .onAppear {
@@ -450,6 +457,31 @@ struct ContentView: View {
 
         var body: some View {
             HStack(spacing: 15) {
+                let initials = artist.name.split(separator: " ")
+                    .prefix(2)
+                    .compactMap { $0.first }
+                    .map { String($0) }
+                    .joined()
+                    .uppercased()
+
+                Circle()
+                    .fill(LinearGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: Color(.secondarySystemFill), location: 0.0),
+                            .init(color: Color(.secondarySystemFill).opacity(0.7), location: 1.0),
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ))
+                    .frame(width: 50, height: 50)
+                    .overlay(
+                        Text(initials)
+                            .font(.system(size: 18))
+                            .fontDesign(.rounded)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                    )
+
                 VStack(alignment: .leading) {
                     Text(artist.name)
                         .font(.headline)
@@ -506,9 +538,9 @@ struct ContentView: View {
                 Spacer()
             }
             .id(album)
-            .task(id: album) {
+            .task(id: album, priority: .background) {
                 // TODO: This can probably be made even a little snappier.
-                try? await Task.sleep(nanoseconds: 25_000_000)
+                try? await Task.sleep(nanoseconds: 48_000_000)
                 guard !Task.isCancelled else {
                     return
                 }
@@ -599,7 +631,7 @@ struct ContentView: View {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    try? await ConnectionManager().addToPlaylist(playlist, songs: [song])
+                                    try! await ConnectionManager().addToPlaylist(playlist, songs: [song])
                                 }
                             }
                         }

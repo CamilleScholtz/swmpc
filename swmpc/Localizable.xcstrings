@@ -302,7 +302,14 @@
       }
     },
     "Update Library" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectie Bijwerken"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
