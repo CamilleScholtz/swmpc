@@ -10,10 +10,12 @@ import SwiftUI
 struct ContentView: View {
     @Environment(MPD.self) private var mpd
 
-    @Binding var media: [any Mediable]?
+    @Binding var category: Category
+    @Binding var queue: [any Mediable]?
+    @Binding var query: String
     @Binding var path: NavigationPath
 
-    @State private var showSearch: Bool = false
+    @State private var searching: Bool = false
     @State private var hover = false
 
     private let scrollToCurrentNotifcation = NotificationCenter.default
@@ -25,17 +27,17 @@ struct ContentView: View {
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    HeaderView(showSearch: $showSearch)
+                    HeaderView(category: $category, searching: $searching, query: $query)
                         .id("top")
 
                     LazyVStack(alignment: .leading, spacing: 15) {
                         switch mpd.queue.type {
                         case .artist:
-                            ArtistsView(media: $media, path: $path)
+                            ArtistsView(queue: $queue, path: $path)
                         case .song, .playlist:
-                            SongsView(media: $media)
+                            SongsView(queue: $queue)
                         default:
-                            AlbumsView(media: $media, path: $path)
+                            AlbumsView(queue: $queue, path: $path)
                         }
                     }
                     .id(mpd.queue.type)
@@ -55,7 +57,7 @@ struct ContentView: View {
                 .onReceive(startSearchingNotication) { _ in
                     scrollToTop(proxy)
 
-                    showSearch = true
+                    searching = true
                 }
             }
             .ignoresSafeArea()
@@ -74,7 +76,7 @@ struct ContentView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 15) {
                         backButton()
-                        AlbumSongsView(for: album, path: $path)
+                        AlbumSongsView(for: album, category: $category, path: $path)
                     }
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
@@ -104,11 +106,11 @@ struct ContentView: View {
     struct ArtistsView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var media: [any Mediable]?
+        @Binding var queue: [any Mediable]?
         @Binding var path: NavigationPath
 
         private var artists: [Artist] {
-            media as? [Artist] ?? []
+            queue as? [Artist] ?? []
         }
 
         var body: some View {
@@ -157,11 +159,11 @@ struct ContentView: View {
     struct AlbumsView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var media: [any Mediable]?
+        @Binding var queue: [any Mediable]?
         @Binding var path: NavigationPath
 
         private var albums: [Album] {
-            media as? [Album] ?? []
+            queue as? [Album] ?? []
         }
 
         var body: some View {
@@ -175,11 +177,13 @@ struct ContentView: View {
         @Environment(MPD.self) private var mpd
         @Environment(\.colorScheme) var colorScheme
 
-        init(for album: Album, path: Binding<NavigationPath>) {
+        init(for album: Album, category: Binding<Category>, path: Binding<NavigationPath>) {
             _album = State(initialValue: album)
+            _category = category
             _path = path
         }
 
+        @Binding var category: Category
         @Binding var path: NavigationPath
 
         @State private var album: Album
@@ -191,9 +195,9 @@ struct ContentView: View {
         var body: some View {
             VStack(alignment: .leading, spacing: 15) {
                 HStack(spacing: 15) {
-                    if let artwork {
+                    if artwork != nil {
                         ZStack(alignment: .bottom) {
-                            ArtworkView(image: artwork)
+                            ArtworkView(image: $artwork)
                                 .frame(width: 80)
                                 .blur(radius: 17)
                                 .offset(y: 7)
@@ -201,7 +205,7 @@ struct ContentView: View {
                                 .blendMode(colorScheme == .dark ? .softLight : .normal)
                                 .opacity(0.5)
 
-                            ArtworkView(image: artwork)
+                            ArtworkView(image: $artwork)
                                 .cornerRadius(10)
                                 .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                                 .frame(width: 100)
@@ -244,6 +248,12 @@ struct ContentView: View {
                         })
                         .onTapGesture(perform: {
                             Task(priority: .userInitiated) {
+                                guard category.type != .playlist else {
+                                    // TODO: Set queue
+
+                                    return
+                                }
+
                                 if mpd.status.media?.id != album.id {
                                     try? await ConnectionManager().play(album)
                                 }
@@ -342,10 +352,10 @@ struct ContentView: View {
     struct SongsView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var media: [any Mediable]?
-        
+        @Binding var queue: [any Mediable]?
+
         private var songs: [Song] {
-            media as? [Song] ?? []
+            queue as? [Song] ?? []
         }
 
         var body: some View {
@@ -358,19 +368,19 @@ struct ContentView: View {
     struct HeaderView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var showSearch: Bool
+        @Binding var category: Category
+        @Binding var searching: Bool
+        @Binding var query: String
 
         @State private var hover = false
-        @State private var query = ""
 
         @FocusState private var focused: Bool
 
         var body: some View {
             HStack {
-                if !showSearch {
-                    // TODO
-//                    Text(mpd.label)
-//                        .font(.headline)
+                if !searching {
+                    Text(category.label)
+                        .font(.headline)
 
                     Spacer()
 
@@ -385,7 +395,7 @@ struct ContentView: View {
                             hover = value
                         })
                         .onTapGesture(perform: {
-                            showSearch = true
+                            searching = true
                         })
                 } else {
                     TextField("Search", text: $query)
@@ -395,21 +405,6 @@ struct ContentView: View {
                         .cornerRadius(4)
                         .disableAutocorrection(true)
                         .focused($focused)
-                        .onChange(of: query) {
-                            guard let type = mpd.queue.type else {
-                                return
-                            }
-
-                            guard !query.isEmpty else {
-                                // mpd.queue.clearSearch()
-                                return
-                            }
-
-                            Task(priority: .userInitiated) {
-                                // TODO
-                                try? await mpd.queue.search(for: query, using: type)
-                            }
-                        }
                         .onAppear {
                             query = ""
                             focused = true
@@ -430,16 +425,17 @@ struct ContentView: View {
                             hover = value
                         })
                         .onTapGesture(perform: {
-                            showSearch = false
+                            searching = false
                         })
                 }
             }
             .frame(height: 50 - 7.5)
             .padding(.horizontal, 15)
             .padding(.top, 7.5)
-//            .onChange(of: queue.type) {
-//                showSearch = false
-//            }
+            .onChange(of: mpd.queue.type) {
+                searching = false
+                query = ""
+            }
         }
     }
 
@@ -459,7 +455,7 @@ struct ContentView: View {
             HStack(spacing: 15) {
                 let initials = artist.name.split(separator: " ")
                     .prefix(2)
-                    .compactMap { $0.first }
+                    .compactMap(\.first)
                     .map { String($0) }
                     .joined()
                     .uppercased()
@@ -519,7 +515,7 @@ struct ContentView: View {
 
         var body: some View {
             HStack(spacing: 15) {
-                ArtworkView(image: artwork)
+                ArtworkView(image: $artwork)
                     .cornerRadius(5)
                     .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                     .frame(width: 60)
@@ -545,7 +541,11 @@ struct ContentView: View {
                     return
                 }
 
-                artwork = await NSImage(data: (try? ArtworkManager.shared.get(using: album.url)) ?? Data())
+                guard let data = try? await ArtworkManager.shared.get(using: album.url) else {
+                    return
+                }
+
+                artwork = NSImage(data: data)
             }
             .contentShape(Rectangle())
             .onTapGesture(perform: {
@@ -650,27 +650,22 @@ struct ContentView: View {
     }
 
     struct ArtworkView: View {
-        let image: NSImage?
-
-        @State private var loaded = false
+        @Binding var image: NSImage?
 
         var body: some View {
-            if let image {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .scaledToFit()
-                    .opacity(loaded ? 1 : 0)
-                    .background(Color(.secondarySystemFill).opacity(0.3))
-                    .animation(.spring, value: loaded)
-                    .onAppear {
-                        loaded = true
-                    }
-            } else {
+            ZStack {
                 Rectangle()
                     .fill(Color(.secondarySystemFill).opacity(0.3))
                     .aspectRatio(contentMode: .fit)
                     .scaledToFill()
+
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .scaledToFit()
+                        .transition(.opacity.animation(.easeInOut(duration: 0.3)))
+                }
             }
         }
     }

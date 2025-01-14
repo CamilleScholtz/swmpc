@@ -28,9 +28,9 @@ struct ConnectionManagerConfig {
 
     private init() {
         let defaults = UserDefaults.standard
-        
-        self.host = defaults.string(forKey: "host")!
-        self.port = UInt16(defaults.integer(forKey: "port"))
+
+        host = defaults.string(forKey: "host")!
+        port = UInt16(defaults.integer(forKey: "port"))
     }
 }
 
@@ -39,10 +39,10 @@ actor ConnectionManager {
 
     private let host = ConnectionManagerConfig.shared.host
     private let port = ConnectionManagerConfig.shared.port
-    
+
     private(set) var idle: Bool
     private(set) var connection: NWConnection?
-    
+
     private var buffer = Data()
     private let connectionQueue = DispatchQueue(label: "com.swmpc.connection")
 
@@ -57,7 +57,17 @@ actor ConnectionManager {
             return
         }
 
-        connection = NWConnection(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: port)!, using: .tcp)
+        let options = NWProtocolTCP.Options()
+        options.noDelay = true
+        if idle {
+            options.enableKeepalive = true
+        }
+
+        connection = NWConnection(
+            host: NWEndpoint.Host(host),
+            port: NWEndpoint.Port(rawValue: port)!,
+            using: NWParameters(tls: nil, tcp: options)
+        )
         guard let connection else {
             throw ConnectionManagerError.connectionError
         }
@@ -196,16 +206,16 @@ actor ConnectionManager {
     private func readFixedLengthData(_ length: Int) async throws -> Data {
         var data = Data()
         data.reserveCapacity(length)
-        
+
         var remaining = length
-        
+
         while remaining > 0 {
             if buffer.isEmpty {
                 try await receiveDataChunk()
             }
 
             let chunkCount = min(buffer.count, remaining)
-            
+
             data.append(buffer.prefix(chunkCount))
             buffer.removeFirst(chunkCount)
 
@@ -339,7 +349,7 @@ actor ConnectionManager {
             return Album(
                 id: id ?? 0,
                 position: position ?? 0,
-                url: url ?? URL(string: "unknown:///")!,
+                url: url ?? URL(string: "mpd:///")!,
                 artist: albumArtist ?? "Unknown Artist",
                 title: album ?? "Unknown Title",
                 date: date ?? "1970"
@@ -348,7 +358,7 @@ actor ConnectionManager {
             return Song(
                 id: id ?? 0,
                 position: position ?? 0,
-                url: url ?? URL(string: "unknown:///")!,
+                url: url ?? URL(string: "mpd:///")!,
                 artist: artist ?? "Unknown Artist",
                 title: title ?? "Unknown Title",
                 duration: duration,

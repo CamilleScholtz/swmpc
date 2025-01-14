@@ -21,7 +21,6 @@ import SwiftUI
     private(set) var playlist: Playlist?
 
     private(set) var media: [any Mediable] = []
-//    private(set) var search: [any Mediable]?
 
     @MainActor
     func set(for type: MediaType? = nil, using playlist: Playlist? = nil) async throws {
@@ -35,7 +34,7 @@ import SwiftUI
         guard self.type != type || self.playlist != playlist else {
             return
         }
-        
+
         if self.playlist != playlist {
             try await ConnectionManager().loadPlaylist(playlist)
         }
@@ -44,7 +43,7 @@ import SwiftUI
             self.type = type
             self.playlist = playlist
         }
-        
+
         switch type {
         case .artist:
             let albums = try await ConnectionManager().getAlbums()
@@ -69,6 +68,11 @@ import SwiftUI
     }
 
     @MainActor
+    func setPlaylists() async throws {
+        playlists = try await ConnectionManager.shared.getPlaylists().filter { $0.name != "Favorites" }
+    }
+
+    @MainActor
     func search(for query: String, using type: MediaType) async throws -> [any Mediable] {
         try await set(for: type)
 
@@ -88,11 +92,6 @@ import SwiftUI
                     $0.title.range(of: query, options: .caseInsensitive) != nil
             }
         }
-    }
-
-    @MainActor
-    func setPlaylists() async throws {
-        playlists = try await ConnectionManager.shared.getPlaylists().filter { $0.name != "Favorites" }
     }
 
     @MainActor

@@ -18,7 +18,8 @@ struct AppView: View {
 
     @State private var selected = categories.first!
     @State private var path = NavigationPath()
-    @State private var media: [any Mediable]?
+    @State private var queue: [any Mediable]?
+    @State private var query = ""
 
     @State private var editingPlaylist = false
     @State private var playlistName = ""
@@ -84,9 +85,9 @@ struct AppView: View {
                         return
                     }
 
-                    media = try? await ConnectionManager().getPlaylist(playlist)
+                    queue = try? await ConnectionManager().getPlaylist(playlist)
                 } else {
-                    media = mpd.queue.media
+                    queue = mpd.queue.media
                 }
 
                 guard let song = mpd.status.song else {
@@ -102,8 +103,22 @@ struct AppView: View {
 
                 mpd.status.media = try? await mpd.queue.get(for: selected.type, using: song)
             }
+            .onChange(of: query) { _, value in
+                guard let type = mpd.queue.type else {
+                    return
+                }
+
+                guard !value.isEmpty else {
+                    queue = mpd.queue.media
+                    return
+                }
+
+                Task(priority: .userInitiated) {
+                    queue = try? await mpd.queue.search(for: value, using: type)
+                }
+            }
         } content: {
-            ContentView(media: $media, path: $path)
+            ContentView(category: $selected, queue: $queue, query: $query, path: $path)
                 .navigationBarBackButtonHidden()
                 .navigationSplitViewColumnWidth(310)
         } detail: {

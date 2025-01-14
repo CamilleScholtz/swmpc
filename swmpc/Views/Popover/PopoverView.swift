@@ -104,7 +104,7 @@ struct PopoverView: View {
         }
         .onChange(of: artwork) { previous, _ in
             updateHeight()
-            
+
             previousArtwork = previous
 
             isBackgroundArtworkTransitioning = true
