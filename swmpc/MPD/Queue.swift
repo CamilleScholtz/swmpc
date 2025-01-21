@@ -34,7 +34,7 @@ import SwiftUI
         guard self.type != type || self.playlist != playlist else {
             return
         }
-
+        
         if self.playlist != playlist {
             try await ConnectionManager().loadPlaylist(playlist)
         }

@@ -15,7 +15,7 @@ struct ContentView: View {
     @Binding var query: String
     @Binding var path: NavigationPath
 
-    @State private var searching: Bool = false
+    @State private var searching = false
     @State private var hover = false
 
     private let scrollToCurrentNotifcation = NotificationCenter.default
@@ -25,40 +25,44 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    HeaderView(category: $category, searching: $searching, query: $query)
-                        .id("top")
+            ZStack {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        HeaderView(category: $category, searching: $searching, query: $query)
+                            .id("top")
 
-                    LazyVStack(alignment: .leading, spacing: 15) {
-                        switch mpd.queue.type {
-                        case .artist:
-                            ArtistsView(queue: $queue, path: $path)
-                        case .song, .playlist:
-                            SongsView(queue: $queue)
-                        default:
-                            AlbumsView(queue: $queue, path: $path)
+                        LazyVStack(alignment: .leading, spacing: 15) {
+                            switch mpd.queue.type {
+                            case .artist:
+                                ArtistsView(queue: $queue, path: $path)
+                            case .song, .playlist:
+                                SongsView(queue: $queue)
+                            default:
+                                AlbumsView(queue: $queue, path: $path)
+                            }
                         }
+                        .id(mpd.queue.type)
+                        .padding(.horizontal, 15)
+                        .padding(.bottom, 15)
                     }
-                    .id(mpd.queue.type)
-                    .padding(.horizontal, 15)
-                    .padding(.bottom, 15)
-                }
-                .task(id: mpd.queue.type) {
-                    guard !Task.isCancelled else {
-                        return
+                    .task(id: mpd.queue.type) {
+                        guard !Task.isCancelled else {
+                            return
+                        }
+
+                        scrollToCurrent(proxy, animate: false)
                     }
+                    .onReceive(scrollToCurrentNotifcation) { _ in
+                        scrollToCurrent(proxy)
+                    }
+                    .onReceive(startSearchingNotication) { _ in
+                        scrollToTop(proxy)
 
-                    scrollToCurrent(proxy, animate: false)
+                        searching = true
+                    }
                 }
-                .onReceive(scrollToCurrentNotifcation) { _ in
-                    scrollToCurrent(proxy)
-                }
-                .onReceive(startSearchingNotication) { _ in
-                    scrollToTop(proxy)
 
-                    searching = true
-                }
+                LoadingView(category: $category)
             }
             .ignoresSafeArea()
             .navigationDestination(for: Artist.self) { artist in
@@ -101,6 +105,36 @@ struct ContentView: View {
             .onTapGesture(perform: {
                 path.removeLast()
             })
+    }
+    
+    struct LoadingView: View {
+        @Environment(MPD.self) private var mpd
+
+        @Binding var category: Category
+        
+        @State private var loading = true
+        
+        var body: some View {
+            ZStack {
+                Rectangle()
+                    .fill(.background)
+                    .ignoresSafeArea()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                ProgressView()
+            }
+            .opacity(loading ? 1 : 0)
+            .onChange(of: category) {
+                loading = true
+            }
+            .onChange(of: mpd.queue.media.count) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.interactiveSpring) {
+                        loading = false
+                    }
+                }
+            }
+        }
     }
 
     struct ArtistsView: View {

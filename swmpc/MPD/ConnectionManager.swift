@@ -10,7 +10,6 @@ import SwiftUI
 
 enum ConnectionManagerError: Error {
     case connectionError
-    case notConnected
     case connectionClosed
 
     case protocolError(String)
@@ -90,7 +89,7 @@ actor ConnectionManager {
 
     func ensureConnectionReady() throws -> NWConnection {
         guard let connection, connection.state == .ready else {
-            throw ConnectionManagerError.notConnected
+            throw ConnectionManagerError.connectionClosed
         }
 
         return connection
