@@ -311,10 +311,16 @@ struct DetailView: View {
 
         var body: some View {
             VStack(alignment: .leading, spacing: 7) {
-                Text(mpd.status.song?.title ?? "No song playing")
-                    .font(.system(size: 18))
-                    .fontWeight(.semibold)
-                    .fontDesign(.rounded)
+                HStack(alignment: .center) {
+                    Text(mpd.status.song?.title ?? "No song playing")
+                        .font(.system(size: 18))
+                        .fontWeight(.semibold)
+                        .fontDesign(.rounded)
+
+                    Spacer()
+
+                    FavoriteView()
+                }
 
                 ProgressView()
             }
@@ -429,6 +435,47 @@ struct DetailView: View {
                         .offset(y: 12)
                 }
             }
+        }
+    }
+
+    struct FavoriteView: View {
+        @Environment(MPD.self) private var mpd
+
+        @State private var hover = false
+        @State private var favorite = false
+
+        var body: some View {
+            Image(systemName: "heart.fill")
+                .scaleEffect(hover ? 1.2 : 1)
+                .animation(.interactiveSpring, value: hover)
+                .foregroundColor(favorite ? .red : Color(.secondarySystemFill))
+                .animation(.interactiveSpring, value: favorite)
+                .onHover(perform: { value in
+                    hover = value
+                })
+                .onTapGesture(perform: {
+                    favorite.toggle()
+
+                    Task(priority: .userInitiated) {
+                        guard let song = mpd.status.song else {
+                            return
+                        }
+
+                        if favorite {
+                            try? await ConnectionManager().addToFavorites(songs: [song])
+                        } else {
+                            try? await ConnectionManager().removeFromFavorites(songs: [song])
+                        }
+                    }
+                })
+                .task(id: mpd.status.song) {
+                    guard let song = mpd.status.song else {
+                        return
+                    }
+
+                    favorite = await (try? ConnectionManager().isInFavorites(song)) ?? false
+                    print(favorite ? "in favorites" : "not in favorites")
+                }
         }
     }
 

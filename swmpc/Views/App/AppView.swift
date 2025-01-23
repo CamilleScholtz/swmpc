@@ -42,9 +42,9 @@ struct AppView: View {
                 }
 
                 Section("Playlists") {
-//                    NavigationLink(value: MediaType.playlist) {
-//                        Label("Favorites", systemImage: "heart")
-//                    }
+                    NavigationLink(value: Category(type: .playlist, playlist: Playlist(id: 0, position: 0, name: "Favorites"), label: "Favorites", image: "heart")) {
+                        Label("Favorites", systemImage: "heart")
+                    }
 
                     ForEach(mpd.queue.playlists ?? []) { playlist in
                         let category = Category(type: .playlist, playlist: playlist, label: playlist.name, image: "music.note.list")
@@ -87,6 +87,8 @@ struct AppView: View {
 
                     queue = try? await ConnectionManager().getPlaylist(playlist)
                 } else {
+                    if mpd.queue.playlist == nil {}
+
                     queue = mpd.queue.media
                 }
 

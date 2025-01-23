@@ -31,6 +31,9 @@
         }
       }
     },
+    "Add Album to Favorites" : {
+
+    },
     "Add Album to Playlist" : {
       "localizations" : {
         "nl" : {
@@ -40,6 +43,9 @@
           }
         }
       }
+    },
+    "Add Song to Favorites" : {
+
     },
     "Add Song to Playlist" : {
       "localizations" : {

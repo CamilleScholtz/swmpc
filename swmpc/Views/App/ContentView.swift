@@ -36,7 +36,7 @@ struct ContentView: View {
                             case .artist:
                                 ArtistsView(queue: $queue, path: $path)
                             case .song, .playlist:
-                                SongsView(queue: $queue)
+                                SongsView(category: $category, queue: $queue)
                             default:
                                 AlbumsView(queue: $queue, path: $path)
                             }
@@ -106,21 +106,21 @@ struct ContentView: View {
                 path.removeLast()
             })
     }
-    
+
     struct LoadingView: View {
         @Environment(MPD.self) private var mpd
 
         @Binding var category: Category
-        
+
         @State private var loading = true
-        
+
         var body: some View {
             ZStack {
                 Rectangle()
                     .fill(.background)
                     .ignoresSafeArea()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
+
                 ProgressView()
             }
             .opacity(loading ? 1 : 0)
@@ -282,26 +282,20 @@ struct ContentView: View {
                         })
                         .onTapGesture(perform: {
                             Task(priority: .userInitiated) {
-                                guard category.type != .playlist else {
-                                    // TODO: Set queue
-
-                                    return
-                                }
-
                                 if mpd.status.media?.id != album.id {
                                     try? await ConnectionManager().play(album)
                                 }
                             }
                         })
                         .contextMenu {
+                            Button("Add Album to Favorites") {
+                                Task {
+                                    try? await ConnectionManager().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
+                                }
+                            }
+
                             if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
                                 Menu("Add Album to Playlist") {
-                                    Button("Favorites") {
-                                        Task {
-                                            try? await ConnectionManager().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
-                                        }
-                                    }
-
                                     ForEach(playlists) { playlist in
                                         Button(playlist.name) {
                                             Task {
@@ -367,7 +361,7 @@ struct ContentView: View {
                             }
 
                             ForEach(songs[disc] ?? []) { song in
-                                SongView(for: song)
+                                SongView(for: song, category: $category)
                             }
                         }
                     }
@@ -386,6 +380,7 @@ struct ContentView: View {
     struct SongsView: View {
         @Environment(MPD.self) private var mpd
 
+        @Binding var category: Category
         @Binding var queue: [any Mediable]?
 
         private var songs: [Song] {
@@ -394,7 +389,7 @@ struct ContentView: View {
 
         var body: some View {
             ForEach(songs) { song in
-                SongView(for: song)
+                SongView(for: song, category: $category)
             }
         }
     }
@@ -586,6 +581,12 @@ struct ContentView: View {
                 path.append(album)
             })
             .contextMenu {
+                Button("Add Album to Favorites") {
+                    Task {
+                        try? await ConnectionManager().addToFavorites(songs: ConnectionManager().getSongs(for: album))
+                    }
+                }
+
                 if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
                     Menu("Add Album to Playlist") {
                         ForEach(playlists) { playlist in
@@ -604,10 +605,13 @@ struct ContentView: View {
     struct SongView: View {
         @Environment(MPD.self) private var mpd
 
+        @Binding var category: Category
+
         private let song: Song
 
-        init(for song: Song) {
+        init(for song: Song, category: Binding<Category>) {
             self.song = song
+            _category = category
         }
 
         @State private var animating = false
@@ -656,10 +660,20 @@ struct ContentView: View {
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
+                    if category.playlist != mpd.queue.playlist {
+                        try? await ConnectionManager().loadPlaylist(category.playlist)
+                    }
+
                     try? await ConnectionManager().play(song)
                 }
             })
             .contextMenu {
+                Button("Add Song to Favorites") {
+                    Task {
+                        try! await ConnectionManager().addToFavorites(songs: [song])
+                    }
+                }
+
                 if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
                     Menu("Add Song to Playlist") {
                         ForEach(playlists) { playlist in

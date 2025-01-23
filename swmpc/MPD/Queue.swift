@@ -8,13 +8,6 @@
 import SwiftUI
 
 @Observable final class Queue {
-//    init() {
-//        Task {
-//            try? await setPlaylists()
-//            //try? await ConnectionManager().loadPlaylist(nil)
-//        }
-//    }
-
     private(set) var playlists: [Playlist]?
 
     private(set) var type: MediaType?
@@ -34,7 +27,7 @@ import SwiftUI
         guard self.type != type || self.playlist != playlist else {
             return
         }
-        
+
         if self.playlist != playlist {
             try await ConnectionManager().loadPlaylist(playlist)
         }

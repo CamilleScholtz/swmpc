@@ -677,10 +677,24 @@ actor ConnectionManager {
         }
     }
 
+    func isInFavorites(_ song: Song) async throws -> Bool {
+        guard !idle else {
+            throw ConnectionManagerError.wrongMode
+        }
+
+        try await connect()
+        defer { disconnect() }
+
+        let lines = try await run(["listplaylistinfo Favorites"])
+
+        return lines.contains { $0.contains(song.url.path) }
+    }
+
     func addToFavorites(songs: [Song]) async throws {
         try await addToPlaylist(Playlist(id: 0, position: 0, name: "Favorites"), songs: songs)
     }
 
+    // TODO: Figure out how the positions works here
     func removeFromFavorites(songs: [Song]) async throws {
         try await removeFromPlaylist(Playlist(id: 0, position: 0, name: "Favorites"), songs: songs)
     }
