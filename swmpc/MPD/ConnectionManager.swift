@@ -181,7 +181,7 @@ actor ConnectionManager {
         string
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "'", with: "\\\\'")
-            .replacingOccurrences(of: "\"", with: "\\\\\\\"")
+            .replacingOccurrences(of: "\"", with: "\\\\\"")
     }
 
     private func filter(key: String, value: String, comparator: String, quote: Bool = true) -> String {
@@ -243,11 +243,9 @@ actor ConnectionManager {
         let connection = try ensureConnectionReady()
 
         guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { data, _, isComplete, error in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { data, _, _, error in
                 if let error {
                     continuation.resume(throwing: error)
-                } else if isComplete {
-                    continuation.resume(returning: nil)
                 } else {
                     continuation.resume(returning: data)
                 }
@@ -257,6 +255,26 @@ actor ConnectionManager {
         }
 
         buffer.append(chunk)
+    }
+
+    private func chunkLines(_ lines: [String], startingWith prefix: String) -> [[String]] {
+        var chunks = [[String]]()
+        var currentChunk = [String]()
+
+        for line in lines {
+            if line.hasPrefix(prefix), !currentChunk.isEmpty {
+                chunks.append(currentChunk)
+                currentChunk.removeAll()
+            }
+
+            currentChunk.append(line)
+        }
+
+        if !currentChunk.isEmpty {
+            chunks.append(currentChunk)
+        }
+
+        return chunks
     }
 
     private func readUntil(_ condition: @escaping (String) -> Bool) async throws -> [String] {
@@ -343,12 +361,16 @@ actor ConnectionManager {
             }
         }
 
+        guard let url else {
+            throw ConnectionManagerError.malformedResponse
+        }
+
         switch media {
         case .album:
             return Album(
                 id: id ?? 0,
                 position: position ?? 0,
-                url: url ?? URL(string: "mpd:///")!,
+                url: url,
                 artist: albumArtist ?? "Unknown Artist",
                 title: album ?? "Unknown Title",
                 date: date ?? "1970"
@@ -357,7 +379,7 @@ actor ConnectionManager {
             return Song(
                 id: id ?? 0,
                 position: position ?? 0,
-                url: url ?? URL(string: "mpd:///")!,
+                url: url,
                 artist: artist ?? "Unknown Artist",
                 title: title ?? "Unknown Title",
                 duration: duration,
@@ -437,21 +459,7 @@ actor ConnectionManager {
             try await run(["playlistinfo"])
         }
 
-        var chunks = [[String]]()
-        var chunk = [String]()
-
-        for line in lines.dropLast() {
-            if line.hasPrefix("file"), !chunk.isEmpty {
-                chunks.append(chunk)
-                chunk.removeAll(keepingCapacity: true)
-            }
-
-            chunk.append(line)
-        }
-
-        if !chunk.isEmpty {
-            chunks.append(chunk)
-        }
+        let chunks = chunkLines(lines, startingWith: "file")
 
         return try chunks.map { chunk in
             try parseMediaResponse(chunk, using: .song) as! Song
@@ -467,22 +475,7 @@ actor ConnectionManager {
         defer { disconnect() }
 
         let lines = try await run(["playlistfind \"(\(filter(key: "track", value: "1", comparator: "==", quote: false)) AND \(filter(key: "disc", value: "1", comparator: "==", quote: false)))\""])
-
-        var chunks = [[String]]()
-        var chunk = [String]()
-
-        for line in lines.dropLast() {
-            if line.hasPrefix("file"), !chunk.isEmpty {
-                chunks.append(chunk)
-                chunk.removeAll(keepingCapacity: true)
-            }
-
-            chunk.append(line)
-        }
-
-        if !chunk.isEmpty {
-            chunks.append(chunk)
-        }
+        let chunks = chunkLines(lines, startingWith: "file")
 
         return try chunks.map { chunk in
             try parseMediaResponse(chunk, using: .album) as! Album
@@ -582,21 +575,7 @@ actor ConnectionManager {
         defer { disconnect() }
 
         let lines = try await run(["listplaylistinfo \(playlist.name)"])
-        var chunks = [[String]]()
-        var chunk = [String]()
-
-        for line in lines.dropLast() {
-            if line.hasPrefix("file"), !chunk.isEmpty {
-                chunks.append(chunk)
-                chunk.removeAll(keepingCapacity: true)
-            }
-
-            chunk.append(line)
-        }
-
-        if !chunk.isEmpty {
-            chunks.append(chunk)
-        }
+        let chunks = chunkLines(lines, startingWith: "file")
 
         return try chunks.enumerated().map { index, chunk in
             let song = try parseMediaResponse(chunk, using: .song) as! Song
@@ -659,9 +638,9 @@ actor ConnectionManager {
         try await connect()
         defer { disconnect() }
 
-        for song in songs {
-            _ = try await run(["playlistadd \(playlist.name) \"\(song.url.path)\""])
-        }
+        let commands = songs.map { "playlistadd \(playlist.name) \"\($0.url.path)\"" }
+
+        _ = try await run(commands)
     }
 
     func removeFromPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
@@ -672,9 +651,9 @@ actor ConnectionManager {
         try await connect()
         defer { disconnect() }
 
-        for song in songs {
-            _ = try await run(["playlistdelete \(playlist.name) \(song.position)"])
-        }
+        let commands = songs.map { "playlistdelete \(playlist.name) \($0.position)" }
+
+        _ = try await run(commands)
     }
 
     func isInFavorites(_ song: Song) async throws -> Bool {
