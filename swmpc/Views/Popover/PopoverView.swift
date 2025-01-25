@@ -91,16 +91,20 @@ struct PopoverView: View {
             .scaleEffect(x: 1.5)
         )
         .frame(width: 250, height: height)
+        .onReceive(willShowNotification) { _ in
+            Task(priority: .userInitiated) {
+                await updateArtwork()
+            }
+        }
+        .onReceive(didCloseNotification) { _ in
+            artwork = nil
+        }
         .task(id: mpd.status.song) {
-            guard AppDelegate.shared.popover.isShown, let song = mpd.status.song else {
+            guard AppDelegate.shared.popover.isShown else {
                 return
             }
-            print("pop")
 
-            guard let data = try? await ArtworkManager.shared.get(using: song.url, shouldCache: false) else {
-                return
-            }
-            artwork = NSImage(data: data)
+            await updateArtwork()
         }
         .onChange(of: artwork) { previous, _ in
             updateHeight()
@@ -129,6 +133,17 @@ struct PopoverView: View {
 
             isHovering = value
         }
+    }
+
+    private func updateArtwork() async {
+        guard let song = mpd.status.song else {
+            return
+        }
+
+        guard let data = try? await ArtworkManager.shared.get(using: song.url, shouldCache: false) else {
+            return
+        }
+        artwork = NSImage(data: data)
     }
 
     private func updateHeight() {
