@@ -230,55 +230,75 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 15) {
                 HStack(spacing: 15) {
                     if artwork != nil {
-                        ZStack(alignment: .bottom) {
-                            ArtworkView(image: $artwork)
-                                .frame(width: 80)
-                                .blur(radius: 17)
-                                .offset(y: 7)
-                                .saturation(1.5)
-                                .blendMode(colorScheme == .dark ? .softLight : .normal)
-                                .opacity(0.5)
+                        ZStack {
+                            ZStack(alignment: .bottom) {
+                                ArtworkView(image: $artwork)
+                                    .frame(width: 80)
+                                    .blur(radius: 17)
+                                    .offset(y: 7)
+                                    .saturation(1.5)
+                                    .blendMode(colorScheme == .dark ? .softLight : .normal)
+                                    .opacity(0.5)
 
-                            ArtworkView(image: $artwork)
-                                .cornerRadius(10)
-                                .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
-                                .frame(width: 100)
-                                .overlay(
-                                    ZStack(alignment: .bottomLeading) {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(.ultraThinMaterial)
-                                            .frame(width: 100)
-                                            .mask(
-                                                LinearGradient(
-                                                    gradient: Gradient(stops: [
-                                                        .init(color: .black, location: 0.3),
-                                                        .init(color: .black.opacity(0), location: 1.0),
-                                                    ]),
-                                                    startPoint: .bottom,
-                                                    endPoint: .top
+                                ArtworkView(image: $artwork)
+                                    .cornerRadius(10)
+                                    .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+                                    .frame(width: 100)
+                                    .overlay(
+                                        ZStack(alignment: .bottomLeading) {
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(.ultraThinMaterial)
+                                                .frame(width: 100)
+                                                .mask(
+                                                    LinearGradient(
+                                                        gradient: Gradient(stops: [
+                                                            .init(color: .black, location: 0.3),
+                                                            .init(color: .black.opacity(0), location: 1.0),
+                                                        ]),
+                                                        startPoint: .bottom,
+                                                        endPoint: .top
+                                                    )
                                                 )
-                                            )
 
-                                        HStack(spacing: 5) {
-                                            Image(systemName: "play.fill")
-                                            Text("Playing")
+                                            HStack(spacing: 5) {
+                                                Image(systemName: "play.fill")
+                                                Text("Playing")
+                                            }
+
+                                            .font(.caption2)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(.black)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 4)
+                                            .background(.white)
+                                            .cornerRadius(100)
+                                            .padding(10)
                                         }
+                                        .opacity(mpd.status.media?.id == album.id ? 1 : 0)
+                                        .animation(.interactiveSpring, value: mpd.status.media?.id == album.id)
+                                    )
+                            }
 
-                                        .font(.caption2)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.black)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 4)
-                                        .background(.white)
-                                        .cornerRadius(100)
-                                        .padding(10)
-                                    }
-                                    .opacity(mpd.status.media?.id == album.id ? 1 : 0)
-                                    .animation(.interactiveSpring, value: mpd.status.media?.id == album.id)
-                                )
+                            if hover, mpd.status.media?.id != album.id {
+                                ZStack {
+                                    Circle()
+                                        .fill(.accent)
+                                        .frame(width: 60, height: 60)
+                                    Circle()
+                                        .fill(.ultraThinMaterial)
+                                        .frame(width: 60, height: 60)
+
+                                    Image(systemName: "play.fill")
+                                        .font(.title)
+                                        .foregroundColor(.white)
+                                }
+                                .transition(.opacity)
+                            }
                         }
                         .onHover(perform: { value in
-                            hover = value
+                            withAnimation(.interactiveSpring) {
+                                hover = value
+                            }
                         })
                         .onTapGesture(perform: {
                             Task(priority: .userInitiated) {
@@ -541,13 +561,47 @@ struct ContentView: View {
         @Binding var path: NavigationPath
 
         @State private var artwork: NSImage?
+        @State private var hover = false
+        @State private var hoverArtwork = false
 
         var body: some View {
             HStack(spacing: 15) {
-                ArtworkView(image: $artwork)
-                    .cornerRadius(5)
-                    .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
-                    .frame(width: 60)
+                ZStack {
+                    ArtworkView(image: $artwork)
+                        .cornerRadius(5)
+                        .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+                        .frame(width: 60)
+
+                    if hover {
+                        ZStack {
+                            if hoverArtwork {
+                                Circle()
+                                    .fill(.accent)
+                                    .frame(width: 40, height: 40)
+                            }
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: 40, height: 40)
+
+                            Image(systemName: "play.fill")
+                                .font(.title3)
+                                .foregroundColor(.white)
+                        }
+                        .transition(.opacity)
+                    }
+                }
+                .onHover(perform: { value in
+                    withAnimation(.interactiveSpring) {
+                        hoverArtwork = value
+                    }
+                })
+                .onTapGesture {
+                    Task(priority: .userInitiated) {
+                        if mpd.status.media?.id != album.id {
+                            try? await ConnectionManager().play(album)
+                        }
+                    }
+                }
 
                 VStack(alignment: .leading) {
                     Text(album.title)
@@ -563,6 +617,11 @@ struct ContentView: View {
                 Spacer()
             }
             .id(album)
+            .onHover(perform: { value in
+                withAnimation(.interactiveSpring) {
+                    hover = value
+                }
+            })
             .task(id: album, priority: .background) {
                 // TODO: This can probably be made even a little snappier.
                 try? await Task.sleep(nanoseconds: 48_000_000)
@@ -701,19 +760,17 @@ struct ContentView: View {
         @Binding var image: NSImage?
 
         var body: some View {
-            ZStack {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .scaledToFit()
+                    .transition(.opacity.animation(.easeInOut(duration: 0.3)))
+            } else {
                 Rectangle()
                     .fill(Color(.secondarySystemFill).opacity(0.3))
                     .aspectRatio(contentMode: .fit)
                     .scaledToFill()
-
-                if let image {
-                    Image(nsImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .scaledToFit()
-                        .transition(.opacity.animation(.easeInOut(duration: 0.3)))
-                }
             }
         }
     }

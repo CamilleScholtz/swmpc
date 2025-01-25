@@ -449,7 +449,10 @@ struct DetailView: View {
                 .scaleEffect(hover ? 1.2 : 1)
                 .animation(.interactiveSpring, value: hover)
                 .foregroundColor(favorite ? .red : Color(.secondarySystemFill))
+                .opacity(favorite ? 0.7 : 1)
                 .animation(.interactiveSpring, value: favorite)
+                .scaleEffect(favorite ? 1.1 : 1)
+                .animation(favorite ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: favorite)
                 .onHover(perform: { value in
                     hover = value
                 })
