@@ -105,12 +105,7 @@ actor ConnectionManager {
 
         try await writeLine(commands.joined(separator: "\n"))
 
-        let lines = try await readUntilOKOrACK()
-        if let ack = lines.first(where: { $0.hasPrefix("ACK") }) {
-            throw ConnectionManagerError.protocolError(ack)
-        }
-
-        return lines
+        return try await readUntilOK()
     }
 
     func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
@@ -281,6 +276,11 @@ actor ConnectionManager {
         var lines: [String] = []
 
         while let line = try await readLine() {
+            if line.hasPrefix("ACK") {
+                print(line)
+                throw ConnectionManagerError.protocolError(line)
+            }
+
             lines.append(line)
 
             if condition(line) {
@@ -293,10 +293,6 @@ actor ConnectionManager {
 
     private func readUntilOK() async throws -> [String] {
         try await readUntil { $0.hasPrefix("OK") }
-    }
-
-    private func readUntilOKOrACK() async throws -> [String] {
-        try await readUntil { $0.hasPrefix("OK") || $0.hasPrefix("ACK") }
     }
 
     // MARK: - Parsing
@@ -339,7 +335,7 @@ actor ConnectionManager {
             case "pos":
                 position = UInt32(value)
             case "file":
-                url = URL(string: value)
+                url = URL(string: value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!)
             case "artist":
                 artist = value
             case "album":
@@ -500,8 +496,8 @@ actor ConnectionManager {
             var chunkSize: Int?
 
             while chunkSize == nil {
-                guard let line = try? await readLine() else {
-                    throw ConnectionManagerError.malformedResponse
+                guard let line = try await readLine() else {
+                    continue
                 }
 
                 if line.hasPrefix("OK") {
