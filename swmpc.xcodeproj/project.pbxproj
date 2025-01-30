@@ -16,6 +16,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		9183AF022D4BB8DF00CDC987 /* Assets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Assets;
+			sourceTree = "<group>";
+		};
 		91A141E22CDE3988000A74BC /* swmpc */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = swmpc;
@@ -39,6 +44,7 @@
 		91A141D72CDE3987000A74BC = {
 			isa = PBXGroup;
 			children = (
+				9183AF022D4BB8DF00CDC987 /* Assets */,
 				91A141E22CDE3988000A74BC /* swmpc */,
 				91A141E12CDE3988000A74BC /* Products */,
 			);
@@ -68,6 +74,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				9183AF022D4BB8DF00CDC987 /* Assets */,
 				91A141E22CDE3988000A74BC /* swmpc */,
 			);
 			name = swmpc;
