@@ -27,5 +27,5 @@ This project is still in early beta stages, as such it is not yet available on t
 
 ## Screenshots
 
-![Screenshot 1](https://github.com/CamilleScholtz/swmpc/blob/main/assets/1.webp?raw=true)
-![Screenshot 2](https://github.com/CamilleScholtz/swmpc/blob/main/assets/2.webp?raw=true)
+![Screenshot 1](hhttps://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/1.webp)
+![Screenshot 2](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/2.webp)
