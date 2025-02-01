@@ -8,6 +8,18 @@
 import Network
 import SwiftUI
 
+protocol ConnectionMode {
+    static var enableKeepalive: Bool { get }
+}
+
+enum IdleMode: ConnectionMode {
+    static let enableKeepalive = true
+}
+
+enum CommandMode: ConnectionMode {
+    static let enableKeepalive = false
+}
+
 enum ConnectionManagerError: Error {
     case connectionError
     case connectionClosed
@@ -16,7 +28,6 @@ enum ConnectionManagerError: Error {
 
     case readUntilConditionNotMet
     case malformedResponse
-    case wrongMode
 }
 
 struct ConnectionManagerConfig {
@@ -33,34 +44,25 @@ struct ConnectionManagerConfig {
     }
 }
 
-actor ConnectionManager {
-    static let shared = ConnectionManager(idle: true)
-
+actor ConnectionManager<Mode: ConnectionMode> {
     private let host = ConnectionManagerConfig.shared.host
     private let port = ConnectionManagerConfig.shared.port
 
-    private(set) var idle: Bool
     private(set) var connection: NWConnection?
 
     private var buffer = Data()
     private let connectionQueue = DispatchQueue(label: "com.swmpc.connection")
 
-    init(idle: Bool = false) {
-        self.idle = idle
-    }
-
-    // MARK: - Connection API
-
+    private init() {}
+    
     func connect() async throws {
-        guard connection == nil else {
+        guard connection?.state != .ready else {
             return
         }
 
         let options = NWProtocolTCP.Options()
         options.noDelay = true
-        if idle {
-            options.enableKeepalive = true
-        }
+        options.enableKeepalive = Mode.enableKeepalive
 
         connection = NWConnection(
             host: NWEndpoint.Host(host),
@@ -108,19 +110,6 @@ actor ConnectionManager {
         return try await readUntilOK()
     }
 
-    func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
-        guard idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
-        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
-        guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
-            throw ConnectionManagerError.protocolError("No changed line")
-        }
-
-        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: ".count)))!
-    }
-
     // MARK: - Connection lifecycle
 
     private func waitForConnectionReady() async throws {
@@ -132,8 +121,11 @@ actor ConnectionManager {
             connection.stateUpdateHandler = { state in
                 continuation.yield(state)
 
-                if case .cancelled = state {
+                switch state {
+                case .cancelled, .failed, .ready:
                     continuation.finish()
+                default:
+                    break
                 }
             }
         }
@@ -143,8 +135,13 @@ actor ConnectionManager {
             case .ready:
                 return
             case let .failed(error):
+                disconnect()
+                throw error
+            case let .waiting(error):
+                disconnect()
                 throw error
             case .cancelled:
+                disconnect()
                 throw ConnectionManagerError.connectionClosed
             default:
                 continue
@@ -172,15 +169,17 @@ actor ConnectionManager {
         }
     }
 
-    private func escape(_ string: String) -> String {
-        string
+    private func escape(_ string: String, quote: String? = "\"") -> String {
+        let string = string
             .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "\\\\'")
-            .replacingOccurrences(of: "\"", with: "\\\\\"")
+            .replacingOccurrences(of: "'", with: "\\\'")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+
+        return quote == nil ? string : "\(quote!)\(string)\(quote!)"
     }
 
     private func filter(key: String, value: String, comparator: String, quote: Bool = true) -> String {
-        let clause = "(\(key) \(comparator) '\(escape(value))')"
+        let clause = "(\(key) \(comparator) \(escape(value, quote: "'")))"
 
         return quote ? "\"\(clause)\"" : clause
     }
@@ -188,7 +187,11 @@ actor ConnectionManager {
     // MARK: - Reading
 
     private func readLine() async throws -> String? {
-        if let line = try? extractLineFromBuffer() {
+        if let line = try extractLineFromBuffer() {
+            if line.hasPrefix("ACK") {
+                throw ConnectionManagerError.protocolError(line)
+            }
+
             return line
         }
 
@@ -238,7 +241,7 @@ actor ConnectionManager {
         let connection = try ensureConnectionReady()
 
         guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { data, _, _, error in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 16384) { data, _, _, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
@@ -276,11 +279,6 @@ actor ConnectionManager {
         var lines: [String] = []
 
         while let line = try await readLine() {
-            if line.hasPrefix("ACK") {
-                print(line)
-                throw ConnectionManagerError.protocolError(line)
-            }
-
             lines.append(line)
 
             if condition(line) {
@@ -384,14 +382,21 @@ actor ConnectionManager {
             )
         }
     }
+}
 
-    // MARK: - Command API
+extension ConnectionManager where Mode == IdleMode {
+    static let idle = ConnectionManager<IdleMode>()
 
-    func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?, song: Song?) {
-        guard idle else {
-            throw ConnectionManagerError.wrongMode
+    func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
+        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
+        guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
+            throw ConnectionManagerError.protocolError("No changed line")
         }
 
+        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: ".count)))!
+    }
+
+    func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?, song: Song?) {
         let lines = try await run(["status"])
 
         var state: PlayerState?
@@ -437,11 +442,39 @@ actor ConnectionManager {
         return (state, isRandom, isRepeat, elapsed, song)
     }
 
-    func getSongs(for media: (any Mediable)? = nil) async throws -> [Song] {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
+    func getPlaylists() async throws -> [Playlist] {
+        let lines = try await run(["listplaylists"])
+        var index: UInt32 = 0
+        var playlists = [Playlist]()
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let (key, value) = try parseLine(line)
+
+            if key == "playlist" {
+                playlists.append(Playlist(
+                    id: index,
+                    position: index,
+                    name: value
+                ))
+
+                index += 1
+            }
         }
 
+        return playlists
+    }
+}
+
+extension ConnectionManager where Mode == CommandMode {
+    static var command: ConnectionManager<CommandMode> {
+        ConnectionManager<CommandMode>()
+    }
+    
+    func getSongs(for media: (any Mediable)? = nil) async throws -> [Song] {
         try await connect()
         defer { disconnect() }
 
@@ -463,10 +496,6 @@ actor ConnectionManager {
     }
 
     func getAlbums() async throws -> [Album] {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -479,10 +508,6 @@ actor ConnectionManager {
     }
 
     func getArtworkData(for url: URL) async throws -> Data {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -491,7 +516,7 @@ actor ConnectionManager {
         var totalSize: Int?
 
         while true {
-            try await writeLine("readpicture \"\(url.path)\" \(offset)")
+            try await writeLine("readpicture \(escape(url.path)) \(offset)")
 
             var chunkSize: Int?
 
@@ -532,41 +557,7 @@ actor ConnectionManager {
         }
     }
 
-    func getPlaylists() async throws -> [Playlist] {
-        guard idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
-        let lines = try await run(["listplaylists"])
-        var index: UInt32 = 0
-        var playlists = [Playlist]()
-
-        for line in lines {
-            guard line != "OK" else {
-                break
-            }
-
-            let (key, value) = try parseLine(line)
-
-            if key == "playlist" {
-                playlists.append(Playlist(
-                    id: index,
-                    position: index,
-                    name: value
-                ))
-
-                index += 1
-            }
-        }
-
-        return playlists
-    }
-
     func getPlaylist(_ playlist: Playlist) async throws -> [Song] {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -590,10 +581,6 @@ actor ConnectionManager {
     }
 
     func loadPlaylist(_ playlist: Playlist?) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -605,10 +592,6 @@ actor ConnectionManager {
     }
 
     func createPlaylist(named name: String) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -616,10 +599,6 @@ actor ConnectionManager {
     }
 
     func removePlaylist(_ playlist: Playlist) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -627,23 +606,15 @@ actor ConnectionManager {
     }
 
     func addToPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
-        let commands = songs.map { "playlistadd \(playlist.name) \"\($0.url.path)\"" }
+        let commands = songs.map { "playlistadd \(playlist.name) \(escape($0.url.path))" }
 
         _ = try await run(commands)
     }
 
     func removeFromPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -653,10 +624,6 @@ actor ConnectionManager {
     }
 
     func isInFavorites(_ song: Song) async throws -> Bool {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -675,10 +642,6 @@ actor ConnectionManager {
     }
 
     func update() async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -686,10 +649,6 @@ actor ConnectionManager {
     }
 
     func play(_ media: any Mediable) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -697,10 +656,6 @@ actor ConnectionManager {
     }
 
     func pause(_ value: Bool) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -708,10 +663,6 @@ actor ConnectionManager {
     }
 
     func previous() async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -719,10 +670,6 @@ actor ConnectionManager {
     }
 
     func next() async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -730,10 +677,6 @@ actor ConnectionManager {
     }
 
     func `repeat`(_ value: Bool) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -741,10 +684,6 @@ actor ConnectionManager {
     }
 
     func random(_ value: Bool) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
@@ -752,10 +691,6 @@ actor ConnectionManager {
     }
 
     func seek(_ value: Double) async throws {
-        guard !idle else {
-            throw ConnectionManagerError.wrongMode
-        }
-
         try await connect()
         defer { disconnect() }
 
