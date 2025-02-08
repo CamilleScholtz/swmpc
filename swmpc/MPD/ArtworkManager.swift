@@ -21,7 +21,7 @@ actor ArtworkManager {
             return data as Data
         }
 
-        let data = try await ConnectionManager().getArtworkData(for: url)
+        let data = try await ConnectionManager.command.getArtworkData(for: url)
 
         if shouldCache {
             cache.setObject(data as NSData, forKey: url as NSURL)

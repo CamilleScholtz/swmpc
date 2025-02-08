@@ -48,8 +48,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private let host = ConnectionManagerConfig.shared.host
     private let port = ConnectionManagerConfig.shared.port
 
-    private(set) var connection: NWConnection?
-
+    private var connection: NWConnection?
     private var buffer = Data()
     private let connectionQueue = DispatchQueue(label: "com.swmpc.connection")
 
@@ -98,11 +97,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
     }
 
     func run(_ commands: [String]) async throws -> [String] {
-        var commands = commands
+        var commandList = commands
 
-        if commands.count > 1 {
-            commands.insert("command_list_begin", at: 0)
-            commands.append("command_list_end")
+        if commandList.count > 1 {
+            commandList.insert("command_list_begin", at: 0)
+            commandList.append("command_list_end")
         }
 
         try await writeLine(commands.joined(separator: "\n"))
@@ -185,19 +184,19 @@ actor ConnectionManager<Mode: ConnectionMode> {
     }
 
     // MARK: - Reading
-
+    
     private func readLine() async throws -> String? {
-        if let line = try extractLineFromBuffer() {
-            if line.hasPrefix("ACK") {
-                throw ConnectionManagerError.protocolError(line)
+        while true {
+            if let line = try extractLineFromBuffer() {
+                if line.hasPrefix("ACK") {
+                    throw ConnectionManagerError.protocolError(line)
+                }
+                
+                return line
             }
-
-            return line
+            
+            try await receiveDataChunk()
         }
-
-        try await receiveDataChunk()
-
-        return try extractLineFromBuffer()
     }
 
     private func readFixedLengthData(_ length: Int) async throws -> Data {
@@ -241,7 +240,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         let connection = try ensureConnectionReady()
 
         guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 16384) { data, _, _, error in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, _, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {

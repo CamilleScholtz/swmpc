@@ -32,7 +32,14 @@
       }
     },
     "Add Album to Favorites" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album Toevoegen aan Favorieten"
+          }
+        }
+      }
     },
     "Add Album to Playlist" : {
       "localizations" : {
@@ -44,8 +51,25 @@
         }
       }
     },
+    "Add Current Song to Favorites" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huidig Nummer Toevoegen aan Favorieten"
+          }
+        }
+      }
+    },
     "Add Song to Favorites" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nummer Toevoegen aan Favorieten"
+          }
+        }
+      }
     },
     "Add Song to Playlist" : {
       "localizations" : {
@@ -67,6 +91,26 @@
         }
       }
     },
+    "Are you sure you want to delete '%@'?" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet je zeker dat je '%@' wilt verwijderen?"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afbreken"
+          }
+        }
+      }
+    },
     "Connection" : {
       "localizations" : {
         "nl" : {
@@ -83,6 +127,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bediening"
+          }
+        }
+      }
+    },
+    "Could not establish connection to MPD." : {
+
+    },
+    "Delete" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijder"
+          }
+        }
+      }
+    },
+    "Delete Playlist" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijder Afspeellijst"
           }
         }
       }
@@ -196,6 +263,9 @@
           }
         }
       }
+    },
+    "Please check your configuration and server." : {
+
     },
     "Port" : {
       "localizations" : {

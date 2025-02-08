@@ -9,8 +9,8 @@ import AsyncAlgorithms
 import SwiftUI
 
 @Observable final class Status {
-    var state: PlayerState?
-    var isPlaying: Bool? {
+    var state: PlayerState = .stop
+    var isPlaying: Bool {
         state == .play
     }
 
@@ -39,16 +39,11 @@ import SwiftUI
 
     @MainActor
     func set() async throws {
-        let data = try await ConnectionManager.shared.getStatusData()
+        let data = try await ConnectionManager.idle.getStatusData()
+        
+        if state != data.state ?? .stop {
+            state = data.state ?? .stop
 
-        if trackElapsed {
-            if elapsed.update(to: data.elapsed ?? 0), data.state == .play {
-                stopTrackingElapsed()
-                startTrackingElapsed()
-            }
-        }
-
-        if state.update(to: data.state) {
             let image = switch data.state {
             case .play:
                 "play"
@@ -73,6 +68,14 @@ import SwiftUI
             AppDelegate.shared.setPopoverAnchorImage(changed: data.isRepeat ?? false ? "repeat" : "single")
         }
 
+        _ = elapsed.update(to: data.elapsed ?? 0)
+        if trackElapsed {
+            if data.state == .play {
+                stopTrackingElapsed()
+                startTrackingElapsed()
+            }
+        }
+        
         if song.update(to: data.song) {
             AppDelegate.shared.setStatusItemTitle()
         }

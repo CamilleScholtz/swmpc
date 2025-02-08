@@ -19,7 +19,7 @@ struct DetailView: View {
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
 
-    @State private var hover = false
+    @State private var isHovering = false
 
     var body: some View {
         VStack {
@@ -124,10 +124,10 @@ struct DetailView: View {
                     .cornerRadius(20)
                     .shadow(color: .black.opacity(0.2), radius: 16)
                     .frame(width: 250)
-                    .scaleEffect(hover ? 1.02 : 1)
-                    .animation(.spring, value: hover)
+                    .scaleEffect(isHovering ? 1.02 : 1)
+                    .animation(.spring, value: isHovering)
                     .onHover(perform: { value in
-                        hover = value
+                        isHovering = value
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
@@ -184,7 +184,7 @@ struct DetailView: View {
     struct ArtworkView: View {
         let image: NSImage?
 
-        @State private var loaded = false
+        @State private var hasLoaded = false
 
         var body: some View {
             if let image {
@@ -192,11 +192,11 @@ struct DetailView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .scaledToFit()
-                    .opacity(loaded ? 1 : 0)
+                    .opacity(hasLoaded ? 1 : 0)
                     .background(Color(.secondarySystemFill))
-                    .animation(.spring, value: loaded)
+                    .animation(.spring, value: hasLoaded)
                     .onAppear {
-                        loaded = true
+                        hasLoaded = true
                     }
             } else {
                 Rectangle()
@@ -344,7 +344,7 @@ struct DetailView: View {
     struct PauseView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             ZStack {
@@ -352,57 +352,57 @@ struct DetailView: View {
                     .fill(.thinMaterial)
                     .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
 
-                Image(systemName: ((mpd.status.isPlaying ?? false) ? "pause" : "play") + ".fill")
+                Image(systemName: (mpd.status.isPlaying ? "pause" : "play") + ".fill")
                     .font(.system(size: 30))
             }
-            .scaleEffect(hover ? 1.2 : 1)
-            .animation(.interactiveSpring, value: hover)
+            .scaleEffect(isHovering ? 1.2 : 1)
+            .animation(.interactiveSpring, value: isHovering)
             .onHover(perform: { value in
-                hover = value
+                isHovering = value
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager().pause(mpd.status.isPlaying ?? false)
+                    try? await ConnectionManager.command.pause(mpd.status.isPlaying)
                 }
             })
         }
     }
 
     struct PreviousView: View {
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             Image(systemName: "backward.fill")
                 .font(.system(size: 18))
                 .padding(12)
-                .scaleEffect(hover ? 1.2 : 1)
-                .animation(.interactiveSpring, value: hover)
+                .scaleEffect(isHovering ? 1.2 : 1)
+                .animation(.interactiveSpring, value: isHovering)
                 .onHover(perform: { value in
-                    hover = value
+                    isHovering = value
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager().previous()
+                        try? await ConnectionManager.command.previous()
                     }
                 })
         }
     }
 
     struct NextView: View {
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             Image(systemName: "forward.fill")
                 .font(.system(size: 18))
                 .padding(12)
-                .scaleEffect(hover ? 1.2 : 1)
-                .animation(.interactiveSpring, value: hover)
+                .scaleEffect(isHovering ? 1.2 : 1)
+                .animation(.interactiveSpring, value: isHovering)
                 .onHover(perform: { value in
-                    hover = value
+                    isHovering = value
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager().next()
+                        try? await ConnectionManager.command.next()
                     }
                 })
         }
@@ -411,20 +411,20 @@ struct DetailView: View {
     struct RandomView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             ZStack {
                 Image(systemName: "shuffle")
                     .padding(10)
-                    .scaleEffect(hover ? 1.2 : 1)
-                    .animation(.interactiveSpring, value: hover)
+                    .scaleEffect(isHovering ? 1.2 : 1)
+                    .animation(.interactiveSpring, value: isHovering)
                     .onHover(perform: { value in
-                        hover = value
+                        isHovering = value
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager().random(!(mpd.status.isRandom ?? false))
+                            try? await ConnectionManager.command.random(!(mpd.status.isRandom ?? false))
                         }
                     })
 
@@ -441,33 +441,33 @@ struct DetailView: View {
     struct FavoriteView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
-        @State private var favorite = false
+        @State private var isHovering = false
+        @State private var isFavorited = false
 
         var body: some View {
             Image(systemName: "heart.fill")
-                .scaleEffect(hover ? 1.2 : 1)
-                .animation(.interactiveSpring, value: hover)
-                .foregroundColor(favorite ? .red : Color(.secondarySystemFill))
-                .opacity(favorite ? 0.7 : 1)
-                .animation(.interactiveSpring, value: favorite)
-                .scaleEffect(favorite ? 1.1 : 1)
-                .animation(favorite ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: favorite)
+                .scaleEffect(isHovering ? 1.2 : 1)
+                .animation(.interactiveSpring, value: isHovering)
+                .foregroundColor(isFavorited ? .red : Color(.secondarySystemFill))
+                .opacity(isFavorited ? 0.7 : 1)
+                .animation(.interactiveSpring, value: isFavorited)
+                .scaleEffect(isFavorited ? 1.1 : 1)
+                .animation(isFavorited ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: isFavorited)
                 .onHover(perform: { value in
-                    hover = value
+                    isHovering = value
                 })
                 .onTapGesture(perform: {
-                    favorite.toggle()
+                    isFavorited.toggle()
 
                     Task(priority: .userInitiated) {
                         guard let song = mpd.status.song else {
                             return
                         }
 
-                        if favorite {
-                            try? await ConnectionManager().addToFavorites(songs: [song])
+                        if isFavorited {
+                            try? await ConnectionManager.command.addToFavorites(songs: [song])
                         } else {
-                            try? await ConnectionManager().removeFromFavorites(songs: [song])
+                            try? await ConnectionManager.command.removeFromFavorites(songs: [song])
                         }
                     }
                 })
@@ -476,8 +476,7 @@ struct DetailView: View {
                         return
                     }
 
-                    favorite = await (try? ConnectionManager().isInFavorites(song)) ?? false
-                    print(favorite ? "in favorites" : "not in favorites")
+                    isFavorited = await (try? ConnectionManager.command.isInFavorites(song)) ?? false
                 }
         }
     }
@@ -485,20 +484,20 @@ struct DetailView: View {
     struct RepeatView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             ZStack {
                 Image(systemName: "repeat")
                     .padding(10)
-                    .scaleEffect(hover ? 1.2 : 1)
-                    .animation(.interactiveSpring, value: hover)
+                    .scaleEffect(isHovering ? 1.2 : 1)
+                    .animation(.interactiveSpring, value: isHovering)
                     .onHover(perform: { value in
-                        hover = value
+                        isHovering = value
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager().repeat(!(mpd.status.isRepeat ?? false))
+                            try? await ConnectionManager.command.repeat(!(mpd.status.isRepeat ?? false))
                         }
                     })
 
@@ -515,7 +514,7 @@ struct DetailView: View {
     struct ProgressView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             GeometryReader { geometry in
@@ -536,8 +535,8 @@ struct DetailView: View {
                             Circle()
                                 .fill(Color(.accent))
                                 .frame(width: 8, height: 8)
-                                .scaleEffect(hover ? 1.5 : 1)
-                                .animation(.spring, value: hover)
+                                .scaleEffect(isHovering ? 1.5 : 1)
+                                .animation(.spring, value: isHovering)
                         }
                         .animation(.spring, value: mpd.status.elapsed)
                     }
@@ -545,11 +544,11 @@ struct DetailView: View {
                     .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager().seek((value.location.x / geometry.size.width) * (mpd.status.song?.duration ?? 100))
+                            try? await ConnectionManager.command.seek((value.location.x / geometry.size.width) * (mpd.status.song?.duration ?? 100))
                         }
                     })
                     .onHover(perform: { value in
-                        hover = value
+                        isHovering = value
                     })
 
                     HStack(alignment: .center) {

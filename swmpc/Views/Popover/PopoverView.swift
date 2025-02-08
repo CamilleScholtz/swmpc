@@ -76,8 +76,8 @@ struct PopoverView: View {
                 .background(.ultraThinMaterial)
 
             FooterView()
-                .frame(height: 80)
-                .offset(y: showInfo ? 0 : 80)
+                .frame(width: 250 - 30, height: 80)
+                .offset(y: showInfo ? -15 : 90)
                 .animation(.spring, value: showInfo)
         }
         .mask(
@@ -124,7 +124,7 @@ struct PopoverView: View {
             if !value {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     if !isHovering {
-                        showInfo = false || !(mpd.status.isPlaying ?? false)
+                        showInfo = false || !mpd.status.isPlaying
                     }
                 }
             } else {
@@ -176,18 +176,19 @@ struct PopoverView: View {
 
     struct FooterView: View {
         @Environment(MPD.self) private var mpd
+        @Environment(\.colorScheme) var colorScheme
 
         var body: some View {
             VStack(spacing: 8) {
                 ProgressView()
 
-                HStack(alignment: .center) {
+                HStack(alignment: .center, spacing: 0) {
                     RepeatView()
                         .offset(x: 10)
 
                     Spacer()
 
-                    HStack {
+                    HStack(spacing: 0) {
                         PreviousView()
                         PauseView()
                         NextView()
@@ -198,11 +199,24 @@ struct PopoverView: View {
                     RandomView()
                         .offset(x: -10)
                 }
-                .offset(y: -1)
+                .frame(width: 250 - 30)
+                .offset(y: -4)
             }
             .frame(height: 80)
-            .background(.thinMaterial)
+            .background(.regularMaterial)
             .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(Color.red.opacity(0.2), lineWidth: 0.5)
+                    .blendMode(.screen)
+            )
+            .padding(1)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(Color.green.opacity(0.2), lineWidth: 1)
+                    .blendMode(.screen)
+            )
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.15 : 0.05), radius: 3, x: 0, y: 2)
             .shadow(radius: 20)
         }
     }
@@ -210,26 +224,26 @@ struct PopoverView: View {
     struct ProgressView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2)
-                    .frame(width: 220, height: 3)
+                    .frame(width: 190, height: 3)
 
                 ZStack(alignment: .trailing) {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(Color(.accent))
                         .frame(
-                            width: max(0, (mpd.status.elapsed ?? 0) / (mpd.status.song?.duration ?? 100) * 220) + 4,
+                            width: max(0, (mpd.status.elapsed ?? 0) / (mpd.status.song?.duration ?? 100) * 190) + 4,
                             height: 3
                         )
 
                     Circle()
                         .fill(Color(.accent))
                         .frame(width: 8, height: 8)
-                        .scaleEffect(hover ? 1.5 : 1)
-                        .animation(.spring, value: hover)
+                        .scaleEffect(isHovering ? 1.5 : 1)
+                        .animation(.spring, value: isHovering)
                 }
                 .animation(.spring, value: mpd.status.elapsed)
             }
@@ -239,11 +253,11 @@ struct PopoverView: View {
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager().seek((value.location.x / 220) * (mpd.status.song?.duration ?? 100))
+                    try? await ConnectionManager.command.seek((value.location.x / 190) * (mpd.status.song?.duration ?? 100))
                 }
             })
             .onHover(perform: { value in
-                hover = value
+                isHovering = value
             })
         }
     }
@@ -251,60 +265,60 @@ struct PopoverView: View {
     struct PauseView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
-            Image(systemName: ((mpd.status.isPlaying ?? false) ? "pause" : "play") + ".circle.fill")
+            Image(systemName: (mpd.status.isPlaying ? "pause" : "play") + ".circle.fill")
                 .font(.system(size: 35))
                 .blendMode(.overlay)
-                .scaleEffect(hover ? 1.2 : 1)
-                .animation(.interactiveSpring, value: hover)
+                .scaleEffect(isHovering ? 1.2 : 1)
+                .animation(.interactiveSpring, value: isHovering)
                 .onHover(perform: { value in
-                    hover = value
+                    isHovering = value
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager().pause(mpd.status.isPlaying ?? false)
+                        try? await ConnectionManager.command.pause(mpd.status.isPlaying)
                     }
                 })
         }
     }
 
     struct PreviousView: View {
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             Image(systemName: "backward.fill")
                 .blendMode(.overlay)
                 .padding(10)
-                .scaleEffect(hover ? 1.2 : 1)
-                .animation(.interactiveSpring, value: hover)
+                .scaleEffect(isHovering ? 1.2 : 1)
+                .animation(.interactiveSpring, value: isHovering)
                 .onHover(perform: { value in
-                    hover = value
+                    isHovering = value
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager().previous()
+                        try? await ConnectionManager.command.previous()
                     }
                 })
         }
     }
 
     struct NextView: View {
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             Image(systemName: "forward.fill")
                 .blendMode(.overlay)
                 .padding(10)
-                .scaleEffect(hover ? 1.2 : 1)
-                .animation(.interactiveSpring, value: hover)
+                .scaleEffect(isHovering ? 1.2 : 1)
+                .animation(.interactiveSpring, value: isHovering)
                 .onHover(perform: { value in
-                    hover = value
+                    isHovering = value
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager().next()
+                        try? await ConnectionManager.command.next()
                     }
                 })
         }
@@ -313,21 +327,21 @@ struct PopoverView: View {
     struct RandomView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             ZStack {
                 Image(systemName: "shuffle")
                     .foregroundColor(Color(.textColor))
                     .padding(10)
-                    .scaleEffect(hover ? 1.2 : 1)
-                    .animation(.interactiveSpring, value: hover)
+                    .scaleEffect(isHovering ? 1.2 : 1)
+                    .animation(.interactiveSpring, value: isHovering)
                     .onHover(perform: { value in
-                        hover = value
+                        isHovering = value
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager().random(!(mpd.status.isRandom ?? false))
+                            try? await ConnectionManager.command.random(!(mpd.status.isRandom ?? false))
                         }
                     })
 
@@ -345,21 +359,21 @@ struct PopoverView: View {
     struct RepeatView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             ZStack {
                 Image(systemName: "repeat")
                     .foregroundColor(Color(.textColor))
                     .padding(10)
-                    .scaleEffect(hover ? 1.2 : 1)
-                    .animation(.interactiveSpring, value: hover)
+                    .scaleEffect(isHovering ? 1.2 : 1)
+                    .animation(.interactiveSpring, value: isHovering)
                     .onHover(perform: { value in
-                        hover = value
+                        isHovering = value
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager().repeat(!(mpd.status.isRepeat ?? false))
+                            try? await ConnectionManager.command.repeat(!(mpd.status.isRepeat ?? false))
                         }
                     })
 

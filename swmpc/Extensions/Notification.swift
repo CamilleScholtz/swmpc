@@ -9,5 +9,6 @@ import SwiftUI
 
 extension Notification.Name {
     static let scrollToCurrentNotification = Notification.Name("scrollToCurrent")
+    static let addCurrentToFavoritesNotifaction = Notification.Name("addCurrentToFavorites")
     static let startSearchingNotication = Notification.Name("startSearching")
 }

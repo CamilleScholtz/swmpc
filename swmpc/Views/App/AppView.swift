@@ -21,113 +21,60 @@ struct AppView: View {
     @State private var queue: [any Mediable]?
     @State private var query = ""
 
-    @State private var editingPlaylist = false
-    @State private var playlistName = ""
-
-    @FocusState private var playlistFocus: Bool
+    @State private var showError = false
 
     var body: some View {
-        NavigationSplitView {
-            List(selection: $selected) {
-                Text("swmpc")
-                    .font(.system(size: 18))
-                    .fontWeight(.semibold)
-                    .fontDesign(.rounded)
-                    .padding(.bottom, 15)
+        Group {
+            if mpd.status.state == .stop {
+                NavigationSplitView {
+                    SidebarView(selected: $selected, queue: $queue, query: $query)
+                } detail: {
+                    ProgressView()
+                        .offset(y: -20)
 
-                ForEach(categories) { category in
-                    NavigationLink(value: category) {
-                        Label(category.label, systemImage: category.image)
+                    VStack {
+                        Text("Could not establish connection to MPD.")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+
+                        Text("Please check your configuration and server.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
+                    .opacity(showError ? 1 : 0)
+                    .animation(.spring, value: showError)
                 }
-
-                Section("Playlists") {
-                    NavigationLink(value: Category(type: .playlist, playlist: Playlist(id: 0, position: 0, name: "Favorites"), label: "Favorites", image: "heart")) {
-                        Label("Favorites", systemImage: "heart")
+                .task(priority: .background) {
+                    try? await Task.sleep(for: .seconds(2))
+                    showError = true
+                }
+            } else {
+                NavigationSplitView {
+                    SidebarView(selected: $selected, queue: $queue, query: $query)
+                } content: {
+                    ContentView(category: $selected, queue: $queue, query: $query, path: $path)
+                        .navigationBarBackButtonHidden()
+                        .navigationSplitViewColumnWidth(310)
+                } detail: {
+                    ViewThatFits {
+                        DetailView(path: $path)
                     }
+                    .padding(60)
+                }
+                .onAppear {
+                    Task {
+                        if selected.type == .playlist {
+                            guard let playlist = selected.playlist else {
+                                return
+                            }
 
-                    ForEach(mpd.queue.playlists ?? []) { playlist in
-                        let category = Category(type: .playlist, playlist: playlist, label: playlist.name, image: "music.note.list")
-
-                        NavigationLink(value: category) {
-                            Label(category.label, systemImage: category.image)
+                            queue = try? await ConnectionManager.command.getPlaylist(playlist)
+                        } else {
+                            queue = mpd.queue.media
                         }
                     }
-
-                    if editingPlaylist {
-                        TextField("Untitled Playlist", text: $playlistName)
-                            .focused($playlistFocus)
-                            .onSubmit {
-                                Task {
-                                    try? await ConnectionManager().createPlaylist(named: playlistName)
-
-                                    editingPlaylist = false
-                                    playlistName = ""
-                                    playlistFocus = false
-                                }
-                            }
-                    }
-
-                    Label("New Playlist", systemImage: "plus")
-                        .onTapGesture(perform: {
-                            editingPlaylist = true
-                            playlistFocus = true
-                        })
                 }
             }
-            .navigationSplitViewColumnWidth(180)
-            .toolbar(removing: .sidebarToggle)
-            .task(id: selected) {
-                try? await mpd.queue.set(for: selected.type)
-
-                if selected.type == .playlist {
-                    guard let playlist = selected.playlist else {
-                        return
-                    }
-
-                    queue = try? await ConnectionManager().getPlaylist(playlist)
-                } else {
-                    if mpd.queue.playlist == nil {}
-
-                    queue = mpd.queue.media
-                }
-
-                guard let song = mpd.status.song else {
-                    return
-                }
-
-                mpd.status.media = try? await mpd.queue.get(for: selected.type, using: song)
-            }
-            .task(id: mpd.status.song) {
-                guard let song = mpd.status.song else {
-                    return
-                }
-
-                mpd.status.media = try? await mpd.queue.get(for: selected.type, using: song)
-            }
-            .onChange(of: query) { _, value in
-                guard let type = mpd.queue.type else {
-                    return
-                }
-
-                guard !value.isEmpty else {
-                    queue = mpd.queue.media
-                    return
-                }
-
-                Task(priority: .userInitiated) {
-                    queue = try? await mpd.queue.search(for: value, using: type)
-                }
-            }
-        } content: {
-            ContentView(category: $selected, queue: $queue, query: $query, path: $path)
-                .navigationBarBackButtonHidden()
-                .navigationSplitViewColumnWidth(310)
-        } detail: {
-            ViewThatFits {
-                DetailView(path: $path)
-            }
-            .padding(60)
         }
         .background(.background)
         .toolbar {

@@ -25,29 +25,30 @@ import SwiftUI
     }
 
     @MainActor
-    private func updateLoop() async {
-        while await (try? ConnectionManager.shared.ensureConnectionReady()) == nil {
+    private func connect() async {
+        while true {
             do {
-                try await ConnectionManager.shared.connect()
+                try await ConnectionManager.idle.connect()
+
+                return
             } catch {
-                try? await Task.sleep(for: .seconds(5))
+                status.state = .stop
+                try? await Task.sleep(for: .seconds(2))
             }
         }
+    }
+
+    @MainActor
+    private func updateLoop() async {
+        await connect()
 
         try? await performUpdates(for: .playlists)
         try? await performUpdates(for: .player)
 
         while !Task.isCancelled {
-            if await (try? ConnectionManager.shared.ensureConnectionReady()) == nil {
-                do {
-                    try await ConnectionManager.shared.connect()
-                } catch {
-                    try? await Task.sleep(for: .seconds(5))
-                    continue
-                }
-            }
+            await connect()
 
-            let changes = try? await ConnectionManager.shared.idleForEvents(mask: [
+            let changes = try? await ConnectionManager.idle.idleForEvents(mask: [
                 .playlists,
                 .queue,
                 .player,
@@ -68,7 +69,7 @@ import SwiftUI
             try await queue.setPlaylists()
         case .database, .queue:
             print("queue")
-        // try await queue.set()
+            try await queue.set()
         case .player:
             try await status.set()
         case .options:

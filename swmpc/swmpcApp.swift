@@ -21,7 +21,7 @@ struct swmpcApp: App {
             CommandMenu("Controls") {
                 Button(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
                     Task {
-                        try? await ConnectionManager().pause(appDelegate.mpd.status.isPlaying ?? false)
+                        try? await ConnectionManager.command.pause(appDelegate.mpd.status.isPlaying)
                     }
                 }
                 // TODO: Space doesn't work?
@@ -29,17 +29,22 @@ struct swmpcApp: App {
 
                 Button("Next Song") {
                     Task {
-                        try? await ConnectionManager().next()
+                        try? await ConnectionManager.command.next()
                     }
                 }
 
                 Button("Previous Song") {
                     Task {
-                        try? await ConnectionManager().previous()
+                        try? await ConnectionManager.command.previous()
                     }
                 }
 
                 Divider()
+
+                Button("Add Current Song to Favorites") {
+                    NotificationCenter.default.post(name: .addCurrentToFavoritesNotifaction, object: nil)
+                }
+                .keyboardShortcut("l", modifiers: [])
 
                 Button("Go to Current Song") {
                     NotificationCenter.default.post(name: .scrollToCurrentNotification, object: nil)
@@ -55,7 +60,7 @@ struct swmpcApp: App {
 
                 Button("Update Library") {
                     Task {
-                        try? await ConnectionManager().update()
+                        try? await ConnectionManager.command.update()
                     }
                 }
             }
@@ -113,6 +118,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(
             withTitle: "Previous song",
+            action: #selector(AppDelegate.handleMenuItemAction(_:)),
+            keyEquivalent: ""
+        )
+
+        menu.addItem(NSMenuItem.separator())
+
+        menu.addItem(
+            withTitle: "Add current song to favorites",
             action: #selector(AppDelegate.handleMenuItemAction(_:)),
             keyEquivalent: ""
         )
@@ -227,7 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch event.type {
         case .rightMouseDown:
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager().pause(mpd.status.isPlaying ?? false)
+                try? await ConnectionManager.command.pause(mpd.status.isPlaying)
             }
         default:
             togglePopover(sender)
@@ -238,19 +251,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch sender.title {
         case "Play":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager().pause(false)
+                try? await ConnectionManager.command.pause(false)
             }
         case "Pause":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager().pause(true)
+                try? await ConnectionManager.command.pause(true)
             }
         case "Next song":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager().next()
+                try? await ConnectionManager.command.next()
             }
         case "Previous song":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager().previous()
+                try? await ConnectionManager.command.previous()
             }
         default:
             break

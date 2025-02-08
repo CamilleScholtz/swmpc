@@ -15,8 +15,8 @@ struct ContentView: View {
     @Binding var query: String
     @Binding var path: NavigationPath
 
-    @State private var searching = false
-    @State private var hover = false
+    @State private var isSearching = false
+    @State private var isHovering = false
 
     private let scrollToCurrentNotifcation = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
@@ -25,45 +25,42 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ZStack {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        HeaderView(category: $category, searching: $searching, query: $query)
-                            .id("top")
+            ScrollViewReader { proxy in
+                ScrollView {
+                    HeaderView(category: $category, isSearching: $isSearching, query: $query)
+                        .id("top")
 
-                        LazyVStack(alignment: .leading, spacing: 15) {
-                            switch mpd.queue.type {
-                            case .artist:
-                                ArtistsView(queue: $queue, path: $path)
-                            case .song, .playlist:
-                                SongsView(category: $category, queue: $queue)
-                            default:
-                                AlbumsView(queue: $queue, path: $path)
-                            }
+                    LazyVStack(alignment: .leading, spacing: 15) {
+                        switch mpd.queue.type {
+                        case .artist:
+                            ArtistsView(queue: $queue, path: $path)
+                        case .song, .playlist:
+                            SongsView(category: $category, queue: $queue)
+                        default:
+                            AlbumsView(queue: $queue, path: $path)
                         }
-                        .id(mpd.queue.type)
-                        .padding(.horizontal, 15)
-                        .padding(.bottom, 15)
                     }
-                    .task(id: mpd.queue.type) {
-                        guard !Task.isCancelled else {
-                            return
-                        }
-
-                        scrollToCurrent(proxy, animate: false)
-                    }
-                    .onReceive(scrollToCurrentNotifcation) { _ in
-                        scrollToCurrent(proxy)
-                    }
-                    .onReceive(startSearchingNotication) { _ in
-                        scrollToTop(proxy)
-
-                        searching = true
-                    }
+                    .id(mpd.queue.type)
+                    .padding(.horizontal, 15)
+                    .padding(.bottom, 15)
                 }
+                .task(id: mpd.queue.type) {
+                    guard !Task.isCancelled else {
+                        return
+                    }
 
-                LoadingView(category: $category)
+                    scrollToCurrent(proxy, animate: false)
+                }
+                .onReceive(scrollToCurrentNotifcation) { _ in
+                    scrollToCurrent(proxy)
+                }
+                .onReceive(startSearchingNotication) { _ in
+                    scrollToTop(proxy)
+
+                    isSearching = true
+                }
             }
+            .overlay(LoadingView(category: $category))
             .ignoresSafeArea()
             .navigationDestination(for: Artist.self) { artist in
                 ScrollView {
@@ -95,12 +92,12 @@ struct ContentView: View {
             .frame(width: 22, height: 22)
             .background(
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(hover ? Color(.secondarySystemFill) : .clear)
+                    .fill(isHovering ? Color(.secondarySystemFill) : .clear)
             )
             .padding(.top, 12)
-            .animation(.interactiveSpring, value: hover)
+            .animation(.interactiveSpring, value: isHovering)
             .onHover(perform: { value in
-                hover = value
+                isHovering = value
             })
             .onTapGesture(perform: {
                 path.removeLast()
@@ -112,26 +109,30 @@ struct ContentView: View {
 
         @Binding var category: Category
 
-        @State private var loading = true
+        @State private var isLoading = true
 
         var body: some View {
             ZStack {
-                Rectangle()
-                    .fill(.background)
-                    .ignoresSafeArea()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if isLoading {
+                    Rectangle()
+                        .fill(.background)
+                        .ignoresSafeArea()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                ProgressView()
+                    ProgressView()
+                }
             }
-            .opacity(loading ? 1 : 0)
             .onChange(of: category) {
-                loading = true
+                isLoading = true
             }
-            .onChange(of: mpd.queue.media.count) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.interactiveSpring) {
-                        loading = false
-                    }
+            .task(id: mpd.queue.media.count) {
+                guard isLoading else {
+                    return
+                }
+
+                try? await Task.sleep(for: .milliseconds(100))
+                withAnimation(.interactiveSpring) {
+                    isLoading = false
                 }
             }
         }
@@ -224,7 +225,7 @@ struct ContentView: View {
         @State private var artwork: NSImage?
         @State private var songs: [Int: [Song]]?
 
-        @State private var hover = false
+        @State private var isHovering = false
 
         var body: some View {
             VStack(alignment: .leading, spacing: 15) {
@@ -279,7 +280,7 @@ struct ContentView: View {
                                     )
                             }
 
-                            if hover, mpd.status.media?.id != album.id {
+                            if isHovering, mpd.status.media?.id != album.id {
                                 ZStack {
                                     Circle()
                                         .fill(.accent)
@@ -297,20 +298,20 @@ struct ContentView: View {
                         }
                         .onHover(perform: { value in
                             withAnimation(.interactiveSpring) {
-                                hover = value
+                                isHovering = value
                             }
                         })
                         .onTapGesture(perform: {
                             Task(priority: .userInitiated) {
                                 if mpd.status.media?.id != album.id {
-                                    try? await ConnectionManager().play(album)
+                                    try? await ConnectionManager.command.play(album)
                                 }
                             }
                         })
                         .contextMenu {
                             Button("Add Album to Favorites") {
                                 Task {
-                                    try? await ConnectionManager().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
+                                    try? await ConnectionManager.command.addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                                 }
                             }
 
@@ -319,7 +320,7 @@ struct ContentView: View {
                                     ForEach(playlists) { playlist in
                                         Button(playlist.name) {
                                             Task {
-                                                try? await ConnectionManager().addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                                                try? await ConnectionManager.command.addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                                             }
                                         }
                                     }
@@ -328,7 +329,7 @@ struct ContentView: View {
                                 if let playlist = mpd.queue.playlist {
                                     Button("Remove Album from Playlist") {
                                         Task {
-                                            try? await ConnectionManager().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                                            try? await ConnectionManager.command.removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                                         }
                                     }
                                 }
@@ -389,7 +390,7 @@ struct ContentView: View {
             }
             .task {
                 async let artworkDataTask = ArtworkManager.shared.get(using: album.url, shouldCache: true)
-                async let songsTask = ConnectionManager().getSongs(for: album)
+                async let songsTask = ConnectionManager.command.getSongs(for: album)
 
                 artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
@@ -418,16 +419,16 @@ struct ContentView: View {
         @Environment(MPD.self) private var mpd
 
         @Binding var category: Category
-        @Binding var searching: Bool
+        @Binding var isSearching: Bool
         @Binding var query: String
 
-        @State private var hover = false
+        @State private var isHovering = false
 
-        @FocusState private var focused: Bool
+        @FocusState private var isFocused: Bool
 
         var body: some View {
             HStack {
-                if !searching {
+                if !isSearching {
                     Text(category.label)
                         .font(.headline)
 
@@ -437,14 +438,14 @@ struct ContentView: View {
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(hover ? Color(.secondarySystemFill) : .clear)
+                                .fill(isHovering ? Color(.secondarySystemFill) : .clear)
                         )
-                        .animation(.interactiveSpring, value: hover)
+                        .animation(.interactiveSpring, value: isHovering)
                         .onHover(perform: { value in
-                            hover = value
+                            isHovering = value
                         })
                         .onTapGesture(perform: {
-                            searching = true
+                            isSearching = true
                         })
                 } else {
                     TextField("Search", text: $query)
@@ -453,28 +454,28 @@ struct ContentView: View {
                         .background(Color(.secondarySystemFill))
                         .cornerRadius(4)
                         .disableAutocorrection(true)
-                        .focused($focused)
+                        .focused($isFocused)
                         .onAppear {
                             query = ""
-                            focused = true
+                            isFocused = true
                         }
                         .onDisappear {
                             query = ""
-                            focused = false
+                            isFocused = false
                         }
 
                     Image(systemName: "xmark.circle")
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(hover ? Color(.secondarySystemFill) : .clear)
+                                .fill(isHovering ? Color(.secondarySystemFill) : .clear)
                         )
-                        .animation(.interactiveSpring, value: hover)
+                        .animation(.interactiveSpring, value: isHovering)
                         .onHover(perform: { value in
-                            hover = value
+                            isHovering = value
                         })
                         .onTapGesture(perform: {
-                            searching = false
+                            isSearching = false
                         })
                 }
             }
@@ -482,7 +483,7 @@ struct ContentView: View {
             .padding(.horizontal, 15)
             .padding(.top, 7.5)
             .onChange(of: mpd.queue.type) {
-                searching = false
+                isSearching = false
                 query = ""
             }
         }
@@ -561,8 +562,8 @@ struct ContentView: View {
         @Binding var path: NavigationPath
 
         @State private var artwork: NSImage?
-        @State private var hover = false
-        @State private var hoverArtwork = false
+        @State private var isHovering = false
+        @State private var isHoveringArtwork = false
 
         var body: some View {
             HStack(spacing: 15) {
@@ -572,9 +573,9 @@ struct ContentView: View {
                         .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                         .frame(width: 60)
 
-                    if hover {
+                    if isHovering {
                         ZStack {
-                            if hoverArtwork {
+                            if isHoveringArtwork {
                                 Circle()
                                     .fill(.accent)
                                     .frame(width: 40, height: 40)
@@ -592,13 +593,13 @@ struct ContentView: View {
                 }
                 .onHover(perform: { value in
                     withAnimation(.interactiveSpring) {
-                        hoverArtwork = value
+                        isHoveringArtwork = value
                     }
                 })
                 .onTapGesture {
                     Task(priority: .userInitiated) {
                         if mpd.status.media?.id != album.id {
-                            try? await ConnectionManager().play(album)
+                            try? await ConnectionManager.command.play(album)
                         }
                     }
                 }
@@ -619,7 +620,7 @@ struct ContentView: View {
             .id(album)
             .onHover(perform: { value in
                 withAnimation(.interactiveSpring) {
-                    hover = value
+                    isHovering = value
                 }
             })
             .task(id: album, priority: .background) {
@@ -642,7 +643,7 @@ struct ContentView: View {
             .contextMenu {
                 Button("Add Album to Favorites") {
                     Task {
-                        try? await ConnectionManager().addToFavorites(songs: ConnectionManager().getSongs(for: album))
+                        try? await ConnectionManager.command.addToFavorites(songs: ConnectionManager.command.getSongs(for: album))
                     }
                 }
 
@@ -651,7 +652,7 @@ struct ContentView: View {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    try? await ConnectionManager().addToPlaylist(playlist, songs: ConnectionManager().getSongs(for: album))
+                                    try? await ConnectionManager.command.addToPlaylist(playlist, songs: ConnectionManager.command.getSongs(for: album))
                                 }
                             }
                         }
@@ -673,14 +674,12 @@ struct ContentView: View {
             _category = category
         }
 
-        @State private var animating = false
-        @State private var hover = false
-        @State private var editingPlaylist = false
+        @State private var isHovering = false
 
         var body: some View {
             HStack(spacing: 15) {
                 Group {
-                    if !hover, mpd.status.song != song {
+                    if !isHovering, mpd.status.song != song {
                         Text(String(song.track))
                             .font(.title3)
                             .fontWeight(.regular)
@@ -715,21 +714,21 @@ struct ContentView: View {
             .id(song)
             .contentShape(Rectangle())
             .onHover(perform: { value in
-                hover = value
+                isHovering = value
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
                     if category.playlist != mpd.queue.playlist {
-                        try? await ConnectionManager().loadPlaylist(category.playlist)
+                        try? await ConnectionManager.command.loadPlaylist(category.playlist)
                     }
 
-                    try? await ConnectionManager().play(song)
+                    try? await ConnectionManager.command.play(song)
                 }
             })
             .contextMenu {
                 Button("Add Song to Favorites") {
                     Task {
-                        try! await ConnectionManager().addToFavorites(songs: [song])
+                        try! await ConnectionManager.command.addToFavorites(songs: [song])
                     }
                 }
 
@@ -738,7 +737,7 @@ struct ContentView: View {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    try! await ConnectionManager().addToPlaylist(playlist, songs: [song])
+                                    try! await ConnectionManager.command.addToPlaylist(playlist, songs: [song])
                                 }
                             }
                         }
@@ -747,7 +746,7 @@ struct ContentView: View {
                     if let playlist = mpd.queue.playlist {
                         Button("Remove Song from Playlist") {
                             Task {
-                                try? await ConnectionManager().removeFromPlaylist(playlist, songs: [song])
+                                try? await ConnectionManager.command.removeFromPlaylist(playlist, songs: [song])
                             }
                         }
                     }
@@ -778,38 +777,38 @@ struct ContentView: View {
     struct WaveView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var animating = false
+        @State private var isAnimating = false
 
         var body: some View {
-            let isPlaying = mpd.status.isPlaying ?? false
+            let isPlaying = mpd.status.isPlaying
 
             HStack(spacing: 1.5) {
                 bar(low: 0.4)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.5).repeatForever() : .linear(duration: 0.5), value: animating)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.5).repeatForever() : .linear(duration: 0.5), value: isAnimating)
                 bar(low: 0.3)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.2).repeatForever() : .linear(duration: 0.5), value: animating)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.2).repeatForever() : .linear(duration: 0.5), value: isAnimating)
                 bar(low: 0.5)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: animating)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: isAnimating)
                 bar(low: 0.3)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.7).repeatForever() : .linear(duration: 0.5), value: animating)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.7).repeatForever() : .linear(duration: 0.5), value: isAnimating)
                 bar(low: 0.5)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: animating)
+                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: isAnimating)
             }
             .onAppear {
-                animating = isPlaying
+                isAnimating = isPlaying
             }
             .onDisappear {
-                animating = false
+                isAnimating = false
             }
             .onChange(of: isPlaying) { _, value in
-                animating = value
+                isAnimating = value
             }
         }
 
         private func bar(low: CGFloat = 0.0, high: CGFloat = 1.0) -> some View {
             RoundedRectangle(cornerRadius: 2)
                 .fill(.secondary)
-                .frame(width: 2, height: (animating ? high : low) * 12)
+                .frame(width: 2, height: (isAnimating ? high : low) * 12)
         }
     }
 

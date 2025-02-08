@@ -29,7 +29,7 @@ import SwiftUI
         }
 
         if self.playlist != playlist {
-            try await ConnectionManager().loadPlaylist(playlist)
+            try await ConnectionManager.command.loadPlaylist(playlist)
         }
 
         defer {
@@ -39,7 +39,7 @@ import SwiftUI
 
         switch type {
         case .artist:
-            let albums = try await ConnectionManager().getAlbums()
+            let albums = try await ConnectionManager.command.getAlbums()
             let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
 
             media = albumsByArtist.map { artist, albums in
@@ -52,17 +52,17 @@ import SwiftUI
             }
             .sorted { $0.position < $1.position }
         case .song:
-            media = try await ConnectionManager().getSongs()
+            media = try await ConnectionManager.command.getSongs()
         case .playlist:
-            media = try await ConnectionManager().getSongs(for: playlist)
+            media = try await ConnectionManager.command.getSongs(for: playlist)
         default:
-            media = try await ConnectionManager().getAlbums()
+            media = try await ConnectionManager.command.getAlbums()
         }
     }
 
     @MainActor
     func setPlaylists() async throws {
-        playlists = try await ConnectionManager.shared.getPlaylists().filter { $0.name != "Favorites" }
+        playlists = try await ConnectionManager.idle.getPlaylists().filter { $0.name != "Favorites" }
     }
 
     @MainActor
