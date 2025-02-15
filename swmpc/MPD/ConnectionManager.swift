@@ -53,6 +53,14 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private let connectionQueue = DispatchQueue(label: "com.swmpc.connection")
 
     private init() {}
+    
+    // TODO: I want to just use `disconnect()` here, but that gives me an `Call to actor-isolated instance method 'disconnect()' in a synchronous nonisolated context` error.
+    deinit {
+        connection?.cancel()
+        connection = nil
+
+        buffer.removeAll()
+    }
 
     func connect() async throws {
         guard connection?.state != .ready else {
