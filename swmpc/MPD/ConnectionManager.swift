@@ -169,32 +169,43 @@ actor ConnectionManager<Mode: ConnectionMode> {
     }
 
     private func escape(_ string: String, quote: String? = "\"") -> String {
-        let string = string
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "'", with: "\\\'")
-            .replacingOccurrences(of: "\"", with: "\\\"")
-
-        return quote == nil ? string : "\(quote!)\(string)\(quote!)"
+        var escaped = string.replacingOccurrences(of: "\\", with: "\\\\")
+        
+        guard let quote = quote else {
+            return escaped
+        }
+        
+        switch quote {
+        case "\"":
+            escaped = escaped.replacingOccurrences(of: "\"", with: "\\\"")
+        case "'":
+            escaped = escaped.replacingOccurrences(of: "'", with: "\\'")
+        default:
+            break
+        }
+        
+        return "\(quote)\(escaped)\(quote)"
     }
 
     private func filter(key: String, value: String, comparator: String, quote: Bool = true) -> String {
         let clause = "(\(key) \(comparator) \(escape(value, quote: "'")))"
-
+            .replacingOccurrences(of: "\\", with: "\\\\")
+        
         return quote ? "\"\(clause)\"" : clause
     }
 
     // MARK: - Reading
-    
+
     private func readLine() async throws -> String? {
         while true {
             if let line = try extractLineFromBuffer() {
                 if line.hasPrefix("ACK") {
                     throw ConnectionManagerError.protocolError(line)
                 }
-                
+
                 return line
             }
-            
+
             try await receiveDataChunk()
         }
     }
