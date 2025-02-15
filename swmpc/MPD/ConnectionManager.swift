@@ -53,7 +53,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private let connectionQueue = DispatchQueue(label: "com.swmpc.connection")
 
     private init() {}
-    
+
     func connect() async throws {
         guard connection?.state != .ready else {
             return
@@ -477,13 +477,33 @@ extension ConnectionManager where Mode == IdleMode {
 
         return playlists
     }
+
+    func getPlaylist(_ playlist: Playlist) async throws -> [Song] {
+        let lines = try await run(["listplaylistinfo \(playlist.name)"])
+        let chunks = chunkLines(lines, startingWith: "file")
+
+        return try chunks.enumerated().map { index, chunk in
+            let song = try parseMediaResponse(chunk, using: .song) as! Song
+
+            return Song(
+                id: UInt32(index),
+                position: UInt32(index),
+                url: song.url,
+                artist: song.artist,
+                title: song.title,
+                duration: song.duration,
+                disc: song.disc,
+                track: song.track
+            )
+        }
+    }
 }
 
 extension ConnectionManager where Mode == CommandMode {
     static var command: ConnectionManager<CommandMode> {
         ConnectionManager<CommandMode>()
     }
-    
+
     func getSongs(for media: (any Mediable)? = nil) async throws -> [Song] {
         try await connect()
         defer { disconnect() }
@@ -619,7 +639,15 @@ extension ConnectionManager where Mode == CommandMode {
         try await connect()
         defer { disconnect() }
 
-        let commands = songs.map { "playlistadd \(playlist.name) \(escape($0.url.path))" }
+        let existingSongs = try await getPlaylist(playlist)
+        let newSongs = songs.filter { song in
+            !existingSongs.contains { $0.url == song.url }
+        }
+
+        let commands = newSongs.map {
+            "playlistadd \(playlist.name) \(escape($0.url.path))"
+        }
+        print(commands)
 
         _ = try await run(commands)
     }
@@ -628,18 +656,11 @@ extension ConnectionManager where Mode == CommandMode {
         try await connect()
         defer { disconnect() }
 
-        let commands = songs.map { "playlistdelete \(playlist.name) \($0.position)" }
+        let commands = songs.map {
+            "playlistdelete \(playlist.name) \($0.position)"
+        }
 
         _ = try await run(commands)
-    }
-
-    func isInFavorites(_ song: Song) async throws -> Bool {
-        try await connect()
-        defer { disconnect() }
-
-        let lines = try await run(["listplaylistinfo Favorites"])
-
-        return lines.contains { $0.contains(song.url.path) }
     }
 
     func addToFavorites(songs: [Song]) async throws {

@@ -9,7 +9,7 @@ import AsyncAlgorithms
 import SwiftUI
 
 @Observable final class Status {
-    var state: PlayerState = .stop
+    var state: PlayerState?
     var isPlaying: Bool {
         state == .play
     }
@@ -30,7 +30,7 @@ import SwiftUI
     @ObservationIgnored @MainActor var trackElapsed: Bool = false {
         didSet {
             if trackElapsed {
-                startTrackingElapsed()
+                state == .play ? startTrackingElapsed() : stopTrackingElapsed()
             } else {
                 stopTrackingElapsed()
             }
@@ -40,10 +40,8 @@ import SwiftUI
     @MainActor
     func set() async throws {
         let data = try await ConnectionManager.idle.getStatusData()
-        
-        if state != data.state ?? .stop {
-            state = data.state ?? .stop
 
+        if state.update(to: data.state) {
             let image = switch data.state {
             case .play:
                 "play"
@@ -56,7 +54,7 @@ import SwiftUI
             AppDelegate.shared.setPopoverAnchorImage(changed: image)
 
             if trackElapsed {
-                data.state == .play ? startTrackingElapsed() : stopTrackingElapsed()
+                state == .play ? startTrackingElapsed() : stopTrackingElapsed()
             }
         }
 
@@ -75,7 +73,7 @@ import SwiftUI
                 startTrackingElapsed()
             }
         }
-        
+
         if song.update(to: data.song) {
             AppDelegate.shared.setStatusItemTitle()
         }
@@ -84,7 +82,7 @@ import SwiftUI
     @MainActor
     private func startTrackingElapsed() {
         if let trackingTask, !trackingTask.isCancelled {
-            return
+            stopTrackingElapsed()
         }
 
         startTime = Date() - (elapsed ?? 0)

@@ -728,7 +728,7 @@ struct ContentView: View {
             .contextMenu {
                 Button("Add Song to Favorites") {
                     Task {
-                        try! await ConnectionManager.command.addToFavorites(songs: [song])
+                        try? await ConnectionManager.command.addToFavorites(songs: [song])
                     }
                 }
 
@@ -737,7 +737,7 @@ struct ContentView: View {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    try! await ConnectionManager.command.addToPlaylist(playlist, songs: [song])
+                                    try? await ConnectionManager.command.addToPlaylist(playlist, songs: [song])
                                 }
                             }
                         }

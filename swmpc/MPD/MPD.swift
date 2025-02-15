@@ -32,7 +32,9 @@ import SwiftUI
 
                 return
             } catch {
-                status.state = .stop
+                // TODO: Set other stuff to nil as well?
+                status.state = nil
+
                 try? await Task.sleep(for: .seconds(2))
             }
         }
@@ -68,7 +70,6 @@ import SwiftUI
         case .playlists:
             try await queue.setPlaylists()
         case .database, .queue:
-            print("queue")
             try await queue.set()
         case .player:
             try await status.set()

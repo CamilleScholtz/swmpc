@@ -8,12 +8,13 @@
 import SwiftUI
 
 @Observable final class Queue {
-    private(set) var playlists: [Playlist]?
+    private(set) var media: [any Mediable] = []
 
     private(set) var type: MediaType?
     private(set) var playlist: Playlist?
 
-    private(set) var media: [any Mediable] = []
+    private(set) var playlists: [Playlist]?
+    private(set) var favorites: [Song] = []
 
     @MainActor
     func set(for type: MediaType? = nil, using playlist: Playlist? = nil) async throws {
@@ -62,7 +63,13 @@ import SwiftUI
 
     @MainActor
     func setPlaylists() async throws {
-        playlists = try await ConnectionManager.idle.getPlaylists().filter { $0.name != "Favorites" }
+        let allPlaylists = try await ConnectionManager.idle.getPlaylists()
+
+        playlists = allPlaylists.filter { $0.name != "Favorites" }
+        guard let favoritePlaylist = allPlaylists.first(where: { $0.name == "Favorites" }) else {
+            return
+        }
+        favorites = try await ConnectionManager.idle.getPlaylist(favoritePlaylist)
     }
 
     @MainActor

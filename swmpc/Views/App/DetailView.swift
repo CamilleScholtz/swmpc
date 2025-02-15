@@ -184,125 +184,17 @@ struct DetailView: View {
     struct ArtworkView: View {
         let image: NSImage?
 
-        @State private var hasLoaded = false
-
-        var body: some View {
-            if let image {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .scaledToFit()
-                    .opacity(hasLoaded ? 1 : 0)
-                    .background(Color(.secondarySystemFill))
-                    .animation(.spring, value: hasLoaded)
-                    .onAppear {
-                        hasLoaded = true
-                    }
-            } else {
-                Rectangle()
-                    .fill(Color(.secondarySystemFill))
-                    .aspectRatio(contentMode: .fit)
-                    .scaledToFit()
-            }
-        }
-    }
-
-    struct VinylView: View {
-        @Environment(MPD.self) private var mpd
-
         var body: some View {
             ZStack {
-                Circle()
-                    .fill(Color(red: 0.15, green: 0.15, blue: 0.15))
-                    .stroke(Color(red: 0.6, green: 0.6, blue: 0.6), lineWidth: 0.3)
-
-                ForEach(0 ..< 37) { i in
-                    let color = Double.random(in: 0.1 ..< 0.3)
-
-                    Circle()
-                        .stroke(Color(red: color, green: color, blue: color), lineWidth: 0.5)
-                        .scaleEffect(0.96 - CGFloat(i) * 0.015)
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                } else {
+                    Color(.secondarySystemFill)
                 }
-
-                ForEach(0 ..< 5) { i in
-                    let color = 0.03
-                    let distance = Double.random(in: 0.11 ..< 0.13)
-
-                    Circle()
-                        .stroke(Color(red: color, green: color, blue: color), lineWidth: 0.8)
-                        .scaleEffect(0.95 - CGFloat(i) * distance)
-                }
-
-                Circle()
-                    .fill(Color.clear)
-                    .overlay(
-                        ZStack {
-                            HStack {
-                                LinearGradient(
-                                    gradient: Gradient(stops: [
-                                        .init(color: Color.clear, location: 0.38),
-                                        .init(color: Color(red: 0.58, green: 0.58, blue: 0.58), location: 0.5),
-                                        .init(color: Color.clear, location: 0.62),
-                                    ]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                .rotation3DEffect(.degrees(80), axis: (x: 0, y: 1, z: 0), perspective: 3)
-                                .scaleEffect(x: 2.7)
-                                .offset(x: 35)
-
-                                LinearGradient(
-                                    gradient: Gradient(stops: [
-                                        .init(color: Color.clear, location: 0.38),
-                                        .init(color: Color(red: 0.55, green: 0.55, blue: 0.55), location: 0.5),
-                                        .init(color: Color.clear, location: 0.62),
-                                    ]),
-                                    startPoint: .bottom,
-                                    endPoint: .top
-                                )
-                                .rotation3DEffect(.degrees(-80), axis: (x: 0, y: 1, z: 0), perspective: 3)
-                                .scaleEffect(x: 2.7)
-                                .offset(x: -35)
-                            }
-                            .rotationEffect(.degrees(-30))
-
-                            HStack {
-                                LinearGradient(
-                                    gradient: Gradient(stops: [
-                                        .init(color: Color.clear, location: 0.38),
-                                        .init(color: Color(red: 0.5, green: 0.5, blue: 0.5), location: 0.5),
-                                        .init(color: Color.clear, location: 0.62),
-                                    ]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                .rotation3DEffect(.degrees(80), axis: (x: 0, y: 1, z: 0), perspective: 3)
-                                .scaleEffect(x: 2.7)
-                                .offset(x: 35)
-
-                                LinearGradient(
-                                    gradient: Gradient(stops: [
-                                        .init(color: Color.clear, location: 0.38),
-                                        .init(color: Color(red: 0.51, green: 0.51, blue: 0.51), location: 0.5),
-                                        .init(color: Color.clear, location: 0.62),
-                                    ]),
-                                    startPoint: .bottom,
-                                    endPoint: .top
-                                )
-                                .rotation3DEffect(.degrees(-80), axis: (x: 0, y: 1, z: 0), perspective: 3)
-                                .scaleEffect(x: 2.7)
-                                .offset(x: -35)
-                            }
-                            .rotationEffect(.degrees(55))
-                        }
-                        .mask(Circle())
-                    )
-                    .blendMode(.difference)
-
-                Circle()
-                    .fill(Color(red: 0.13, green: 0.13, blue: 0.13).opacity(0.6))
-                    .frame(width: 97, height: 97)
             }
+            .transition(.opacity.animation(.spring))
+            .aspectRatio(contentMode: .fit)
         }
     }
 
@@ -471,12 +363,13 @@ struct DetailView: View {
                         }
                     }
                 })
-                .task(id: mpd.status.song) {
+                .onChange(of: mpd.status.song) {
                     guard let song = mpd.status.song else {
                         return
                     }
 
-                    isFavorited = await (try? ConnectionManager.command.isInFavorites(song)) ?? false
+                    // TODO: On launch, favorites is not yet set.
+                    isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
                 }
         }
     }

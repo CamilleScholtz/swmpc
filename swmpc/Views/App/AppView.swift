@@ -25,7 +25,7 @@ struct AppView: View {
 
     var body: some View {
         Group {
-            if mpd.status.state == .stop {
+            if mpd.status.state == nil {
                 NavigationSplitView {
                     SidebarView(selected: $selected, queue: $queue, query: $query)
                 } detail: {
