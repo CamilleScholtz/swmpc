@@ -207,13 +207,13 @@ struct PopoverView: View {
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color.red.opacity(0.2), lineWidth: 0.5)
+                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5)
                     .blendMode(.screen)
             )
             .padding(1)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color.green.opacity(0.2), lineWidth: 1)
+                    .strokeBorder(Color.black.opacity(0.2), lineWidth: 1)
                     .blendMode(.screen)
             )
             .shadow(color: .black.opacity(colorScheme == .dark ? 0.15 : 0.05), radius: 3, x: 0, y: 2)
