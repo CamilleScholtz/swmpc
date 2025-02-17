@@ -60,7 +60,7 @@ struct SidebarView: View {
                         .focused($isFocused)
                         .onSubmit {
                             Task {
-                                try? await ConnectionManager.command.createPlaylist(named: playlistName)
+                                try? await ConnectionManager.command().createPlaylist(named: playlistName)
 
                                 isEditingPlaylist = false
                                 playlistName = ""
@@ -82,7 +82,7 @@ struct SidebarView: View {
                     }
 
                     Task {
-                        try? await ConnectionManager.command.removePlaylist(playlist)
+                        try? await ConnectionManager.command().removePlaylist(playlist)
                         playlistToDelete = nil
                     }
                 }
@@ -107,7 +107,7 @@ struct SidebarView: View {
                     return
                 }
 
-                queue = try? await ConnectionManager.command.getPlaylist(playlist)
+                queue = try? await ConnectionManager.command().getPlaylist(playlist)
             } else {
                 queue = mpd.queue.media
             }

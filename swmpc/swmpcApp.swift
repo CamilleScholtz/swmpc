@@ -21,7 +21,7 @@ struct swmpcApp: App {
             CommandMenu("Controls") {
                 Button(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
                     Task {
-                        try? await ConnectionManager.command.pause(appDelegate.mpd.status.isPlaying)
+                        try? await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
                     }
                 }
                 // TODO: Space doesn't work?
@@ -29,13 +29,13 @@ struct swmpcApp: App {
 
                 Button("Next Song") {
                     Task {
-                        try? await ConnectionManager.command.next()
+                        try? await ConnectionManager.command().next()
                     }
                 }
 
                 Button("Previous Song") {
                     Task {
-                        try? await ConnectionManager.command.previous()
+                        try? await ConnectionManager.command().previous()
                     }
                 }
 
@@ -60,7 +60,7 @@ struct swmpcApp: App {
 
                 Button("Update Library") {
                     Task {
-                        try? await ConnectionManager.command.update()
+                        try? await ConnectionManager.command().update()
                     }
                 }
             }
@@ -240,7 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch event.type {
         case .rightMouseDown:
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.pause(mpd.status.isPlaying)
+                try? await ConnectionManager.command().pause(mpd.status.isPlaying)
             }
         default:
             togglePopover(sender)
@@ -251,19 +251,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch sender.title {
         case "Play":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.pause(false)
+                try? await ConnectionManager.command().pause(false)
             }
         case "Pause":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.pause(true)
+                try? await ConnectionManager.command().pause(true)
             }
         case "Next song":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.next()
+                try? await ConnectionManager.command().next()
             }
         case "Previous song":
             Task(priority: .userInitiated) { @MainActor in
-                try? await ConnectionManager.command.previous()
+                try? await ConnectionManager.command().previous()
             }
         default:
             break

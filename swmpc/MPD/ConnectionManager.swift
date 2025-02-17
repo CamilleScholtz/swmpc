@@ -179,7 +179,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private func escape(_ string: String, quote: String? = "\"") -> String {
         var escaped = string.replacingOccurrences(of: "\\", with: "\\\\")
 
-        guard let quote = quote else {
+        guard let quote else {
             return escaped
         }
 
@@ -402,18 +402,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     }
 }
 
-extension ConnectionManager where Mode == IdleMode {
-    static let idle = ConnectionManager<IdleMode>()
+// MARK: - Shared commands
 
-    func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
-        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
-        guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
-            throw ConnectionManagerError.protocolError("No changed line")
-        }
-
-        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: ".count)))!
-    }
-
+extension ConnectionManager {
     func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?, isRepeat: Bool?, elapsed: Double?, song: Song?) {
         let lines = try await run(["status"])
 
@@ -460,6 +451,80 @@ extension ConnectionManager where Mode == IdleMode {
         return (state, isRandom, isRepeat, elapsed, song)
     }
 
+    func getSongs(for media: (any Mediable)? = nil) async throws -> [Song] {
+        let lines: [String] = switch media {
+        case let artist as Artist:
+            try await run(["playlistfind \(filter(key: "albumArtist", value: artist.name, comparator: "=="))"])
+        case let album as Album:
+            // TODO: Probably doesn't work with two albums with the same name.
+            try await run(["playlistfind \(filter(key: "album", value: album.title, comparator: "=="))"])
+        default:
+            try await run(["playlistinfo"])
+        }
+
+        let chunks = chunkLines(lines, startingWith: "file")
+
+        return try chunks.map { chunk in
+            try parseMediaResponse(chunk, using: .song) as! Song
+        }
+    }
+
+    func getAlbums() async throws -> [Album] {
+        let lines = try await run(["playlistfind \"(\(filter(key: "track", value: "1", comparator: "==", quote: false)) AND \(filter(key: "disc", value: "1", comparator: "==", quote: false)))\""])
+        let chunks = chunkLines(lines, startingWith: "file")
+
+        return try chunks.map { chunk in
+            try parseMediaResponse(chunk, using: .album) as! Album
+        }
+    }
+
+    func getArtworkData(for url: URL) async throws -> Data {
+        var data = Data()
+        var offset = 0
+        var totalSize: Int?
+
+        while true {
+            try await writeLine("readpicture \(escape(url.path)) \(offset)")
+
+            var chunkSize: Int?
+
+            while chunkSize == nil {
+                guard let line = try await readLine() else {
+                    continue
+                }
+
+                if line.hasPrefix("OK") {
+                    break
+                }
+
+                let (key, value) = try parseLine(line)
+
+                switch key {
+                case "size":
+                    totalSize = Int(value)
+                case "binary":
+                    chunkSize = Int(value)
+                default:
+                    break
+                }
+            }
+
+            guard let chunkSize else {
+                throw ConnectionManagerError.malformedResponse
+            }
+
+            let binaryChunk = try await readFixedLengthData(chunkSize)
+            data.append(binaryChunk)
+            buffer.removeAll()
+
+            offset += chunkSize
+
+            if offset >= (totalSize ?? 0) {
+                return data
+            }
+        }
+    }
+    
     func getPlaylists() async throws -> [Playlist] {
         let lines = try await run(["listplaylists"])
         var index: UInt32 = 0
@@ -485,7 +550,7 @@ extension ConnectionManager where Mode == IdleMode {
 
         return playlists
     }
-
+    
     func getPlaylist(_ playlist: Playlist) async throws -> [Song] {
         let lines = try await run(["listplaylistinfo \(playlist.name)"])
         let chunks = chunkLines(lines, startingWith: "file")
@@ -507,169 +572,66 @@ extension ConnectionManager where Mode == IdleMode {
     }
 }
 
+// MARK: - Idle mode commands
+
+extension ConnectionManager where Mode == IdleMode {
+    static let idle = ConnectionManager<IdleMode>()
+
+    func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
+        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
+        guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
+            throw ConnectionManagerError.protocolError("No changed line")
+        }
+
+        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: ".count)))!
+    }
+}
+
+// MARK: - Command mode commands
+
 extension ConnectionManager where Mode == CommandMode {
-    static var command: ConnectionManager<CommandMode> {
-        ConnectionManager<CommandMode>()
-    }
+    static func command() async throws -> ConnectionManager<CommandMode> {
+        let manager = ConnectionManager<CommandMode>()
+        try await manager.connect()
 
-    private func withConnection<T: Sendable>(_ block: () async throws -> T) async throws -> T {
-        guard ((try? ensureConnectionReady()) == nil) else {
-            return try await block()
-        }
-
-        try await connect()
-        defer { disconnect() }
-
-        return try await block()
-    }
-
-    func getSongs(for media: (any Mediable)? = nil) async throws -> [Song] {
-        try await withConnection {
-            let lines: [String] = switch media {
-            case let artist as Artist:
-                try await run(["playlistfind \(filter(key: "albumArtist", value: artist.name, comparator: "=="))"])
-            case let album as Album:
-                // TODO: Probably doesn't work with two albums with the same name.
-                try await run(["playlistfind \(filter(key: "album", value: album.title, comparator: "=="))"])
-            default:
-                try await run(["playlistinfo"])
-            }
-
-            let chunks = chunkLines(lines, startingWith: "file")
-
-            return try chunks.map { chunk in
-                try parseMediaResponse(chunk, using: .song) as! Song
-            }
-        }
-    }
-
-    func getAlbums() async throws -> [Album] {
-        try await withConnection {
-            let lines = try await run(["playlistfind \"(\(filter(key: "track", value: "1", comparator: "==", quote: false)) AND \(filter(key: "disc", value: "1", comparator: "==", quote: false)))\""])
-            let chunks = chunkLines(lines, startingWith: "file")
-
-            return try chunks.map { chunk in
-                try parseMediaResponse(chunk, using: .album) as! Album
-            }
-        }
-    }
-
-    func getArtworkData(for url: URL) async throws -> Data {
-        try await withConnection {
-            var data = Data()
-            var offset = 0
-            var totalSize: Int?
-
-            while true {
-                try await writeLine("readpicture \(escape(url.path)) \(offset)")
-
-                var chunkSize: Int?
-
-                while chunkSize == nil {
-                    guard let line = try await readLine() else {
-                        continue
-                    }
-
-                    if line.hasPrefix("OK") {
-                        break
-                    }
-
-                    let (key, value) = try parseLine(line)
-
-                    switch key {
-                    case "size":
-                        totalSize = Int(value)
-                    case "binary":
-                        chunkSize = Int(value)
-                    default:
-                        break
-                    }
-                }
-
-                guard let chunkSize else {
-                    throw ConnectionManagerError.malformedResponse
-                }
-
-                let binaryChunk = try await readFixedLengthData(chunkSize)
-                data.append(binaryChunk)
-                buffer.removeAll()
-
-                offset += chunkSize
-
-                if offset >= (totalSize ?? 0) {
-                    return data
-                }
-            }
-        }
-    }
-
-    func getPlaylist(_ playlist: Playlist) async throws -> [Song] {
-        try await withConnection {
-            let lines = try await run(["listplaylistinfo \(playlist.name)"])
-            let chunks = chunkLines(lines, startingWith: "file")
-
-            return try chunks.enumerated().map { index, chunk in
-                let song = try parseMediaResponse(chunk, using: .song) as! Song
-
-                return Song(
-                    id: UInt32(index),
-                    position: UInt32(index),
-                    url: song.url,
-                    artist: song.artist,
-                    title: song.title,
-                    duration: song.duration,
-                    disc: song.disc,
-                    track: song.track
-                )
-            }
-        }
+        return manager
     }
 
     func loadPlaylist(_ playlist: Playlist?) async throws {
-        try await withConnection {
-            if let playlist {
-                _ = try await run(["clear", "load \(playlist.name)"])
-            } else {
-                _ = try await run(["clear", "add /"])
-            }
+        if let playlist {
+            _ = try await run(["clear", "load \(playlist.name)"])
+        } else {
+            _ = try await run(["clear", "add /"])
         }
     }
 
     func createPlaylist(named name: String) async throws {
-        try await withConnection {
-            _ = try await run(["save \(name)", "playlistclear \(name)"])
-        }
+        _ = try await run(["save \(name)", "playlistclear \(name)"])
     }
 
     func removePlaylist(_ playlist: Playlist) async throws {
-        try await withConnection {
-            _ = try await run(["rm \(playlist.name)"])
-        }
+        _ = try await run(["rm \(playlist.name)"])
     }
 
     func addToPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        try await withConnection {
-            let existingSongs = try await getPlaylist(playlist)
-            let newSongs = songs.filter { song in
-                !existingSongs.contains { $0.url == song.url }
-            }
-
-            let commands = newSongs.map {
-                "playlistadd \(playlist.name) \(escape($0.url.path))"
-            }
-
-            _ = try await run(commands)
+        let existingSongs = try await getPlaylist(playlist)
+        let newSongs = songs.filter { song in
+            !existingSongs.contains { $0.url == song.url }
         }
+
+        let commands = newSongs.map {
+            "playlistadd \(playlist.name) \(escape($0.url.path))"
+        }
+
+        _ = try await run(commands)
     }
 
     func removeFromPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        try await withConnection {
-            let commands = songs.map {
-                "playlistdelete \(playlist.name) \($0.position)"
-            }
-
-            _ = try await run(commands)
+        let commands = songs.map {
+            "playlistdelete \(playlist.name) \($0.position)"
         }
+
+        _ = try await run(commands)
     }
 
     func addToFavorites(songs: [Song]) async throws {
@@ -682,50 +644,34 @@ extension ConnectionManager where Mode == CommandMode {
     }
 
     func update() async throws {
-        try await withConnection {
-            _ = try await run(["update"])
-        }
+        _ = try await run(["update"])
     }
 
     func play(_ media: any Mediable) async throws {
-        try await withConnection {
-            _ = try await run(["playid \(media.id)"])
-        }
+        _ = try await run(["playid \(media.id)"])
     }
 
     func pause(_ value: Bool) async throws {
-        try await withConnection {
-            _ = try await run([value ? "pause 1" : "pause 0"])
-        }
+        _ = try await run([value ? "pause 1" : "pause 0"])
     }
 
     func previous() async throws {
-        try await withConnection {
-            _ = try await run(["previous"])
-        }
+        _ = try await run(["previous"])
     }
 
     func next() async throws {
-        try await withConnection {
-            _ = try await run(["next"])
-        }
+        _ = try await run(["next"])
     }
 
     func `repeat`(_ value: Bool) async throws {
-        try await withConnection {
-            _ = try await run([value ? "repeat 1" : "repeat 0"])
-        }
+        _ = try await run([value ? "repeat 1" : "repeat 0"])
     }
 
     func random(_ value: Bool) async throws {
-        try await withConnection {
-            _ = try await run([value ? "random 1" : "random 0"])
-        }
+        _ = try await run([value ? "random 1" : "random 0"])
     }
 
     func seek(_ value: Double) async throws {
-        try await withConnection {
-            _ = try await run(["seekcur \(value)"])
-        }
+        _ = try await run(["seekcur \(value)"])
     }
 }

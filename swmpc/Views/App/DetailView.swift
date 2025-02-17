@@ -254,7 +254,7 @@ struct DetailView: View {
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command.pause(mpd.status.isPlaying)
+                    try? await ConnectionManager.command().pause(mpd.status.isPlaying)
                 }
             })
         }
@@ -274,7 +274,7 @@ struct DetailView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command.previous()
+                        try? await ConnectionManager.command().previous()
                     }
                 })
         }
@@ -294,7 +294,7 @@ struct DetailView: View {
                 })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command.next()
+                        try? await ConnectionManager.command().next()
                     }
                 })
         }
@@ -316,7 +316,7 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command.random(!(mpd.status.isRandom ?? false))
+                            try? await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
                         }
                     })
 
@@ -357,9 +357,9 @@ struct DetailView: View {
                         }
 
                         if isFavorited {
-                            try? await ConnectionManager.command.addToFavorites(songs: [song])
+                            try? await ConnectionManager.command().addToFavorites(songs: [song])
                         } else {
-                            try? await ConnectionManager.command.removeFromFavorites(songs: [song])
+                            try? await ConnectionManager.command().removeFromFavorites(songs: [song])
                         }
                     }
                 })
@@ -390,7 +390,7 @@ struct DetailView: View {
                     })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command.repeat(!(mpd.status.isRepeat ?? false))
+                            try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
                         }
                     })
 
@@ -437,7 +437,7 @@ struct DetailView: View {
                     .contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command.seek((value.location.x / geometry.size.width) * (mpd.status.song?.duration ?? 100))
+                            try? await ConnectionManager.command().seek((value.location.x / geometry.size.width) * (mpd.status.song?.duration ?? 100))
                         }
                     })
                     .onHover(perform: { value in

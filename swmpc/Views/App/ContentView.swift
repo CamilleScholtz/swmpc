@@ -304,14 +304,14 @@ struct ContentView: View {
                         .onTapGesture(perform: {
                             Task(priority: .userInitiated) {
                                 if mpd.status.media?.id != album.id {
-                                    try? await ConnectionManager.command.play(album)
+                                    try? await ConnectionManager.command().play(album)
                                 }
                             }
                         })
                         .contextMenu {
                             Button("Add Album to Favorites") {
                                 Task {
-                                    try? await ConnectionManager.command.addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
+                                    try? await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                                 }
                             }
 
@@ -320,7 +320,7 @@ struct ContentView: View {
                                     ForEach(playlists) { playlist in
                                         Button(playlist.name) {
                                             Task {
-                                                try? await ConnectionManager.command.addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                                                try? await ConnectionManager.command().addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                                             }
                                         }
                                     }
@@ -329,7 +329,7 @@ struct ContentView: View {
                                 if let playlist = mpd.queue.playlist {
                                     Button("Remove Album from Playlist") {
                                         Task {
-                                            try? await ConnectionManager.command.removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                                            try? await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                                         }
                                     }
                                 }
@@ -390,7 +390,7 @@ struct ContentView: View {
             }
             .task {
                 async let artworkDataTask = ArtworkManager.shared.get(using: album.url, shouldCache: true)
-                async let songsTask = ConnectionManager.command.getSongs(for: album)
+                async let songsTask = ConnectionManager.command().getSongs(for: album)
 
                 artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
@@ -599,7 +599,7 @@ struct ContentView: View {
                 .onTapGesture {
                     Task(priority: .userInitiated) {
                         if mpd.status.media?.id != album.id {
-                            try? await ConnectionManager.command.play(album)
+                            try? await ConnectionManager.command().play(album)
                         }
                     }
                 }
@@ -643,7 +643,7 @@ struct ContentView: View {
             .contextMenu {
                 Button("Add Album to Favorites") {
                     Task {
-                        try? await ConnectionManager.command.addToFavorites(songs: ConnectionManager.command.getSongs(for: album))
+                        try? await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
                     }
                 }
 
@@ -652,7 +652,7 @@ struct ContentView: View {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    try? await ConnectionManager.command.addToPlaylist(playlist, songs: ConnectionManager.command.getSongs(for: album))
+                                    try? await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
                                 }
                             }
                         }
@@ -719,16 +719,16 @@ struct ContentView: View {
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
                     if category.playlist != mpd.queue.playlist {
-                        try? await ConnectionManager.command.loadPlaylist(category.playlist)
+                        try? await ConnectionManager.command().loadPlaylist(category.playlist)
                     }
 
-                    try? await ConnectionManager.command.play(song)
+                    try? await ConnectionManager.command().play(song)
                 }
             })
             .contextMenu {
                 Button("Add Song to Favorites") {
                     Task {
-                        try? await ConnectionManager.command.addToFavorites(songs: [song])
+                        try? await ConnectionManager.command().addToFavorites(songs: [song])
                     }
                 }
 
@@ -737,7 +737,7 @@ struct ContentView: View {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
                                 Task {
-                                    try? await ConnectionManager.command.addToPlaylist(playlist, songs: [song])
+                                    try? await ConnectionManager.command().addToPlaylist(playlist, songs: [song])
                                 }
                             }
                         }
@@ -746,7 +746,7 @@ struct ContentView: View {
                     if let playlist = mpd.queue.playlist {
                         Button("Remove Song from Playlist") {
                             Task {
-                                try? await ConnectionManager.command.removeFromPlaylist(playlist, songs: [song])
+                                try? await ConnectionManager.command().removeFromPlaylist(playlist, songs: [song])
                             }
                         }
                     }

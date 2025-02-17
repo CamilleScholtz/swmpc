@@ -68,7 +68,7 @@ struct AppView: View {
                                 return
                             }
 
-                            queue = try? await ConnectionManager.command.getPlaylist(playlist)
+                            queue = try? await ConnectionManager.command().getPlaylist(playlist)
                         } else {
                             queue = mpd.queue.media
                         }
