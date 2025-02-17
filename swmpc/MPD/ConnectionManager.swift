@@ -105,14 +105,14 @@ actor ConnectionManager<Mode: ConnectionMode> {
     }
 
     func run(_ commands: [String]) async throws -> [String] {
-        var commandList = commands
+        var list = commands
 
-        if commandList.count > 1 {
-            commandList.insert("command_list_begin", at: 0)
-            commandList.append("command_list_end")
+        if list.count > 1 {
+            list.insert("command_list_begin", at: 0)
+            list.append("command_list_end")
         }
 
-        try await writeLine(commands.joined(separator: "\n"))
+        try await writeLine(list.joined(separator: "\n"))
 
         return try await readUntilOK()
     }
