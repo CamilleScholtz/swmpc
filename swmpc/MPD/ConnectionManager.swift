@@ -39,7 +39,7 @@ struct ConnectionManagerConfig {
     private init() {
         let defaults = UserDefaults.standard
 
-        host = defaults.string(forKey: "host")!
+        host = defaults.string(forKey: "host") ?? "localhost"
         port = UInt16(defaults.integer(forKey: "port"))
     }
 }
@@ -351,7 +351,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
             case "pos":
                 position = UInt32(value)
             case "file":
-                url = URL(string: value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!)
+                guard let formatted = URL(string: value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? "") else {
+                    throw ConnectionManagerError.malformedResponse
+                }
+    
+                url = formatted
             case "artist":
                 artist = value
             case "album":
