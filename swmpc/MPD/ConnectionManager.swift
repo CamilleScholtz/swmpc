@@ -10,14 +10,22 @@ import SwiftUI
 
 protocol ConnectionMode {
     static var enableKeepalive: Bool { get }
+    static var bufferSize: Int { get }
 }
 
 enum IdleMode: ConnectionMode {
     static let enableKeepalive = true
+    static let bufferSize = 4096
+}
+
+enum ArtworkMode: ConnectionMode {
+    static let enableKeepalive = true
+    static let bufferSize = 16384
 }
 
 enum CommandMode: ConnectionMode {
     static let enableKeepalive = false
+    static let bufferSize = 4096
 }
 
 enum ConnectionManagerError: Error {
@@ -259,7 +267,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         let connection = try ensureConnectionReady()
 
         guard let chunk = try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Data?, Error>) in
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, _, error in
+            connection.receive(minimumIncompleteLength: 1, maximumLength: Mode.bufferSize) { data, _, _, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
@@ -354,7 +362,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 guard let formatted = URL(string: value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? "") else {
                     throw ConnectionManagerError.malformedResponse
                 }
-    
+
                 url = formatted
             case "artist":
                 artist = value
@@ -482,6 +490,78 @@ extension ConnectionManager {
         }
     }
 
+    func getPlaylists() async throws -> [Playlist] {
+        let lines = try await run(["listplaylists"])
+        var index: UInt32 = 0
+        var playlists = [Playlist]()
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let (key, value) = try parseLine(line)
+
+            if key == "playlist" {
+                playlists.append(Playlist(
+                    id: index,
+                    position: index,
+                    name: value
+                ))
+
+                index += 1
+            }
+        }
+
+        return playlists
+    }
+
+    func getPlaylist(_ playlist: Playlist) async throws -> [Song] {
+        let lines = try await run(["listplaylistinfo \(playlist.name)"])
+        let chunks = chunkLines(lines, startingWith: "file")
+
+        return try chunks.enumerated().map { index, chunk in
+            let song = try parseMediaResponse(chunk, using: .song) as! Song
+
+            return Song(
+                id: UInt32(index),
+                position: UInt32(index),
+                url: song.url,
+                artist: song.artist,
+                title: song.title,
+                duration: song.duration,
+                disc: song.disc,
+                track: song.track
+            )
+        }
+    }
+}
+
+// MARK: - Idle mode commands
+
+extension ConnectionManager where Mode == IdleMode {
+    static let idle = ConnectionManager<IdleMode>()
+
+    func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
+        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
+        guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
+            throw ConnectionManagerError.protocolError("No changed line")
+        }
+
+        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: ".count)))!
+    }
+}
+
+// MARK: - Artwork mode commands
+
+extension ConnectionManager where Mode == ArtworkMode {
+    static func artwork() async throws -> ConnectionManager<ArtworkMode> {
+        let manager = ConnectionManager<ArtworkMode>()
+        try await manager.connect()
+
+        return manager
+    }
+    
     func getArtworkData(for url: URL) async throws -> Data {
         var data = Data()
         var offset = 0
@@ -527,67 +607,6 @@ extension ConnectionManager {
                 return data
             }
         }
-    }
-    
-    func getPlaylists() async throws -> [Playlist] {
-        let lines = try await run(["listplaylists"])
-        var index: UInt32 = 0
-        var playlists = [Playlist]()
-
-        for line in lines {
-            guard line != "OK" else {
-                break
-            }
-
-            let (key, value) = try parseLine(line)
-
-            if key == "playlist" {
-                playlists.append(Playlist(
-                    id: index,
-                    position: index,
-                    name: value
-                ))
-
-                index += 1
-            }
-        }
-
-        return playlists
-    }
-    
-    func getPlaylist(_ playlist: Playlist) async throws -> [Song] {
-        let lines = try await run(["listplaylistinfo \(playlist.name)"])
-        let chunks = chunkLines(lines, startingWith: "file")
-
-        return try chunks.enumerated().map { index, chunk in
-            let song = try parseMediaResponse(chunk, using: .song) as! Song
-
-            return Song(
-                id: UInt32(index),
-                position: UInt32(index),
-                url: song.url,
-                artist: song.artist,
-                title: song.title,
-                duration: song.duration,
-                disc: song.disc,
-                track: song.track
-            )
-        }
-    }
-}
-
-// MARK: - Idle mode commands
-
-extension ConnectionManager where Mode == IdleMode {
-    static let idle = ConnectionManager<IdleMode>()
-
-    func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
-        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
-        guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
-            throw ConnectionManagerError.protocolError("No changed line")
-        }
-
-        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: ".count)))!
     }
 }
 
