@@ -11,21 +11,29 @@ import SwiftUI
 protocol ConnectionMode {
     static var enableKeepalive: Bool { get }
     static var bufferSize: Int { get }
+    static var queueAttributes: DispatchQueue.Attributes { get }
+    static var qos: DispatchQoS { get }
 }
 
 enum IdleMode: ConnectionMode {
     static let enableKeepalive = true
     static let bufferSize = 4096
+    static let queueAttributes: DispatchQueue.Attributes = []
+    static let qos: DispatchQoS = .userInteractive
 }
 
 enum ArtworkMode: ConnectionMode {
     static let enableKeepalive = true
     static let bufferSize = 16384
+    static let queueAttributes: DispatchQueue.Attributes = .concurrent
+    static let qos: DispatchQoS = .utility
 }
 
 enum CommandMode: ConnectionMode {
     static let enableKeepalive = false
     static let bufferSize = 4096
+    static let queueAttributes: DispatchQueue.Attributes = []
+    static let qos: DispatchQoS = .userInitiated
 }
 
 enum ConnectionManagerError: Error {
@@ -38,6 +46,7 @@ enum ConnectionManagerError: Error {
     case malformedResponse
 }
 
+// TODO: Possibly make this not a singleton, for dynamic config updates.
 struct ConnectionManagerConfig {
     static let shared = ConnectionManagerConfig()
 
@@ -58,7 +67,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     private var connection: NWConnection?
     private var buffer = Data()
-    private let connectionQueue = DispatchQueue(label: "com.swmpc.connection")
+    private let connectionQueue = DispatchQueue(
+        label: "com.swmpc.connection.\(Mode.self)",
+        qos: Mode.qos,
+        attributes: Mode.queueAttributes,
+        target: .global(qos: Mode.qos.qosClass)
+    )
 
     private init() {}
 
@@ -79,9 +93,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
         options.noDelay = true
         options.enableKeepalive = Mode.enableKeepalive
 
+        guard let port = NWEndpoint.Port(rawValue: port) else {
+            throw ConnectionManagerError.connectionError
+        }
+
         connection = NWConnection(
             host: NWEndpoint.Host(host),
-            port: NWEndpoint.Port(rawValue: port)!,
+            port: port,
             using: NWParameters(tls: nil, tcp: options)
         )
         guard let connection else {
@@ -249,12 +267,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     }
 
     private func extractLineFromBuffer() throws -> String? {
-        guard let range = buffer.firstRange(of: Data([0x0A])) else {
-            return nil
-        }
+        guard let index = buffer.firstIndex(of: 0x0A) else { return nil }
 
-        let data = buffer[..<range.lowerBound]
-        buffer.removeSubrange(buffer.startIndex ..< range.upperBound)
+        let data = buffer.prefix(upTo: index)
+        buffer.removeSubrange(...index)
 
         guard let string = String(data: data, encoding: .utf8) else {
             throw ConnectionManagerError.malformedResponse
@@ -359,7 +375,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
             case "pos":
                 position = UInt32(value)
             case "file":
-                guard let formatted = URL(string: value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? "") else {
+                guard let encoded = value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+                      let formatted = URL(string: encoded)
+                else {
                     throw ConnectionManagerError.malformedResponse
                 }
 
@@ -561,7 +579,7 @@ extension ConnectionManager where Mode == ArtworkMode {
 
         return manager
     }
-    
+
     func getArtworkData(for url: URL) async throws -> Data {
         var data = Data()
         var offset = 0

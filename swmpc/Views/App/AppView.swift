@@ -44,7 +44,7 @@ struct AppView: View {
                     .opacity(showError ? 1 : 0)
                     .animation(.spring, value: showError)
                 }
-                .task(priority: .background) {
+                .task(priority: .medium) {
                     try? await Task.sleep(for: .seconds(2))
                     showError = true
                 }
