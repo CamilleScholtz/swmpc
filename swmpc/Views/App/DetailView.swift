@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SFSafeSymbols
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
@@ -244,7 +245,7 @@ struct DetailView: View {
                     .fill(.thinMaterial)
                     .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
 
-                Image(systemName: (mpd.status.isPlaying ? "pause" : "play") + ".fill")
+                Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
                     .font(.system(size: 30))
             }
             .scaleEffect(isHovering ? 1.2 : 1)
@@ -264,7 +265,7 @@ struct DetailView: View {
         @State private var isHovering = false
 
         var body: some View {
-            Image(systemName: "backward.fill")
+            Image(systemSymbol: .backwardFill)
                 .font(.system(size: 18))
                 .padding(12)
                 .scaleEffect(isHovering ? 1.2 : 1)
@@ -284,7 +285,7 @@ struct DetailView: View {
         @State private var isHovering = false
 
         var body: some View {
-            Image(systemName: "forward.fill")
+            Image(systemSymbol: .forwardFill)
                 .font(.system(size: 18))
                 .padding(12)
                 .scaleEffect(isHovering ? 1.2 : 1)
@@ -307,7 +308,7 @@ struct DetailView: View {
 
         var body: some View {
             ZStack {
-                Image(systemName: "shuffle")
+                Image(systemSymbol: .shuffle)
                     .padding(10)
                     .scaleEffect(isHovering ? 1.2 : 1)
                     .animation(.interactiveSpring, value: isHovering)
@@ -337,7 +338,7 @@ struct DetailView: View {
         @State private var isFavorited = false
 
         var body: some View {
-            Image(systemName: "heart.fill")
+            Image(systemSymbol: .heartFill)
                 .scaleEffect(isHovering ? 1.2 : 1)
                 .animation(.interactiveSpring, value: isHovering)
                 .foregroundColor(isFavorited ? .red : Color(.secondarySystemFill))
@@ -381,7 +382,7 @@ struct DetailView: View {
 
         var body: some View {
             ZStack {
-                Image(systemName: "repeat")
+                Image(systemSymbol: .repeat)
                     .padding(10)
                     .scaleEffect(isHovering ? 1.2 : 1)
                     .animation(.interactiveSpring, value: isHovering)

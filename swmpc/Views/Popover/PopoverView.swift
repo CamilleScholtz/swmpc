@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SFSafeSymbols
 
 struct PopoverView: View {
     @Environment(MPD.self) private var mpd
@@ -165,7 +166,7 @@ struct PopoverView: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 250)
             } else {
-                Image(systemName: "photo")
+                Image(systemSymbol: .photo)
                     .font(.system(size: 25))
                     .blendMode(.overlay)
                     .frame(width: 250, height: 250)
@@ -268,7 +269,7 @@ struct PopoverView: View {
         @State private var isHovering = false
 
         var body: some View {
-            Image(systemName: (mpd.status.isPlaying ? "pause" : "play") + ".circle.fill")
+            Image(systemSymbol: mpd.status.isPlaying ? .pauseCircleFill : .pauseCircleFill)
                 .font(.system(size: 35))
                 .blendMode(.overlay)
                 .scaleEffect(isHovering ? 1.2 : 1)
@@ -288,7 +289,7 @@ struct PopoverView: View {
         @State private var isHovering = false
 
         var body: some View {
-            Image(systemName: "backward.fill")
+            Image(systemSymbol: .backwardFill)
                 .blendMode(.overlay)
                 .padding(10)
                 .scaleEffect(isHovering ? 1.2 : 1)
@@ -308,7 +309,7 @@ struct PopoverView: View {
         @State private var isHovering = false
 
         var body: some View {
-            Image(systemName: "forward.fill")
+            Image(systemSymbol: .forwardFill)
                 .blendMode(.overlay)
                 .padding(10)
                 .scaleEffect(isHovering ? 1.2 : 1)
@@ -331,7 +332,7 @@ struct PopoverView: View {
 
         var body: some View {
             ZStack {
-                Image(systemName: "shuffle")
+                Image(systemSymbol: .shuffle)
                     .foregroundColor(Color(.textColor))
                     .padding(10)
                     .scaleEffect(isHovering ? 1.2 : 1)
@@ -363,7 +364,7 @@ struct PopoverView: View {
 
         var body: some View {
             ZStack {
-                Image(systemName: "repeat")
+                Image(systemSymbol: .repeat)
                     .foregroundColor(Color(.textColor))
                     .padding(10)
                     .scaleEffect(isHovering ? 1.2 : 1)

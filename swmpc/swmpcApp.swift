@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SFSafeSymbols
 
 @main
 struct swmpcApp: App {
@@ -161,26 +162,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         switch changed {
         case "play":
-            popoverAnchor.button!.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "play")
+            popoverAnchor.button!.image = NSImage(systemSymbol: .playFill, accessibilityDescription: "play")
         case "pause":
-            popoverAnchor.button!.image = NSImage(systemSymbolName: "pause.fill", accessibilityDescription: "pause")
+            popoverAnchor.button!.image = NSImage(systemSymbol: .pauseFill, accessibilityDescription: "pause")
         case "stop":
-            popoverAnchor.button!.image = NSImage(systemSymbolName: "stop.fill", accessibilityDescription: "stop")
+            popoverAnchor.button!.image = NSImage(systemSymbol: .stopFill, accessibilityDescription: "stop")
         case "random":
-            popoverAnchor.button!.image = NSImage(systemSymbolName: "shuffle", accessibilityDescription: "random")
+            popoverAnchor.button!.image = NSImage(systemSymbol: .shuffle, accessibilityDescription: "random")
         case "sequential":
-            popoverAnchor.button!.image = NSImage(systemSymbolName: "arrow.up.arrow.down", accessibilityDescription: "sequential")
+            popoverAnchor.button!.image = NSImage(systemSymbol: .arrowUpArrowDown, accessibilityDescription: "sequential")
         case "repeat":
-            popoverAnchor.button!.image = NSImage(systemSymbolName: "repeat", accessibilityDescription: "repeat")
+            popoverAnchor.button!.image = NSImage(systemSymbol: .repeat, accessibilityDescription: "repeat")
         case "singe":
-            popoverAnchor.button!.image = NSImage(systemSymbolName: "return", accessibilityDescription: "singe")
+            popoverAnchor.button!.image = NSImage(systemSymbol: .return, accessibilityDescription: "singe")
         default:
-            return popoverAnchor.button!.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "mmpsp")
+            return popoverAnchor.button!.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
         }
 
         changeImageWorkItem?.cancel()
         changeImageWorkItem = DispatchWorkItem {
-            self.popoverAnchor.button!.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "mmpsp")
+            self.popoverAnchor.button!.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
         }
 
         if let workItem = changeImageWorkItem {

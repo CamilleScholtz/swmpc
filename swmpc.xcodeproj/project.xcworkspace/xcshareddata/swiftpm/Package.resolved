@@ -1,5 +1,5 @@
 {
-  "originHash" : "6e42f2755d11b672d4dfcd7cf68d03e67a473a4fa6028c293f355b286cce8f41",
+  "originHash" : "f51112e2beb231850aec4b1a5a27529f940cc8f658af874c512a336c0a107b62",
   "pins" : [
     {
       "identity" : "launchatlogin-modern",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc",
         "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "sfsafesymbols",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SFSafeSymbols/SFSafeSymbols",
+      "state" : {
+        "revision" : "e2e28f4e56e1769c2ec3c61c9355fc64eb7a535a",
+        "version" : "5.3.0"
       }
     },
     {

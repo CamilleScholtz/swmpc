@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SFSafeSymbols
 
 struct ContentView: View {
     @Environment(MPD.self) private var mpd
@@ -88,7 +89,7 @@ struct ContentView: View {
     }
 
     private func backButton() -> some View {
-        Image(systemName: "chevron.backward")
+        Image(systemSymbol: .chevronBackward)
             .frame(width: 22, height: 22)
             .background(
                 RoundedRectangle(cornerRadius: 4)
@@ -262,7 +263,7 @@ struct ContentView: View {
                                                 )
 
                                             HStack(spacing: 5) {
-                                                Image(systemName: "play.fill")
+                                                Image(systemSymbol: .playFill)
                                                 Text("Playing")
                                             }
 
@@ -289,7 +290,7 @@ struct ContentView: View {
                                         .fill(.ultraThinMaterial)
                                         .frame(width: 60, height: 60)
 
-                                    Image(systemName: "play.fill")
+                                    Image(systemSymbol: .playFill)
                                         .font(.title)
                                         .foregroundColor(.white)
                                 }
@@ -434,7 +435,7 @@ struct ContentView: View {
 
                     Spacer()
 
-                    Image(systemName: "magnifyingglass")
+                    Image(systemSymbol: .magnifyingglass)
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
@@ -464,7 +465,7 @@ struct ContentView: View {
                             isFocused = false
                         }
 
-                    Image(systemName: "xmark.circle")
+                    Image(systemSymbol: .xmarkCircle)
                         .frame(width: 22, height: 22)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
@@ -584,7 +585,7 @@ struct ContentView: View {
                                 .fill(.ultraThinMaterial)
                                 .frame(width: 40, height: 40)
 
-                            Image(systemName: "play.fill")
+                            Image(systemSymbol: .playFill)
                                 .font(.title3)
                                 .foregroundColor(.white)
                         }
@@ -689,7 +690,7 @@ struct ContentView: View {
                         if mpd.status.song == song {
                             WaveView()
                         } else {
-                            Image(systemName: "play.fill")
+                            Image(systemSymbol: .playFill)
                                 .font(.title3)
                                 .foregroundColor(.accentColor)
                         }
