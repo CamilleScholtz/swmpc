@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 10/11/2024.
 //
 
+import SFSafeSymbols
 import SwiftUI
 
 enum PlayerState {
@@ -34,5 +35,5 @@ struct Category: Identifiable, Hashable {
     let type: MediaType
     let playlist: Playlist?
     let label: String
-    let image: String
+    let image: SFSymbol
 }

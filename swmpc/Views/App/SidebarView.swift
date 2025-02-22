@@ -31,24 +31,24 @@ struct SidebarView: View {
 
             ForEach(categories) { category in
                 NavigationLink(value: category) {
-                    Label(category.label, systemImage: category.image)
+                    Label(category.label, systemSymbol: category.image)
                 }
             }
 
             Section("Playlists") {
-                NavigationLink(value: Category(type: .playlist, playlist: Playlist(id: 0, position: 0, name: "Favorites"), label: "Favorites", image: "heart")) {
-                    Label("Favorites", systemImage: "heart")
+                NavigationLink(value: Category(type: .playlist, playlist: Playlist(id: 0, position: 0, name: "Favorites"), label: "Favorites", image: .heart)) {
+                    Label("Favorites", systemSymbol: .heart)
                 }
 
                 ForEach(mpd.queue.playlists ?? []) { playlist in
-                    let category = Category(type: .playlist, playlist: playlist, label: playlist.name, image: "music.note.list")
+                    let category = Category(type: .playlist, playlist: playlist, label: playlist.name, image: .musicNoteList)
 
                     NavigationLink(value: category) {
-                        Label(category.label, systemImage: category.image)
+                        Label(category.label, systemSymbol: category.image)
                     }
                     .contextMenu {
                         Button("Delete Playlist") {
-                            Task {
+                            Task(priority: .userInitiated) {
                                 playlistToDelete = playlist
                             }
                         }
@@ -59,7 +59,7 @@ struct SidebarView: View {
                     TextField("Untitled Playlist", text: $playlistName)
                         .focused($isFocused)
                         .onSubmit {
-                            Task {
+                            Task(priority: .userInitiated) {
                                 try? await ConnectionManager.command().createPlaylist(named: playlistName)
 
                                 isEditingPlaylist = false
@@ -69,7 +69,7 @@ struct SidebarView: View {
                         }
                 }
 
-                Label("New Playlist", systemImage: "plus")
+                Label("New Playlist", systemSymbol: .plus)
                     .onTapGesture(perform: {
                         isEditingPlaylist = true
                         isFocused = true
@@ -81,7 +81,7 @@ struct SidebarView: View {
                         return
                     }
 
-                    Task {
+                    Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().removePlaylist(playlist)
                         playlistToDelete = nil
                     }
@@ -99,6 +99,7 @@ struct SidebarView: View {
         }
         .navigationSplitViewColumnWidth(180)
         .toolbar(removing: .sidebarToggle)
+        // TODO: On startup this runs twice...
         .task(id: selected) {
             try? await mpd.queue.set(for: selected.type)
 
@@ -119,6 +120,10 @@ struct SidebarView: View {
             mpd.status.media = try? await mpd.queue.get(for: selected.type, using: song)
         }
         .task(id: mpd.status.song) {
+            guard !Task.isCancelled else {
+                return
+            }
+
             guard let song = mpd.status.song else {
                 return
             }

@@ -5,8 +5,8 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
-import SwiftUI
 import SFSafeSymbols
+import SwiftUI
 
 struct PopoverView: View {
     @Environment(MPD.self) private var mpd

@@ -8,9 +8,9 @@
 import SwiftUI
 
 let categories: [Category] = [
-    .init(type: MediaType.album, playlist: nil, label: "Albums", image: "square.stack"),
-    .init(type: MediaType.artist, playlist: nil, label: "Artists", image: "music.microphone"),
-    .init(type: MediaType.song, playlist: nil, label: "Songs", image: "music.note"),
+    .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
+    .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMic),
+    .init(type: MediaType.song, playlist: nil, label: "Songs", image: .musicNote),
 ]
 
 struct AppView: View {
