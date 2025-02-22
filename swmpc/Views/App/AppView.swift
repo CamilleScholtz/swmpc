@@ -7,27 +7,39 @@
 
 import SwiftUI
 
-let categories: [Category] = [
-    .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
-    .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMic),
-    .init(type: MediaType.song, playlist: nil, label: "Songs", image: .musicNote),
-]
-
 struct AppView: View {
     @Environment(MPD.self) private var mpd
 
-    @State private var selected = categories.first!
+    private let categories: [Category]
+
+    @State private var category: Category
     @State private var path = NavigationPath()
     @State private var queue: [any Mediable]?
     @State private var query = ""
 
     @State private var showError = false
 
+    init() {
+        categories = [
+            .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
+            .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMic),
+            .init(type: MediaType.song, playlist: nil, label: "Songs", image: .musicNote),
+        ]
+
+        category = categories.first!
+    }
+
     var body: some View {
         Group {
             if mpd.status.state == nil {
                 NavigationSplitView {
-                    SidebarView(selected: $selected, queue: $queue, query: $query)
+                    List {
+                        Text("swmpc")
+                            .font(.system(size: 18))
+                            .fontWeight(.semibold)
+                            .fontDesign(.rounded)
+                            .padding(.bottom, 15)
+                    }
                 } detail: {
                     ProgressView()
                         .offset(y: -20)
@@ -46,13 +58,18 @@ struct AppView: View {
                 }
                 .task(priority: .medium) {
                     try? await Task.sleep(for: .seconds(2))
+
+                    guard !Task.isCancelled else {
+                        return
+                    }
+
                     showError = true
                 }
             } else {
                 NavigationSplitView {
-                    SidebarView(selected: $selected, queue: $queue, query: $query)
+                    SidebarView(category: $category, queue: $queue, query: $query)
                 } content: {
-                    ContentView(category: $selected, queue: $queue, query: $query, path: $path)
+                    ContentView(category: $category, queue: $queue, query: $query, path: $path)
                         .navigationBarBackButtonHidden()
                         .navigationSplitViewColumnWidth(310)
                 } detail: {
@@ -61,17 +78,15 @@ struct AppView: View {
                     }
                     .padding(60)
                 }
-                .onAppear {
-                    Task {
-                        if selected.type == .playlist {
-                            guard let playlist = selected.playlist else {
-                                return
-                            }
-
-                            queue = try? await ConnectionManager.command().getPlaylist(playlist)
-                        } else {
-                            queue = mpd.queue.media
+                .task {
+                    if category.type == .playlist {
+                        guard let playlist = category.playlist else {
+                            return
                         }
+
+                        queue = try? await ConnectionManager.command().getPlaylist(playlist)
+                    } else {
+                        queue = mpd.queue.media
                     }
                 }
             }

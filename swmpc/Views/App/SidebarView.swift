@@ -10,7 +10,7 @@ import SwiftUI
 struct SidebarView: View {
     @Environment(MPD.self) private var mpd
 
-    @Binding var selected: Category
+    @Binding var category: Category
     @Binding var queue: [any Mediable]?
     @Binding var query: String
 
@@ -22,12 +22,18 @@ struct SidebarView: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        List(selection: $selected) {
+        List(selection: $category) {
             Text("swmpc")
                 .font(.system(size: 18))
                 .fontWeight(.semibold)
                 .fontDesign(.rounded)
                 .padding(.bottom, 15)
+
+            let categories: [Category] = [
+                .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
+                .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMic),
+                .init(type: MediaType.song, playlist: nil, label: "Songs", image: .musicNote),
+            ]
 
             ForEach(categories) { category in
                 NavigationLink(value: category) {
@@ -99,12 +105,11 @@ struct SidebarView: View {
         }
         .navigationSplitViewColumnWidth(180)
         .toolbar(removing: .sidebarToggle)
-        // TODO: On startup this runs twice...
-        .task(id: selected) {
-            try? await mpd.queue.set(for: selected.type)
+        .task(id: category) {
+            try? await mpd.queue.set(for: category.type)
 
-            if selected.type == .playlist {
-                guard let playlist = selected.playlist else {
+            if category.type == .playlist {
+                guard let playlist = category.playlist else {
                     return
                 }
 
@@ -117,18 +122,14 @@ struct SidebarView: View {
                 return
             }
 
-            mpd.status.media = try? await mpd.queue.get(for: selected.type, using: song)
+            mpd.status.media = try? await mpd.queue.get(for: category.type, using: song)
         }
         .task(id: mpd.status.song) {
-            guard !Task.isCancelled else {
-                return
-            }
-
             guard let song = mpd.status.song else {
                 return
             }
 
-            mpd.status.media = try? await mpd.queue.get(for: selected.type, using: song)
+            mpd.status.media = try? await mpd.queue.get(for: category.type, using: song)
         }
         .onChange(of: query) { _, value in
             guard let type = mpd.queue.type else {
