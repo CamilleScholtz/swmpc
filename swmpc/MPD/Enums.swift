@@ -30,8 +30,8 @@ enum IdleEvent: String {
 }
 
 struct Category: Identifiable, Hashable {
-    var id = UUID()
-
+    var id: MediaType { type }
+    
     let type: MediaType
     let playlist: Playlist?
     let label: String

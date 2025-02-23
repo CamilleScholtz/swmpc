@@ -9,7 +9,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @Environment(MPD.self) private var mpd
-
+    
     @Binding var category: Category
     @Binding var queue: [any Mediable]?
     @Binding var query: String
@@ -20,7 +20,7 @@ struct SidebarView: View {
     @State private var playlistToDelete: Playlist?
 
     @FocusState private var isFocused: Bool
-
+    
     var body: some View {
         List(selection: $category) {
             Text("swmpc")
@@ -29,12 +29,6 @@ struct SidebarView: View {
                 .fontDesign(.rounded)
                 .padding(.bottom, 15)
 
-            let categories: [Category] = [
-                .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
-                .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMic),
-                .init(type: MediaType.song, playlist: nil, label: "Songs", image: .musicNote),
-            ]
-
             ForEach(categories) { category in
                 NavigationLink(value: category) {
                     Label(category.label, systemSymbol: category.image)
@@ -42,20 +36,20 @@ struct SidebarView: View {
             }
 
             Section("Playlists") {
-                NavigationLink(value: Category(type: .playlist, playlist: Playlist(id: 0, position: 0, name: "Favorites"), label: "Favorites", image: .heart)) {
-                    Label("Favorites", systemSymbol: .heart)
+                let category = Category(type: .playlist, playlist: Playlist(id: 0, position: 0, name: "Favorites"), label: "Favorites", image: .heart)
+                NavigationLink(value: category) {
+                    Label(category.label, systemSymbol: category.image)
                 }
 
                 ForEach(mpd.queue.playlists ?? []) { playlist in
                     let category = Category(type: .playlist, playlist: playlist, label: playlist.name, image: .musicNoteList)
-
                     NavigationLink(value: category) {
                         Label(category.label, systemSymbol: category.image)
                     }
                     .contextMenu {
                         Button("Delete Playlist") {
                             Task(priority: .userInitiated) {
-                                playlistToDelete = playlist
+                                playlistToDelete = category.playlist
                             }
                         }
                     }
@@ -103,7 +97,6 @@ struct SidebarView: View {
                 }
             }
         }
-        .navigationSplitViewColumnWidth(180)
         .toolbar(removing: .sidebarToggle)
         .task(id: category) {
             try? await mpd.queue.set(for: category.type)

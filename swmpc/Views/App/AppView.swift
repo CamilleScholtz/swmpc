@@ -7,27 +7,21 @@
 
 import SwiftUI
 
+let categories: [Category] = [
+    .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
+    .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMic),
+    .init(type: MediaType.song, playlist: nil, label: "Songs", image: .musicNote),
+]
+
 struct AppView: View {
     @Environment(MPD.self) private var mpd
 
-    private let categories: [Category]
-
-    @State private var category: Category
+    @State private var category = categories.first!
     @State private var path = NavigationPath()
     @State private var queue: [any Mediable]?
     @State private var query = ""
 
     @State private var showError = false
-
-    init() {
-        categories = [
-            .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
-            .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMic),
-            .init(type: MediaType.song, playlist: nil, label: "Songs", image: .musicNote),
-        ]
-
-        category = categories.first!
-    }
 
     var body: some View {
         Group {
@@ -40,6 +34,7 @@ struct AppView: View {
                             .fontDesign(.rounded)
                             .padding(.bottom, 15)
                     }
+                    .navigationSplitViewColumnWidth(180)
                 } detail: {
                     ProgressView()
                         .offset(y: -20)
@@ -68,6 +63,7 @@ struct AppView: View {
             } else {
                 NavigationSplitView {
                     SidebarView(category: $category, queue: $queue, query: $query)
+                        .navigationSplitViewColumnWidth(180)
                 } content: {
                     ContentView(category: $category, queue: $queue, query: $query, path: $path)
                         .navigationBarBackButtonHidden()

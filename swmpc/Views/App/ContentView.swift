@@ -45,15 +45,8 @@ struct ContentView: View {
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
-                .task(id: mpd.queue.type) {
-                    guard !Task.isCancelled else {
-                        return
-                    }
-
-                    scrollToCurrent(proxy, animate: false)
-                }
-                .onReceive(scrollToCurrentNotifcation) { _ in
-                    scrollToCurrent(proxy)
+                .onReceive(scrollToCurrentNotifcation) { notification in
+                    scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
                 }
                 .onReceive(startSearchingNotication) { _ in
                     scrollToTop(proxy)
@@ -127,11 +120,13 @@ struct ContentView: View {
                 isLoading = true
             }
             .task(id: mpd.queue.media.count) {
-                guard isLoading else {
+                guard isLoading, mpd.queue.media.count != 0 else {
                     return
                 }
 
-                try? await Task.sleep(for: .milliseconds(100))
+                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+
+                try? await Task.sleep(for: .milliseconds(200))
                 withAnimation(.interactiveSpring) {
                     isLoading = false
                 }

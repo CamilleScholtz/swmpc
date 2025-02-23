@@ -48,7 +48,7 @@ struct swmpcApp: App {
                 .keyboardShortcut("l", modifiers: [])
 
                 Button("Go to Current Song") {
-                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: nil)
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
                 }
                 .keyboardShortcut("c", modifiers: [])
 
