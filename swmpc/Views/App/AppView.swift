@@ -74,17 +74,6 @@ struct AppView: View {
                     }
                     .padding(60)
                 }
-                .task {
-                    if category.type == .playlist {
-                        guard let playlist = category.playlist else {
-                            return
-                        }
-
-                        queue = try? await ConnectionManager.command().getPlaylist(playlist)
-                    } else {
-                        queue = mpd.queue.media
-                    }
-                }
             }
         }
         .background(.background)

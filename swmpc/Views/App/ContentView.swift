@@ -54,7 +54,7 @@ struct ContentView: View {
                     isSearching = true
                 }
             }
-            .overlay(LoadingView(category: $category))
+            .overlay(LoadingView(category: $category, queue: $queue))
             .ignoresSafeArea()
             .navigationDestination(for: Artist.self) { artist in
                 ScrollView {
@@ -102,6 +102,7 @@ struct ContentView: View {
         @Environment(MPD.self) private var mpd
 
         @Binding var category: Category
+        @Binding var queue: [any Mediable]?
 
         @State private var isLoading = true
 
@@ -119,11 +120,12 @@ struct ContentView: View {
             .onChange(of: category) {
                 isLoading = true
             }
-            .task(id: mpd.queue.media.count) {
-                guard isLoading, mpd.queue.media.count != 0 else {
+            .task(id: queue?.count) {
+                guard isLoading else {
                     return
                 }
 
+                // TODO: Scroll doesn't work when selecting a different playlist.
                 NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
 
                 try? await Task.sleep(for: .milliseconds(200))
