@@ -98,8 +98,6 @@ struct SidebarView: View {
             router.category = category
         }
         .task(id: router.category) {
-            print(mpd.status.playlist)
-            
             if router.category.playlist == mpd.status.playlist {
                 print("standard")
                 try? await mpd.queue.set(using: router.category.type)
@@ -122,21 +120,7 @@ struct SidebarView: View {
                 return
             }
 
-            mpd.status.media = try? await mpd.queue.get(using: router.category.type, for: song)
-        }
-        .onChange(of: mpd.queue.query) { _, _ in
-//            guard let type = mpd.queue.type else {
-//                return
-//            }
-//
-//            guard !value.isEmpty else {
-//                queue = mpd.queue.media
-//                return
-//            }
-//
-//            Task(priority: .userInitiated) {
-//                queue = try? await mpd.queue.search(for: value, using: type)
-//            }
+            mpd.status.media = try? await mpd.queue.get(for: song, using: router.category.type)
         }
         .alert("Queue Playlist", isPresented: $showQueueAlert) {
             Button("Queue") {
@@ -152,7 +136,7 @@ struct SidebarView: View {
             Button("Cancel", role: .cancel) {
                 playlistToQueue = nil
                 showQueueAlert = false
-                
+
                 router.category = router.previousCategory
             }
         } message: {
@@ -170,7 +154,7 @@ struct SidebarView: View {
 
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().removePlaylist(playlist)
-                    
+
                     playlistToDelete = nil
                     showDeleteAlert = false
                 }

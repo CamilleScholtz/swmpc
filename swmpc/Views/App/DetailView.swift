@@ -135,15 +135,15 @@ struct DetailView: View {
                                 return
                             }
 
-//                            guard let media = try? await mpd.queue.get(for: .album, using: song) else {
-//                                return
-//                            }
-//
-//                            // TODO: Check if last in path is not the same as current media.
-//                            // TODO: Very hacky?
-//                            router.path.removeLast(router.path.count)
-//                            try? await Task.sleep(for: .milliseconds(1))
-//                            router.path.append(media)
+                            guard let media = try? await mpd.queue.get(for: song, using: .album) else {
+                                return
+                            }
+
+                            // TODO: Check if last in path is not the same as current media.
+                            // TODO: Very hacky?
+                            router.path.removeLast(router.path.count)
+                            try? await Task.sleep(for: .milliseconds(1))
+                            router.path.append(media)
                         }
                     })
             }

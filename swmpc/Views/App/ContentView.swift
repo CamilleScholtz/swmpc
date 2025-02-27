@@ -39,7 +39,7 @@ struct ContentView: View {
                             AlbumsView()
                         }
                     }
-                    .id(router.category.type)
+                    .id(router.category)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
@@ -333,7 +333,7 @@ struct ContentView: View {
                             .onTapGesture(perform: {
                                 Task(priority: .userInitiated) {
                                     // TODO: Set the type here first
-                                    guard let media = try? await mpd.queue.get(using: .artist, for: album) else {
+                                    guard let media = try? await mpd.queue.get(for: album, using: .artist) else {
                                         return
                                     }
 
@@ -401,6 +401,7 @@ struct ContentView: View {
         @Binding var isSearching: Bool
 
         @State private var isHovering = false
+        @State private var query = ""
 
         @FocusState private var isFocused: Bool
 
@@ -426,9 +427,7 @@ struct ContentView: View {
                             isSearching = true
                         })
                 } else {
-                    @Bindable var queue = mpd.queue
-                    
-                    TextField("Search", text: $queue.query)
+                    TextField("Search", text: $query)
                         .textFieldStyle(.plain)
                         .padding(8)
                         .background(Color(.secondarySystemFill))
@@ -436,11 +435,11 @@ struct ContentView: View {
                         .disableAutocorrection(true)
                         .focused($isFocused)
                         .onAppear {
-                            mpd.queue.query = ""
+                            query = ""
                             isFocused = true
                         }
                         .onDisappear {
-                            mpd.queue.query = ""
+                            query = ""
                             isFocused = false
                         }
 
@@ -462,9 +461,26 @@ struct ContentView: View {
             .frame(height: 50 - 7.5)
             .padding(.horizontal, 15)
             .padding(.top, 7.5)
-            .onChange(of: router.category.type) {
+            .onChange(of: router.category) {
                 isSearching = false
-                mpd.queue.query = ""
+            }
+            .task(id: isSearching) {
+                if !isSearching {
+                    query = ""
+                    mpd.queue.results = nil
+                }
+            }
+            .task(id: query) {
+                guard isSearching else {
+                    return
+                }
+
+                if query.isEmpty {
+                    mpd.queue.results = nil
+                    return
+                }
+
+                try? await mpd.queue.search(for: query)
             }
         }
     }

@@ -8,31 +8,39 @@
 import SwiftUI
 
 @Observable final class Queue {
-    var media: [any Mediable] = []
+    private var internalMedia: [any Mediable] = []
 
-    var type: MediaType?
-    var playlists: [Playlist]?
-    var favorites: [Song] = []
+    var media: [any Mediable] {
+        get {
+            results ?? internalMedia
+        }
+        set {
+            internalMedia = newValue
+        }
+    }
 
-    // TODO: Move this to the view.
-    var query: String = ""
-    
+    var results: [any Mediable]?
+
+    private(set) var type: MediaType?
+    private(set) var playlists: [Playlist]?
+    private(set) var favorites: [Song] = []
+
     @MainActor
     func set(using type: MediaType? = nil) async throws {
         let current = type ?? self.type
         guard current != self.type else {
             return
         }
-        
+
         defer { self.type = current }
-        
-        switch type {
+
+        media = switch type {
         case .artist:
-            media = try await ConnectionManager.command().getArtists()
+            try await ConnectionManager.command().getArtists()
         case .song, .playlist:
-            media = try await ConnectionManager.command().getSongs()
+            try await ConnectionManager.command().getSongs()
         default:
-            media = try await ConnectionManager.command().getAlbums()
+            try await ConnectionManager.command().getAlbums()
         }
     }
 
@@ -48,21 +56,22 @@ import SwiftUI
     }
 
     @MainActor
-    func search(for query: String, using type: MediaType) async throws -> [any Mediable] {
-        //try await set(using: type, for: playlist)
+    func search(for query: String, using type: MediaType? = nil) async throws {
+        let current = type ?? self.type
+        try await set(using: current)
 
-        switch type {
+        results = switch current {
         case .artist:
-            return (media as! [Artist]).filter {
+            (internalMedia as! [Artist]).filter {
                 $0.name.range(of: query, options: .caseInsensitive) != nil
             }
         case .song:
-            return (media as! [Song]).filter {
+            (internalMedia as! [Song]).filter {
                 $0.artist.range(of: query, options: .caseInsensitive) != nil ||
                     $0.title.range(of: query, options: .caseInsensitive) != nil
             }
         default:
-            return (media as! [Album]).filter {
+            (internalMedia as! [Album]).filter {
                 $0.artist.range(of: query, options: .caseInsensitive) != nil ||
                     $0.title.range(of: query, options: .caseInsensitive) != nil
             }
@@ -70,14 +79,26 @@ import SwiftUI
     }
 
     @MainActor
-    func get(using: MediaType, for media: any Mediable) async throws -> (any Mediable)? {
-        guard type != .song else {
+    func get(for media: any Mediable, using type: MediaType? = nil) async throws -> (any Mediable)? {
+        let current = type ?? self.type
+        guard current != .song else {
             return media
         }
 
-        try await set(using: type)
+        var queue: [any Mediable] = if current == self.type {
+            internalMedia
+        } else {
+            switch type {
+            case .artist:
+                try await ConnectionManager.command().getArtists()
+            case .song, .playlist:
+                try await ConnectionManager.command().getSongs()
+            default:
+                try await ConnectionManager.command().getAlbums()
+            }
+        }
 
-        if let index = self.media.firstIndex(where: { $0.id > media.id }), index > 0 {
+        if let index = queue.firstIndex(where: { $0.id > media.id }), index > 0 {
             return self.media[index - 1]
         }
 
