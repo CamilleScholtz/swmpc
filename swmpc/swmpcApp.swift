@@ -12,10 +12,13 @@ import SwiftUI
 struct swmpcApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    let router = Router()
+    
     var body: some Scene {
         WindowGroup {
             AppView()
                 .environment(appDelegate.mpd)
+                .environment(router)
         }
         .windowStyle(.hiddenTitleBar)
         .commands {

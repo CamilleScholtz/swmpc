@@ -10,11 +10,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(MPD.self) private var mpd
-
-    @Binding var category: Category
-    @Binding var queue: [any Mediable]?
-    @Binding var query: String
-    @Binding var path: NavigationPath
+    @Environment(Router.self) private var router
 
     @State private var isSearching = false
     @State private var isHovering = false
@@ -25,23 +21,25 @@ struct ContentView: View {
         .publisher(for: .startSearchingNotication)
 
     var body: some View {
-        NavigationStack(path: $path) {
+        @Bindable var boundRouter = router
+
+        NavigationStack(path: $boundRouter.path) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    HeaderView(category: $category, isSearching: $isSearching, query: $query)
+                    HeaderView(isSearching: $isSearching)
                         .id("top")
 
                     LazyVStack(alignment: .leading, spacing: 15) {
-                        switch mpd.queue.type {
+                        switch router.category.type {
                         case .artist:
-                            ArtistsView(queue: $queue, path: $path)
+                            ArtistsView()
                         case .song, .playlist:
-                            SongsView(category: $category, queue: $queue)
+                            SongsView()
                         default:
-                            AlbumsView(queue: $queue, path: $path)
+                            AlbumsView()
                         }
                     }
-                    .id(mpd.queue.type)
+                    .id(router.category.type)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
@@ -54,13 +52,13 @@ struct ContentView: View {
                     isSearching = true
                 }
             }
-            .overlay(LoadingView(category: $category, queue: $queue))
+            .overlay(LoadingView())
             .ignoresSafeArea()
             .navigationDestination(for: Artist.self) { artist in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 15) {
                         backButton()
-                        ArtistAlbumsView(for: artist, path: $path)
+                        ArtistAlbumsView(for: artist)
                     }
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
@@ -71,7 +69,7 @@ struct ContentView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 15) {
                         backButton()
-                        AlbumSongsView(for: album, category: $category, path: $path)
+                        AlbumSongsView(for: album)
                     }
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
@@ -94,15 +92,13 @@ struct ContentView: View {
                 isHovering = value
             })
             .onTapGesture(perform: {
-                path.removeLast()
+                router.path.removeLast()
             })
     }
 
     struct LoadingView: View {
         @Environment(MPD.self) private var mpd
-
-        @Binding var category: Category
-        @Binding var queue: [any Mediable]?
+        @Environment(Router.self) private var router
 
         @State private var isLoading = true
 
@@ -117,10 +113,11 @@ struct ContentView: View {
                     ProgressView()
                 }
             }
-            .onChange(of: category) {
+            .onChange(of: router.category) {
                 isLoading = true
             }
-            .task(id: queue?.count) {
+            // TODO: media.count is not really failproof.
+            .task(id: mpd.queue.media.count) {
                 guard isLoading else {
                     return
                 }
@@ -139,16 +136,13 @@ struct ContentView: View {
     struct ArtistsView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var queue: [any Mediable]?
-        @Binding var path: NavigationPath
-
         private var artists: [Artist] {
-            queue as? [Artist] ?? []
+            mpd.queue.media as? [Artist] ?? []
         }
 
         var body: some View {
             ForEach(artists) { artist in
-                ArtistView(for: artist, path: $path)
+                ArtistView(for: artist)
             }
         }
     }
@@ -158,12 +152,9 @@ struct ContentView: View {
 
         private var artist: Artist
 
-        init(for artist: Artist, path: Binding<NavigationPath>) {
+        init(for artist: Artist) {
             self.artist = artist
-            _path = path
         }
-
-        @Binding var path: NavigationPath
 
         var body: some View {
             VStack(alignment: .leading, spacing: 15) {
@@ -183,7 +174,7 @@ struct ContentView: View {
                 .padding(.bottom, 15)
 
                 ForEach(artist.albums ?? []) { album in
-                    AlbumView(for: album, path: $path)
+                    AlbumView(for: album)
                 }
             }
         }
@@ -192,32 +183,25 @@ struct ContentView: View {
     struct AlbumsView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var queue: [any Mediable]?
-        @Binding var path: NavigationPath
-
         private var albums: [Album] {
-            queue as? [Album] ?? []
+            mpd.queue.media as? [Album] ?? []
         }
 
         var body: some View {
             ForEach(albums) { album in
-                AlbumView(for: album, path: $path)
+                AlbumView(for: album)
             }
         }
     }
 
     struct AlbumSongsView: View {
         @Environment(MPD.self) private var mpd
-        @Environment(\.colorScheme) var colorScheme
+        @Environment(Router.self) private var router
+        @Environment(\.colorScheme) private var colorScheme
 
-        init(for album: Album, category: Binding<Category>, path: Binding<NavigationPath>) {
+        init(for album: Album) {
             _album = State(initialValue: album)
-            _category = category
-            _path = path
         }
-
-        @Binding var category: Category
-        @Binding var path: NavigationPath
 
         @State private var album: Album
         @State private var artwork: NSImage?
@@ -313,7 +297,7 @@ struct ContentView: View {
                                 }
                             }
 
-                            if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
+                            if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
                                 Menu("Add Album to Playlist") {
                                     ForEach(playlists) { playlist in
                                         Button(playlist.name) {
@@ -324,7 +308,7 @@ struct ContentView: View {
                                     }
                                 }
 
-                                if let playlist = mpd.queue.playlist {
+                                if let playlist = mpd.status.playlist {
                                     Button("Remove Album from Playlist") {
                                         Task {
                                             try? await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
@@ -349,11 +333,11 @@ struct ContentView: View {
                             .onTapGesture(perform: {
                                 Task(priority: .userInitiated) {
                                     // TODO: Set the type here first
-                                    guard let media = try? await mpd.queue.get(for: .artist, using: album) else {
+                                    guard let media = try? await mpd.queue.get(using: .artist, for: album) else {
                                         return
                                     }
 
-                                    path.append(media)
+                                    router.path.append(media)
                                 }
                             })
 
@@ -380,14 +364,14 @@ struct ContentView: View {
                             }
 
                             ForEach(songs[disc] ?? []) { song in
-                                SongView(for: song, category: $category)
+                                SongView(for: song)
                             }
                         }
                     }
                 }
             }
             .task {
-                async let artworkDataTask = ArtworkManager.shared.get(using: album.url, shouldCache: true)
+                async let artworkDataTask = ArtworkManager.shared.get(for: album, shouldCache: true)
                 async let songsTask = ConnectionManager.command().getSongs(for: album)
 
                 artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
@@ -399,26 +383,22 @@ struct ContentView: View {
     struct SongsView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var category: Category
-        @Binding var queue: [any Mediable]?
-
         private var songs: [Song] {
-            queue as? [Song] ?? []
+            mpd.queue.media as? [Song] ?? []
         }
 
         var body: some View {
             ForEach(songs) { song in
-                SongView(for: song, category: $category)
+                SongView(for: song)
             }
         }
     }
 
     struct HeaderView: View {
         @Environment(MPD.self) private var mpd
+        @Environment(Router.self) private var router
 
-        @Binding var category: Category
         @Binding var isSearching: Bool
-        @Binding var query: String
 
         @State private var isHovering = false
 
@@ -427,7 +407,7 @@ struct ContentView: View {
         var body: some View {
             HStack {
                 if !isSearching {
-                    Text(category.label)
+                    Text(router.category.label)
                         .font(.headline)
 
                     Spacer()
@@ -446,7 +426,9 @@ struct ContentView: View {
                             isSearching = true
                         })
                 } else {
-                    TextField("Search", text: $query)
+                    @Bindable var queue = mpd.queue
+                    
+                    TextField("Search", text: $queue.query)
                         .textFieldStyle(.plain)
                         .padding(8)
                         .background(Color(.secondarySystemFill))
@@ -454,11 +436,11 @@ struct ContentView: View {
                         .disableAutocorrection(true)
                         .focused($isFocused)
                         .onAppear {
-                            query = ""
+                            mpd.queue.query = ""
                             isFocused = true
                         }
                         .onDisappear {
-                            query = ""
+                            mpd.queue.query = ""
                             isFocused = false
                         }
 
@@ -480,24 +462,22 @@ struct ContentView: View {
             .frame(height: 50 - 7.5)
             .padding(.horizontal, 15)
             .padding(.top, 7.5)
-            .onChange(of: mpd.queue.type) {
+            .onChange(of: router.category.type) {
                 isSearching = false
-                query = ""
+                mpd.queue.query = ""
             }
         }
     }
 
     struct ArtistView: View {
         @Environment(MPD.self) private var mpd
+        @Environment(Router.self) private var router
 
         private let artist: Artist
 
-        init(for artist: Artist, path: Binding<NavigationPath>) {
+        init(for artist: Artist) {
             self.artist = artist
-            _path = path
         }
-
-        @Binding var path: NavigationPath
 
         var body: some View {
             HStack(spacing: 15) {
@@ -542,22 +522,20 @@ struct ContentView: View {
             .id(artist)
             .contentShape(Rectangle())
             .onTapGesture(perform: {
-                path.append(artist)
+                router.path.append(artist)
             })
         }
     }
 
     struct AlbumView: View {
         @Environment(MPD.self) private var mpd
+        @Environment(Router.self) private var router
 
         private let album: Album
 
-        init(for album: Album, path: Binding<NavigationPath>) {
+        init(for album: Album) {
             self.album = album
-            _path = path
         }
-
-        @Binding var path: NavigationPath
 
         @State private var artwork: NSImage?
         @State private var isHovering = false
@@ -596,9 +574,7 @@ struct ContentView: View {
                 })
                 .onTapGesture {
                     Task(priority: .userInitiated) {
-                        if mpd.status.media?.id != album.id {
-                            try? await ConnectionManager.command().play(album)
-                        }
+                        try? await ConnectionManager.command().play(album)
                     }
                 }
 
@@ -628,7 +604,7 @@ struct ContentView: View {
                     return
                 }
 
-                guard let data = try? await ArtworkManager.shared.get(using: album.url) else {
+                guard let data = try? await ArtworkManager.shared.get(for: album) else {
                     return
                 }
 
@@ -636,7 +612,7 @@ struct ContentView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture(perform: {
-                path.append(album)
+                router.path.append(album)
             })
             .contextMenu {
                 Button("Add Album to Favorites") {
@@ -645,7 +621,7 @@ struct ContentView: View {
                     }
                 }
 
-                if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
+                if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
                     Menu("Add Album to Playlist") {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
@@ -662,14 +638,12 @@ struct ContentView: View {
 
     struct SongView: View {
         @Environment(MPD.self) private var mpd
-
-        @Binding var category: Category
+        @Environment(Router.self) private var router
 
         private let song: Song
 
-        init(for song: Song, category: Binding<Category>) {
+        init(for song: Song) {
             self.song = song
-            _category = category
         }
 
         @State private var isHovering = false
@@ -716,10 +690,6 @@ struct ContentView: View {
             })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
-                    if category.playlist != mpd.queue.playlist {
-                        try? await ConnectionManager.command().loadPlaylist(category.playlist)
-                    }
-
                     try? await ConnectionManager.command().play(song)
                 }
             })
@@ -730,7 +700,7 @@ struct ContentView: View {
                     }
                 }
 
-                if let playlists = (mpd.queue.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.queue.playlist }) : mpd.queue.playlists {
+                if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
                     Menu("Add Song to Playlist") {
                         ForEach(playlists) { playlist in
                             Button(playlist.name) {
@@ -741,7 +711,7 @@ struct ContentView: View {
                         }
                     }
 
-                    if let playlist = mpd.queue.playlist {
+                    if let playlist = mpd.status.playlist {
                         Button("Remove Song from Playlist") {
                             Task {
                                 try? await ConnectionManager.command().removeFromPlaylist(playlist, songs: [song])

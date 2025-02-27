@@ -91,15 +91,14 @@
         }
       }
     },
-    "Are you sure you want to delete '%@'?" : {
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weet je zeker dat je '%@' wilt verwijderen?"
-          }
-        }
-      }
+    "Are you sure you want to delete playlist ’%@’?" : {
+
+    },
+    "Are you sure you want to queue playlist ’%@’?" : {
+
+    },
+    "Are you sure you want to queue the library?" : {
+
     },
     "Cancel" : {
       "localizations" : {
@@ -160,16 +159,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disc %@"
-          }
-        }
-      }
-    },
-    "Favorites" : {
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Favorieten"
           }
         }
       }
@@ -277,6 +266,9 @@
         }
       }
     },
+    "Premium Features" : {
+
+    },
     "Previous Song" : {
       "localizations" : {
         "nl" : {
@@ -286,6 +278,12 @@
           }
         }
       }
+    },
+    "Queue" : {
+
+    },
+    "Queue Playlist" : {
+
     },
     "Remove Album from Playlist" : {
       "localizations" : {
@@ -316,6 +314,12 @@
           }
         }
       }
+    },
+    "Select a setting from the sidebar" : {
+
+    },
+    "Settings" : {
+
     },
     "Show Song in Status Bar" : {
       "localizations" : {
@@ -386,6 +390,12 @@
           }
         }
       }
+    },
+    "Upgrade Now" : {
+
+    },
+    "Upgrade to premium to unlock additional features such as advanced customization options, priority support, and more." : {
+
     }
   },
   "version" : "1.0"

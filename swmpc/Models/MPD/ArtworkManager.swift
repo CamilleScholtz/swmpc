@@ -16,15 +16,15 @@ actor ArtworkManager {
         cache.countLimit = 64
     }
 
-    func get(using url: URL, shouldCache: Bool = true) async throws -> Data {
-        if shouldCache, let data = cache.object(forKey: url as NSURL) {
+    func get(for media: any Playable, shouldCache: Bool = true) async throws -> Data {
+        if shouldCache, let data = cache.object(forKey: media.url as NSURL) {
             return data as Data
         }
 
-        let data = try await ConnectionManager.artwork().getArtworkData(for: url)
+        let data = try await ConnectionManager.artwork().getArtworkData(for: media.url)
 
         if shouldCache {
-            cache.setObject(data as NSData, forKey: url as NSURL)
+            cache.setObject(data as NSData, forKey: media.url as NSURL)
         }
 
         return data

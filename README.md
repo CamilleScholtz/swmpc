@@ -14,10 +14,11 @@ Written using SwiftUI, `swmpc` is a MPD client that looks, and *feels* native to
 - [x] Control playback from the menu bar
 - [x] A beautiful albumart popover for the menubar
 
+
 ## Requirements
 
 - macOS 15.0 or later
-- An MPD server
+- An MPD server (Supporting protocol version 0.24.0 or later)
 
 
 ## Installation

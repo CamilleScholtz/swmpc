@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-protocol Mediable: Identifiable, Hashable, Sendable {
+protocol Mediable: Identifiable, Equatable, Hashable, Sendable {
     var id: UInt32 { get }
     var position: UInt32 { get }
 }
 
-protocol Artworkable {
+protocol Playable: Mediable {
     var url: URL { get }
 }
 
@@ -26,7 +26,7 @@ struct Artist: Mediable {
     var albums: [Album]?
 }
 
-struct Album: Mediable, Artworkable {
+struct Album: Playable {
     let id: UInt32
     let position: UInt32
     let url: URL
@@ -36,7 +36,7 @@ struct Album: Mediable, Artworkable {
     let date: String
 }
 
-struct Song: Mediable, Artworkable {
+struct Song: Playable {
     let id: UInt32
     let position: UInt32
     let url: URL
@@ -53,9 +53,8 @@ struct Song: Mediable, Artworkable {
     }
 }
 
-struct Playlist: Mediable {
-    let id: UInt32
-    let position: UInt32
+struct Playlist: Identifiable, Equatable, Hashable, Sendable {
+    var id: String { name }
 
     let name: String
 }

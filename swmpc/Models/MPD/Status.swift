@@ -19,8 +19,8 @@ import SwiftUI
     var elapsed: Double?
 
     var song: Song?
-    // TODO: I currently set this in AppView, I'd rather want to do it here,
-    // but I don't have access to either `$category` nor `mpd.queue`...
+    // TODO: I currently set this in SidebarView, I'd rather want to do it here,
+    // but I don't have access to either `$category`.
     var media: (any Mediable)?
     var playlist: Playlist?
 
@@ -77,6 +77,8 @@ import SwiftUI
         if song.update(to: data.song) {
             AppDelegate.shared.setStatusItemTitle()
         }
+
+        _ = playlist.update(to: data.playlist)
     }
 
     @MainActor

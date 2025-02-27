@@ -8,54 +8,29 @@
 import SwiftUI
 
 @Observable final class Queue {
-    private(set) var media: [any Mediable] = []
+    var media: [any Mediable] = []
 
-    private(set) var type: MediaType?
-    private(set) var playlist: Playlist?
+    var type: MediaType?
+    var playlists: [Playlist]?
+    var favorites: [Song] = []
 
-    private(set) var playlists: [Playlist]?
-    private(set) var favorites: [Song] = []
-
+    // TODO: Move this to the view.
+    var query: String = ""
+    
     @MainActor
-    func set(for type: MediaType? = nil, using playlist: Playlist? = nil) async throws {
-        var type = type
-        if type == nil {
-            type = self.type
-        } else if type == .playlist {
-            type = .song
-        }
-
-        guard self.type != type || self.playlist != playlist else {
+    func set(using type: MediaType? = nil) async throws {
+        let current = type ?? self.type
+        guard current != self.type else {
             return
         }
-
-        if self.playlist != playlist {
-            try await ConnectionManager.command().loadPlaylist(playlist)
-        }
-
-        defer {
-            self.type = type
-            self.playlist = playlist
-        }
-
+        
+        defer { self.type = current }
+        
         switch type {
         case .artist:
-            let albums = try await ConnectionManager.command().getAlbums()
-            let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
-
-            media = albumsByArtist.map { artist, albums in
-                Artist(
-                    id: albums.first!.id,
-                    position: albums.first!.position,
-                    name: artist,
-                    albums: albums
-                )
-            }
-            .sorted { $0.position < $1.position }
-        case .song:
+            media = try await ConnectionManager.command().getArtists()
+        case .song, .playlist:
             media = try await ConnectionManager.command().getSongs()
-        case .playlist:
-            media = try await ConnectionManager.command().getSongs(for: playlist)
         default:
             media = try await ConnectionManager.command().getAlbums()
         }
@@ -69,12 +44,12 @@ import SwiftUI
         guard let favoritePlaylist = allPlaylists.first(where: { $0.name == "Favorites" }) else {
             return
         }
-        favorites = try await ConnectionManager.idle.getPlaylist(favoritePlaylist)
+        favorites = try await ConnectionManager.idle.getSongs(for: favoritePlaylist)
     }
 
     @MainActor
     func search(for query: String, using type: MediaType) async throws -> [any Mediable] {
-        try await set(for: type)
+        //try await set(using: type, for: playlist)
 
         switch type {
         case .artist:
@@ -95,12 +70,12 @@ import SwiftUI
     }
 
     @MainActor
-    func get(for type: MediaType, using media: any Mediable) async throws -> (any Mediable)? {
+    func get(using: MediaType, for media: any Mediable) async throws -> (any Mediable)? {
         guard type != .song else {
             return media
         }
 
-        try await set(for: type, using: playlist)
+        try await set(using: type)
 
         if let index = self.media.firstIndex(where: { $0.id > media.id }), index > 0 {
             return self.media[index - 1]

@@ -10,7 +10,7 @@ import SwiftUI
 
 struct PopoverView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var height = Double(250)
 
@@ -141,7 +141,7 @@ struct PopoverView: View {
             return
         }
 
-        guard let data = try? await ArtworkManager.shared.get(using: song.url, shouldCache: false) else {
+        guard let data = try? await ArtworkManager.shared.get(for: song, shouldCache: false) else {
             return
         }
         artwork = NSImage(data: data)
@@ -177,7 +177,7 @@ struct PopoverView: View {
 
     struct FooterView: View {
         @Environment(MPD.self) private var mpd
-        @Environment(\.colorScheme) var colorScheme
+        @Environment(\.colorScheme) private var colorScheme
 
         var body: some View {
             VStack(spacing: 8) {

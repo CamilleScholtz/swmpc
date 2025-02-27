@@ -10,9 +10,8 @@ import SwiftUI
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.colorScheme) var colorScheme
-
-    @Binding var path: NavigationPath
+    @Environment(Router.self) private var router
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var artwork: NSImage?
     @State private var previousArtwork: NSImage?
@@ -136,15 +135,15 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let media = try? await mpd.queue.get(for: .album, using: song) else {
-                                return
-                            }
-
-                            // TODO: Check if last in path is not the same as current media.
-                            // TODO: Very hacky?
-                            path.removeLast(path.count)
-                            try? await Task.sleep(for: .milliseconds(1))
-                            path.append(media)
+//                            guard let media = try? await mpd.queue.get(for: .album, using: song) else {
+//                                return
+//                            }
+//
+//                            // TODO: Check if last in path is not the same as current media.
+//                            // TODO: Very hacky?
+//                            router.path.removeLast(router.path.count)
+//                            try? await Task.sleep(for: .milliseconds(1))
+//                            router.path.append(media)
                         }
                     })
             }
@@ -163,7 +162,7 @@ struct DetailView: View {
                 return
             }
 
-            guard let data = try? await ArtworkManager.shared.get(using: song.url, shouldCache: false) else {
+            guard let data = try? await ArtworkManager.shared.get(for: song, shouldCache: false) else {
                 return
             }
             artwork = NSImage(data: data)
