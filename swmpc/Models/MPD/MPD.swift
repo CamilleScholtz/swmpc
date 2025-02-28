@@ -44,8 +44,9 @@ import SwiftUI
     private func updateLoop() async {
         await connect()
 
-        try? await performUpdates(for: .playlists)
-        try? await performUpdates(for: .player)
+        try? await queue.set(using: .album, idle: true)
+        try? await status.set()
+        try? await queue.setPlaylists()
 
         while !Task.isCancelled {
             await connect()
@@ -68,17 +69,13 @@ import SwiftUI
     private func performUpdates(for change: IdleEvent) async throws {
         switch change {
         case .playlists:
-            print("playlist")
             try await queue.setPlaylists()
         case .database, .queue:
-            print("queue")
             try await queue.set()
             try await status.set()
         case .player:
-            print("player")
             try await status.set()
         case .options:
-            print("options")
             try await status.set()
         }
     }

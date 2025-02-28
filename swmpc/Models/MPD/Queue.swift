@@ -25,8 +25,12 @@ import SwiftUI
     private(set) var playlists: [Playlist]?
     private(set) var favorites: [Song] = []
 
+    private(set) var lastUpdated: Date?
+
     @MainActor
-    func set(using type: MediaType? = nil) async throws {
+    func set(using type: MediaType? = nil, idle: Bool = false) async throws {
+        defer { lastUpdated = Date() }
+        
         let current = type ?? self.type
         guard current != self.type else {
             return
@@ -36,11 +40,11 @@ import SwiftUI
 
         media = switch type {
         case .artist:
-            try await ConnectionManager.command().getArtists()
+            try await idle ? ConnectionManager.idle.getArtists() : ConnectionManager.command().getArtists()
         case .song, .playlist:
-            try await ConnectionManager.command().getSongs()
+            try await idle ? ConnectionManager.idle.getSongs() : ConnectionManager.command().getSongs()
         default:
-            try await ConnectionManager.command().getAlbums()
+            try await idle ? ConnectionManager.idle.getAlbums() : ConnectionManager.command().getAlbums()
         }
     }
 
@@ -85,7 +89,7 @@ import SwiftUI
             return media
         }
 
-        var queue: [any Mediable] = if current == self.type {
+        let queue: [any Mediable] = if current == self.type {
             internalMedia
         } else {
             switch type {
@@ -99,7 +103,7 @@ import SwiftUI
         }
 
         if let index = queue.firstIndex(where: { $0.id > media.id }), index > 0 {
-            return self.media[index - 1]
+            return queue[index - 1]
         }
 
         return nil

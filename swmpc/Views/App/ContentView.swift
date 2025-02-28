@@ -116,8 +116,7 @@ struct ContentView: View {
             .onChange(of: router.category) {
                 isLoading = true
             }
-            // TODO: media.count is not really failproof.
-            .task(id: mpd.queue.media.count) {
+            .task(id: mpd.queue.lastUpdated) {
                 guard isLoading else {
                     return
                 }

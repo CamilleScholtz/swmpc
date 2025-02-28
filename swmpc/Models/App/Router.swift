@@ -21,7 +21,7 @@ struct Category: Identifiable, Hashable {
 class Router {
     let categories: [Category] = [
         .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
-        .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMic),
+        .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMicrophone),
         .init(type: MediaType.song, playlist: nil, label: "Songs", image: .musicNote),
     ]
 

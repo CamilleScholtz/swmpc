@@ -530,11 +530,14 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// This function is a convenience wrapper around `readUntil`, using a
     /// condition that checks if a line begin with `OK`. It returns all lines
-    /// read up to and including the "OK" line. If the condition is never met or
+    /// read up to and including the `OK` line. If the condition is never met or
     /// an error occurs during reading, the function will throw an error.
     ///
     /// - Returns: An array of strings containing the lines read, including the
     ///            final line that starts with `OK`.
+    /// - Throws: `ConnectionManagerError.readUntilConditionNotMet` if the
+    ///           condition is never met, or any error encountered by
+    ///           `readLine()`.
     private func readUntilOK() async throws -> [String] {
         try await readUntil { $0.hasPrefix("OK") }
     }

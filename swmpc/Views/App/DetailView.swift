@@ -13,7 +13,7 @@ struct DetailView: View {
     @Environment(Router.self) private var router
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var artwork: NSImage?
+    @State private var artwork: NSImage? 
     @State private var previousArtwork: NSImage?
 
     @State private var isBackgroundArtworkTransitioning = false
@@ -368,7 +368,6 @@ struct DetailView: View {
                         return
                     }
 
-                    // TODO: On launch, favorites is not yet set.
                     isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
                 }
         }

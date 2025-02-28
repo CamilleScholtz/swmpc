@@ -99,21 +99,17 @@ struct SidebarView: View {
         }
         .task(id: router.category) {
             if router.category.playlist == mpd.status.playlist {
-                print("standard")
                 try? await mpd.queue.set(using: router.category.type)
             } else {
-                print("alert")
-
                 playlistToQueue = router.category.playlist
                 showQueueAlert = true
             }
 
-//            guard let song = mpd.status.song else {
-//                return
-//            }
-
-            // TODO: Is this one even needed?
-            // mpd.status.media = try? await mpd.queue.get(for: category.type, using: song)
+            guard let song = mpd.status.song else {
+                return
+            }
+            
+            mpd.status.media = try? await mpd.queue.get(for: song, using: router.category.type)
         }
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
