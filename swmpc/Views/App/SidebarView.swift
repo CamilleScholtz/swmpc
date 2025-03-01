@@ -108,7 +108,7 @@ struct SidebarView: View {
             guard let song = mpd.status.song else {
                 return
             }
-            
+
             mpd.status.media = try? await mpd.queue.get(for: song, using: router.category.type)
         }
         .task(id: mpd.status.song) {

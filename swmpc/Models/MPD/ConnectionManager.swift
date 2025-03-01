@@ -26,7 +26,7 @@ enum IdleMode: ConnectionMode {
 /// Represents the connection configuration for artwork retrieval.
 enum ArtworkMode: ConnectionMode {
     static let enableKeepalive = false
-    static let bufferSize = 16384
+    static let bufferSize = 8192
     static let queueAttributes: DispatchQueue.Attributes = .concurrent
     static let qos: DispatchQoS = .utility
 }
@@ -377,6 +377,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Returns: A `Data` object containing exactly `length` bytes.
     /// - Throws: An error if receiving additional data fails.
     private func readFixedLengthData(_ length: Int) async throws -> Data {
+        guard length >= 0 else {
+            throw ConnectionManagerError.malformedResponse
+        }
+
         var data = Data()
         data.reserveCapacity(length)
 
@@ -977,7 +981,7 @@ extension ConnectionManager where Mode == ArtworkMode {
         var offset = 0
         var totalSize: Int?
 
-        while true {
+        loop: while true {
             try await writeLine("readpicture \(escape(url.path)) \(offset)")
 
             var chunkSize: Int?
@@ -985,10 +989,6 @@ extension ConnectionManager where Mode == ArtworkMode {
             while chunkSize == nil {
                 guard let line = try await readLine() else {
                     continue
-                }
-
-                if line.hasPrefix("OK") {
-                    break
                 }
 
                 let (key, value) = try parseLine(line)
@@ -1009,13 +1009,20 @@ extension ConnectionManager where Mode == ArtworkMode {
 
             let binaryChunk = try await readFixedLengthData(chunkSize)
             data.append(binaryChunk)
-            buffer.removeAll()
 
-            offset += chunkSize
+            while let line = try await readLine() {
+                if line.hasPrefix("OK") {
+                    offset += chunkSize
 
-            if offset >= (totalSize ?? 0) {
-                return data
+                    if offset >= (totalSize ?? 0) {
+                        return data
+                    } else {
+                        continue loop
+                    }
+                }
             }
+
+            throw ConnectionManagerError.malformedResponse
         }
     }
 }

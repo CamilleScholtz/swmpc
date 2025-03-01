@@ -30,7 +30,7 @@ import SwiftUI
     @MainActor
     func set(using type: MediaType? = nil, idle: Bool = false) async throws {
         defer { lastUpdated = Date() }
-        
+
         let current = type ?? self.type
         guard current != self.type else {
             return

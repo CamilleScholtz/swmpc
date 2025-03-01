@@ -121,7 +121,6 @@ struct ContentView: View {
                     return
                 }
 
-                // TODO: Scroll doesn't work when selecting a different playlist.
                 NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
 
                 try? await Task.sleep(for: .milliseconds(200))
