@@ -97,8 +97,9 @@ struct AppearanceView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Show Status Bar", isOn: $showStatusBar)
+                Toggle("Show in Status Bar", isOn: $showStatusBar)
                 Toggle("Show Song in Status Bar", isOn: $showStatusbarSong)
+                    .disabled(!showStatusBar)
             }
         }
         .navigationTitle("Appearance")
@@ -106,14 +107,14 @@ struct AppearanceView: View {
 }
 
 struct AdvancedView: View {
-    @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.embedded
+    @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
     var body: some View {
         Form {
             Section {
-                Picker("Artwork method", selection: $artworkGetter) {
-                    Text("Embedded").tag(ArtworkGetter.embedded)
+                Picker("Artwork method:", selection: $artworkGetter) {
                     Text("Library").tag(ArtworkGetter.library)
+                    Text("Embedded").tag(ArtworkGetter.embedded)
                 }
                 .pickerStyle(.inline)
             }

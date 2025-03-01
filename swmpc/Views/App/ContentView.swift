@@ -121,8 +121,6 @@ struct ContentView: View {
                     return
                 }
 
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
-
                 try? await Task.sleep(for: .milliseconds(200))
                 withAnimation(.interactiveSpring) {
                     isLoading = false

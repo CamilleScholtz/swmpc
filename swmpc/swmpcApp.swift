@@ -89,10 +89,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var changeImageWorkItem: DispatchWorkItem?
 
+    @AppStorage(Setting.showStatusBar) var showStatusBar = true
+    @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
+
     func applicationDidFinishLaunching(_: Notification) {
         AppDelegate.shared = self
 
-        if UserDefaults.standard.bool(forKey: "showStatusBar") {
+        if showStatusBar {
             configureStatusItem()
             configurePopover()
         }
@@ -141,7 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popoverAnchor.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
         popoverAnchor.button!.action = #selector(handleButtonAction)
 
-        if UserDefaults.standard.bool(forKey: "showStatusbarSong") {
+        if showStatusBar {
             statusItem.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
             statusItem.button!.action = #selector(handleButtonAction)
         }
@@ -159,7 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func setPopoverAnchorImage(changed: String? = nil) {
-        guard UserDefaults.standard.bool(forKey: "showStatusBar") else {
+        guard showStatusBar else {
             return
         }
 
@@ -193,7 +196,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func setStatusItemTitle() {
-        guard UserDefaults.standard.bool(forKey: "showStatusBar"), UserDefaults.standard.bool(forKey: "showStatusbarSong") else {
+        guard showStatusBar, showStatusbarSong else {
             return
         }
 

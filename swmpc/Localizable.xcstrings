@@ -103,7 +103,7 @@
     "Are you sure you want to queue the library?" : {
 
     },
-    "Artwork method" : {
+    "Artwork method:" : {
 
     },
     "Cancel" : {
@@ -333,6 +333,9 @@
         }
       }
     },
+    "Show in Status Bar" : {
+
+    },
     "Show Song in Status Bar" : {
       "localizations" : {
         "nl" : {
@@ -344,6 +347,7 @@
       }
     },
     "Show Status Bar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {

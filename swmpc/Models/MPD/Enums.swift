@@ -29,6 +29,6 @@ enum IdleEvent: String {
 }
 
 enum ArtworkGetter: String {
-    case embedded = "readpicture"
     case library = "albumart"
+    case embedded = "readpicture"
 }
