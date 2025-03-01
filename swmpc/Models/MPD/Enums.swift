@@ -27,3 +27,8 @@ enum IdleEvent: String {
     case options
     case player
 }
+
+enum ArtworkGetter: String {
+    case embedded = "readpicture"
+    case library = "albumart"
+}

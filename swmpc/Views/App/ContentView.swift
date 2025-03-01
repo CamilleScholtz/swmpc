@@ -142,6 +142,14 @@ struct ContentView: View {
             ForEach(artists) { artist in
                 ArtistView(for: artist)
             }
+            .task {
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                mpd.status.media = try? await mpd.queue.get(for: song, using: .artist)
+                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+            }
         }
     }
 
@@ -175,6 +183,14 @@ struct ContentView: View {
                     AlbumView(for: album)
                 }
             }
+            .task {
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
+                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+            }
         }
     }
 
@@ -188,6 +204,14 @@ struct ContentView: View {
         var body: some View {
             ForEach(albums) { album in
                 AlbumView(for: album)
+            }
+            .task {
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
+                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
     }
@@ -388,6 +412,14 @@ struct ContentView: View {
         var body: some View {
             ForEach(songs) { song in
                 SongView(for: song)
+            }
+            .task {
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                mpd.status.media = try? await mpd.queue.get(for: song, using: .song)
+                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
     }

@@ -6,81 +6,62 @@
 //
 
 import LaunchAtLogin
+import SFSafeSymbols
 import SwiftUI
 
 enum Setting {
     static let host = "host"
     static let port = "port"
+
     static let showStatusBar = "showStatusBar"
     static let showStatusbarSong = "showStatusbarSong"
+
+    static let artworkGetter = "artworkGetter"
 }
 
 struct SettingsView: View {
-    // Define the sections in the sidebar.
-    enum SettingSection: String, CaseIterable, Identifiable {
+    enum SettingCategory: String, CaseIterable, Identifiable {
         case general = "General"
         case appearance = "Appearance"
-        case premium = "Premium Features"
+        case advanced = "Advanced"
 
         var id: Self { self }
         var title: String { rawValue }
 
-        // Provide system images that fit the context.
-        var systemImage: String {
+        var image: SFSymbol {
             switch self {
-            case .general: "gearshape"
-            case .appearance: "paintpalette"
-            case .premium: "star.circle"
+            case .general: .gearshape
+            case .appearance: .paintpalette
+            case .advanced: .gearshape2
+            }
+        }
+
+        var view: AnyView {
+            switch self {
+            case .general:
+                AnyView(GeneralView())
+            case .appearance:
+                AnyView(AppearanceView())
+            case .advanced:
+                AnyView(AdvancedView())
             }
         }
     }
 
-    @State private var selection: SettingSection? = .general
+    @State private var selection: SettingCategory? = .general
 
     var body: some View {
-        NavigationView {
-            // Sidebar list with NavigationLinks
-            List(selection: $selection) {
-                ForEach(SettingSection.allCases) { section in
-                    NavigationLink(value: section) {
-                        Label(section.title, systemImage: section.systemImage)
+        TabView(selection: $selection) {
+            ForEach(SettingCategory.allCases) { category in
+                category.view
+                    .tabItem {
+                        Label(category.title, systemSymbol: category.image)
                     }
-                }
-            }
-            .listStyle(SidebarListStyle())
-            .frame(minWidth: 200)
-
-            // Default detail view when nothing is selected.
-            Text("Select a setting from the sidebar")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        // Navigation split (new in macOS 13) is another option, but NavigationView works well too.
-        .navigationTitle("Settings")
-        .frame(width: 700, height: 500)
-        // For macOS Monterey and earlier, use a NavigationLink-based sidebar:
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Button(action: toggleSidebar, label: {
-                    Image(systemName: "sidebar.leading")
-                })
+                    .tag(category)
+                    .padding(40)
             }
         }
-        .navigationDestination(for: SettingSection.self) { section in
-            switch section {
-            case .general:
-                GeneralView()
-            case .appearance:
-                AppearanceView()
-            case .premium:
-                PremiumView()
-            }
-        }
-    }
-
-    // Helper to toggle the sidebar (works on macOS)
-    private func toggleSidebar() {
-        NSApp.keyWindow?.firstResponder?
-            .tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
+        .frame(width: 500)
     }
 }
 
@@ -90,18 +71,21 @@ struct GeneralView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Startup")) {
-                LaunchAtLogin.Toggle()
-                    .padding(.vertical, 4)
+            Section {
+                TextField("MPD Host:", text: $host)
+                TextField("MPD Port:", value: $port, formatter: NumberFormatter())
             }
-            Section(header: Text("Connection")) {
-                TextField("Host", text: $host)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                TextField("Port", value: $port, formatter: NumberFormatter())
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            .padding(.leading, 20)
+            .padding(.trailing, 20)
+
+            Divider()
+                .padding(.top, 20)
+                .padding(.bottom, 20)
+
+            Section {
+                LaunchAtLogin.Toggle()
             }
         }
-        .padding()
         .navigationTitle("General")
     }
 }
@@ -112,46 +96,28 @@ struct AppearanceView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Status Bar")) {
+            Section {
                 Toggle("Show Status Bar", isOn: $showStatusBar)
                 Toggle("Show Song in Status Bar", isOn: $showStatusbarSong)
             }
         }
-        .padding()
         .navigationTitle("Appearance")
     }
 }
 
-struct PremiumView: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Premium Features")
-                .font(.title)
-                .bold()
-            Text("Upgrade to premium to unlock additional features such as advanced customization options, priority support, and more.")
-                .foregroundColor(.secondary)
-            Button("Upgrade Now") {
-                // Insert your upgrade action (e.g. open a URL)
-                if let url = URL(string: "https://www.example.com/upgrade") {
-                    NSWorkspace.shared.open(url)
-                }
-            }
-            .buttonStyle(PrimaryButtonStyle())
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .navigationTitle("Premium Features")
-    }
-}
+struct AdvancedView: View {
+    @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.embedded
 
-struct PrimaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            .background(Color.accentColor)
-            .foregroundColor(.white)
-            .cornerRadius(8)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    var body: some View {
+        Form {
+            Section {
+                Picker("Artwork method", selection: $artworkGetter) {
+                    Text("Embedded").tag(ArtworkGetter.embedded)
+                    Text("Library").tag(ArtworkGetter.library)
+                }
+                .pickerStyle(.inline)
+            }
+        }
+        .navigationTitle("Advanced")
     }
 }

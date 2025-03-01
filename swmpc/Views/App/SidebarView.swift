@@ -104,12 +104,6 @@ struct SidebarView: View {
                 playlistToQueue = router.category.playlist
                 showQueueAlert = true
             }
-
-            guard let song = mpd.status.song else {
-                return
-            }
-
-            mpd.status.media = try? await mpd.queue.get(for: song, using: router.category.type)
         }
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {

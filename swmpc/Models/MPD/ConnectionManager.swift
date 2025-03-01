@@ -51,24 +51,9 @@ enum ConnectionManagerError: Error {
     case malformedResponse
 }
 
-// TODO: Possibly make this not a singleton, for dynamic config updates.
-struct ConnectionManagerConfig {
-    static let shared = ConnectionManagerConfig()
-
-    let host: String
-    let port: UInt16
-
-    private init() {
-        let defaults = UserDefaults.standard
-
-        host = defaults.string(forKey: "host") ?? "localhost"
-        port = UInt16(defaults.integer(forKey: "port"))
-    }
-}
-
 actor ConnectionManager<Mode: ConnectionMode> {
-    private let host = ConnectionManagerConfig.shared.host
-    private let port = ConnectionManagerConfig.shared.port
+    @AppStorage(Setting.host) var host = "localhost"
+    @AppStorage(Setting.port) var port = 6600
 
     private var connection: NWConnection?
     private var buffer = Data()
@@ -111,7 +96,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         options.noDelay = true
         options.enableKeepalive = Mode.enableKeepalive
 
-        guard let port = NWEndpoint.Port(rawValue: port) else {
+        guard let port = NWEndpoint.Port(rawValue: UInt16(port)) else {
             throw ConnectionManagerError.invalidPort
         }
 
@@ -977,12 +962,14 @@ extension ConnectionManager where Mode == ArtworkMode {
     /// - Throws: An error if the server response is malformed, if the read
     ///           operation fails, or if other connection related errors occur.
     func getArtworkData(for url: URL) async throws -> Data {
+        @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.embedded
+
         var data = Data()
         var offset = 0
         var totalSize: Int?
 
         loop: while true {
-            try await writeLine("readpicture \(escape(url.path)) \(offset)")
+            try await writeLine("\(artworkGetter.rawValue) \(escape(url.path)) \(offset)")
 
             var chunkSize: Int?
 

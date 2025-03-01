@@ -81,6 +81,9 @@
         }
       }
     },
+    "Advanced" : {
+
+    },
     "Appearance" : {
       "localizations" : {
         "nl" : {
@@ -100,6 +103,9 @@
     "Are you sure you want to queue the library?" : {
 
     },
+    "Artwork method" : {
+
+    },
     "Cancel" : {
       "localizations" : {
         "nl" : {
@@ -111,6 +117,7 @@
       }
     },
     "Connection" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -163,6 +170,9 @@
         }
       }
     },
+    "Embedded" : {
+
+    },
     "General" : {
       "localizations" : {
         "nl" : {
@@ -184,6 +194,7 @@
       }
     },
     "Host" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -192,6 +203,15 @@
           }
         }
       }
+    },
+    "Library" : {
+
+    },
+    "MPD Host:" : {
+
+    },
+    "MPD Port:" : {
+
     },
     "New Playlist" : {
       "localizations" : {
@@ -257,6 +277,7 @@
 
     },
     "Port" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -265,9 +286,6 @@
           }
         }
       }
-    },
-    "Premium Features" : {
-
     },
     "Previous Song" : {
       "localizations" : {
@@ -315,12 +333,6 @@
         }
       }
     },
-    "Select a setting from the sidebar" : {
-
-    },
-    "Settings" : {
-
-    },
     "Show Song in Status Bar" : {
       "localizations" : {
         "nl" : {
@@ -342,6 +354,7 @@
       }
     },
     "Startup" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -352,6 +365,7 @@
       }
     },
     "Status Bar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -390,12 +404,6 @@
           }
         }
       }
-    },
-    "Upgrade Now" : {
-
-    },
-    "Upgrade to premium to unlock additional features such as advanced customization options, priority support, and more." : {
-
     }
   },
   "version" : "1.0"
