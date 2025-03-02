@@ -132,6 +132,8 @@ struct ContentView: View {
     struct ArtistsView: View {
         @Environment(MPD.self) private var mpd
 
+        @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
+
         private var artists: [Artist] {
             mpd.queue.media as? [Artist] ?? []
         }
@@ -140,13 +142,23 @@ struct ContentView: View {
             ForEach(artists) { artist in
                 ArtistView(for: artist)
             }
-            .task {
+            .onChange(of: mpd.status.media as? Artist) { previous, _ in
+                if scrollToCurrent {
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: previous != nil)
+                } else {
+                    guard previous == nil else {
+                        return
+                    }
+
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+                }
+            }
+            .task(id: mpd.status.song) {
                 guard let song = mpd.status.song else {
                     return
                 }
 
                 mpd.status.media = try? await mpd.queue.get(for: song, using: .artist)
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
     }
@@ -181,19 +193,23 @@ struct ContentView: View {
                     AlbumView(for: album)
                 }
             }
+            .onAppear {
+                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+            }
             .task {
                 guard let song = mpd.status.song else {
                     return
                 }
 
                 mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
     }
 
     struct AlbumsView: View {
         @Environment(MPD.self) private var mpd
+
+        @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
         private var albums: [Album] {
             mpd.queue.media as? [Album] ?? []
@@ -203,13 +219,23 @@ struct ContentView: View {
             ForEach(albums) { album in
                 AlbumView(for: album)
             }
-            .task {
+            .onChange(of: mpd.status.media as? Album) { previous, _ in
+                if scrollToCurrent {
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: previous != nil)
+                } else {
+                    guard previous == nil else {
+                        return
+                    }
+
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+                }
+            }
+            .task(id: mpd.status.song) {
                 guard let song = mpd.status.song else {
                     return
                 }
 
                 mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
     }
@@ -403,6 +429,8 @@ struct ContentView: View {
     struct SongsView: View {
         @Environment(MPD.self) private var mpd
 
+        @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
+
         private var songs: [Song] {
             mpd.queue.media as? [Song] ?? []
         }
@@ -411,13 +439,23 @@ struct ContentView: View {
             ForEach(songs) { song in
                 SongView(for: song)
             }
-            .task {
+            .onChange(of: mpd.status.media as? Song) { previous, _ in
+                if scrollToCurrent {
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: previous != nil)
+                } else {
+                    guard previous == nil else {
+                        return
+                    }
+
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+                }
+            }
+            .task(id: mpd.status.song) {
                 guard let song = mpd.status.song else {
                     return
                 }
 
                 mpd.status.media = try? await mpd.queue.get(for: song, using: .song)
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
     }

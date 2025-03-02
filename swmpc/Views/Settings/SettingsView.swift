@@ -15,6 +15,7 @@ enum Setting {
 
     static let showStatusBar = "showStatusBar"
     static let showStatusbarSong = "showStatusbarSong"
+    static let scrollToCurrent = "scrollToCurrent"
 
     static let artworkGetter = "artworkGetter"
 }
@@ -93,13 +94,24 @@ struct GeneralView: View {
 struct AppearanceView: View {
     @AppStorage(Setting.showStatusBar) var showStatusBar = true
     @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
+    @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
 
     var body: some View {
         Form {
             Section {
+                Toggle(isOn: $scrollToCurrent) {
+                    Text("Scroll to Current Song")
+                    Text("Scroll to the current song when the song changes.")
+                }
+            }
+
+            Section {
                 Toggle("Show in Status Bar", isOn: $showStatusBar)
-                Toggle("Show Song in Status Bar", isOn: $showStatusbarSong)
-                    .disabled(!showStatusBar)
+                Toggle(isOn: $showStatusbarSong) {
+                    Text("Show Song in Status Bar")
+                    Text("If this is disabled, only the swmpc icon will be shown.")
+                }
+                .disabled(!showStatusBar)
             }
         }
         .navigationTitle("Appearance")

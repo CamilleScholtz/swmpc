@@ -204,6 +204,9 @@
         }
       }
     },
+    "If this is disabled, only the swmpc icon will be shown." : {
+
+    },
     "Library" : {
 
     },
@@ -322,6 +325,12 @@
           }
         }
       }
+    },
+    "Scroll to Song" : {
+
+    },
+    "Scroll to the current song when the song changes." : {
+
     },
     "Search" : {
       "localizations" : {

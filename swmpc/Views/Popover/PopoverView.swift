@@ -31,19 +31,27 @@ struct PopoverView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ArtworkView(image: artwork)
-                // TODO:
-//                .overlay(
-//                    previousArtwork != nil ? AnyView(ArtworkView(image: previousArtwork)
-//                        .opacity(isBackgroundArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
-//                )
+                .overlay(
+                    Group {
+                        if let previousArtwork {
+                            ArtworkView(image: previousArtwork)
+                                .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
+                                .transition(.opacity)
+                        }
+                    }
+                )
                 .opacity(0.3)
 
             ArtworkView(image: artwork)
-                // TODO:
-//                .overlay(
-//                    previousArtwork?.image != nil ? AnyView(ArtworkView(image: previousArtwork!.image)
-//                        .opacity(isArtworkTransitioning ? 1 : 0)) : AnyView(EmptyView())
-//                )
+                .overlay(
+                    Group {
+                        if let previousArtwork {
+                            ArtworkView(image: previousArtwork)
+                                .opacity(isArtworkTransitioning ? 1 : 0)
+                                .transition(.opacity)
+                        }
+                    }
+                )
                 .overlay(
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
@@ -113,11 +121,11 @@ struct PopoverView: View {
             previousArtwork = previous
 
             isBackgroundArtworkTransitioning = true
-            withAnimation(.easeInOut(duration: 0.5)) {
+            withAnimation(.spring(duration: 0.5)) {
                 isBackgroundArtworkTransitioning = false
             }
             isArtworkTransitioning = true
-            withAnimation(.easeInOut(duration: 0.1)) {
+            withAnimation(.interactiveSpring) {
                 isArtworkTransitioning = false
             }
         }
