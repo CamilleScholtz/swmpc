@@ -13,11 +13,13 @@ enum Setting {
     static let host = "host"
     static let port = "port"
 
-    static let showStatusBar = "showStatusBar"
-    static let showStatusbarSong = "showStatusbarSong"
-    static let scrollToCurrent = "scrollToCurrent"
+    static let openAIToken = "openai_token"
 
-    static let artworkGetter = "artworkGetter"
+    static let showStatusBar = "show_status_bar"
+    static let showStatusbarSong = "show_statusbar_song"
+    static let scrollToCurrent = "scroll_to_current"
+
+    static let artworkGetter = "artwork_getter"
 }
 
 struct SettingsView: View {
@@ -69,6 +71,7 @@ struct SettingsView: View {
 struct GeneralView: View {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
+    @AppStorage(Setting.openAIToken) var openAIToken = ""
 
     var body: some View {
         Form {
@@ -76,15 +79,20 @@ struct GeneralView: View {
                 TextField("MPD Host:", text: $host)
                 TextField("MPD Port:", value: $port, formatter: NumberFormatter())
             }
-            .padding(.leading, 20)
-            .padding(.trailing, 20)
 
             Divider()
-                .padding(.top, 20)
-                .padding(.bottom, 20)
 
             Section {
                 LaunchAtLogin.Toggle()
+            }
+
+            Divider()
+
+            Section {
+                TextField("OpenAI Token:", text: $openAIToken)
+                    .textContentType(.password)
+                Text("This is required to use the OpenAI API.")
+                    .font(.caption2)
             }
         }
         .navigationTitle("General")

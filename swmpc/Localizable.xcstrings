@@ -140,6 +140,9 @@
     "Could not establish connection to MPD." : {
 
     },
+    "Create Smart Playlist" : {
+
+    },
     "Delete" : {
       "localizations" : {
         "nl" : {
@@ -210,6 +213,9 @@
     "Library" : {
 
     },
+    "Load Playlist" : {
+
+    },
     "MPD Host:" : {
 
     },
@@ -235,6 +241,9 @@
           }
         }
       }
+    },
+    "OpenAI Token:" : {
+
     },
     "Pause" : {
       "localizations" : {
@@ -326,7 +335,7 @@
         }
       }
     },
-    "Scroll to Song" : {
+    "Scroll to Current Song" : {
 
     },
     "Scroll to the current song when the song changes." : {
@@ -397,6 +406,9 @@
           }
         }
       }
+    },
+    "This is required to use the OpenAI API." : {
+
     },
     "Untitled Playlist" : {
       "localizations" : {

@@ -33,8 +33,10 @@ struct ContentView: View {
                         switch router.category.type {
                         case .artist:
                             ArtistsView()
-                        case .song, .playlist:
+                        case .song:
                             SongsView()
+                        case .playlist:
+                            PlaylistView()
                         default:
                             AlbumsView()
                         }
@@ -457,6 +459,63 @@ struct ContentView: View {
 
                 mpd.status.media = try? await mpd.queue.get(for: song, using: .song)
             }
+        }
+    }
+
+    struct PlaylistView: View {
+        @Environment(MPD.self) private var mpd
+
+        var body: some View {
+            if mpd.queue.media.isEmpty {
+                HStack(alignment: .center) {
+                    Spacer()
+                    IntelligenceLabel("Create Smart Playlist")
+                    Spacer()
+                }
+            } else {
+                SongsView()
+            }
+        }
+    }
+
+    struct IntelligenceLabel: View {
+        var title: String
+
+        init(_ title: String) {
+            self.title = title
+        }
+
+        @State private var offset: CGFloat = 0
+
+        private let colors: [Color] = [.blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple]
+
+        var body: some View {
+            Label(title, systemSymbol: .appleIntelligence)
+                .padding(10)
+                .background(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(
+                                LinearGradient(
+                                    colors: colors,
+                                    startPoint: UnitPoint(x: offset, y: 0),
+                                    endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0)
+                                )
+                            )
+                            .opacity(0.4)
+                            .onAppear {
+                                withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
+                                    offset = -CGFloat(colors.count - 1)
+                                }
+                            }
+
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.background)
+                            .opacity(0.9)
+                            .padding(1)
+                            .blur(radius: 5)
+                    }
+                )
         }
     }
 
