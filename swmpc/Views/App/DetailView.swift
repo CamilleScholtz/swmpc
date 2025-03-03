@@ -159,6 +159,7 @@ struct DetailView: View {
         .frame(minWidth: 520, minHeight: 520)
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
+                artwork = nil
                 return
             }
 

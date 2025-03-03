@@ -146,6 +146,7 @@ struct PopoverView: View {
 
     private func updateArtwork() async {
         guard let song = mpd.status.song else {
+            artwork = nil
             return
         }
 
