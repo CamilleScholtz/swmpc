@@ -58,6 +58,14 @@ struct SidebarView: View {
                 if isEditingPlaylist {
                     TextField("Untitled Playlist", text: $playlistName)
                         .focused($isFocused)
+                        .onChange(of: isFocused) { _, value in
+                            guard !value else {
+                                return
+                            }
+
+                            isEditingPlaylist = false
+                            playlistName = ""
+                        }
                         .onSubmit {
                             Task(priority: .userInitiated) {
                                 try? await ConnectionManager.command().createPlaylist(named: playlistName)
@@ -85,9 +93,7 @@ struct SidebarView: View {
             router.setPlaylists(playlists)
         }
         .task(id: mpd.status.playlist) {
-            // TODO: Figure this out.
             guard let playlist = mpd.status.playlist else {
-                // category = categories.first!
                 return
             }
 
@@ -109,7 +115,7 @@ struct SidebarView: View {
             Button("Queue") {
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().loadPlaylist(playlistToQueue)
-                    try? await mpd.queue.set(using: router.category.type)
+                    try? await mpd.queue.set(using: router.category.type, force: true)
 
                     playlistToQueue = nil
                     showQueueAlert = false
