@@ -17,7 +17,10 @@ struct SidebarView: View {
     @State private var showDeleteAlert = false
     @State private var playlistToDelete: Playlist?
 
-    @State private var isEditingPlaylist = false
+    @State private var isRenamingPlaylist = false
+    @State private var playlistToRename: Playlist?
+
+    @State private var isCreatingPlaylist = false
     @State private var playlistName = ""
 
     @FocusState private var isFocused: Bool
@@ -40,13 +43,48 @@ struct SidebarView: View {
 
             Section("Playlists") {
                 ForEach(router.playlists) { category in
-                    NavigationLink(value: category) {
-                        Label(category.label, systemSymbol: category.image)
-                    }
-                    .contextMenu {
-                        if category.label != "Favorites" {
-                            Button("Delete Playlist") {
+                    if isRenamingPlaylist, category.playlist == playlistToRename {
+                        TextField(playlistName, text: $playlistName)
+                            .focused($isFocused)
+                            .onChange(of: isFocused) { _, value in
+                                guard !value else {
+                                    return
+                                }
+
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    isRenamingPlaylist = false
+                                    playlistToRename = nil
+                                    playlistName = ""
+                                }
+                            }
+                            .onSubmit {
                                 Task(priority: .userInitiated) {
+                                    print(playlistName)
+                                    try await ConnectionManager.command().renamePlaylist(category.playlist!, to: playlistName)
+
+                                    isRenamingPlaylist = false
+                                    playlistToRename = nil
+                                    playlistName = ""
+                                }
+                            }
+                    } else {
+                        NavigationLink(value: category) {
+                            Label(category.label, systemSymbol: category.image)
+                        }
+                        .contextMenu {
+                            if category.label != "Favorites" {
+                                Button("Smart Playlist") {}
+
+                                Divider()
+
+                                Button("Rename Playlist") {
+                                    isRenamingPlaylist = true
+                                    playlistName = category.playlist!.name
+                                    playlistToRename = category.playlist!
+                                    isFocused = true
+                                }
+
+                                Button("Delete Playlist") {
                                     playlistToDelete = category.playlist
                                     showDeleteAlert = true
                                 }
@@ -55,7 +93,7 @@ struct SidebarView: View {
                     }
                 }
 
-                if isEditingPlaylist {
+                if isCreatingPlaylist {
                     TextField("Untitled Playlist", text: $playlistName)
                         .focused($isFocused)
                         .onChange(of: isFocused) { _, value in
@@ -63,23 +101,24 @@ struct SidebarView: View {
                                 return
                             }
 
-                            isEditingPlaylist = false
-                            playlistName = ""
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                isCreatingPlaylist = false
+                                playlistName = ""
+                            }
                         }
                         .onSubmit {
                             Task(priority: .userInitiated) {
                                 try? await ConnectionManager.command().createPlaylist(named: playlistName)
 
-                                isEditingPlaylist = false
+                                isCreatingPlaylist = false
                                 playlistName = ""
-                                isFocused = false
                             }
                         }
                 }
 
                 Label("New Playlist", systemSymbol: .plus)
                     .onTapGesture(perform: {
-                        isEditingPlaylist = true
+                        isCreatingPlaylist = true
                         isFocused = true
                     })
             }
@@ -101,6 +140,10 @@ struct SidebarView: View {
                 return
             }
 
+            guard router.category != category else {
+                return
+            }
+
             router.category = category
         }
         .task(id: router.category) {
@@ -112,6 +155,13 @@ struct SidebarView: View {
             }
         }
         .alert("Queue Playlist", isPresented: $showQueueAlert) {
+            Button("Cancel", role: .cancel) {
+                playlistToQueue = nil
+                showQueueAlert = false
+
+                router.category = router.previousCategory
+            }
+
             Button("Queue") {
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().loadPlaylist(playlistToQueue)
@@ -121,13 +171,6 @@ struct SidebarView: View {
                     showQueueAlert = false
                 }
             }
-
-            Button("Cancel", role: .cancel) {
-                playlistToQueue = nil
-                showQueueAlert = false
-
-                router.category = router.previousCategory
-            }
         } message: {
             if let playlist = playlistToQueue {
                 Text("Are you sure you want to queue playlist ’\(playlist.name)’?")
@@ -136,6 +179,11 @@ struct SidebarView: View {
             }
         }
         .alert("Delete Playlist", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) {
+                playlistToDelete = nil
+                showDeleteAlert = false
+            }
+
             Button("Delete", role: .destructive) {
                 guard let playlist = playlistToDelete else {
                     return
@@ -147,11 +195,6 @@ struct SidebarView: View {
                     playlistToDelete = nil
                     showDeleteAlert = false
                 }
-            }
-
-            Button("Cancel", role: .cancel) {
-                playlistToDelete = nil
-                showDeleteAlert = false
             }
         } message: {
             if let playlist = playlistToDelete {

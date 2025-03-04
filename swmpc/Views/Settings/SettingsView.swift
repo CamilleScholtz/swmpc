@@ -14,6 +14,7 @@ enum Setting {
     static let port = "port"
 
     static let openAIToken = "openai_token"
+    static let deepSeekToken = "deepseek_token"
 
     static let showStatusBar = "show_status_bar"
     static let showStatusbarSong = "show_statusbar_song"
@@ -71,7 +72,9 @@ struct SettingsView: View {
 struct GeneralView: View {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
+
     @AppStorage(Setting.openAIToken) var openAIToken = ""
+    @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
 
     var body: some View {
         Form {

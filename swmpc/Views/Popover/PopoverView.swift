@@ -151,8 +151,10 @@ struct PopoverView: View {
         }
 
         guard let data = try? await ArtworkManager.shared.get(for: song, shouldCache: false) else {
+            artwork = nil
             return
         }
+
         artwork = NSImage(data: data)
     }
 

@@ -1052,6 +1052,16 @@ extension ConnectionManager where Mode == CommandMode {
         _ = try await run(["save \(name)", "playlistclear \(name)"])
     }
 
+    /// Renames a playlist.
+    ///
+    /// - Parameters:
+    ///   - playlist: The `Playlist` object representing the playlist to rename.
+    ///   - name: The new name for the playlist.
+    /// - Throws: An error if the underlying command execution fails.
+    func renamePlaylist(_ playlist: Playlist, to name: String) async throws {
+        _ = try await run(["rename \(playlist.name) \(name)"])
+    }
+
     /// Removes a playlist from the media server.
     ///
     /// - Parameter playlist: The `Playlist` object representing the playlist to
@@ -1071,10 +1081,17 @@ extension ConnectionManager where Mode == CommandMode {
     ///               the songs should be added.
     ///   - songs: An array of `Song` objects to add to the playlist.
     /// - Throws: An error if the underlying command execution fails.
-    func addToPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        let existingSongs = try await getSongs(for: playlist)
-        let newSongs = songs.filter { song in
-            !existingSongs.contains { $0.url == song.url }
+    func addToPlaylist(_ playlist: Playlist, songs: [Song], force: Bool = false) async throws {
+        var newSongs: [Song]
+
+        if force {
+            newSongs = songs
+        } else {
+            let existingSongs = try await getSongs(for: playlist)
+
+            newSongs = songs.filter { song in
+                !existingSongs.contains { $0.url == song.url }
+            }
         }
 
         let commands = newSongs.map {

@@ -164,8 +164,10 @@ struct DetailView: View {
             }
 
             guard let data = try? await ArtworkManager.shared.get(for: song, shouldCache: false) else {
+                artwork = nil
                 return
             }
+
             artwork = NSImage(data: data)
         }
         .onChange(of: artwork) { previous, _ in

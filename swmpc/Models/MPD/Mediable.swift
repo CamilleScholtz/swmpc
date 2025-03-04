@@ -34,6 +34,10 @@ struct Album: Playable {
     let artist: String
     let title: String
     let date: String
+
+    var description: String {
+        "\(artist) - \(title)"
+    }
 }
 
 struct Song: Playable {

@@ -73,9 +73,9 @@ struct swmpcApp: App {
                 Button("Create Smart Playlist") {
                     NotificationCenter.default.post(name: .createSmartPlaylistNotification, object: nil)
                 }
-                
+
                 Divider()
-                
+
                 Menu("Load Playlist") {
                     ForEach(router.playlists) { playlist in
                         Button(playlist.label) {

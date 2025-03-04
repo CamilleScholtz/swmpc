@@ -15,43 +15,75 @@ struct ContentView: View {
     @State private var isSearching = false
     @State private var isHovering = false
 
+    @State private var showSmartPlaylistSheet = false
+    @State private var playlistToEdit: Playlist?
+    @State private var smartPlaylistPrompt = ""
+
     private let scrollToCurrentNotifcation = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
     private let startSearchingNotication = NotificationCenter.default
         .publisher(for: .startSearchingNotication)
+    private let createSmartPlaylistNotification = NotificationCenter.default
+        .publisher(for: .createSmartPlaylistNotification)
 
     var body: some View {
         @Bindable var boundRouter = router
 
         NavigationStack(path: $boundRouter.path) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    HeaderView(isSearching: $isSearching)
-                        .id("top")
-
-                    LazyVStack(alignment: .leading, spacing: 15) {
+            Group {
+                if mpd.queue.media.count == 0 {
+                    VStack {
                         switch router.category.type {
-                        case .artist:
-                            ArtistsView()
-                        case .song:
-                            SongsView()
                         case .playlist:
-                            PlaylistView()
+                            Text("No songs in playlist.")
+                                .font(.headline)
+
+                            Text("Add songs to your playlist.")
+                                .font(.subheadline)
+
+                            IntelligenceLabel("Create Smart Playlist")
+                                .offset(y: 20)
+                                .onTapGesture {
+                                    NotificationCenter.default.post(name: .createSmartPlaylistNotification, object: router.category.playlist)
+                                }
                         default:
-                            AlbumsView()
+                            Text("No \(router.category.label.lowercased()) in library.")
+                                .font(.headline)
+
+                            Text("Add songs to your library.")
+                                .font(.subheadline)
                         }
                     }
-                    .id(router.category)
-                    .padding(.horizontal, 15)
-                    .padding(.bottom, 15)
-                }
-                .onReceive(scrollToCurrentNotifcation) { notification in
-                    scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
-                }
-                .onReceive(startSearchingNotication) { _ in
-                    scrollToTop(proxy)
+                    .offset(y: -60)
+                } else {
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            HeaderView(isSearching: $isSearching)
+                                .id("top")
 
-                    isSearching = true
+                            LazyVStack(alignment: .leading, spacing: 15) {
+                                switch router.category.type {
+                                case .artist:
+                                    ArtistsView()
+                                case .song, .playlist:
+                                    SongsView()
+                                default:
+                                    AlbumsView()
+                                }
+                            }
+                            .id(router.category)
+                            .padding(.horizontal, 15)
+                            .padding(.bottom, 15)
+                        }
+                        .onReceive(scrollToCurrentNotifcation) { notification in
+                            scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
+                        }
+                        .onReceive(startSearchingNotication) { _ in
+                            scrollToTop(proxy)
+
+                            isSearching = true
+                        }
+                    }
                 }
             }
             .overlay(LoadingView())
@@ -77,6 +109,45 @@ struct ContentView: View {
                     .padding(.bottom, 15)
                 }
                 .ignoresSafeArea()
+            }
+            .onReceive(createSmartPlaylistNotification) { notification in
+                guard let playlist = notification.object as? Playlist else {
+                    return
+                }
+
+                playlistToEdit = playlist
+                showSmartPlaylistSheet = true
+            }
+            .sheet(isPresented: $showSmartPlaylistSheet) {
+                VStack(spacing: 30) {
+                    TextEditor(text: $smartPlaylistPrompt)
+                        .font(.system(size: 13))
+                        .padding(10)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(10)
+
+                    HStack {
+                        Button("Cancel", role: .cancel) {
+                            playlistToEdit = nil
+                            showSmartPlaylistSheet = false
+                        }
+                        .keyboardShortcut(.cancelAction)
+
+                        Button("Create") {
+                            Task(priority: .userInitiated) {
+                                print("as")
+
+                                do {
+                                    try await IntelligenceManager.shared.createSmartPlaylist(using: playlistToEdit!, prompt: smartPlaylistPrompt)
+                                } catch {
+                                    print(error)
+                                }
+                            }
+                        }
+                        .keyboardShortcut(.defaultAction)
+                    }
+                }
+                .padding(20)
             }
         }
     }
@@ -459,63 +530,6 @@ struct ContentView: View {
 
                 mpd.status.media = try? await mpd.queue.get(for: song, using: .song)
             }
-        }
-    }
-
-    struct PlaylistView: View {
-        @Environment(MPD.self) private var mpd
-
-        var body: some View {
-            if mpd.queue.media.isEmpty {
-                HStack(alignment: .center) {
-                    Spacer()
-                    IntelligenceLabel("Create Smart Playlist")
-                    Spacer()
-                }
-            } else {
-                SongsView()
-            }
-        }
-    }
-
-    struct IntelligenceLabel: View {
-        var title: String
-
-        init(_ title: String) {
-            self.title = title
-        }
-
-        @State private var offset: CGFloat = 0
-
-        private let colors: [Color] = [.blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple]
-
-        var body: some View {
-            Label(title, systemSymbol: .appleIntelligence)
-                .padding(10)
-                .background(
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(
-                                LinearGradient(
-                                    colors: colors,
-                                    startPoint: UnitPoint(x: offset, y: 0),
-                                    endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0)
-                                )
-                            )
-                            .opacity(0.4)
-                            .onAppear {
-                                withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
-                                    offset = -CGFloat(colors.count - 1)
-                                }
-                            }
-
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.background)
-                            .opacity(0.9)
-                            .padding(1)
-                            .blur(radius: 5)
-                    }
-                )
         }
     }
 
@@ -918,6 +932,64 @@ struct ContentView: View {
             RoundedRectangle(cornerRadius: 2)
                 .fill(.secondary)
                 .frame(width: 2, height: (isAnimating ? high : low) * 12)
+        }
+    }
+
+    struct IntelligenceLabel: View {
+        @Environment(\.colorScheme) private var colorScheme
+
+        var title: String
+
+        init(_ title: String) {
+            self.title = title
+        }
+
+        @State private var isHovering = false
+        @State private var offset: CGFloat = 0
+
+        private let colors: [Color] = [.blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple]
+
+        var body: some View {
+            HStack {
+                Image(systemSymbol: .sparkles)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: colors,
+                            startPoint: UnitPoint(x: offset, y: 0),
+                            endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0)
+                        )
+                    )
+
+                Text(title)
+            }
+            .padding(10)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.thinMaterial)
+
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(
+                            LinearGradient(
+                                colors: colors,
+                                startPoint: UnitPoint(x: offset, y: 0),
+                                endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0)
+                            )
+                        )
+                        .opacity(0.1)
+                        .blendMode(colorScheme == .dark ? .hardLight : .normal)
+                }
+            )
+            .scaleEffect(isHovering ? 1.05 : 1)
+            .animation(.interactiveSpring, value: isHovering)
+            .onHover(perform: { value in
+                isHovering = value
+            })
+            .onAppear {
+                withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
+                    offset = -CGFloat(colors.count - 1)
+                }
+            }
         }
     }
 

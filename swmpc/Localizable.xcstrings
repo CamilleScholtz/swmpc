@@ -81,6 +81,12 @@
         }
       }
     },
+    "Add songs to your library." : {
+
+    },
+    "Add songs to your playlist." : {
+
+    },
     "Advanced" : {
 
     },
@@ -138,6 +144,9 @@
       }
     },
     "Could not establish connection to MPD." : {
+
+    },
+    "Create" : {
 
     },
     "Create Smart Playlist" : {
@@ -242,6 +251,12 @@
         }
       }
     },
+    "No %@ in library." : {
+
+    },
+    "No songs in playlist." : {
+
+    },
     "OpenAI Token:" : {
 
     },
@@ -335,6 +350,9 @@
         }
       }
     },
+    "Rename Playlist" : {
+
+    },
     "Scroll to Current Song" : {
 
     },
@@ -374,6 +392,9 @@
           }
         }
       }
+    },
+    "Smart Playlist" : {
+
     },
     "Startup" : {
       "extractionState" : "stale",
