@@ -20,7 +20,7 @@ actor IntelligenceManager {
     private init() {}
 
     @MainActor
-    func createSmartPlaylist(using playlist: Playlist, prompt: String) async throws {
+    func createPlaylist(using playlist: Playlist, prompt: String) async throws {
         @AppStorage(Setting.openAIToken) var openAIToken = ""
         guard !openAIToken.isEmpty else {
             throw IntelligenceManagerError.missingToken
@@ -43,7 +43,7 @@ actor IntelligenceManager {
 
         let result = try await openAI.chats(query: ChatQuery(
             messages: [
-                .init(role: .system, content: "Create a playlist that fits a description we will supply later. The user will send you all available albums in the format 'artist - title'. Return the albums (in format 'artist - title', using the EXACT same naming as was supplied to you) that should be in the playlist the following description: \(prompt)")!,
+                .init(role: .system, content: "You are a music expert who knows every genre, artist, and album—from mainstream hits to obscure world music. You can sense any gathering’s mood and craft the perfect playlist. You’ve studied the history behind every style, genre, and artist. Your job is to create a playlist based on a description we’ll provide. The user will send you albums in the format “artist - title.” Return only those albums, in that exact “artist - title” format, which match the given description. The description is: \(prompt)")!,
                 .init(role: .user, content: albums.map(\.description).joined(separator: "\n"))!,
             ],
             model: .gpt4_o_mini,
@@ -66,5 +66,6 @@ actor IntelligenceManager {
         }
 
         try await ConnectionManager.command().addToPlaylist(playlist, songs: songs)
+        try await ConnectionManager.command().loadPlaylist(playlist)
     }
 }

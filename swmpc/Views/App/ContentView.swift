@@ -920,11 +920,50 @@ struct ContentView: View {
             "Syncing sounds with taste…",
             "Selecting ideal tracks…",
             "Calculating song sequence…",
+            "Mixing music…",
+            "Identifying harmonious tracks…",
+            "Checking for duplicates…",
+            "Cloud-sourcing songs…",
+            "Shuffling songs…",
+            "Scanning for similar tracks…",
+            "Filtering out noise…",
+            "Sorting songs by genre…",
+            "Recommending tracks…",
         ]
+
+        private let suggestions = [
+            "Love Songs",
+            "Turkish Music",
+            "Asian Music",
+            "Russian Music",
+            "Baroque Pop-Punk",
+            "Spontaneous Jazz",
+            "Chill vibes",
+            "Workout Tunes",
+            "Party Mix",
+            "Study Beats",
+            "Relaxing Music",
+            "Post-Apocalyptic Polka",
+            "Gnome Music",
+            "Video Game Soundtracks",
+            "Classical Music",
+        ]
+
+        init(showSmartPlaylistSheet: Binding<Bool>, playlistToEdit: Binding<Playlist?>) {
+            _showSmartPlaylistSheet = showSmartPlaylistSheet
+            _playlistToEdit = playlistToEdit
+
+            _loadingSentence = State(initialValue: loadingSentences.randomElement()!)
+            _suggestion = State(initialValue: suggestions.randomElement()!)
+        }
 
         @State private var smartPlaylistPrompt = ""
         @State private var isLoading = false
-        @State private var loadingSentence = "Analyzing music preferences…"
+
+        @State private var loadingSentence: String
+        @State private var suggestion: String
+
+        @FocusState private var isFocused: Bool
 
         var body: some View {
             VStack(spacing: 30) {
@@ -941,12 +980,43 @@ struct ContentView: View {
                             loadingSentence = loadingSentences.randomElement()!
                         }
                 } else {
-                    TextEditor(text: $smartPlaylistPrompt)
-                        .font(.system(size: 13))
-                        .padding(10)
-                        .background(.ultraThinMaterial)
-                        .frame(minHeight: 100)
-                        .cornerRadius(10)
+                    Text("I want to listen to…")
+                        .font(.headline)
+
+                    // XXX: So this is super hacky, but we create this invisible
+                    // TextField that draws the focus, because `.focused` for
+                    // some reason does not work.
+                    TextField("", text: .constant(""))
+                        .textFieldStyle(.plain)
+                        .frame(width: 0, height: 0)
+
+                    TextField(suggestion, text: $smartPlaylistPrompt)
+                        .textFieldStyle(.plain)
+                        .padding(8)
+                        .background(.accent)
+                        .cornerRadius(100)
+                        .multilineTextAlignment(.center)
+                        .disableAutocorrection(true)
+                        .focused($isFocused)
+                        .offset(y: -30)
+                        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+                        ) { _ in
+                            guard !isFocused else {
+                                return
+                            }
+
+                            suggestion = suggestions.randomElement()!
+                        }
+                        .onChange(of: isFocused) { _, value in
+                            guard value else {
+                                return
+                            }
+
+                            suggestion = ""
+                        }
+                        .onAppear {
+                            isFocused = false
+                        }
 
                     HStack {
                         Button("Cancel", role: .cancel) {
@@ -958,10 +1028,10 @@ struct ContentView: View {
                         Button("Create") {
                             Task(priority: .userInitiated) {
                                 isLoading = true
-                                
-                                try? await IntelligenceManager.shared.createSmartPlaylist(using: playlistToEdit!, prompt: smartPlaylistPrompt)
+
+                                try? await IntelligenceManager.shared.createPlaylist(using: playlistToEdit!, prompt: smartPlaylistPrompt)
                                 try? await mpd.queue.set(using: .playlist, force: true)
-                                
+
                                 isLoading = false
                                 playlistToEdit = nil
                                 showSmartPlaylistSheet = false
@@ -969,6 +1039,7 @@ struct ContentView: View {
                         }
                         .keyboardShortcut(.defaultAction)
                     }
+                    .offset(y: -30)
                 }
             }
             .frame(width: 300)

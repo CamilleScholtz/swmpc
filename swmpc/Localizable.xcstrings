@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "%@ albums" : {
       "localizations" : {
         "nl" : {
@@ -82,13 +85,34 @@
       }
     },
     "Add songs to your library." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg nummers toe aan je collectie."
+          }
+        }
+      }
     },
     "Add songs to your playlist." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg nummers toe aan je afspeellijst."
+          }
+        }
+      }
     },
     "Advanced" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geavanceerd"
+          }
+        }
+      }
     },
     "Appearance" : {
       "localizations" : {
@@ -101,7 +125,14 @@
       }
     },
     "Are you sure you want to delete playlist ’%@’?" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet je zeker dat je afspeellijst ’%@’ wilt verwijderen?"
+          }
+        }
+      }
     },
     "Are you sure you want to queue playlist ’%@’?" : {
 
@@ -118,17 +149,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afbreken"
-          }
-        }
-      }
-    },
-    "Connection" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verbinding"
           }
         }
       }
@@ -205,16 +225,8 @@
         }
       }
     },
-    "Host" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Host"
-          }
-        }
-      }
+    "I want to listen to…" : {
+
     },
     "If this is disabled, only the swmpc icon will be shown." : {
 
@@ -303,17 +315,6 @@
     "Please check your configuration and server." : {
 
     },
-    "Port" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Poort"
-          }
-        }
-      }
-    },
     "Previous Song" : {
       "localizations" : {
         "nl" : {
@@ -382,41 +383,8 @@
         }
       }
     },
-    "Show Status Bar" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Statusbalk Tonen"
-          }
-        }
-      }
-    },
     "Smart Playlist" : {
 
-    },
-    "Startup" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opstarten"
-          }
-        }
-      }
-    },
-    "Status Bar" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Statusbalk"
-          }
-        }
-      }
     },
     "swmpc" : {
       "localizations" : {
