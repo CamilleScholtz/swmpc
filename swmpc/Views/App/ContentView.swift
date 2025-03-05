@@ -37,11 +37,10 @@ struct ContentView: View {
                         case .playlist:
                             Text("No songs in playlist.")
                                 .font(.headline)
-
                             Text("Add songs to your playlist.")
                                 .font(.subheadline)
 
-                            IntelligenceLabel("Create Smart Playlist")
+                            IntelligenceButtonView("Create Playlist using AI")
                                 .offset(y: 20)
                                 .onTapGesture {
                                     NotificationCenter.default.post(name: .createSmartPlaylistNotification, object: router.category.playlist)
@@ -119,35 +118,7 @@ struct ContentView: View {
                 showSmartPlaylistSheet = true
             }
             .sheet(isPresented: $showSmartPlaylistSheet) {
-                VStack(spacing: 30) {
-                    TextEditor(text: $smartPlaylistPrompt)
-                        .font(.system(size: 13))
-                        .padding(10)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(10)
-
-                    HStack {
-                        Button("Cancel", role: .cancel) {
-                            playlistToEdit = nil
-                            showSmartPlaylistSheet = false
-                        }
-                        .keyboardShortcut(.cancelAction)
-
-                        Button("Create") {
-                            Task(priority: .userInitiated) {
-                                print("as")
-
-                                do {
-                                    try await IntelligenceManager.shared.createSmartPlaylist(using: playlistToEdit!, prompt: smartPlaylistPrompt)
-                                } catch {
-                                    print(error)
-                                }
-                            }
-                        }
-                        .keyboardShortcut(.defaultAction)
-                    }
-                }
-                .padding(20)
+                SmartPlaylistView(showSmartPlaylistSheet: $showSmartPlaylistSheet, playlistToEdit: $playlistToEdit)
             }
         }
     }
@@ -935,9 +906,100 @@ struct ContentView: View {
         }
     }
 
-    struct IntelligenceLabel: View {
-        @Environment(\.colorScheme) private var colorScheme
+    struct SmartPlaylistView: View {
+        @Environment(MPD.self) private var mpd
 
+        @Binding var showSmartPlaylistSheet: Bool
+        @Binding var playlistToEdit: Playlist?
+
+        private let loadingSentences = [
+            "Analyzing music preferences…",
+            "Matching tracks to vibe…",
+            "Curating playlist…",
+            "Cross-referencing mood with melodies…",
+            "Syncing sounds with taste…",
+            "Selecting ideal tracks…",
+            "Calculating song sequence…",
+        ]
+
+        @State private var smartPlaylistPrompt = ""
+        @State private var isLoading = false
+        @State private var loadingSentence = "Analyzing music preferences…"
+
+        var body: some View {
+            VStack(spacing: 30) {
+                if isLoading {
+                    IntelligenceSparklesView()
+                        .font(.system(size: 40))
+
+                    Text(loadingSentence)
+                        .padding(.vertical, 5)
+                        .font(.subheadline)
+                        .onReceive(
+                            Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+                        ) { _ in
+                            loadingSentence = loadingSentences.randomElement()!
+                        }
+                } else {
+                    TextEditor(text: $smartPlaylistPrompt)
+                        .font(.system(size: 13))
+                        .padding(10)
+                        .background(.ultraThinMaterial)
+                        .frame(minHeight: 100)
+                        .cornerRadius(10)
+
+                    HStack {
+                        Button("Cancel", role: .cancel) {
+                            playlistToEdit = nil
+                            showSmartPlaylistSheet = false
+                        }
+                        .keyboardShortcut(.cancelAction)
+
+                        Button("Create") {
+                            Task(priority: .userInitiated) {
+                                isLoading = true
+                                
+                                try? await IntelligenceManager.shared.createSmartPlaylist(using: playlistToEdit!, prompt: smartPlaylistPrompt)
+                                try? await mpd.queue.set(using: .playlist, force: true)
+                                
+                                isLoading = false
+                                playlistToEdit = nil
+                                showSmartPlaylistSheet = false
+                            }
+                        }
+                        .keyboardShortcut(.defaultAction)
+                    }
+                }
+            }
+            .frame(width: 300)
+            .padding(20)
+        }
+    }
+
+    struct IntelligenceSparklesView: View {
+        @State private var offset: CGFloat = 0
+
+        private let colors: [Color] = [.blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple]
+
+        var body: some View {
+            Image(systemSymbol: .sparkles)
+                .overlay(
+                    LinearGradient(
+                        colors: colors,
+                        startPoint: UnitPoint(x: offset, y: 0),
+                        endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0)
+                    )
+                    .onAppear {
+                        withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
+                            offset = -CGFloat(colors.count - 1)
+                        }
+                    }
+                )
+                .mask(Image(systemSymbol: .sparkles))
+        }
+    }
+
+    struct IntelligenceButtonView: View {
         var title: String
 
         init(_ title: String) {
@@ -945,51 +1007,23 @@ struct ContentView: View {
         }
 
         @State private var isHovering = false
-        @State private var offset: CGFloat = 0
-
-        private let colors: [Color] = [.blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple]
 
         var body: some View {
             HStack {
-                Image(systemSymbol: .sparkles)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: colors,
-                            startPoint: UnitPoint(x: offset, y: 0),
-                            endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0)
-                        )
-                    )
-
+                IntelligenceSparklesView()
                 Text(title)
             }
-            .padding(10)
+            .padding(8)
+            .padding(.horizontal, 2)
             .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.thinMaterial)
-
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(
-                            LinearGradient(
-                                colors: colors,
-                                startPoint: UnitPoint(x: offset, y: 0),
-                                endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0)
-                            )
-                        )
-                        .opacity(0.1)
-                        .blendMode(colorScheme == .dark ? .hardLight : .normal)
-                }
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.thinMaterial)
             )
             .scaleEffect(isHovering ? 1.05 : 1)
             .animation(.interactiveSpring, value: isHovering)
             .onHover(perform: { value in
                 isHovering = value
             })
-            .onAppear {
-                withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
-                    offset = -CGFloat(colors.count - 1)
-                }
-            }
         }
     }
 

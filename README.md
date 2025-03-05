@@ -5,15 +5,15 @@ Native MPD client for macOS.
 
 ## Features
 
-Written using SwiftUI, `swmpc` is a MPD client that looks, and *feels* native to macOS. It supports the following features:
+`swmpc` is designed to be a simple, yet powerful MPD client that is easy to use, and looks great on macOS. It is built using SwiftUI, and is designed to be fast and responsive. It supports all the basic features you would expect from a MPD client, and more. It also has a beautiful album art popover that can be accessed from the menu bar.
 
 - [x] Playback controls
 - [x] Library browsing (search by artist, album, etc.)
 - [x] Playlist management
 - [x] Control playback from the menu bar
 - [x] A beautiful albumart popover for the menubar
+- [x] Create "smart" playlists using AI
 
-- [ ] Create playlists using AI-generated recommendations
 
 ## Requirements
 

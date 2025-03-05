@@ -23,7 +23,6 @@ struct AppView: View {
                         Text("Could not establish connection to MPD.")
                             .font(.headline)
                             .foregroundColor(.secondary)
-
                         Text("Please check your configuration and server.")
                             .font(.subheadline)
                             .foregroundColor(.secondary)

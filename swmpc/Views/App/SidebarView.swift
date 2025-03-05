@@ -59,7 +59,6 @@ struct SidebarView: View {
                             }
                             .onSubmit {
                                 Task(priority: .userInitiated) {
-                                    print(playlistName)
                                     try await ConnectionManager.command().renamePlaylist(category.playlist!, to: playlistName)
 
                                     isRenamingPlaylist = false

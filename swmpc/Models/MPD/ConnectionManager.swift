@@ -314,6 +314,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private func filter(key: String, value: String, comparator: String, quote: Bool = true) -> String {
         let clause = "(\(key) \(comparator) \(escape(value, quote: "'")))"
             .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
 
         return quote ? "\"\(clause)\"" : clause
     }
@@ -466,6 +467,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private func chunkLines(_ lines: [String], startingWith prefix: String) -> [[String]] {
         var chunks = [[String]]()
         var currentChunk = [String]()
+
+        guard lines.contains(where: { $0.hasPrefix(prefix) }) else {
+            return chunks
+        }
 
         for line in lines {
             if line.hasPrefix(prefix), !currentChunk.isEmpty {
@@ -780,6 +785,7 @@ extension ConnectionManager {
     ///           malformed.
     func getSongs() async throws -> [Song] {
         let lines = try await run(["playlistinfo"])
+
         let chunks = chunkLines(lines, startingWith: "file")
 
         return try chunks.map { chunk in
@@ -1081,17 +1087,10 @@ extension ConnectionManager where Mode == CommandMode {
     ///               the songs should be added.
     ///   - songs: An array of `Song` objects to add to the playlist.
     /// - Throws: An error if the underlying command execution fails.
-    func addToPlaylist(_ playlist: Playlist, songs: [Song], force: Bool = false) async throws {
-        var newSongs: [Song]
-
-        if force {
-            newSongs = songs
-        } else {
-            let existingSongs = try await getSongs(for: playlist)
-
-            newSongs = songs.filter { song in
-                !existingSongs.contains { $0.url == song.url }
-            }
+    func addToPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
+        let existingSongs = try await getSongs(for: playlist)
+        let newSongs = songs.filter { song in
+            !existingSongs.contains { $0.url == song.url }
         }
 
         let commands = newSongs.map {

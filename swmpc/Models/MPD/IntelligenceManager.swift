@@ -65,8 +65,6 @@ actor IntelligenceManager {
             try await songs.append(contentsOf: ConnectionManager.command().getSongs(for: album))
         }
 
-        print(songs)
-
-        try await ConnectionManager.command().addToPlaylist(playlist, songs: songs, force: true)
+        try await ConnectionManager.command().addToPlaylist(playlist, songs: songs)
     }
 }
