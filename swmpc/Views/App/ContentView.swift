@@ -19,7 +19,7 @@ struct ContentView: View {
     @State private var playlistToEdit: Playlist?
     @State private var smartPlaylistPrompt = ""
 
-    private let scrollToCurrentNotifcation = NotificationCenter.default
+    private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
     private let startSearchingNotication = NotificationCenter.default
         .publisher(for: .startSearchingNotication)
@@ -74,7 +74,7 @@ struct ContentView: View {
                             .padding(.horizontal, 15)
                             .padding(.bottom, 15)
                         }
-                        .onReceive(scrollToCurrentNotifcation) { notification in
+                        .onReceive(scrollToCurrentNotification) { notification in
                             scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
                         }
                         .onReceive(startSearchingNotication) { _ in
@@ -929,6 +929,15 @@ struct ContentView: View {
             "Filtering out noise…",
             "Sorting songs by genre…",
             "Recommending tracks…",
+            "Analyzing beats per minute…",
+            "Rating songs…",
+            "Consulting /mu/…",
+            "Analyzing song lyrics…",
+            "Checking for explicit content…",
+            "Scanning for hidden gems…",
+            "Waiting for inspiration…",
+            "Calculating song popularity…",
+            "Analyzing waveform…",
         ]
 
         private let suggestions = [

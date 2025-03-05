@@ -13,12 +13,13 @@ enum Setting {
     static let host = "host"
     static let port = "port"
 
-    static let openAIToken = "openai_token"
-    static let deepSeekToken = "deepseek_token"
-
     static let showStatusBar = "show_status_bar"
     static let showStatusbarSong = "show_statusbar_song"
     static let scrollToCurrent = "scroll_to_current"
+
+    static let intelligenceModel = "intelligence_model"
+    static let openAIToken = "openai_token"
+    static let deepSeekToken = "deepseek_token"
 
     static let artworkGetter = "artwork_getter"
 }
@@ -27,6 +28,7 @@ struct SettingsView: View {
     enum SettingCategory: String, CaseIterable, Identifiable {
         case general = "General"
         case appearance = "Appearance"
+        case intelligence = "Intelligence"
         case advanced = "Advanced"
 
         var id: Self { self }
@@ -36,6 +38,7 @@ struct SettingsView: View {
             switch self {
             case .general: .gearshape
             case .appearance: .paintpalette
+            case .intelligence: .sparkles
             case .advanced: .gearshape2
             }
         }
@@ -46,6 +49,8 @@ struct SettingsView: View {
                 AnyView(GeneralView())
             case .appearance:
                 AnyView(AppearanceView())
+            case .intelligence:
+                AnyView(IntelligenceView())
             case .advanced:
                 AnyView(AdvancedView())
             }
@@ -73,9 +78,6 @@ struct GeneralView: View {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
 
-    @AppStorage(Setting.openAIToken) var openAIToken = ""
-    @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
-
     var body: some View {
         Form {
             Section {
@@ -87,15 +89,6 @@ struct GeneralView: View {
 
             Section {
                 LaunchAtLogin.Toggle()
-            }
-
-            Divider()
-
-            Section {
-                TextField("OpenAI Token:", text: $openAIToken)
-                    .textContentType(.password)
-                Text("This is required to use the OpenAI API.")
-                    .font(.caption2)
             }
         }
         .navigationTitle("General")
@@ -126,6 +119,36 @@ struct AppearanceView: View {
             }
         }
         .navigationTitle("Appearance")
+    }
+}
+
+struct IntelligenceView: View {
+    @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.none
+    @AppStorage(Setting.openAIToken) var openAIToken = ""
+    @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Intelligence Model:", selection: $intelligenceModel) {
+                    Text("Disabled").tag(IntelligenceModel.none)
+                    Text("OpenAI").tag(IntelligenceModel.openAI)
+                    Text("DeepSeek").tag(IntelligenceModel.deepSeek)
+                }
+                .pickerStyle(.inline)
+
+                switch intelligenceModel {
+                case .openAI:
+                    TextField("OpenAI API Token:", text: $openAIToken)
+                        .textContentType(.password)
+                case .deepSeek:
+                    TextField("DeepSeek API Token:", text: $deepSeekToken)
+                        .textContentType(.password)
+                default:
+                    EmptyView()
+                }
+            }
+        }
     }
 }
 

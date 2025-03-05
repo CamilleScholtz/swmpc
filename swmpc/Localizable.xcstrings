@@ -172,6 +172,12 @@
     "Create Smart Playlist" : {
 
     },
+    "DeepSeek" : {
+
+    },
+    "DeepSeek API Token:" : {
+
+    },
     "Delete" : {
       "localizations" : {
         "nl" : {
@@ -191,6 +197,9 @@
           }
         }
       }
+    },
+    "Disabled" : {
+
     },
     "Disc %@" : {
       "localizations" : {
@@ -231,6 +240,9 @@
     "If this is disabled, only the swmpc icon will be shown." : {
 
     },
+    "Intelligence Model:" : {
+
+    },
     "Library" : {
 
     },
@@ -269,7 +281,10 @@
     "No songs in playlist." : {
 
     },
-    "OpenAI Token:" : {
+    "OpenAI" : {
+
+    },
+    "OpenAI API Token:" : {
 
     },
     "Pause" : {
@@ -395,9 +410,6 @@
           }
         }
       }
-    },
-    "This is required to use the OpenAI API." : {
-
     },
     "Untitled Playlist" : {
       "localizations" : {
