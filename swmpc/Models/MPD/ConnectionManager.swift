@@ -1089,12 +1089,12 @@ extension ConnectionManager where Mode == CommandMode {
     ///   - songs: An array of `Song` objects to add to the playlist.
     /// - Throws: An error if the underlying command execution fails.
     func addToPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        let existingSongs = try await getSongs(for: playlist)
-        let newSongs = songs.filter { song in
-            !existingSongs.contains { $0.url == song.url }
+        let playlistSongs = try await getSongs(for: playlist)
+        let songsToAdd = songs.filter { song in
+            !playlistSongs.contains { $0.url == song.url }
         }
 
-        let commands = newSongs.map {
+        let commands = songsToAdd.map {
             "playlistadd \(playlist.name) \(escape($0.url.path))"
         }
 
@@ -1109,9 +1109,22 @@ extension ConnectionManager where Mode == CommandMode {
     ///   - songs: An array of `Song` objects to remove from the playlist.
     /// - Throws: An error if the underlying command execution fails.
     func removeFromPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        let commands = songs.map {
-            "playlistdelete \(playlist.name) \($0.position)"
+        let playlistSongs = try await getSongs(for: playlist)
+        let songsToRemove = playlistSongs.filter { song in
+            songs.contains { $0.url == song.url }
         }
+
+        var commands: [String]
+        let positions = songsToRemove.map(\.position).sorted().map { $0 }
+
+        if positions.count > 1 && positions == Array(positions.first! ... positions.last!) {
+            commands = ["playlistdelete \(playlist.name) \(positions.first!):\(positions.last!)"]
+        } else {
+            commands = songsToRemove.map {
+                "playlistdelete \(playlist.name) \($0.position)"
+            }
+        }
+        print(commands)
 
         _ = try await run(commands)
     }
@@ -1131,7 +1144,6 @@ extension ConnectionManager where Mode == CommandMode {
     ///                    favorites playlist.
     /// - Throws: An error if the underlying command execution fails.
     func removeFromFavorites(songs: [Song]) async throws {
-        // TODO: Figure out how the positions works here
         try await removeFromPlaylist(Playlist(name: "Favorites"), songs: songs)
     }
 
