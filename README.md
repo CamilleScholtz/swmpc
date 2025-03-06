@@ -12,7 +12,7 @@ Native MPD client for macOS.
 - [x] Playlist management
 - [x] Control playback from the menu bar
 - [x] A beautiful albumart popover for the menubar
-- [x] Create "smart" playlists using AI
+- [x] Create "smart" playlists using AI (OpenAI or DeepSeek)
 
 
 ## Requirements

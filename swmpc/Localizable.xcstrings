@@ -105,6 +105,7 @@
       }
     },
     "Advanced" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -114,7 +115,11 @@
         }
       }
     },
+    "API Token:" : {
+
+    },
     "Appearance" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -140,7 +145,10 @@
     "Are you sure you want to queue the library?" : {
 
     },
-    "Artwork method:" : {
+    "Artwork retrieval:" : {
+
+    },
+    "Behavior" : {
 
     },
     "Cancel" : {
@@ -172,10 +180,10 @@
     "Create Smart Playlist" : {
 
     },
-    "DeepSeek" : {
+    "Currently used for smart playlist generation." : {
 
     },
-    "DeepSeek API Token:" : {
+    "DeepSeek" : {
 
     },
     "Delete" : {
@@ -198,9 +206,6 @@
         }
       }
     },
-    "Disabled" : {
-
-    },
     "Disc %@" : {
       "localizations" : {
         "nl" : {
@@ -212,6 +217,9 @@
       }
     },
     "Embedded" : {
+
+    },
+    "Enable AI Features" : {
 
     },
     "General" : {
@@ -240,13 +248,19 @@
     "If this is disabled, only the swmpc icon will be shown." : {
 
     },
-    "Intelligence Model:" : {
+    "Intelligence" : {
 
     },
     "Library" : {
 
     },
+    "Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself." : {
+
+    },
     "Load Playlist" : {
+
+    },
+    "Model:" : {
 
     },
     "MPD Host:" : {
@@ -282,9 +296,6 @@
 
     },
     "OpenAI" : {
-
-    },
-    "OpenAI API Token:" : {
 
     },
     "Pause" : {

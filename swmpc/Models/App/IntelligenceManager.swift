@@ -16,9 +16,8 @@ enum IntelligenceManagerError: Error {
 }
 
 enum IntelligenceModel: String {
-    case openAI = "gpt-4o-mini"
     case deepSeek = "deepseek-chat"
-    case none = ""
+    case openAI = "gpt-4o"
 }
 
 actor IntelligenceManager {
@@ -28,19 +27,15 @@ actor IntelligenceManager {
 
     @MainActor
     func connect(using model: IntelligenceModel) async throws -> OpenAI {
+        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+        guard isIntelligenceEnabled else {
+            throw IntelligenceManagerError.intelligenceDisabled
+        }
+
         var token: String
         var host: String
 
         switch model {
-        case .openAI:
-            @AppStorage(Setting.openAIToken) var openAIToken = ""
-            guard !openAIToken.isEmpty else {
-                throw IntelligenceManagerError.missingToken
-            }
-
-            token = openAIToken
-            host = "api.openai.com"
-
         case .deepSeek:
             @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
             guard !deepSeekToken.isEmpty else {
@@ -49,9 +44,14 @@ actor IntelligenceManager {
 
             token = deepSeekToken
             host = "api.deepseek.com"
+        case .openAI:
+            @AppStorage(Setting.openAIToken) var openAIToken = ""
+            guard !openAIToken.isEmpty else {
+                throw IntelligenceManagerError.missingToken
+            }
 
-        default:
-            throw IntelligenceManagerError.intelligenceDisabled
+            token = openAIToken
+            host = "api.openai.com"
         }
 
         return OpenAI(configuration: .init(token: token, host: host))
@@ -59,7 +59,7 @@ actor IntelligenceManager {
 
     @MainActor
     func createPlaylist(using playlist: Playlist, prompt: String) async throws {
-        @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel.none
+        @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel.deepSeek
 
         let client = try await connect(using: model)
 

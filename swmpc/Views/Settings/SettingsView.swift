@@ -17,9 +17,10 @@ enum Setting {
     static let showStatusbarSong = "show_statusbar_song"
     static let scrollToCurrent = "scroll_to_current"
 
+    static let isIntelligenceEnabled = "is_intelligence_enabled"
     static let intelligenceModel = "intelligence_model"
-    static let openAIToken = "openai_token"
     static let deepSeekToken = "deepseek_token"
+    static let openAIToken = "openai_token"
 
     static let artworkGetter = "artwork_getter"
 }
@@ -27,9 +28,8 @@ enum Setting {
 struct SettingsView: View {
     enum SettingCategory: String, CaseIterable, Identifiable {
         case general = "General"
-        case appearance = "Appearance"
+        case behavior = "Behavior"
         case intelligence = "Intelligence"
-        case advanced = "Advanced"
 
         var id: Self { self }
         var title: String { rawValue }
@@ -37,9 +37,8 @@ struct SettingsView: View {
         var image: SFSymbol {
             switch self {
             case .general: .gearshape
-            case .appearance: .paintpalette
+            case .behavior: .sliderHorizontal3
             case .intelligence: .sparkles
-            case .advanced: .gearshape2
             }
         }
 
@@ -47,12 +46,10 @@ struct SettingsView: View {
             switch self {
             case .general:
                 AnyView(GeneralView())
-            case .appearance:
-                AnyView(AppearanceView())
+            case .behavior:
+                AnyView(BehaviorView())
             case .intelligence:
                 AnyView(IntelligenceView())
-            case .advanced:
-                AnyView(AdvancedView())
             }
         }
     }
@@ -67,7 +64,6 @@ struct SettingsView: View {
                         Label(category.title, systemSymbol: category.image)
                     }
                     .tag(category)
-                    .padding(40)
             }
         }
         .frame(width: 500)
@@ -78,93 +74,97 @@ struct GeneralView: View {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
 
+    @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
+
     var body: some View {
         Form {
-            Section {
-                TextField("MPD Host:", text: $host)
-                TextField("MPD Port:", value: $port, formatter: NumberFormatter())
-            }
+            TextField("MPD Host:", text: $host)
+            TextField("MPD Port:", value: $port, formatter: NumberFormatter())
 
             Divider()
+                .frame(height: 32, alignment: .center)
 
-            Section {
-                LaunchAtLogin.Toggle()
+            Picker("Artwork retrieval:", selection: $artworkGetter) {
+                Text("Library").tag(ArtworkGetter.library)
+                Text("Embedded").tag(ArtworkGetter.embedded)
             }
+            .pickerStyle(.inline)
+            Text("Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Divider()
+                .frame(height: 32, alignment: .center)
+
+            LaunchAtLogin.Toggle()
         }
+        .padding(32)
         .navigationTitle("General")
     }
 }
 
-struct AppearanceView: View {
+struct BehaviorView: View {
     @AppStorage(Setting.showStatusBar) var showStatusBar = true
     @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
     @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
 
     var body: some View {
         Form {
-            Section {
-                Toggle(isOn: $scrollToCurrent) {
-                    Text("Scroll to Current Song")
-                    Text("Scroll to the current song when the song changes.")
-                }
+            Toggle(isOn: $scrollToCurrent) {
+                Text("Scroll to Current Song")
+                Text("Scroll to the current song when the song changes.")
             }
 
-            Section {
-                Toggle("Show in Status Bar", isOn: $showStatusBar)
-                Toggle(isOn: $showStatusbarSong) {
-                    Text("Show Song in Status Bar")
-                    Text("If this is disabled, only the swmpc icon will be shown.")
-                }
-                .disabled(!showStatusBar)
+            Divider()
+                .frame(height: 32, alignment: .center)
+
+            Toggle("Show in Status Bar", isOn: $showStatusBar)
+            Toggle(isOn: $showStatusbarSong) {
+                Text("Show Song in Status Bar")
+                Text("If this is disabled, only the swmpc icon will be shown.")
             }
+            .disabled(!showStatusBar)
         }
-        .navigationTitle("Appearance")
+        .padding(32)
+        .navigationTitle("Behavior")
     }
 }
 
 struct IntelligenceView: View {
-    @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.none
-    @AppStorage(Setting.openAIToken) var openAIToken = ""
+    @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+    @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.deepSeek
     @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
+    @AppStorage(Setting.openAIToken) var openAIToken = ""
 
     var body: some View {
         Form {
-            Section {
-                Picker("Intelligence Model:", selection: $intelligenceModel) {
-                    Text("Disabled").tag(IntelligenceModel.none)
-                    Text("OpenAI").tag(IntelligenceModel.openAI)
-                    Text("DeepSeek").tag(IntelligenceModel.deepSeek)
-                }
-                .pickerStyle(.inline)
+            Toggle(isOn: $isIntelligenceEnabled) {
+                Text("Enable AI Features")
+                Text("Currently used for smart playlist generation.")
+            }
 
-                switch intelligenceModel {
-                case .openAI:
-                    TextField("OpenAI API Token:", text: $openAIToken)
-                        .textContentType(.password)
-                case .deepSeek:
-                    TextField("DeepSeek API Token:", text: $deepSeekToken)
-                        .textContentType(.password)
-                default:
-                    EmptyView()
-                }
+            Divider()
+                .frame(height: 32, alignment: .center)
+
+            Picker("Model:", selection: $intelligenceModel) {
+                Text("DeepSeek").tag(IntelligenceModel.deepSeek)
+                Text("OpenAI").tag(IntelligenceModel.openAI)
+            }
+            .pickerStyle(.inline)
+            .disabled(!isIntelligenceEnabled)
+
+            switch intelligenceModel {
+            case .deepSeek:
+                TextField("API Token:", text: $deepSeekToken)
+                    .textContentType(.password)
+                    .disabled(!isIntelligenceEnabled)
+            case .openAI:
+                TextField("API Token:", text: $openAIToken)
+                    .textContentType(.password)
+                    .disabled(!isIntelligenceEnabled)
             }
         }
-    }
-}
-
-struct AdvancedView: View {
-    @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
-
-    var body: some View {
-        Form {
-            Section {
-                Picker("Artwork method:", selection: $artworkGetter) {
-                    Text("Library").tag(ArtworkGetter.library)
-                    Text("Embedded").tag(ArtworkGetter.embedded)
-                }
-                .pickerStyle(.inline)
-            }
-        }
-        .navigationTitle("Advanced")
+        .padding(32)
+        .navigationTitle("Intelligence")
     }
 }
