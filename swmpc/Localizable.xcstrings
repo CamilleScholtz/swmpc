@@ -177,9 +177,6 @@
     "Create" : {
 
     },
-    "Create Smart Playlist" : {
-
-    },
     "Currently used for smart playlist generation." : {
 
     },
@@ -220,6 +217,9 @@
 
     },
     "Enable AI Features" : {
+
+    },
+    "Enable AI features in settings to use this feature." : {
 
     },
     "General" : {
@@ -408,9 +408,6 @@
           }
         }
       }
-    },
-    "Smart Playlist" : {
-
     },
     "swmpc" : {
       "localizations" : {

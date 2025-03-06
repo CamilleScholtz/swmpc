@@ -12,19 +12,21 @@ struct ContentView: View {
     @Environment(MPD.self) private var mpd
     @Environment(Router.self) private var router
 
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+
     @State private var isSearching = false
     @State private var isHovering = false
 
-    @State private var showSmartPlaylistSheet = false
+    @State private var showIntelligencePlaylistSheet = false
     @State private var playlistToEdit: Playlist?
-    @State private var smartPlaylistPrompt = ""
+    @State private var intelligencePlaylistPrompt = ""
 
     private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
     private let startSearchingNotication = NotificationCenter.default
         .publisher(for: .startSearchingNotication)
-    private let createSmartPlaylistNotification = NotificationCenter.default
-        .publisher(for: .createSmartPlaylistNotification)
+    private let createIntelligencePlaylistNotification = NotificationCenter.default
+        .publisher(for: .createIntelligencePlaylistNotification)
 
     var body: some View {
         @Bindable var boundRouter = router
@@ -43,7 +45,11 @@ struct ContentView: View {
                             IntelligenceButtonView("Create Playlist using AI")
                                 .offset(y: 20)
                                 .onTapGesture {
-                                    NotificationCenter.default.post(name: .createSmartPlaylistNotification, object: router.category.playlist)
+                                    guard isIntelligenceEnabled else {
+                                        return
+                                    }
+
+                                    NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: router.category.playlist)
                                 }
                         default:
                             Text("No \(router.category.label.lowercased()) in library.")
@@ -109,16 +115,16 @@ struct ContentView: View {
                 }
                 .ignoresSafeArea()
             }
-            .onReceive(createSmartPlaylistNotification) { notification in
+            .onReceive(createIntelligencePlaylistNotification) { notification in
                 guard let playlist = notification.object as? Playlist else {
                     return
                 }
 
                 playlistToEdit = playlist
-                showSmartPlaylistSheet = true
+                showIntelligencePlaylistSheet = true
             }
-            .sheet(isPresented: $showSmartPlaylistSheet) {
-                SmartPlaylistView(showSmartPlaylistSheet: $showSmartPlaylistSheet, playlistToEdit: $playlistToEdit)
+            .sheet(isPresented: $showIntelligencePlaylistSheet) {
+                IntelligencePlaylistView(showIntelligencePlaylistSheet: $showIntelligencePlaylistSheet, playlistToEdit: $playlistToEdit)
             }
         }
     }
@@ -906,10 +912,10 @@ struct ContentView: View {
         }
     }
 
-    struct SmartPlaylistView: View {
+    struct IntelligencePlaylistView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var showSmartPlaylistSheet: Bool
+        @Binding var showIntelligencePlaylistSheet: Bool
         @Binding var playlistToEdit: Playlist?
 
         private let loadingSentences = [
@@ -958,15 +964,15 @@ struct ContentView: View {
             "Classical Music",
         ]
 
-        init(showSmartPlaylistSheet: Binding<Bool>, playlistToEdit: Binding<Playlist?>) {
-            _showSmartPlaylistSheet = showSmartPlaylistSheet
+        init(showIntelligencePlaylistSheet: Binding<Bool>, playlistToEdit: Binding<Playlist?>) {
+            _showIntelligencePlaylistSheet = showIntelligencePlaylistSheet
             _playlistToEdit = playlistToEdit
 
             _loadingSentence = State(initialValue: loadingSentences.randomElement()!)
             _suggestion = State(initialValue: suggestions.randomElement()!)
         }
 
-        @State private var smartPlaylistPrompt = ""
+        @State private var prompt = ""
         @State private var isLoading = false
 
         @State private var loadingSentence: String
@@ -999,7 +1005,7 @@ struct ContentView: View {
                         .textFieldStyle(.plain)
                         .frame(width: 0, height: 0)
 
-                    TextField(suggestion, text: $smartPlaylistPrompt)
+                    TextField(suggestion, text: $prompt)
                         .textFieldStyle(.plain)
                         .padding(8)
                         .background(.accent)
@@ -1030,7 +1036,7 @@ struct ContentView: View {
                     HStack {
                         Button("Cancel", role: .cancel) {
                             playlistToEdit = nil
-                            showSmartPlaylistSheet = false
+                            showIntelligencePlaylistSheet = false
                         }
                         .keyboardShortcut(.cancelAction)
 
@@ -1038,12 +1044,12 @@ struct ContentView: View {
                             Task(priority: .userInitiated) {
                                 isLoading = true
 
-                                try? await IntelligenceManager.shared.createPlaylist(using: playlistToEdit!, prompt: smartPlaylistPrompt)
+                                try? await IntelligenceManager.shared.createPlaylist(using: playlistToEdit!, prompt: prompt)
                                 try? await mpd.queue.set(using: .playlist, force: true)
 
                                 isLoading = false
                                 playlistToEdit = nil
-                                showSmartPlaylistSheet = false
+                                showIntelligencePlaylistSheet = false
                             }
                         }
                         .keyboardShortcut(.defaultAction)
@@ -1059,7 +1065,7 @@ struct ContentView: View {
     struct IntelligenceSparklesView: View {
         @State private var offset: CGFloat = 0
 
-        private let colors: [Color] = [.blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple]
+        private let colors: [Color] = [.yellow, .orange, .brown, .orange, .yellow]
 
         var body: some View {
             Image(systemSymbol: .sparkles)
@@ -1080,6 +1086,8 @@ struct ContentView: View {
     }
 
     struct IntelligenceButtonView: View {
+        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+
         var title: String
 
         init(_ title: String) {
@@ -1089,21 +1097,35 @@ struct ContentView: View {
         @State private var isHovering = false
 
         var body: some View {
-            HStack {
-                IntelligenceSparklesView()
-                Text(title)
+            VStack {
+                HStack {
+                    IntelligenceSparklesView()
+                    Text(title)
+                }
+                .padding(8)
+                .padding(.horizontal, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.thinMaterial)
+                )
+                .scaleEffect(isHovering ? 1.05 : 1)
+                .animation(.interactiveSpring, value: isHovering)
+                .opacity(isIntelligenceEnabled ? 1 : 0.7)
+                .onHover(perform: { value in
+                    guard isIntelligenceEnabled else {
+                        return
+                    }
+
+                    isHovering = value
+                })
+
+                if !isIntelligenceEnabled {
+                    Text("Enable AI features in settings to use this feature.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .offset(y: 10)
+                }
             }
-            .padding(8)
-            .padding(.horizontal, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.thinMaterial)
-            )
-            .scaleEffect(isHovering ? 1.05 : 1)
-            .animation(.interactiveSpring, value: isHovering)
-            .onHover(perform: { value in
-                isHovering = value
-            })
         }
     }
 

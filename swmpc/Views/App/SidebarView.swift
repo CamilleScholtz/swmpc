@@ -72,10 +72,6 @@ struct SidebarView: View {
                         }
                         .contextMenu {
                             if category.label != "Favorites" {
-                                Button("Smart Playlist") {}
-
-                                Divider()
-
                                 Button("Rename Playlist") {
                                     isRenamingPlaylist = true
                                     playlistName = category.playlist!.name
