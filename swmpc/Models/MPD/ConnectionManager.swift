@@ -850,10 +850,11 @@ extension ConnectionManager {
         var index: UInt32 = 0
 
         return try chunks.map { chunk in
-            index += 1
-
-            return try parseMediaResponse(chunk, using: .song, index:
+            let song = try parseMediaResponse(chunk, using: .song, index:
                 index) as! Song
+            index += 1
+            
+            return song
         }
     }
 
