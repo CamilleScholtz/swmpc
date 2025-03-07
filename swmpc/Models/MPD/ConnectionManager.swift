@@ -311,7 +311,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   - quote: A Boolean value that determines whether the final clause
     ///            should be enclosed in double quotes. Defaults to `true`.
     /// - Returns: A formatted string representing the filter clause.
-    private func filter(key: String, value: String, comparator: String, quote: Bool = true) -> String {
+    private func filter(key: String, value: String, comparator: String = "==", quote: Bool = true) -> String {
         let clause = "(\(key) \(comparator) \(escape(value, quote: "'")))"
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
@@ -802,7 +802,7 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(for artist: Artist) async throws -> [Song] {
-        let lines = try await run(["playlistfind \(filter(key: "albumArtist", value: artist.name, comparator: "=="))"])
+        let lines = try await run(["playlistfind \(filter(key: "albumArtist", value: artist.name))"])
         let chunks = chunkLines(lines, startingWith: "file")
 
         return try chunks.map { chunk in
@@ -822,8 +822,7 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(for album: Album) async throws -> [Song] {
-        // TODO: Probably doesn't work with two albums with the same name.
-        let lines = try await run(["playlistfind \(filter(key: "album", value: album.title, comparator: "=="))"])
+        let lines = try await run(["playlistfind \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumArtist", value: album.artist, quote: false)))\""])
         let chunks = chunkLines(lines, startingWith: "file")
 
         return try chunks.map { chunk in
@@ -853,7 +852,7 @@ extension ConnectionManager {
             let song = try parseMediaResponse(chunk, using: .song, index:
                 index) as! Song
             index += 1
-            
+
             return song
         }
     }
@@ -865,7 +864,7 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getAlbums() async throws -> [Album] {
-        let lines = try await run(["playlistfind \"(\(filter(key: "track", value: "1", comparator: "==", quote: false)) AND \(filter(key: "disc", value: "1", comparator: "==", quote: false)))\""])
+        let lines = try await run(["playlistfind \"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
         let chunks = chunkLines(lines, startingWith: "file")
 
         return try chunks.map { chunk in
