@@ -39,7 +39,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Album toevoegen aan favorieten"
+            "value" : "Album aan favorieten toevoegen"
           }
         }
       }
@@ -49,7 +49,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Album toevoegen aan afspeellijst"
+            "value" : "Album aan afspeellijst toevoegen"
           }
         }
       }
@@ -59,7 +59,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Huidig Nummer Toevoegen aan Favorieten"
+            "value" : "Huidig nummer aan favorieten toevoegen"
           }
         }
       }
@@ -69,7 +69,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nummer Toevoegen aan Favorieten"
+            "value" : "Nummer aan favorieten toevoegen"
           }
         }
       }
@@ -79,7 +79,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nummer Toevoegen aan Afspeellijst"
+            "value" : "Nummer aan afspeellijst toevoegen"
           }
         }
       }
@@ -109,7 +109,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "API Token:"
+            "value" : "API-token:"
           }
         }
       }
@@ -119,7 +119,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weet je zeker dat je afspeellijst ’%@’ wilt verwijderen?"
+            "value" : "Weet je zeker dat je de afspeellijst ’%@’ wilt verwijderen?"
           }
         }
       }
@@ -129,7 +129,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weet je zeker dat je afspeellijst '%@' in de wachtrij wilt zetten?"
+            "value" : "Weet je zeker dat je afspeellijst '%@' aan de afspeelwachtrij wilt toevoegen?"
           }
         }
       }
@@ -139,7 +139,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weet je zeker dat je de collectie in de wachtrij wilt zetten?"
+            "value" : "Weet je zeker dat je de volledige collectie aan de afspeelwachtrij wilt toevoegen?"
           }
         }
       }
@@ -149,7 +149,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Omslag ophaalmethode:"
+            "value" : "Albumhoes ophalen:"
           }
         }
       }
@@ -159,7 +159,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Handelingen"
+            "value" : "Gedrag"
           }
         }
       }
@@ -169,7 +169,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afbreken"
+            "value" : "Annuleren"
           }
         }
       }
@@ -209,7 +209,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wordt momenteel gebruikt voor het maken van slimme afspeellijsten."
+            "value" : "Wordt gebruikt voor het genereren van slimme afspeellijsten."
           }
         }
       }
@@ -222,7 +222,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verwijder"
+            "value" : "Verwijderen"
           }
         }
       }
@@ -232,7 +232,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verwijder Afspeellijst"
+            "value" : "Afspeellijst verwijderen"
           }
         }
       }
@@ -262,7 +262,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI-functies Gebruiken"
+            "value" : "AI-functies inschakelen"
           }
         }
       }
@@ -272,7 +272,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Schakel AI-functies in bij instellingen om deze functie te gebruiken."
+            "value" : "Schakel AI-functies in de instellingen in om dit te gebruiken."
           }
         }
       }
@@ -292,7 +292,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ga naar Huidig Nummer"
+            "value" : "Ga naar huidig nummer"
           }
         }
       }
@@ -312,7 +312,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Als dit is uitgeschakeld, wordt alleen het swmpc pictogram weergegeven."
+            "value" : "Als dit uit staat, wordt alleen het swmpc-pictogram getoond."
           }
         }
       }
@@ -322,7 +322,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intelligence"
+            "value" : "Intelligentie"
           }
         }
       }
@@ -342,7 +342,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collectie haalt de omslag op door in de map waarin het bestand staat te zoeken naar een bestand met de naam cover.png, cover.jpg of cover.webp. Embedded haalt het artwork op uit het bestand zelf."
+            "value" : "Collectie zoekt naar albumhoezen (cover.png/jpg/webp) in de map. Ingebed haalt de hoes uit het bestand zelf."
           }
         }
       }
@@ -352,7 +352,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Laad Afspeellijst"
+            "value" : "Afspeellijst laden"
           }
         }
       }
@@ -372,7 +372,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "MPD Host:"
+            "value" : "MPD-host:"
           }
         }
       }
@@ -382,7 +382,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "MPD Port:"
+            "value" : "MPD-poort:"
           }
         }
       }
@@ -392,7 +392,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nieuwe Afspeellijst"
+            "value" : "Nieuwe afspeellijst"
           }
         }
       }
@@ -402,7 +402,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Volgend Nummer"
+            "value" : "Volgend nummer"
           }
         }
       }
@@ -412,7 +412,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geen %@ in afspeellijst."
+            "value" : "Geen %@ in collectie."
           }
         }
       }
@@ -435,7 +435,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pauze"
+            "value" : "Pauzeren"
           }
         }
       }
@@ -455,7 +455,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afspelen"
+            "value" : "Wordt afgespeeld"
           }
         }
       }
@@ -495,7 +495,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wachtrij"
+            "value" : "Afspeelwachtrij"
           }
         }
       }
@@ -505,7 +505,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afspeellijst Toevoegen aan Wachtrij"
+            "value" : "Afspeellijst toevoegen aan wachtrij"
           }
         }
       }
@@ -515,7 +515,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Album Verwijderen uit Afspeellijst"
+            "value" : "Album uit afspeellijst verwijderen"
           }
         }
       }
@@ -525,7 +525,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nummer Verwijderen uit Favorieten"
+            "value" : "Nummer uit favorieten verwijderen"
           }
         }
       }
@@ -535,7 +535,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nummer Verwijderen uit Afspeellijst"
+            "value" : "Nummer uit afspeellijst verwijderen"
           }
         }
       }
@@ -545,7 +545,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afspeellijst Hernoemen"
+            "value" : "Afspeellijst hernoemen"
           }
         }
       }
@@ -555,7 +555,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scroll naar het Huidige Nummer"
+            "value" : "Scroll naar huidig nummer"
           }
         }
       }
@@ -565,7 +565,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scroll naar het huidige nummer wanneer het nummer verandert."
+            "value" : "Scroll automatisch naar huidig nummer bij wijzigingen"
           }
         }
       }
@@ -585,7 +585,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tonen in Statusbalk"
+            "value" : "In statusbalk tonen"
           }
         }
       }
@@ -595,7 +595,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nummer Tonen in Statusbalk"
+            "value" : "Nummer in statusbalk tonen"
           }
         }
       }
@@ -608,7 +608,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Naamloze Afspeellijst"
+            "value" : "Naamloze afspeellijst"
           }
         }
       }
@@ -618,7 +618,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collectie Bijwerken"
+            "value" : "Collectie bijwerken"
           }
         }
       }
