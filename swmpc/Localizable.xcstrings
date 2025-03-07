@@ -2,7 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "" : {
-
+      "shouldTranslate" : false
     },
     "%@ albums" : {
       "localizations" : {
@@ -39,7 +39,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Album Toevoegen aan Favorieten"
+            "value" : "Album toevoegen aan favorieten"
           }
         }
       }
@@ -49,7 +49,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Album Toevoegen aan Afspeellijst"
+            "value" : "Album toevoegen aan afspeellijst"
           }
         }
       }
@@ -104,27 +104,12 @@
         }
       }
     },
-    "Advanced" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geavanceerd"
-          }
-        }
-      }
-    },
     "API Token:" : {
-
-    },
-    "Appearance" : {
-      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weergave"
+            "value" : "API Token:"
           }
         }
       }
@@ -140,16 +125,44 @@
       }
     },
     "Are you sure you want to queue playlist ’%@’?" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet je zeker dat je afspeellijst '%@' in de wachtrij wilt zetten?"
+          }
+        }
+      }
     },
     "Are you sure you want to queue the library?" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet je zeker dat je de collectie in de wachtrij wilt zetten?"
+          }
+        }
+      }
     },
     "Artwork retrieval:" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omslag ophaalmethode:"
+          }
+        }
+      }
     },
     "Behavior" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handelingen"
+          }
+        }
+      }
     },
     "Cancel" : {
       "localizations" : {
@@ -172,16 +185,37 @@
       }
     },
     "Could not establish connection to MPD." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan geen verbinding maken met MPD."
+          }
+        }
+      }
     },
     "Create" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aanmaken"
+          }
+        }
+      }
     },
     "Currently used for smart playlist generation." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wordt momenteel gebruikt voor het maken van slimme afspeellijsten."
+          }
+        }
+      }
     },
     "DeepSeek" : {
-
+      "shouldTranslate" : false
     },
     "Delete" : {
       "localizations" : {
@@ -214,13 +248,34 @@
       }
     },
     "Embedded" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Embedded"
+          }
+        }
+      }
     },
     "Enable AI Features" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-functies Gebruiken"
+          }
+        }
+      }
     },
     "Enable AI features in settings to use this feature." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schakel AI-functies in bij instellingen om deze functie te gebruiken."
+          }
+        }
+      }
     },
     "General" : {
       "localizations" : {
@@ -243,31 +298,94 @@
       }
     },
     "I want to listen to…" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik wil luisteren naar…"
+          }
+        }
+      }
     },
     "If this is disabled, only the swmpc icon will be shown." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als dit is uitgeschakeld, wordt alleen het swmpc pictogram weergegeven."
+          }
+        }
+      }
     },
     "Intelligence" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intelligence"
+          }
+        }
+      }
     },
     "Library" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectie"
+          }
+        }
+      }
     },
     "Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectie haalt de omslag op door in de map waarin het bestand staat te zoeken naar een bestand met de naam cover.png, cover.jpg of cover.webp. Embedded haalt het artwork op uit het bestand zelf."
+          }
+        }
+      }
     },
     "Load Playlist" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laad Afspeellijst"
+          }
+        }
+      }
     },
     "Model:" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model:"
+          }
+        }
+      }
     },
     "MPD Host:" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MPD Host:"
+          }
+        }
+      }
     },
     "MPD Port:" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MPD Port:"
+          }
+        }
+      }
     },
     "New Playlist" : {
       "localizations" : {
@@ -290,13 +408,27 @@
       }
     },
     "No %@ in library." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen %@ in afspeellijst."
+          }
+        }
+      }
     },
     "No songs in playlist." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen nummers in afspeellijst."
+          }
+        }
+      }
     },
     "OpenAI" : {
-
+      "shouldTranslate" : false
     },
     "Pause" : {
       "localizations" : {
@@ -339,7 +471,14 @@
       }
     },
     "Please check your configuration and server." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controleer je configuratie en server."
+          }
+        }
+      }
     },
     "Previous Song" : {
       "localizations" : {
@@ -352,10 +491,24 @@
       }
     },
     "Queue" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtrij"
+          }
+        }
+      }
     },
     "Queue Playlist" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afspeellijst Toevoegen aan Wachtrij"
+          }
+        }
+      }
     },
     "Remove Album from Playlist" : {
       "localizations" : {
@@ -363,6 +516,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Album Verwijderen uit Afspeellijst"
+          }
+        }
+      }
+    },
+    "Remove Song from Favorites" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nummer Verwijderen uit Favorieten"
           }
         }
       }
@@ -378,13 +541,34 @@
       }
     },
     "Rename Playlist" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afspeellijst Hernoemen"
+          }
+        }
+      }
     },
     "Scroll to Current Song" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll naar het Huidige Nummer"
+          }
+        }
+      }
     },
     "Scroll to the current song when the song changes." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll naar het huidige nummer wanneer het nummer verandert."
+          }
+        }
+      }
     },
     "Search" : {
       "localizations" : {
@@ -397,7 +581,14 @@
       }
     },
     "Show in Status Bar" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tonen in Statusbalk"
+          }
+        }
+      }
     },
     "Show Song in Status Bar" : {
       "localizations" : {
@@ -410,14 +601,7 @@
       }
     },
     "swmpc" : {
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "swmpc"
-          }
-        }
-      }
+      "shouldTranslate" : false
     },
     "Untitled Playlist" : {
       "localizations" : {

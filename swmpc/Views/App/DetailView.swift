@@ -339,6 +339,9 @@ struct DetailView: View {
         @State private var isHovering = false
         @State private var isFavorited = false
 
+        private let addCurrentToFavoritesNotifaction = NotificationCenter.default
+            .publisher(for: .addCurrentToFavoritesNotifaction)
+
         var body: some View {
             Image(systemSymbol: .heartFill)
                 .scaleEffect(isHovering ? 1.2 : 1)
@@ -352,12 +355,15 @@ struct DetailView: View {
                     isHovering = value
                 })
                 .onTapGesture(perform: {
-                    isFavorited.toggle()
-
+                    NotificationCenter.default.post(name: .addCurrentToFavoritesNotifaction, object: nil)
+                })
+                .onReceive(addCurrentToFavoritesNotifaction) { _ in
                     Task(priority: .userInitiated) {
                         guard let song = mpd.status.song else {
                             return
                         }
+                        
+                        isFavorited.toggle()
 
                         if isFavorited {
                             try? await ConnectionManager.command().addToFavorites(songs: [song])
@@ -365,7 +371,7 @@ struct DetailView: View {
                             try? await ConnectionManager.command().removeFromFavorites(songs: [song])
                         }
                     }
-                })
+                }
                 .onChange(of: mpd.status.song) {
                     guard let song = mpd.status.song else {
                         return

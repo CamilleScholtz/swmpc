@@ -56,6 +56,7 @@ import SwiftUI
         guard let favoritePlaylist = allPlaylists.first(where: { $0.name == "Favorites" }) else {
             return
         }
+
         favorites = try await ConnectionManager.idle.getSongs(for: favoritePlaylist)
     }
 

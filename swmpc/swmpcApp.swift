@@ -14,7 +14,7 @@ struct swmpcApp: App {
 
     let router = Router()
 
-    var body: some Scene {
+    var body: some Scene {        
         WindowGroup {
             AppView()
                 .environment(appDelegate.mpd)
@@ -53,6 +53,7 @@ struct swmpcApp: App {
                 Button("Go to Current Song") {
                     NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
                 }
+                // TODO: This sometimes selects a playlist starting with the `c`.
                 .keyboardShortcut("c", modifiers: [])
 
                 Button("Search") {

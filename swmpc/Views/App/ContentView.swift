@@ -826,9 +826,11 @@ struct ContentView: View {
                 }
             })
             .contextMenu {
-                Button("Add Song to Favorites") {
-                    Task {
-                        try? await ConnectionManager.command().addToFavorites(songs: [song])
+                if mpd.status.playlist?.name != "Favorites" {
+                    Button("Add Song to Favorites") {
+                        Task {
+                            try? await ConnectionManager.command().addToFavorites(songs: [song])
+                        }
                     }
                 }
 
@@ -844,9 +846,19 @@ struct ContentView: View {
                     }
 
                     if let playlist = mpd.status.playlist {
-                        Button("Remove Song from Playlist") {
-                            Task {
-                                try? await ConnectionManager.command().removeFromPlaylist(playlist, songs: [song])
+                        Divider()
+                        
+                        if mpd.status.playlist?.name == "Favorites" {
+                            Button("Remove Song from Favorites") {
+                                Task {
+                                    try? await ConnectionManager.command().removeFromFavorites(songs: [song])
+                                }
+                            }
+                        } else {
+                            Button("Remove Song from Playlist") {
+                                Task {
+                                    try? await ConnectionManager.command().removeFromPlaylist(playlist, songs: [song])
+                                }
                             }
                         }
                     }

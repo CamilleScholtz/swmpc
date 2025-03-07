@@ -1124,7 +1124,6 @@ extension ConnectionManager where Mode == CommandMode {
                 "playlistdelete \(playlist.name) \($0.position)"
             }
         }
-        print(commands)
 
         _ = try await run(commands)
     }
