@@ -14,34 +14,47 @@ struct swmpcApp: App {
 
     let router = Router()
 
-    var body: some Scene {        
+    var body: some Scene {
         WindowGroup {
             AppView()
                 .environment(appDelegate.mpd)
                 .environment(router)
+                .onAppear {
+                    for window in NSApplication.shared.windows {
+                        window.tabbingMode = .disallowed
+                    }
+                }
         }
         .windowStyle(.hiddenTitleBar)
+        .commandsRemoved()
         .commands {
+            CommandGroup(replacing: .undoRedo) {}
+            CommandGroup(replacing: .pasteboard) {}
+            CommandGroup(replacing: .toolbar) {}
+        
+
+
             CommandMenu("Controls") {
                 Button(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
-                    Task {
+                    Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
                     }
                 }
-                // TODO: Space doesn't work?
-                .keyboardShortcut(.space, modifiers: [])
+                .keyboardShortcut(.space, modifiers: [.command])
 
                 Button("Next Song") {
-                    Task {
+                    Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().next()
                     }
                 }
+                .keyboardShortcut(.downArrow, modifiers: [.command])
 
                 Button("Previous Song") {
-                    Task {
+                    Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().previous()
                     }
                 }
+                .keyboardShortcut(.upArrow, modifiers: [.command])
 
                 Divider()
 
@@ -53,7 +66,6 @@ struct swmpcApp: App {
                 Button("Go to Current Song") {
                     NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
                 }
-                // TODO: This sometimes selects a playlist starting with the `c`.
                 .keyboardShortcut("c", modifiers: [])
 
                 Button("Search") {
@@ -63,11 +75,12 @@ struct swmpcApp: App {
 
                 Divider()
 
-                Button("Update Library") {
+                Button("Refresh Library") {
                     Task {
                         try? await ConnectionManager.command().update()
                     }
                 }
+                .keyboardShortcut("r", modifiers: [.command])
             }
 
             CommandMenu("Playlists") {

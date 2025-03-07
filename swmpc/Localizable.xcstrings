@@ -510,6 +510,16 @@
         }
       }
     },
+    "Refresh Library" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collectie verversen"
+          }
+        }
+      }
+    },
     "Remove Album from Playlist" : {
       "localizations" : {
         "nl" : {
@@ -609,16 +619,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Naamloze afspeellijst"
-          }
-        }
-      }
-    },
-    "Update Library" : {
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collectie bijwerken"
           }
         }
       }
