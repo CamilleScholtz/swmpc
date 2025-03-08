@@ -41,15 +41,38 @@ enum CommandMode: ConnectionMode {
 
 enum ConnectionManagerError: Error {
     case invalidPort
+    case unsupportedServerVersion
 
-    case unsupportedVersion
-    case connectionError
-    case connectionClosed
-
-    case protocolError(String)
+    case connectionSetupFailed
+    case connectionUnexpectedClosure
 
     case readUntilConditionNotMet
-    case malformedResponse
+
+    case protocolViolation(String)
+    case malformedResponse(String)
+
+    case networkTransportError(Error)
+
+    var localizedDescription: String {
+        switch self {
+        case .invalidPort:
+            return "Invalid port provided. Port must be between 1 and 65535."
+        case .unsupportedServerVersion:
+            return "Unsupported MPD server version. Minimum required version is 0.21."
+        case .connectionSetupFailed:
+            return "Failed to establish network connection to MPD server."
+        case .connectionUnexpectedClosure:
+            return "Network connection was closed unexpectedly during operation."
+        case .readUntilConditionNotMet:
+            return "Failed to locate expected response termination sequence."
+        case let .protocolViolation(details):
+            return "MPD protocol violation detected: \(details)"
+        case let .malformedResponse(details):
+            return "Received malformed or unexpected response format from server: \(details)"
+        case let .networkTransportError(underlyingError):
+            return "Network transport error occurred: \(underlyingError.localizedDescription)"
+        }
+    }
 }
 
 actor ConnectionManager<Mode: ConnectionMode> {
@@ -88,9 +111,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// (i.e. in the `.ready` state), the function returns immediately.
     ///
     /// - Throws: `ConnectionManagerError.invalidPort` if the port is
-    ///           invalid, and `ConnectionManagerError.connectionError` if the
+    ///           invalid, `ConnectionManagerError.connectionSetupFailed` if the
     ///           connection cannot be created, the connection fails to become
-    ///           ready, or the expected server greeting is not received.
+    ///           ready, or the expected server greeting is not received,
+    ///           `ConnectionManagerError.unsupportedServerVersion` if the
+    ///           server version is not supported.
     func connect() async throws {
         guard connection?.state != .ready else {
             return
@@ -110,22 +135,27 @@ actor ConnectionManager<Mode: ConnectionMode> {
             using: NWParameters(tls: nil, tcp: options)
         )
         guard let connection else {
-            throw ConnectionManagerError.connectionError
+            throw ConnectionManagerError.connectionSetupFailed
         }
 
         connection.start(queue: connectionQueue)
-        try await waitForConnectionReady()
+        do {
+            try await waitForConnectionReady()
+        } catch {
+            disconnect()
+            throw error
+        }
 
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
-            throw ConnectionManagerError.connectionError
+            throw ConnectionManagerError.connectionSetupFailed
         }
 
         version = lines.first?.split(separator: " ").last.map(String.init)
         guard version?.compare("0.21", options: .numeric) !=
             .orderedAscending
         else {
-            throw ConnectionManagerError.unsupportedVersion
+            throw ConnectionManagerError.unsupportedServerVersion
         }
     }
 
@@ -147,15 +177,15 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// This function checks if there is an active `NWConnection` that is in the
     /// `.ready` state. If the connection is valid and ready, it returns the
     /// connection for use. Otherwise, it throws a
-    /// `ConnectionManagerError.connectionClosed` error indicating that the
-    /// connection is either not established or not ready.
+    /// `ConnectionManagerError.connectionUnexpectedClosure` error indicating
+    /// that the connection is either not established or not ready.
     ///
-    /// - Throws: `ConnectionManagerError.connectionClosed` if there is no
-    ///           active connection or if the connection is not ready.
+    /// - Throws: `ConnectionManagerError.connectionUnexpectedClosure` if there
+    ///           is no active connection or if the connection is not ready.
     /// - Returns: A ready-to-use `NWConnection` instance.
     func ensureConnectionReady() throws -> NWConnection {
         guard let connection, connection.state == .ready else {
-            throw ConnectionManagerError.connectionClosed
+            throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
         return connection
@@ -203,11 +233,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// - Throws: An error from the connection's failure, waiting, or
     ///           cancellation state, or a
-    ///           `ConnectionManagerError.connectionError` if the connection is
-    ///           missing.
+    ///           `ConnectionManagerError.connectionUnexpectedClosure` if the
+    ///           connection is missing.
     private func waitForConnectionReady() async throws {
         guard let connection else {
-            throw ConnectionManagerError.connectionError
+            throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
         let states = AsyncStream<NWConnection.State> { continuation in
@@ -228,20 +258,17 @@ actor ConnectionManager<Mode: ConnectionMode> {
             case .ready:
                 return
             case let .failed(error):
-                disconnect()
-                throw error
+                throw ConnectionManagerError.networkTransportError(error)
             case let .waiting(error):
-                disconnect()
-                throw error
+                throw ConnectionManagerError.networkTransportError(error)
             case .cancelled:
-                disconnect()
-                throw ConnectionManagerError.connectionClosed
+                throw ConnectionManagerError.connectionUnexpectedClosure
             default:
                 continue
             }
         }
 
-        throw ConnectionManagerError.connectionError
+        throw ConnectionManagerError.connectionUnexpectedClosure
     }
 
     // MARK: - Writing
@@ -266,7 +293,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
             CheckedContinuation<Void, Error>) in
             connection.send(content: data, completion: .contentProcessed { error in
                 if let error {
-                    continuation.resume(throwing: error)
+                    continuation.resume(throwing:
+                        ConnectionManagerError.networkTransportError(error)
+                    )
                 } else {
                     continuation.resume()
                 }
@@ -338,7 +367,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// calling `extractLineFromBuffer()`.
     /// - If a complete line is available:
     ///   - If the line starts with `ACK`, it indicates a protocol error and
-    ///     throws `ConnectionManagerError.protocolError` with the offending
+    ///     throws `ConnectionManagerError.protocolViolation` with the offending
     ///     line.
     ///   - Otherwise, it returns the line.
     /// - If no complete line is present, the function awaits additional data by
@@ -352,7 +381,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         while true {
             if let line = try extractLineFromBuffer() {
                 if line.hasPrefix("ACK") {
-                    throw ConnectionManagerError.protocolError(line)
+                    throw ConnectionManagerError.protocolViolation(line)
                 }
 
                 return line
@@ -375,7 +404,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: An error if receiving additional data fails.
     private func readFixedLengthData(_ length: Int) async throws -> Data {
         guard length >= 0 else {
-            throw ConnectionManagerError.malformedResponse
+            throw ConnectionManagerError.malformedResponse(
+                "Invalid data length")
         }
 
         var data = Data()
@@ -418,7 +448,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         buffer.removeSubrange(...index)
 
         guard let string = String(data: data, encoding: .utf8) else {
-            throw ConnectionManagerError.malformedResponse
+            throw ConnectionManagerError.malformedResponse(
+                "Failed to decode line from buffer")
         }
 
         return string
@@ -449,13 +480,15 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 Mode.bufferSize)
             { data, _, _, error in
                 if let error {
-                    continuation.resume(throwing: error)
+                    continuation.resume(throwing:
+                        ConnectionManagerError.networkTransportError(error) // ← Wrap here
+                    )
                 } else {
                     continuation.resume(returning: data)
                 }
             }
         }) else {
-            throw ConnectionManagerError.connectionClosed
+            throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
         buffer.append(chunk)
@@ -573,7 +606,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard parts.count == 2 else {
-            throw ConnectionManagerError.malformedResponse
+            throw ConnectionManagerError.malformedResponse(
+                "Line does not contain exactly one colon")
         }
 
         return (parts[0].lowercased(), parts[1])
@@ -649,7 +683,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
                     withAllowedCharacters: .urlPathAllowed),
                     let formatted = URL(string: encoded)
                 else {
-                    throw ConnectionManagerError.malformedResponse
+                    throw ConnectionManagerError.malformedResponse(
+                        "Failed to parse URL")
                 }
 
                 url = formatted
@@ -682,7 +717,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard let id, let position, let url else {
-            throw ConnectionManagerError.malformedResponse
+            throw ConnectionManagerError.malformedResponse(
+                "Missing mandatory fields")
         }
 
         switch media {
@@ -773,7 +809,8 @@ extension ConnectionManager {
                 case "stop":
                     .stop
                 default:
-                    throw ConnectionManagerError.malformedResponse
+                    throw ConnectionManagerError.malformedResponse(
+                        "Invalid player state")
                 }
             case "random":
                 isRandom = (value == "1")
@@ -956,8 +993,11 @@ extension ConnectionManager where Mode == IdleMode {
     ///           response does not contain a `changed` line.
     func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
         let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
-        guard let changedLine = lines.first(where: { $0.hasPrefix("changed: ") }) else {
-            throw ConnectionManagerError.malformedResponse
+        guard let changedLine = lines.first(where: { $0.hasPrefix(
+            "changed: ") })
+        else {
+            throw ConnectionManagerError.malformedResponse(
+                "Missing 'changed' line")
         }
 
         return IdleEvent(rawValue: String(changedLine.dropFirst("changed: "
@@ -1013,7 +1053,8 @@ extension ConnectionManager where Mode == ArtworkMode {
             }
 
             guard let chunkSize else {
-                throw ConnectionManagerError.malformedResponse
+                throw ConnectionManagerError.malformedResponse(
+                    "Missing chunk size")
             }
 
             let binaryChunk = try await readFixedLengthData(chunkSize)
@@ -1031,7 +1072,7 @@ extension ConnectionManager where Mode == ArtworkMode {
                 }
             }
 
-            throw ConnectionManagerError.malformedResponse
+            throw ConnectionManagerError.malformedResponse("Missing 'OK' line")
         }
     }
 }
