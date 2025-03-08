@@ -25,9 +25,18 @@ actor IntelligenceManager {
 
     private init() {}
 
+    /// Connects to the intelligence API using the given model.
+    ///
+    /// - Parameters:
+    ///     - model: The model to use.
+    /// - Returns: The connected intelligence API.
+    /// - Throws: An error if the connection could not be established.
     @MainActor
-    func connect(using model: IntelligenceModel) async throws -> OpenAI {
-        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+    private func connect(using model: IntelligenceModel) async throws ->
+        OpenAI
+    {
+        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled =
+            false
         guard isIntelligenceEnabled else {
             throw IntelligenceManagerError.intelligenceDisabled
         }
@@ -57,9 +66,16 @@ actor IntelligenceManager {
         return OpenAI(configuration: .init(token: token, host: host))
     }
 
+    /// Creates a playlist using the given prompt.
+    ///
+    /// - Parameters:
+    ///     - playlist: The playlist to fill.
+    ///     - prompt: The prompt to use.
+    /// - Throws: An error if the playlist could not be filled
     @MainActor
-    func createPlaylist(using playlist: Playlist, prompt: String) async throws {
-        @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel.deepSeek
+    func fillPlaylist(using playlist: Playlist, prompt: String) async throws {
+        @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel
+            .deepSeek
 
         let client = try await connect(using: model)
 
@@ -82,7 +98,8 @@ actor IntelligenceManager {
 
                 THE DESCRIPTION: \(prompt)
                 """)!,
-                .init(role: .user, content: albums.map(\.description).joined(separator: "\n"))!,
+                .init(role: .user, content: albums.map(\.description).joined(
+                    separator: "\n"))!,
             ],
             model: model.rawValue,
             responseFormat: .jsonObject
@@ -95,7 +112,8 @@ actor IntelligenceManager {
         struct Playlist: Decodable {
             let playlist: [String]
         }
-        let data = try JSONDecoder().decode(Playlist.self, from: Data(response.utf8))
+        let data = try JSONDecoder().decode(Playlist.self, from: Data(
+            response.utf8))
 
         var songs: [Song] = []
 
@@ -104,10 +122,12 @@ actor IntelligenceManager {
                 continue
             }
 
-            try await songs.append(contentsOf: ConnectionManager.command().getSongs(for: album))
+            try await songs.append(contentsOf: ConnectionManager.command()
+                .getSongs(for: album))
         }
 
-        try await ConnectionManager.command().addToPlaylist(playlist, songs: songs)
+        try await ConnectionManager.command().addToPlaylist(playlist, songs:
+            songs)
         try await ConnectionManager.command().loadPlaylist(playlist)
     }
 }

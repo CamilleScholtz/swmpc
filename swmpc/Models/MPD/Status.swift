@@ -20,7 +20,7 @@ import SwiftUI
 
     var song: Song?
     // TODO: I currently set this in SidebarView, I'd rather want to do it here,
-    // but I don't have access to either `$category`.
+    // however, accessing the router from here feels wrong.
     var media: (any Mediable)?
     var playlist: Playlist?
 

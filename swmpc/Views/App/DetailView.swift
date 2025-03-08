@@ -362,7 +362,7 @@ struct DetailView: View {
                         guard let song = mpd.status.song else {
                             return
                         }
-                        
+
                         isFavorited.toggle()
 
                         if isFavorited {

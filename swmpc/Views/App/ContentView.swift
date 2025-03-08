@@ -847,7 +847,7 @@ struct ContentView: View {
 
                     if let playlist = mpd.status.playlist {
                         Divider()
-                        
+
                         if mpd.status.playlist?.name == "Favorites" {
                             Button("Remove Song from Favorites") {
                                 Task {
@@ -1056,7 +1056,7 @@ struct ContentView: View {
                             Task(priority: .userInitiated) {
                                 isLoading = true
 
-                                try? await IntelligenceManager.shared.createPlaylist(using: playlistToEdit!, prompt: prompt)
+                                try? await IntelligenceManager.shared.fillPlaylist(using: playlistToEdit!, prompt: prompt)
                                 try? await mpd.queue.set(using: .playlist, force: true)
 
                                 isLoading = false

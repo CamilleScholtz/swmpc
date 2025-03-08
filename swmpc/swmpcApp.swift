@@ -31,8 +31,6 @@ struct swmpcApp: App {
             CommandGroup(replacing: .undoRedo) {}
             CommandGroup(replacing: .pasteboard) {}
             CommandGroup(replacing: .toolbar) {}
-        
-
 
             CommandMenu("Controls") {
                 Button(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {

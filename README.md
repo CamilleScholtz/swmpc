@@ -18,7 +18,7 @@ Native MPD client for macOS.
 ## Requirements
 
 - macOS 15.0 or later
-- MPD 0.24.0 or later, (using older versions may work, but playlist management will not be available)
+- MPD 0.24.0 or later, (using versions new than 0.21 still work, but playlist management will not be available)
 
 
 ## Installation

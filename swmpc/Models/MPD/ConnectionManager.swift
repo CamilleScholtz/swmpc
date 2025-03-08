@@ -42,6 +42,7 @@ enum CommandMode: ConnectionMode {
 enum ConnectionManagerError: Error {
     case invalidPort
 
+    case unsupportedVersion
     case connectionError
     case connectionClosed
 
@@ -63,6 +64,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
         attributes: Mode.queueAttributes,
         target: .global(qos: Mode.qos.qosClass)
     )
+
+    /// The version of the MPD server.
+    private var version: String?
 
     private init() {}
 
@@ -115,6 +119,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
             throw ConnectionManagerError.connectionError
+        }
+
+        version = lines.first?.split(separator: " ").last.map(String.init)
+        guard version?.compare("0.21", options: .numeric) !=
+            .orderedAscending
+        else {
+            throw ConnectionManagerError.unsupportedVersion
         }
     }
 
@@ -464,7 +475,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   - prefix: The prefix string that signifies the start of a new chunk.
     /// - Returns: An array of chunks, where each chunk is an array of strings
     ///            grouped together.
-    private func chunkLines(_ lines: [String], startingWith prefix: String) -> [[String]] {
+    private func chunkLines(_ lines: [String], startingWith prefix: String) ->
+        [[String]]
+    {
         var chunks = [[String]]()
         var currentChunk = [String]()
 
@@ -505,7 +518,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: `ConnectionManagerError.readUntilConditionNotMet` if the
     ///           condition is never met, or any error encountered by
     ///           `readLine()`.
-    private func readUntil(_ condition: @escaping (String) -> Bool) async throws -> [String] {
+    private func readUntil(_ condition: @escaping (String) -> Bool) async throws
+        -> [String]
+    {
         var lines: [String] = []
 
         while let line = try await readLine() {
@@ -601,7 +616,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            a `Song`) based on the parsed data.
     /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
     ///           are missing or if the response is improperly formatted.
-    private func parseMediaResponse(_ lines: [String], using media: MediaType, index: UInt32? = nil) throws -> (any Playable)? {
+    private func parseMediaResponse(_ lines: [String], using media: MediaType,
+                                    index: UInt32? = nil) throws -> (any
+        Playable)?
+    {
         var id: UInt32?
         var position: UInt32?
         var url: URL?
@@ -812,9 +830,6 @@ extension ConnectionManager {
 
     /// Retrieves songs from the queue that match a specific album title.
     ///
-    /// - Note: This method may not work correctly if multiple albums share the
-    ///         same title.
-    ///
     /// - Parameter album: The `Album` object for which the songs should be
     ///                    retrieved.
     /// - Returns: An array of `Song` objects corresponding to the specified
@@ -945,7 +960,8 @@ extension ConnectionManager where Mode == IdleMode {
             throw ConnectionManagerError.malformedResponse
         }
 
-        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: ".count)))!
+        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: "
+                .count)))!
     }
 }
 
@@ -1114,9 +1130,12 @@ extension ConnectionManager where Mode == CommandMode {
         }
 
         var commands: [String]
-        let positions = songsToRemove.map(\.position).sorted().map { $0 }
+        let positions = songsToRemove.map(\.position).sorted().map(\.self)
 
-        if positions.count > 1 && positions == Array(positions.first! ... positions.last!) {
+        if positions.count > 1, version?.compare("0.23.3", options: .numeric)
+            != .orderedAscending, positions == Array(positions.first! ...
+                positions.last!)
+        {
             commands = ["playlistdelete \(playlist.name) \(positions.first!):\(positions.last!)"]
         } else {
             commands = songsToRemove.map {
