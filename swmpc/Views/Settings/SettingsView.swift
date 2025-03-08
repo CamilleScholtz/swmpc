@@ -68,103 +68,104 @@ struct SettingsView: View {
         }
         .frame(width: 500)
     }
-}
 
-struct GeneralView: View {
-    @AppStorage(Setting.host) var host = "localhost"
-    @AppStorage(Setting.port) var port = 6600
+    struct GeneralView: View {
+        @AppStorage(Setting.host) var host = "localhost"
+        @AppStorage(Setting.port) var port = 6600
 
-    @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
+        @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
-    var body: some View {
-        Form {
-            TextField("MPD Host:", text: $host)
-            TextField("MPD Port:", value: $port, formatter: NumberFormatter())
+        var body: some View {
+            Form {
+                TextField("MPD Host:", text: $host)
+                TextField("MPD Port:", value: $port, formatter: NumberFormatter())
 
-            Divider()
-                .frame(height: 32, alignment: .center)
+                Divider()
+                    .frame(height: 32, alignment: .center)
 
-            Picker("Artwork retrieval:", selection: $artworkGetter) {
-                Text("Library").tag(ArtworkGetter.library)
-                Text("Embedded").tag(ArtworkGetter.embedded)
+                Picker("Artwork retrieval:", selection: $artworkGetter) {
+                    Text("Library").tag(ArtworkGetter.library)
+                    Text("Embedded").tag(ArtworkGetter.embedded)
+                }
+                .pickerStyle(.inline)
+                Text("Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Divider()
+                    .frame(height: 32, alignment: .center)
+
+                LaunchAtLogin.Toggle()
             }
-            .pickerStyle(.inline)
-            Text("Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            Divider()
-                .frame(height: 32, alignment: .center)
-
-            LaunchAtLogin.Toggle()
+            .padding(32)
+            .navigationTitle("General")
         }
-        .padding(32)
-        .navigationTitle("General")
+    }
+
+    struct BehaviorView: View {
+        @AppStorage(Setting.showStatusBar) var showStatusBar = true
+        @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
+        @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
+
+        var body: some View {
+            Form {
+                Toggle(isOn: $scrollToCurrent) {
+                    Text("Scroll to Current Song")
+                    Text("Scroll to the current song when the song changes.")
+                }
+
+                Divider()
+                    .frame(height: 32, alignment: .center)
+
+                Toggle("Show in Status Bar", isOn: $showStatusBar)
+                Toggle(isOn: $showStatusbarSong) {
+                    Text("Show Song in Status Bar")
+                    Text("If this is disabled, only the swmpc icon will be shown.")
+                }
+                .disabled(!showStatusBar)
+            }
+            .padding(32)
+            .navigationTitle("Behavior")
+        }
+    }
+
+    struct IntelligenceView: View {
+        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+        @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.deepSeek
+        @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
+        @AppStorage(Setting.openAIToken) var openAIToken = ""
+
+        var body: some View {
+            Form {
+                Toggle(isOn: $isIntelligenceEnabled) {
+                    Text("Enable AI Features")
+                    Text("Currently used for smart playlist generation.")
+                }
+
+                Divider()
+                    .frame(height: 32, alignment: .center)
+
+                Picker("Model:", selection: $intelligenceModel) {
+                    Text("DeepSeek").tag(IntelligenceModel.deepSeek)
+                    Text("OpenAI").tag(IntelligenceModel.openAI)
+                }
+                .pickerStyle(.inline)
+                .disabled(!isIntelligenceEnabled)
+
+                switch intelligenceModel {
+                case .deepSeek:
+                    TextField("API Token:", text: $deepSeekToken)
+                        .textContentType(.password)
+                        .disabled(!isIntelligenceEnabled)
+                case .openAI:
+                    TextField("API Token:", text: $openAIToken)
+                        .textContentType(.password)
+                        .disabled(!isIntelligenceEnabled)
+                }
+            }
+            .padding(32)
+            .navigationTitle("Intelligence")
+        }
     }
 }
 
-struct BehaviorView: View {
-    @AppStorage(Setting.showStatusBar) var showStatusBar = true
-    @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-    @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
-
-    var body: some View {
-        Form {
-            Toggle(isOn: $scrollToCurrent) {
-                Text("Scroll to Current Song")
-                Text("Scroll to the current song when the song changes.")
-            }
-
-            Divider()
-                .frame(height: 32, alignment: .center)
-
-            Toggle("Show in Status Bar", isOn: $showStatusBar)
-            Toggle(isOn: $showStatusbarSong) {
-                Text("Show Song in Status Bar")
-                Text("If this is disabled, only the swmpc icon will be shown.")
-            }
-            .disabled(!showStatusBar)
-        }
-        .padding(32)
-        .navigationTitle("Behavior")
-    }
-}
-
-struct IntelligenceView: View {
-    @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
-    @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.deepSeek
-    @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
-    @AppStorage(Setting.openAIToken) var openAIToken = ""
-
-    var body: some View {
-        Form {
-            Toggle(isOn: $isIntelligenceEnabled) {
-                Text("Enable AI Features")
-                Text("Currently used for smart playlist generation.")
-            }
-
-            Divider()
-                .frame(height: 32, alignment: .center)
-
-            Picker("Model:", selection: $intelligenceModel) {
-                Text("DeepSeek").tag(IntelligenceModel.deepSeek)
-                Text("OpenAI").tag(IntelligenceModel.openAI)
-            }
-            .pickerStyle(.inline)
-            .disabled(!isIntelligenceEnabled)
-
-            switch intelligenceModel {
-            case .deepSeek:
-                TextField("API Token:", text: $deepSeekToken)
-                    .textContentType(.password)
-                    .disabled(!isIntelligenceEnabled)
-            case .openAI:
-                TextField("API Token:", text: $openAIToken)
-                    .textContentType(.password)
-                    .disabled(!isIntelligenceEnabled)
-            }
-        }
-        .padding(32)
-        .navigationTitle("Intelligence")
-    }
-}
