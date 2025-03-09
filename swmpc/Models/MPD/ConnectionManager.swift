@@ -512,22 +512,22 @@ actor ConnectionManager<Mode: ConnectionMode> {
         [[String]]
     {
         var chunks = [[String]]()
-        var currentChunk = [String]()
-
-        guard lines.contains(where: { $0.hasPrefix(prefix) }) else {
-            return chunks
-        }
+        var currentChunk: [String]?
 
         for line in lines {
-            if line.hasPrefix(prefix), !currentChunk.isEmpty {
-                chunks.append(currentChunk)
-                currentChunk.removeAll()
+            if line.hasPrefix(prefix) {
+                if let current = currentChunk {
+                    chunks.append(current)
+                }
+
+                currentChunk = [line]
+            } else {
+                currentChunk?.append(line)
             }
-            currentChunk.append(line)
         }
 
-        if !currentChunk.isEmpty {
-            chunks.append(currentChunk)
+        if let current = currentChunk {
+            chunks.append(current)
         }
 
         return chunks
