@@ -21,7 +21,7 @@ extension Double {
         hours.round(.down)
         let minutes = (self - hours * 3600) / 60
 
-        if hours < 1 {
+        guard hours > 1 else {
             return String(format: "%02dm", Int(minutes))
         }
 

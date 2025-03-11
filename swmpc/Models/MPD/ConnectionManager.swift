@@ -58,7 +58,7 @@ enum ConnectionManagerError: Error {
         case .invalidPort:
             return "Invalid port provided. Port must be between 1 and 65535."
         case .unsupportedServerVersion:
-            return "Unsupported MPD server version. Minimum required version is 0.21."
+            return "Unsupported MPD server version. Minimum required version is 0.24."
         case .connectionSetupFailed:
             return "Failed to establish network connection to MPD server."
         case .connectionUnexpectedClosure:
@@ -152,7 +152,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         version = lines.first?.split(separator: " ").last.map(String.init)
-        guard version?.compare("0.21", options: .numeric) !=
+        guard version?.compare("0.24", options: .numeric) !=
             .orderedAscending
         else {
             throw ConnectionManagerError.unsupportedServerVersion
@@ -1173,9 +1173,8 @@ extension ConnectionManager where Mode == CommandMode {
         var commands: [String]
         let positions = songsToRemove.map(\.position).sorted().map(\.self)
 
-        if positions.count > 1, version?.compare("0.23.3", options: .numeric)
-            != .orderedAscending, positions == Array(positions.first! ...
-                positions.last!)
+        if positions.count > 1, positions == Array(positions.first! ...
+            positions.last!)
         {
             commands = ["playlistdelete \(playlist.name) \(positions.first!):\(positions.last!)"]
         } else {
