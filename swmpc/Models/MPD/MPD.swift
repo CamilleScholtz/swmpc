@@ -11,6 +11,8 @@ import SwiftUI
     let status = Status()
     let queue = Queue()
 
+    var error: Error?
+
     private var updateLoopTask: Task<Void, Never>?
 
     @MainActor
@@ -29,9 +31,12 @@ import SwiftUI
         while true {
             do {
                 try await ConnectionManager.idle.connect()
+                error = nil
 
                 return
             } catch {
+                self.error = error
+
                 // TODO: Set other stuff to nil as well?
                 status.state = nil
 

@@ -26,6 +26,14 @@ struct AppView: View {
                         Text("Please check your configuration and server.")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+
+                        if let error = mpd.error {
+                            Text(error.localizedDescription)
+                                .font(.caption)
+                                .monospaced()
+                                .foregroundColor(.secondary)
+                                .padding(.top, 10)
+                        }
                     }
                     .opacity(showError ? 1 : 0)
                     .animation(.spring, value: showError)

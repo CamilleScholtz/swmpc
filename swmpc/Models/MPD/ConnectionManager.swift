@@ -39,7 +39,7 @@ enum CommandMode: ConnectionMode {
     static let qos: DispatchQoS = .userInitiated
 }
 
-enum ConnectionManagerError: Error {
+enum ConnectionManagerError: LocalizedError {
     case invalidPort
     case unsupportedServerVersion
 
@@ -51,26 +51,22 @@ enum ConnectionManagerError: Error {
     case protocolViolation(String)
     case malformedResponse(String)
 
-    case networkTransportError(Error)
-
-    var localizedDescription: String {
+    var errorDescription: String? {
         switch self {
         case .invalidPort:
-            return "Invalid port provided. Port must be between 1 and 65535."
+            "Invalid port provided. Port must be between 1 and 65535."
         case .unsupportedServerVersion:
-            return "Unsupported MPD server version. Minimum required version is 0.24."
+            "Unsupported MPD server version. Minimum required version is 0.24."
         case .connectionSetupFailed:
-            return "Failed to establish network connection to MPD server."
+            "Failed to establish network connection to MPD server."
         case .connectionUnexpectedClosure:
-            return "Network connection was closed unexpectedly during operation."
+            "Network connection was closed unexpectedly during operation."
         case .readUntilConditionNotMet:
-            return "Failed to locate expected response termination sequence."
+            "Failed to locate expected response termination sequence."
         case let .protocolViolation(details):
-            return "MPD protocol violation detected: \(details)"
+            "MPD protocol violation: \(details)"
         case let .malformedResponse(details):
-            return "Received malformed or unexpected response format from server: \(details)"
-        case let .networkTransportError(underlyingError):
-            return "Network transport error occurred: \(underlyingError.localizedDescription)"
+            "Received malformed or unexpected response format from server: \(details)"
         }
     }
 }
@@ -258,9 +254,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
             case .ready:
                 return
             case let .failed(error):
-                throw ConnectionManagerError.networkTransportError(error)
+                throw error
             case let .waiting(error):
-                throw ConnectionManagerError.networkTransportError(error)
+                throw error
             case .cancelled:
                 throw ConnectionManagerError.connectionUnexpectedClosure
             default:
@@ -293,9 +289,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             CheckedContinuation<Void, Error>) in
             connection.send(content: data, completion: .contentProcessed { error in
                 if let error {
-                    continuation.resume(throwing:
-                        ConnectionManagerError.networkTransportError(error)
-                    )
+                    continuation.resume(throwing: error)
                 } else {
                     continuation.resume()
                 }
@@ -480,9 +474,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 Mode.bufferSize)
             { data, _, _, error in
                 if let error {
-                    continuation.resume(throwing:
-                        ConnectionManagerError.networkTransportError(error) // ← Wrap here
-                    )
+                    continuation.resume(throwing: error)
                 } else {
                     continuation.resume(returning: data)
                 }

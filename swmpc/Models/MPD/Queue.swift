@@ -27,16 +27,16 @@ import SwiftUI
 
     /// The type of media in the queue. This can be `album`, `artist`, `song`,
     /// or `playlist`.
-    private(set) var type: MediaType?
+    var type: MediaType?
 
     /// The playlists available on the server.
-    private(set) var playlists: [Playlist]?
+    var playlists: [Playlist]?
 
     /// The songs in the `Favorites` playlist.
-    private(set) var favorites: [Song] = []
+    var favorites: [Song] = []
 
     /// The date at which the queue was last updated.
-    private(set) var lastUpdated: Date?
+    var lastUpdated: Date?
 
     /// This asynchronous function sets the media in the queue.
     ///
