@@ -64,6 +64,7 @@ struct AppView: View {
                 .background(.background)
             }
         }
+        .frame(minWidth: 180 + 310 + 650, minHeight: 650)
         .toolbar {
             Color.clear
         }

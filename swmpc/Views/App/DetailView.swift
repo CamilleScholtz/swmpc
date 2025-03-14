@@ -22,7 +22,7 @@ struct DetailView: View {
     @State private var isHovering = false
 
     var body: some View {
-        VStack {
+        ZStack {
             ZStack {
                 ZStack {
                     ZStack {
@@ -147,16 +147,16 @@ struct DetailView: View {
                         }
                     })
             }
-            .offset(y: -25)
-            .zIndex(100)
+            .offset(y: -120)
 
-            Spacer()
+            VStack {
+                Spacer()
 
-            FooterView()
-                .frame(height: 80)
+                FooterView()
+                    .frame(height: 80)
+            }
         }
         .ignoresSafeArea()
-        .frame(minWidth: 520, minHeight: 520)
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
                 artwork = nil

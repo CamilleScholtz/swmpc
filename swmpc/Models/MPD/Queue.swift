@@ -9,7 +9,7 @@ import SwiftUI
 
 @Observable final class Queue {
     /// The media in the queue. This represent the actual MPD queue.
-    private var internalMedia: [any Mediable] = []
+    var internalMedia: [any Mediable] = []
 
     /// The media in the queue. This can be the actual MPD queue or the search
     /// results.
