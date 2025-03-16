@@ -5,11 +5,13 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import Navigator
 import SwiftUI
 
 struct AppView: View {
     @Environment(MPD.self) private var mpd
 
+    @State private var selectedDestination: SidebarDestination? = .albums
     @State private var showError = false
 
     var body: some View {
@@ -49,12 +51,20 @@ struct AppView: View {
                 }
             } else {
                 NavigationSplitView {
-                    SidebarView()
+                    SidebarView(selectedDestination: $selectedDestination)
                         .navigationSplitViewColumnWidth(180)
                 } content: {
-                    ContentView()
-                        .navigationBarBackButtonHidden()
-                        .navigationSplitViewColumnWidth(310)
+                    ManagedNavigationStack(name: "content") {
+                        selectedDestination
+                            .navigationDestination(ContentDestination.self)
+                    }
+                    .navigationSplitViewColumnWidth(310)
+                    .navigationBarBackButtonHidden(true)
+                    .ignoresSafeArea()
+                    .overlay(
+                        LoadingView(selectedDestination: $selectedDestination)
+                    )
+                    .setPlaylistRootModifier()
                 } detail: {
                     ViewThatFits {
                         DetailView()

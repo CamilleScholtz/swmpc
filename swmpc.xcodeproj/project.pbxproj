@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91489B852D6A6C6C0038092A /* SFSafeSymbols */; };
 		91489BC42D7648350038092A /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 91489BC32D7648350038092A /* OpenAI */; };
+		9185FA552D85D742008E3B29 /* Navigator in Frameworks */ = {isa = PBXBuildFile; productRef = 9185FA542D85D742008E3B29 /* Navigator */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
@@ -38,6 +39,7 @@
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
 				91489BC42D7648350038092A /* OpenAI in Frameworks */,
+				9185FA552D85D742008E3B29 /* Navigator in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -87,6 +89,7 @@
 				91F55B392CFE5D300027BBFE /* AsyncAlgorithms */,
 				91489B852D6A6C6C0038092A /* SFSafeSymbols */,
 				91489BC32D7648350038092A /* OpenAI */,
+				9185FA542D85D742008E3B29 /* Navigator */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -122,6 +125,7 @@
 				91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */,
+				9185FA532D85D741008E3B29 /* XCRemoteSwiftPackageReference "Navigator" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -374,6 +378,14 @@
 				minimumVersion = 0.3.6;
 			};
 		};
+		9185FA532D85D741008E3B29 /* XCRemoteSwiftPackageReference "Navigator" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hmlongco/Navigator";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.25;
+			};
+		};
 		91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
@@ -402,6 +414,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */;
 			productName = OpenAI;
+		};
+		9185FA542D85D742008E3B29 /* Navigator */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9185FA532D85D741008E3B29 /* XCRemoteSwiftPackageReference "Navigator" */;
+			productName = Navigator;
 		};
 		91A142142CDEA27E000A74BC /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;

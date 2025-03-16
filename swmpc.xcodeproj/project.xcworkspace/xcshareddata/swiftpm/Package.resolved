@@ -1,5 +1,5 @@
 {
-  "originHash" : "1d1fa7ef914a6ae896778171466aee27559f7bd2b97a9a1b2313ae0bf993d1ce",
+  "originHash" : "23e6fda7a7226f96856b3e57374f1d3241140c9f9e88818b9bcb1a536d3118ca",
   "pins" : [
     {
       "identity" : "launchatlogin-modern",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc",
         "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "navigator",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/hmlongco/Navigator",
+      "state" : {
+        "revision" : "9d0b3205f51fbfb3babf8add05d25bf4e279ead4",
+        "version" : "0.9.25"
       }
     },
     {

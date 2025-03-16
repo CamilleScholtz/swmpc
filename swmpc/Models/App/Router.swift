@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 25/02/2025.
 //
 
+import Navigator
 import SFSafeSymbols
 import SwiftUI
 
@@ -17,8 +18,7 @@ struct Category: Identifiable, Hashable {
     let image: SFSymbol
 }
 
-@Observable
-class Router {
+@Observable class Router {
     let categories: [Category] = [
         .init(type: MediaType.album, playlist: nil, label: "Albums", image: .squareStack),
         .init(type: MediaType.artist, playlist: nil, label: "Artists", image: .musicMicrophone),

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-protocol Mediable: Identifiable, Equatable, Hashable, Sendable {
+protocol Mediable: Identifiable, Equatable, Hashable, Codable, Sendable {
     var id: UInt32 { get }
     var position: UInt32 { get }
 }

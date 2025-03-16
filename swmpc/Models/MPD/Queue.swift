@@ -86,6 +86,7 @@ import SwiftUI
         let allPlaylists = try await ConnectionManager.idle.getPlaylists()
 
         playlists = allPlaylists.filter { $0.name != "Favorites" }
+
         guard let favoritePlaylist = allPlaylists.first(where: {
             $0.name == "Favorites"
         }) else {

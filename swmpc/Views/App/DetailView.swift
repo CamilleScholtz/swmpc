@@ -10,7 +10,7 @@ import SwiftUI
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(Router.self) private var router
+    @Environment(\.navigator) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var artwork: NSImage?
@@ -135,19 +135,20 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let media = try? await mpd.queue.get(for: song, using: .album) else {
+                            guard let album = try? await mpd.queue.get(for: song, using: .album) as? Album else {
                                 return
                             }
 
-                            // TODO: Check if last in path is not the same as current media.
-                            // TODO: Very hacky?
-                            router.path.removeLast(router.path.count)
-                            try? await Task.sleep(for: .milliseconds(1))
-                            router.path.append(media)
+                            guard let navigator = navigator.root.child(named: "content") else {
+                                return
+                            }
+
+                            // TODO: Check if top of stack is same album.
+                            navigator.push(ContentDestination.album(album))
                         }
                     })
             }
-            .offset(y: -120)
+            .offset(y: -110)
 
             VStack {
                 Spacer()

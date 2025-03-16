@@ -125,6 +125,7 @@
       }
     },
     "Are you sure you want to queue playlist ’%@’?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -135,6 +136,7 @@
       }
     },
     "Are you sure you want to queue the library?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -388,6 +390,7 @@
       }
     },
     "New Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -551,6 +554,7 @@
       }
     },
     "Rename Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -611,9 +615,13 @@
       }
     },
     "swmpc" : {
-      "shouldTranslate" : false
+
+    },
+    "Test" : {
+
     },
     "Untitled Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
