@@ -10,61 +10,22 @@ import SwiftUI
 
 extension SidebarDestination: NavigationDestination {
     var body: some View {
-        ContentView(destination: self)
+        SidebarDestinationViewBuilder(destination: self)
     }
 
-//    private struct EmptyContentView: View {
-//        @Environment(Router.self) private var router
-//
-//        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
-//
-//        @State private var showIntelligencePlaylistSheet = false
-//        @State private var playlistToEdit: Playlist?
-//        @State private var intelligencePlaylistPrompt = ""
-//
-//        private let createIntelligencePlaylistNotification = NotificationCenter.default
-//            .publisher(for: .createIntelligencePlaylistNotification)
-//
-//        var body: some View {
-//            VStack {
-//                switch router.category.type {
-//                case .playlist:
-//                    Text("No songs in playlist.")
-//                        .font(.headline)
-//                    Text("Add songs to your playlist.")
-//                        .font(.subheadline)
-//
-//                    IntelligenceButtonView("Create Playlist using AI")
-//                        .offset(y: 20)
-//                        .onTapGesture {
-//                            guard isIntelligenceEnabled else {
-//                                return
-//                            }
-//
-//                            NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: router.category.playlist)
-//                        }
-//                default:
-//                    Text("No \(router.category.label.lowercased()) in library.")
-//                        .font(.headline)
-//
-//                    Text("Add songs to your library.")
-//                        .font(.subheadline)
-//                }
-//            }
-//            .offset(y: -20)
-//            .onReceive(createIntelligencePlaylistNotification) { notification in
-//                guard let playlist = notification.object as? Playlist else {
-//                    return
-//                }
-//
-//                playlistToEdit = playlist
-//                showIntelligencePlaylistSheet = true
-//            }
-//            .sheet(isPresented: $showIntelligencePlaylistSheet) {
-//                IntelligencePlaylistView(showIntelligencePlaylistSheet: $showIntelligencePlaylistSheet, playlistToEdit: $playlistToEdit)
-//            }
-//        }
-//    }
+    private struct SidebarDestinationViewBuilder: View {
+        @Environment(MPD.self) private var mpd
+
+        let destination: SidebarDestination
+
+        var body: some View {
+            if mpd.queue.internalMedia.isEmpty {
+                EmptyContentView(destination: destination)
+            } else {
+                ContentView(destination: destination)
+            }
+        }
+    }
 
     private struct ContentView: View {
         @Environment(MPD.self) private var mpd
@@ -138,6 +99,59 @@ extension SidebarDestination: NavigationDestination {
                 }
             } else {
                 proxy.scrollTo("top", anchor: .center)
+            }
+        }
+    }
+
+    private struct EmptyContentView: View {
+        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+
+        let destination: SidebarDestination
+
+        @State private var showIntelligencePlaylistSheet = false
+        @State private var playlistToEdit: Playlist?
+        @State private var intelligencePlaylistPrompt = ""
+
+        private let createIntelligencePlaylistNotification = NotificationCenter.default
+            .publisher(for: .createIntelligencePlaylistNotification)
+
+        var body: some View {
+            VStack {
+                switch destination {
+                case .albums, .artists, .songs:
+                    Text("No \(destination.label.lowercased()) in library.")
+                        .font(.headline)
+
+                    Text("Add songs to your library.")
+                        .font(.subheadline)
+                case let .playlist(playlist):
+                    Text("No songs in playlist.")
+                        .font(.headline)
+                    Text("Add songs to your playlist.")
+                        .font(.subheadline)
+
+                    IntelligenceButtonView("Create Playlist using AI")
+                        .offset(y: 20)
+                        .onTapGesture {
+                            guard isIntelligenceEnabled else {
+                                return
+                            }
+
+                            NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: playlist)
+                        }
+                }
+            }
+            .offset(y: -20)
+            .onReceive(createIntelligencePlaylistNotification) { notification in
+                guard let playlist = notification.object as? Playlist else {
+                    return
+                }
+
+                playlistToEdit = playlist
+                showIntelligencePlaylistSheet = true
+            }
+            .sheet(isPresented: $showIntelligencePlaylistSheet) {
+                IntelligencePlaylistView(showIntelligencePlaylistSheet: $showIntelligencePlaylistSheet, playlistToEdit: $playlistToEdit)
             }
         }
     }
