@@ -85,26 +85,10 @@
       }
     },
     "Add songs to your library." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voeg nummers toe aan je collectie."
-          }
-        }
-      }
+
     },
     "Add songs to your playlist." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voeg nummers toe aan je afspeellijst."
-          }
-        }
-      }
+
     },
     "API Token:" : {
       "localizations" : {
@@ -122,28 +106,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Weet je zeker dat je de afspeellijst ’%@’ wilt verwijderen?"
-          }
-        }
-      }
-    },
-    "Are you sure you want to queue playlist ’%@’?" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weet je zeker dat je afspeellijst '%@' aan de afspeelwachtrij wilt toevoegen?"
-          }
-        }
-      }
-    },
-    "Are you sure you want to queue the library?" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weet je zeker dat je de volledige collectie aan de afspeelwachtrij wilt toevoegen?"
           }
         }
       }
@@ -412,26 +374,10 @@
       }
     },
     "No %@ in library." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geen %@ in collectie."
-          }
-        }
-      }
+
     },
     "No songs in playlist." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geen nummers in afspeellijst."
-          }
-        }
-      }
+
     },
     "OpenAI" : {
       "shouldTranslate" : false
@@ -508,17 +454,6 @@
     },
     "Queue Library" : {
 
-    },
-    "Queue Playlist" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afspeellijst toevoegen aan wachtrij"
-          }
-        }
-      }
     },
     "Queue Playlist %@" : {
 
