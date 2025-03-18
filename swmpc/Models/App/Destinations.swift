@@ -10,7 +10,7 @@ import SwiftUI
 import Navigator
 import SFSafeSymbols
 
-enum SidebarDestination: Hashable {
+enum SidebarDestination: Identifiable, Codable, Hashable {
     case albums
     case artists
     case songs
@@ -48,7 +48,7 @@ enum SidebarDestination: Hashable {
     }
 }
 
-enum ContentDestination: Codable, Hashable {
+enum ContentDestination: Identifiable, Codable, Hashable {
     case album(Album)
     case artist(Artist)
 }

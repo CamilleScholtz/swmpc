@@ -2,7 +2,7 @@
 //  HeaderView.swift
 //  swmpc
 //
-//  Created by Camille Scholtz on 16/03/2025.
+//  Created by Camille Scholtz on 18/03/2025.
 //
 
 import SwiftUI
@@ -10,7 +10,7 @@ import SwiftUI
 struct HeaderView: View {
     @Environment(MPD.self) private var mpd
 
-    @Binding var selectedDestination: SidebarDestination?
+    @Binding var destination: SidebarDestination
 
     @State private var isSearching = false
     @State private var isHovering = false
@@ -21,7 +21,7 @@ struct HeaderView: View {
     var body: some View {
         HStack {
             if !isSearching {
-                Text(selectedDestination?.label ?? "")
+                Text(destination.label)
                     .font(.headline)
 
                 Spacer()
@@ -74,7 +74,7 @@ struct HeaderView: View {
         .frame(height: 50 - 7.5)
         .padding(.horizontal, 15)
         .padding(.top, 7.5)
-        .onChange(of: selectedDestination) {
+        .onChange(of: destination) {
             isSearching = false
         }
         .task(id: isSearching) {

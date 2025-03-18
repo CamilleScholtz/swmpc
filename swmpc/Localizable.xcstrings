@@ -85,6 +85,7 @@
       }
     },
     "Add songs to your library." : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -95,6 +96,7 @@
       }
     },
     "Add songs to your playlist." : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -390,7 +392,6 @@
       }
     },
     "New Playlist" : {
-      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -411,6 +412,7 @@
       }
     },
     "No %@ in library." : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -421,6 +423,7 @@
       }
     },
     "No songs in playlist." : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -503,7 +506,11 @@
         }
       }
     },
+    "Queue Library" : {
+
+    },
     "Queue Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -512,6 +519,9 @@
           }
         }
       }
+    },
+    "Queue Playlist %@" : {
+
     },
     "Refresh Library" : {
       "localizations" : {
@@ -554,7 +564,6 @@
       }
     },
     "Rename Playlist" : {
-      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {
@@ -617,11 +626,10 @@
     "swmpc" : {
 
     },
-    "Test" : {
+    "This will overwrite the current queue." : {
 
     },
     "Untitled Playlist" : {
-      "extractionState" : "stale",
       "localizations" : {
         "nl" : {
           "stringUnit" : {

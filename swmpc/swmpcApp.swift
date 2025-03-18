@@ -12,13 +12,10 @@ import SwiftUI
 struct swmpcApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
-    let router = Router()
-
     var body: some Scene {
         WindowGroup {
             AppView()
                 .environment(appDelegate.mpd)
-                .environment(router)
                 .onAppear {
                     for window in NSApplication.shared.windows {
                         window.tabbingMode = .disallowed
@@ -81,12 +78,14 @@ struct swmpcApp: App {
                 .keyboardShortcut("r", modifiers: [.command])
             }
 
-            CommandMenu("Playlists") {
-                Menu("Load Playlist") {
-                    ForEach(router.playlists) { playlist in
-                        Button(playlist.label) {
-                            Task {
-                                try? await ConnectionManager.command().loadPlaylist(playlist.playlist!)
+            if let playlists = appDelegate.mpd.queue.playlists {
+                CommandMenu("Playlists") {
+                    Menu("Load Playlist") {
+                        ForEach(playlists) { playlist in
+                            Button(playlist.name) {
+                                Task {
+                                    try? await ConnectionManager.command().loadPlaylist(playlist)
+                                }
                             }
                         }
                     }

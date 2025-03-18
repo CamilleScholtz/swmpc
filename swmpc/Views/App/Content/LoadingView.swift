@@ -11,7 +11,7 @@ import SwiftUI
 struct LoadingView: View {
     @Environment(MPD.self) private var mpd
 
-    @Binding var selectedDestination: SidebarDestination?
+    @Binding var destination: SidebarDestination
 
     @State private var isLoading = true
 
@@ -26,7 +26,7 @@ struct LoadingView: View {
                 ProgressView()
             }
         }
-        .onChange(of: $selectedDestination) {
+        .onChange(of: $destination) {
             isLoading = true
         }
         .task(id: mpd.queue.lastUpdated) {

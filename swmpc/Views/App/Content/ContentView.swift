@@ -2,86 +2,75 @@
 //  ContentView.swift
 //  swmpc
 //
-//  Created by Camille Scholtz on 14/11/2024.
+//  Created by Camille Scholtz on 16/03/2025.
 //
 
 import Navigator
-import SFSafeSymbols
 import SwiftUI
 
-struct ContentView: View {
-    @Environment(MPD.self) private var mpd
-
+extension SidebarDestination: NavigationDestination {
     var body: some View {
-        if mpd.queue.media.isEmpty {
-            EmptyContentView()
-                .ignoresSafeArea()
-        } else {
-            ManagedNavigationStack(scene: "content") {
-                SidebarDestination.albums
-                    .navigationDestination(SidebarDestination.self)
-                    .ignoresSafeArea()
-            }
-        }
+        ContentView(destination: self)
     }
 
-    struct EmptyContentView: View {
-        @Environment(Router.self) private var router
+//    private struct EmptyContentView: View {
+//        @Environment(Router.self) private var router
+//
+//        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+//
+//        @State private var showIntelligencePlaylistSheet = false
+//        @State private var playlistToEdit: Playlist?
+//        @State private var intelligencePlaylistPrompt = ""
+//
+//        private let createIntelligencePlaylistNotification = NotificationCenter.default
+//            .publisher(for: .createIntelligencePlaylistNotification)
+//
+//        var body: some View {
+//            VStack {
+//                switch router.category.type {
+//                case .playlist:
+//                    Text("No songs in playlist.")
+//                        .font(.headline)
+//                    Text("Add songs to your playlist.")
+//                        .font(.subheadline)
+//
+//                    IntelligenceButtonView("Create Playlist using AI")
+//                        .offset(y: 20)
+//                        .onTapGesture {
+//                            guard isIntelligenceEnabled else {
+//                                return
+//                            }
+//
+//                            NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: router.category.playlist)
+//                        }
+//                default:
+//                    Text("No \(router.category.label.lowercased()) in library.")
+//                        .font(.headline)
+//
+//                    Text("Add songs to your library.")
+//                        .font(.subheadline)
+//                }
+//            }
+//            .offset(y: -20)
+//            .onReceive(createIntelligencePlaylistNotification) { notification in
+//                guard let playlist = notification.object as? Playlist else {
+//                    return
+//                }
+//
+//                playlistToEdit = playlist
+//                showIntelligencePlaylistSheet = true
+//            }
+//            .sheet(isPresented: $showIntelligencePlaylistSheet) {
+//                IntelligencePlaylistView(showIntelligencePlaylistSheet: $showIntelligencePlaylistSheet, playlistToEdit: $playlistToEdit)
+//            }
+//        }
+//    }
 
-        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
-
-        @State private var showIntelligencePlaylistSheet = false
-        @State private var playlistToEdit: Playlist?
-        @State private var intelligencePlaylistPrompt = ""
-
-        private let createIntelligencePlaylistNotification = NotificationCenter.default
-            .publisher(for: .createIntelligencePlaylistNotification)
-
-        var body: some View {
-            VStack {
-                switch router.category.type {
-                case .playlist:
-                    Text("No songs in playlist.")
-                        .font(.headline)
-                    Text("Add songs to your playlist.")
-                        .font(.subheadline)
-
-                    IntelligenceButtonView("Create Playlist using AI")
-                        .offset(y: 20)
-                        .onTapGesture {
-                            guard isIntelligenceEnabled else {
-                                return
-                            }
-
-                            NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: router.category.playlist)
-                        }
-                default:
-                    Text("No \(router.category.label.lowercased()) in library.")
-                        .font(.headline)
-
-                    Text("Add songs to your library.")
-                        .font(.subheadline)
-                }
-            }
-            .offset(y: -20)
-            .onReceive(createIntelligencePlaylistNotification) { notification in
-                guard let playlist = notification.object as? Playlist else {
-                    return
-                }
-
-                playlistToEdit = playlist
-                showIntelligencePlaylistSheet = true
-            }
-            .sheet(isPresented: $showIntelligencePlaylistSheet) {
-                IntelligencePlaylistView(showIntelligencePlaylistSheet: $showIntelligencePlaylistSheet, playlistToEdit: $playlistToEdit)
-            }
-        }
-    }
-
-    struct FilledContentView: View {
+    private struct ContentView: View {
         @Environment(MPD.self) private var mpd
-        @Environment(Router.self) private var router
 
+        let destination: SidebarDestination
+        
         @State private var isHovering = false
         @State private var isSearching = false
 
@@ -93,20 +82,19 @@ struct ContentView: View {
         var body: some View {
             ScrollViewReader { proxy in
                 ScrollView {
-//                    HeaderView(isSearching: $isSearching)
-//                        .id("top")
+                    HeaderView(destination: .constant(destination))
+                        .id("top")
 
                     LazyVStack(alignment: .leading, spacing: 15) {
-                        switch router.category.type {
-                        case .artist:
-                            ArtistsView()
-                        case .song, .playlist:
-                            SongsView()
-                        default:
+                        switch destination {
+                        case .albums:
                             AlbumsView()
+                        case .artists:
+                            ArtistsView()
+                        case .songs, .playlist:
+                            SongsView()
                         }
                     }
-                    .id(router.category)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
@@ -155,21 +143,21 @@ struct ContentView: View {
     }
 }
 
-struct ArtworkView: View {
-    @Binding var image: NSImage?
-
+extension ContentDestination: NavigationDestination {
     var body: some View {
-        if let image {
-            Image(nsImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .scaledToFit()
-                .transition(.opacity.animation(.easeInOut(duration: 0.3)))
-        } else {
-            Rectangle()
-                .fill(Color(.secondarySystemFill).opacity(0.3))
-                .aspectRatio(contentMode: .fit)
-                .scaledToFill()
+        ZStack(alignment: .topTrailing) {
+            switch self {
+            case let .album(album):
+                AlbumSongsView(for: album)
+                    .padding(.top, 25)
+            case let .artist(artist):
+                ArtistAlbumsView(for: artist)
+                    .padding(.top, 25)
+            }
+
+            BackButtonView()
+                .offset(x: -15, y: 5)
         }
+        .ignoresSafeArea()
     }
 }

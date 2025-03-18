@@ -9,10 +9,15 @@ import Navigator
 import SwiftUI
 
 struct AppView: View {
+    @Environment(\.navigator) private var navigator
     @Environment(MPD.self) private var mpd
 
-    @State private var selectedDestination: SidebarDestination? = .albums
+    @State private var destination: SidebarDestination = .albums
+
     @State private var showError = false
+
+    @State private var showQueueAlert = false
+    @State private var playlistToQueue: Playlist?
 
     var body: some View {
         Group {
@@ -51,20 +56,19 @@ struct AppView: View {
                 }
             } else {
                 NavigationSplitView {
-                    SidebarView(selectedDestination: $selectedDestination)
+                    SidebarView(destination: $destination)
                         .navigationSplitViewColumnWidth(180)
                 } content: {
                     ManagedNavigationStack(name: "content") {
-                        selectedDestination
+                        destination
                             .navigationDestination(ContentDestination.self)
                     }
                     .navigationSplitViewColumnWidth(310)
                     .navigationBarBackButtonHidden(true)
                     .ignoresSafeArea()
                     .overlay(
-                        LoadingView(selectedDestination: $selectedDestination)
+                        LoadingView(destination: $destination)
                     )
-                    .setPlaylistRootModifier()
                 } detail: {
                     ViewThatFits {
                         DetailView()

@@ -57,7 +57,7 @@ struct Song: Playable {
     }
 }
 
-struct Playlist: Identifiable, Equatable, Hashable, Sendable {
+struct Playlist: Identifiable, Equatable, Hashable, Codable, Sendable {
     var id: String { name }
 
     let name: String
