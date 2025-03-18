@@ -70,7 +70,7 @@ extension SidebarDestination: NavigationDestination {
         @Environment(MPD.self) private var mpd
 
         let destination: SidebarDestination
-        
+
         @State private var isHovering = false
         @State private var isSearching = false
 
