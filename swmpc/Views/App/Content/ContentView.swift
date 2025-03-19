@@ -159,18 +159,20 @@ extension SidebarDestination: NavigationDestination {
 
 extension ContentDestination: NavigationDestination {
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            switch self {
-            case let .album(album):
-                AlbumSongsView(for: album)
-                    .padding(.top, 25)
-            case let .artist(artist):
-                ArtistAlbumsView(for: artist)
-                    .padding(.top, 25)
-            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 15) {
+                BackButtonView()
+                    .offset(y: 5)
 
-            BackButtonView()
-                .offset(x: -15, y: 5)
+                switch self {
+                case let .album(album):
+                    AlbumSongsView(for: album)
+                case let .artist(artist):
+                    ArtistAlbumsView(for: artist)
+                }
+            }
+            .padding(.horizontal, 15)
+            .padding(.bottom, 15)
         }
         .ignoresSafeArea()
     }

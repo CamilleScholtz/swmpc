@@ -144,7 +144,7 @@ struct DetailView: View {
                             }
 
                             // TODO: Check if top of stack is same album.
-                            navigator.push(ContentDestination.album(album))
+                            navigator.navigate(to: ContentDestination.album(album))
                         }
                     })
             }

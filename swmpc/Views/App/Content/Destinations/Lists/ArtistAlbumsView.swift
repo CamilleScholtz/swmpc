@@ -17,36 +17,32 @@ struct ArtistAlbumsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 15) {
-                HStack(spacing: 15) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(artist.name)
-                            .font(.system(size: 18))
-                            .fontWeight(.semibold)
-                            .fontDesign(.rounded)
-                            .lineLimit(3)
+        VStack(alignment: .leading, spacing: 15) {
+            HStack(spacing: 15) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(artist.name)
+                        .font(.system(size: 18))
+                        .fontWeight(.semibold)
+                        .fontDesign(.rounded)
+                        .lineLimit(3)
 
-                        Text(artist.albums?.count ?? 0 > 1 ? "\(String(artist.albums!.count)) albums" : "1 album")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.bottom, 15)
-
-                ForEach(artist.albums ?? []) { album in
-                    AlbumView(for: album)
+                    Text(artist.albums?.count ?? 0 > 1 ? "\(String(artist.albums!.count)) albums" : "1 album")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .padding(.leading, 15)
-            .padding(.trailing, 15)
         }
+        .padding(.bottom, 15)
         .task {
             guard let song = mpd.status.song else {
                 return
             }
 
             mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
+        }
+
+        ForEach(artist.albums ?? []) { album in
+            AlbumView(for: album)
         }
     }
 }

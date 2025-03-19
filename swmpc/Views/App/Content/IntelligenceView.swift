@@ -9,6 +9,7 @@ import SwiftUI
 
 struct IntelligencePlaylistView: View {
     @Environment(MPD.self) private var mpd
+    @Environment(\.colorScheme) private var colorScheme
 
     @Binding var showIntelligencePlaylistSheet: Bool
     @Binding var playlistToEdit: Playlist?
@@ -76,7 +77,7 @@ struct IntelligencePlaylistView: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: 15) {
             if isLoading {
                 IntelligenceSparklesView()
                     .font(.system(size: 40))
@@ -103,12 +104,12 @@ struct IntelligencePlaylistView: View {
                 TextField(suggestion, text: $prompt)
                     .textFieldStyle(.plain)
                     .padding(8)
-                    .background(.accent)
+                    .background(colorScheme == .dark ? .accent.opacity(0.2) : .accent)
                     .cornerRadius(100)
                     .multilineTextAlignment(.center)
                     .disableAutocorrection(true)
                     .focused($isFocused)
-                    .offset(y: -30)
+                    .offset(y: -15)
                     .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()
                     ) { _ in
                         guard !isFocused else {
@@ -127,6 +128,8 @@ struct IntelligencePlaylistView: View {
                     .onAppear {
                         isFocused = false
                     }
+
+                Spacer()
 
                 HStack {
                     Button("Cancel", role: .cancel) {
@@ -149,7 +152,7 @@ struct IntelligencePlaylistView: View {
                     }
                     .keyboardShortcut(.defaultAction)
                 }
-                .offset(y: -30)
+                .offset(y: -15)
             }
         }
         .frame(width: 300)

@@ -220,7 +220,6 @@ struct FooterView: View {
     struct ProgressView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var dragProgress: CGFloat? = nil
         @State private var isHovering = false
 
         private var progress: CGFloat {
@@ -234,10 +233,6 @@ struct FooterView: View {
             return CGFloat(elapsed / duration)
         }
 
-        private var displayProgress: CGFloat {
-            dragProgress ?? progress
-        }
-
         var body: some View {
             GeometryReader { geometry in
                 VStack(spacing: 0) {
@@ -248,30 +243,24 @@ struct FooterView: View {
 
                         RoundedRectangle(cornerRadius: 2)
                             .fill(Color(.accent))
-                            .frame(width: displayProgress * geometry.size.width, height: 3)
-                            .animation(.spring, value: displayProgress)
+                            .frame(width: progress * geometry.size.width, height: 3)
+                            .animation(.spring, value: progress)
 
                         Circle()
                             .fill(Color(.accent))
                             .frame(width: 8, height: 8)
                             .scaleEffect(isHovering ? 1.5 : 1)
                             .animation(.spring, value: isHovering)
-                            .offset(x: (displayProgress * geometry.size.width) - 4)
-                            .animation(.spring, value: displayProgress)
+                            .offset(x: (progress * geometry.size.width) - 4)
+                            .animation(.spring, value: progress)
                     }
                     .padding(.vertical, 3)
                     .contentShape(Rectangle())
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
-                                dragProgress = min(max(value.location.x / geometry.size.width, 0), 1)
-                            }
-                            .onEnded { value in
-                                let time = min(max(value.location.x / geometry.size.width, 0), 1) * (mpd.status.song?.duration ?? 100)
-
                                 Task(priority: .userInitiated) {
-                                    try? await ConnectionManager.command().seek(time)
-                                    dragProgress = nil
+                                    try? await ConnectionManager.command().seek(min(max(value.location.x / geometry.size.width, 0), 1) * (mpd.status.song?.duration ?? 100))
                                 }
                             }
                     )

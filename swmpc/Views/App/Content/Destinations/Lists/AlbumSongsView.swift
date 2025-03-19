@@ -161,9 +161,6 @@ struct AlbumSongsView: View {
                     }
                 }
             }
-            .padding(.leading, 15)
-            .padding(.trailing, 15)
-            .padding(.bottom, 10)
             .task {
                 async let artworkDataTask = ArtworkManager.shared.get(for: album, shouldCache: true)
                 async let songsTask = ConnectionManager.command().getSongs(for: album)
@@ -171,35 +168,22 @@ struct AlbumSongsView: View {
                 artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
+        }
+        .padding(.bottom, 15)
 
-            Divider()
-
-            if let songs {
-                ScrollView {
-                    Spacer()
-                        .frame(height: 15)
-
-                    ForEach(songs.keys.sorted(), id: \.self) { disc in
-                        VStack(alignment: .leading, spacing: 15) {
-                            if songs.keys.count > 1 {
-                                Text("Disc \(String(disc))")
-                                    .font(.headline)
-                                    .padding(.top, disc == songs.keys.sorted().first ? 0 : 10)
-                            }
-
-                            ForEach(songs[disc] ?? []) { song in
-                                SongView(for: song)
-                            }
-                        }
+        if let songs {
+            ForEach(songs.keys.sorted(), id: \.self) { disc in
+                VStack(alignment: .leading, spacing: 15) {
+                    if songs.keys.count > 1 {
+                        Text("Disc \(String(disc))")
+                            .font(.headline)
+                            .padding(.top, disc == songs.keys.sorted().first ? 0 : 10)
                     }
-                    .padding(.leading, 15)
-                    .padding(.trailing, 15)
 
-                    Spacer()
-                        .frame(height: 15)
+                    ForEach(songs[disc] ?? []) { song in
+                        SongView(for: song)
+                    }
                 }
-                .padding(.bottom, -30)
-                .offset(y: -15)
             }
         }
     }
