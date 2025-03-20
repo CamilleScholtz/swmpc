@@ -401,10 +401,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
             throw ConnectionManagerError.malformedResponse(
                 "Invalid data length")
         }
+        
+        guard length > 0 else {
+            return Data()
+        }
 
-        var data = Data()
-        data.reserveCapacity(length)
-
+        var data = Data(capacity: length)
         var remaining = length
 
         while remaining > 0 {
@@ -470,11 +472,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         guard let chunk = try await withCheckedThrowingContinuation({ (
             continuation: CheckedContinuation<Data?, Error>) in
-            connection.receive(minimumIncompleteLength: 1, maximumLength:
-                Mode.bufferSize)
-            { data, _, _, error in
+            connection.receive(minimumIncompleteLength: 1,
+                              maximumLength: Mode.bufferSize)
+            { data, _, isComplete, error in
                 if let error {
                     continuation.resume(throwing: error)
+                } else if isComplete {
+                    continuation.resume(returning: data ?? Data())
                 } else {
                     continuation.resume(returning: data)
                 }
@@ -974,7 +978,7 @@ extension ConnectionManager {
 extension ConnectionManager where Mode == IdleMode {
     static let idle = ConnectionManager<IdleMode>()
 
-    /// Waits for an idle event from the media server that matches the specifie
+    /// Waits for an idle event from the media server that matches the specified
     /// mask.
     ///
     /// - Parameter mask: An array of `IdleEvent` values specifying which events
