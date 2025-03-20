@@ -36,8 +36,6 @@ import SwiftUI
                 return
             } catch {
                 self.error = error
-
-                // TODO: Set other stuff to nil as well?
                 status.state = nil
 
                 try? await Task.sleep(for: .seconds(2))

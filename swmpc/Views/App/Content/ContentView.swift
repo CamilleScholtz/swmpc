@@ -32,7 +32,6 @@ extension SidebarDestination: NavigationDestination {
 
         let destination: SidebarDestination
 
-        @State private var isHovering = false
         @State private var isSearching = false
 
         private let scrollToCurrentNotification = NotificationCenter.default
