@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-import Navigator
+import NavigatorUI
 import SFSafeSymbols
 
 enum SidebarDestination: Identifiable, Codable, Hashable {
