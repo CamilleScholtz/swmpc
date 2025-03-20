@@ -5,7 +5,7 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
-import Navigator
+import NavigatorUI
 import SwiftUI
 
 struct AppView: View {

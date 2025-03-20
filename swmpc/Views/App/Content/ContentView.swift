@@ -5,7 +5,7 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import Navigator
+import NavigatorUI
 import SwiftUI
 
 extension SidebarDestination: NavigationDestination {
