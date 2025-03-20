@@ -1,7 +1,18 @@
-# swmpc
+<div align="center">
+	<a href="https://github.com/CamilleScholtz/swmpc">
+		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/1.webp" alt="swmpc">
+	</a>
 
-Native MPD client for macOS.
+	<h3 align="center">swmpc</h3>
 
+	<p align="center">
+		swmpc is a native macOS client for MPD.
+		<br />
+		<a href="https://github.com/CamilleScholtz/swmpc/issues">Report Bug</a>
+		·
+		<a href="https://github.com/CamilleScholtz/swmpc/issues">Request Feature</a>
+	</p>
+</div>
 
 ## Features
 
@@ -15,6 +26,12 @@ Native MPD client for macOS.
 - [x] Create "smart" playlists using AI (OpenAI or DeepSeek)
 
 
+## Screenshots
+
+![Screenshot 1](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/1.webp)
+![Screenshot 2](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/2.webp)
+
+
 ## Requirements
 
 - macOS 15.0 or later
@@ -24,9 +41,3 @@ Native MPD client for macOS.
 ## Installation
 
 This project is still in early beta stages, as such it is not yet available on the App Store. There are some tagged pre-releases available on the [releases page](https://github.com/CamilleScholtz/swmpc/releases). You can download the latest version, unzip it, and move the app to your Applications folder. Alternatively, you can clone the repository and build the app yourself.
-
-
-## Screenshots
-
-![Screenshot 1](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/1.webp)
-![Screenshot 2](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/2.webp)
