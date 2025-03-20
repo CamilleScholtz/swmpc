@@ -1,10 +1,8 @@
 <div align="center">
 	<a href="https://github.com/CamilleScholtz/swmpc">
-		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/1.webp" alt="swmpc">
+		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/swmpc.webp" alt="swmpc">
 	</a>
-
 	<h3 align="center">swmpc</h3>
-
 	<p align="center">
 		swmpc is a native macOS client for MPD.
 		<br />
