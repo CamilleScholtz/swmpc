@@ -31,9 +31,9 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
 
     var label: String {
         switch self {
-        case .albums: "Albums"
-        case .artists: "Artists"
-        case .songs: "Songs"
+        case .albums: String(localized: "Albums")
+        case .artists: String(localized: "Artists")
+        case .songs: String(localized: "Songs")
         case let .playlist(playlist): playlist.name
         }
     }

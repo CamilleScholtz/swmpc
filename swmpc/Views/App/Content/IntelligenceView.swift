@@ -14,7 +14,7 @@ struct IntelligencePlaylistView: View {
     @Binding var showIntelligencePlaylistSheet: Bool
     @Binding var playlistToEdit: Playlist?
 
-    private let loadingSentences = [
+    private let loadingSentences: [LocalizedStringResource] = [
         "Analyzing music preferences…",
         "Matching tracks to vibe…",
         "Curating playlist…",
@@ -41,8 +41,8 @@ struct IntelligencePlaylistView: View {
         "Calculating song popularity…",
         "Analyzing waveform…",
     ]
-
-    private let suggestions = [
+    
+    private let suggestions: [LocalizedStringResource] = [
         "Love Songs",
         "Turkish Music",
         "Asian Music",
@@ -71,8 +71,8 @@ struct IntelligencePlaylistView: View {
     @State private var prompt = ""
     @State private var isLoading = false
 
-    @State private var loadingSentence: String
-    @State private var suggestion: String
+    @State private var loadingSentence: LocalizedStringResource
+    @State private var suggestion: LocalizedStringResource
 
     @FocusState private var isFocused: Bool
 
@@ -101,7 +101,7 @@ struct IntelligencePlaylistView: View {
                     .textFieldStyle(.plain)
                     .frame(width: 0, height: 0)
 
-                TextField(suggestion, text: $prompt)
+                TextField(String(localized: suggestion), text: $prompt)
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(colorScheme == .dark ? .accent.opacity(0.2) : .accent)
