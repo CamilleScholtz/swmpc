@@ -5,7 +5,7 @@
 //  Created by Camille Scholtz on 04/03/2025.
 //
 
-@preconcurrency import OpenAI
+import OpenAI
 import SwiftUI
 
 enum IntelligenceManagerError: Error {
@@ -105,7 +105,7 @@ actor IntelligenceManager {
             responseFormat: .jsonObject
         ))
 
-        guard let response = result.choices.first?.message.content?.string else {
+        guard let response = result.choices.first?.message.content else {
             throw IntelligenceManagerError.noResponse
         }
 
