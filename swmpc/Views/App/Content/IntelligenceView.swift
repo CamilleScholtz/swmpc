@@ -41,7 +41,7 @@ struct IntelligencePlaylistView: View {
         "Calculating song popularity…",
         "Analyzing waveform…",
     ]
-    
+
     private let suggestions: [LocalizedStringResource] = [
         "Love Songs",
         "Turkish Music",

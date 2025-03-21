@@ -1,6 +1,15 @@
 {
-  "originHash" : "0a6a247cd616c327799c43cacc7eaaed8a9e0738bd0409fe49e3234a3dad0e6f",
+  "originHash" : "b003b19be5969776f51bba705cc0722e42e8b4f01927dcbd664d5adb5d4b3488",
   "pins" : [
+    {
+      "identity" : "keychainstoragekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/maxhumber/KeychainStorageKit",
+      "state" : {
+        "revision" : "51b0a88f3ca2eb21a777c588754780f8d296f724",
+        "version" : "1.0.0"
+      }
+    },
     {
       "identity" : "launchatlogin-modern",
       "kind" : "remoteSourceControl",

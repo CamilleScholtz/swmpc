@@ -8,6 +8,7 @@
 import LaunchAtLogin
 import SFSafeSymbols
 import SwiftUI
+import KeychainStorageKit
 
 enum Setting {
     static let host = "host"
@@ -132,8 +133,9 @@ struct SettingsView: View {
     struct IntelligenceView: View {
         @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
         @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.deepSeek
-        @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
-        @AppStorage(Setting.openAIToken) var openAIToken = ""
+
+        @State private var deepSeekToken = ""
+        @State private var openAIToken = ""
 
         var body: some View {
             Form {
@@ -154,13 +156,37 @@ struct SettingsView: View {
 
                 switch intelligenceModel {
                 case .deepSeek:
-                    TextField("API Token:", text: $deepSeekToken)
+                    SecureField("API Token:", text: $deepSeekToken)
                         .textContentType(.password)
                         .disabled(!isIntelligenceEnabled)
+                        .onAppear {
+                            @KeychainStorage(Setting.deepSeekToken) var deepSeekTokenSecureStorage: String?
+                            deepSeekToken = deepSeekTokenSecureStorage ?? ""
+                        }
+                        .onChange(of: deepSeekToken) { _, value in
+                            guard !value.isEmpty else {
+                                return
+                            }
+                            
+                            @KeychainStorage(Setting.deepSeekToken) var deepSeekTokenSecureStorage: String?
+                            deepSeekTokenSecureStorage = value
+                        }
                 case .openAI:
-                    TextField("API Token:", text: $openAIToken)
+                    SecureField("API Token:", text: $openAIToken)
                         .textContentType(.password)
                         .disabled(!isIntelligenceEnabled)
+                        .onAppear {
+                            @KeychainStorage(Setting.openAIToken) var openAITokenSecureStorage: String?
+                            openAIToken = openAITokenSecureStorage ?? ""
+                        }
+                        .onChange(of: openAIToken) { _, value in
+                            guard !value.isEmpty else {
+                                return
+                            }
+                            
+                            @KeychainStorage(Setting.openAIToken) var openAITokenSecureStorage: String?
+                            openAITokenSecureStorage = value
+                        }
                 }
             }
             .padding(32)

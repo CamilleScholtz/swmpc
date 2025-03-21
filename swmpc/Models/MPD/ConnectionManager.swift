@@ -78,7 +78,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private var connection: NWConnection?
     private var buffer = Data()
     private let connectionQueue = DispatchQueue(
-        label: "com.swmpc.connection.\(Mode.self)",
+        label: "com.camille.swmpc.connection.\(Mode.self)",
         qos: Mode.qos,
         attributes: Mode.queueAttributes,
         target: .global(qos: Mode.qos.qosClass)
@@ -401,7 +401,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             throw ConnectionManagerError.malformedResponse(
                 "Invalid data length")
         }
-        
+
         guard length > 0 else {
             return Data()
         }
@@ -473,7 +473,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         guard let chunk = try await withCheckedThrowingContinuation({ (
             continuation: CheckedContinuation<Data?, Error>) in
             connection.receive(minimumIncompleteLength: 1,
-                              maximumLength: Mode.bufferSize)
+                               maximumLength: Mode.bufferSize)
             { data, _, isComplete, error in
                 if let error {
                     continuation.resume(throwing: error)

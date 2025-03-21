@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91489B852D6A6C6C0038092A /* SFSafeSymbols */; };
 		91489BC42D7648350038092A /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 91489BC32D7648350038092A /* OpenAI */; };
+		9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */; };
 		919709D92D8C39C800FC54B9 /* NavigatorUI in Frameworks */ = {isa = PBXBuildFile; productRef = 919709D82D8C39C800FC54B9 /* NavigatorUI */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
@@ -41,6 +42,7 @@
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
 				91489BC42D7648350038092A /* OpenAI in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
+				9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +92,7 @@
 				91489B852D6A6C6C0038092A /* SFSafeSymbols */,
 				91489BC32D7648350038092A /* OpenAI */,
 				919709D82D8C39C800FC54B9 /* NavigatorUI */,
+				9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -126,6 +129,7 @@
 				91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */,
 				919709D72D8C39C800FC54B9 /* XCRemoteSwiftPackageReference "Navigator" */,
+				9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -286,12 +290,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = swmpc/swmpc.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 9Y37TMD63Q;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -303,7 +307,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.03;
-				PRODUCT_BUNDLE_IDENTIFIER = camille.swmpc;
+				PRODUCT_BUNDLE_IDENTIFIER = com.camille.swmpc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -316,12 +320,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = swmpc/swmpc.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 9Y37TMD63Q;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -333,7 +337,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.03;
-				PRODUCT_BUNDLE_IDENTIFIER = camille.swmpc;
+				PRODUCT_BUNDLE_IDENTIFIER = com.camille.swmpc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -380,6 +384,14 @@
 				minimumVersion = 0.3.6;
 			};
 		};
+		9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maxhumber/KeychainStorageKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 		919709D72D8C39C800FC54B9 /* XCRemoteSwiftPackageReference "Navigator" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/hmlongco/Navigator";
@@ -416,6 +428,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */;
 			productName = OpenAI;
+		};
+		9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */;
+			productName = KeychainStorageKit;
 		};
 		919709D82D8C39C800FC54B9 /* NavigatorUI */ = {
 			isa = XCSwiftPackageProductDependency;

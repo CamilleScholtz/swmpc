@@ -73,7 +73,6 @@ struct AlbumView: View {
         }
         .id(album)
         .task(id: album, priority: .high) {
-            // TODO: This can probably be made even a little snappier.
             try? await Task.sleep(nanoseconds: 48_000_000)
             guard !Task.isCancelled else {
                 return

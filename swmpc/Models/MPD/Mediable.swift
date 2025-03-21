@@ -22,7 +22,9 @@ struct Artist: Mediable {
 
     let name: String
 
-    // TODO: I don't really like this...
+    // XXX: I don't really like this as it is not consisten with the other
+    // structs, `Album` doesn't have [`Song`] for example. I haven't found
+    // a more efficient way of doing this though.
     var albums: [Album]?
 }
 

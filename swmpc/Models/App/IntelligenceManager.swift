@@ -7,6 +7,7 @@
 
 import OpenAI
 import SwiftUI
+import KeychainStorageKit
 
 enum IntelligenceManagerError: Error {
     case intelligenceDisabled
@@ -46,16 +47,16 @@ actor IntelligenceManager {
 
         switch model {
         case .deepSeek:
-            @AppStorage(Setting.deepSeekToken) var deepSeekToken = ""
-            guard !deepSeekToken.isEmpty else {
+            @KeychainStorage(Setting.deepSeekToken) var deepSeekToken: String?            
+            guard let deepSeekToken, !deepSeekToken.isEmpty else {
                 throw IntelligenceManagerError.missingToken
             }
 
             token = deepSeekToken
             host = "api.deepseek.com"
         case .openAI:
-            @AppStorage(Setting.openAIToken) var openAIToken = ""
-            guard !openAIToken.isEmpty else {
+            @KeychainStorage(Setting.openAIToken) var openAIToken: String?
+            guard let openAIToken, !openAIToken.isEmpty else {
                 throw IntelligenceManagerError.missingToken
             }
 
@@ -85,7 +86,7 @@ actor IntelligenceManager {
         let result = try await client.chats(query: ChatQuery(
             messages: [
                 .init(role: .system, content: """
-                You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering’s mood and craft the perfect playlist. Your job is to create a playlist that perfectly fits a shoort description we’ll provide. The user will send you albums in the format `artist - title`. Return, in JSON format, those albums, in that exact same `artist - title` format, which match the given description.
+                You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering's mood and craft the perfect playlist. Your job is to create a playlist that perfectly fits a shoort description we'll provide. The user will send you albums in the format `artist - title`. Return, in JSON format, those albums, in that exact same `artist - title` format, which match the given description.
 
                 EXAMPLE JSON OUTPUT:
                 {
