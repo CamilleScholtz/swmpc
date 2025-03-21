@@ -108,11 +108,15 @@ struct SidebarView: View {
                             }
                     }
 
-                    Label("New Playlist", systemSymbol: .plus)
-                        .onTapGesture(perform: {
-                            isCreatingPlaylist = true
-                            isFocused = true
-                        })
+                    // TODO: This button doesn't take up the full width.
+                    Button(action: {
+                        isCreatingPlaylist = true
+                        isFocused = true
+                    }) {
+                        Label("New Playlist", systemSymbol: .plus)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .keyboardShortcut("n", modifiers: [.command])
                 }
             }
         }
