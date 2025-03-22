@@ -1380,6 +1380,7 @@
       }
     },
     "If this is disabled, only the swmpc icon will be shown." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1406,6 +1407,9 @@
           }
         }
       }
+    },
+    "If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect." : {
+
     },
     "Intelligence" : {
       "localizations" : {

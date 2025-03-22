@@ -67,6 +67,7 @@ struct SidebarView: View {
                             NavigationLink(value: SidebarDestination.playlist(playlist)) {
                                 Label(playlist.name, systemSymbol: .musicNoteList)
                             }
+                            .help(Text(playlist.name))
                             .contextMenu {
                                 if playlist.name != "Favorites" {
                                     Button("Rename Playlist") {
@@ -82,7 +83,6 @@ struct SidebarView: View {
                                     }
                                 }
                             }
-                            .help(Text(playlist.name))
                         }
                     }
 
