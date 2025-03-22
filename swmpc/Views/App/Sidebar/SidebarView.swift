@@ -82,6 +82,7 @@ struct SidebarView: View {
                                     }
                                 }
                             }
+                            .help(Text(playlist.name))
                         }
                     }
 
