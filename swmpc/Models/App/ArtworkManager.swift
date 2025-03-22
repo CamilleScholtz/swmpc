@@ -13,8 +13,11 @@ actor ArtworkManager {
     private let cache = NSCache<NSURL, NSData>()
     private var tasks: [URL: (task: Task<Data, Error>, isPrefetch: Bool)] = [:]
 
+    private let maxConcurrentFetches = 16
+    private var activeFetches = 0
+
     private init() {
-        cache.totalCostLimit = 50 * 1024 * 1024
+        cache.totalCostLimit = 64 * 1024 * 1024
     }
 
     /// Fetches the artwork data for a given media.
@@ -38,6 +41,16 @@ actor ArtworkManager {
         let task = Task<Data, Error>(priority: .high) { [shouldCache] in
             defer { removeTask(for: media.url) }
 
+            while self.activeFetches >= self.maxConcurrentFetches {
+                try await Task.sleep(for: .milliseconds(50))
+                if Task.isCancelled {
+                    throw CancellationError()
+                }
+            }
+
+            self.activeFetches += 1
+            defer { self.activeFetches -= 1 }
+
             let data = try await ConnectionManager.artwork().getArtworkData(for:
                 media.url)
             if shouldCache {
@@ -58,7 +71,7 @@ actor ArtworkManager {
     /// - Throws: An error if the artwork data could not be fetched.
     func prefetch(for mediaItems: [any Playable]) {
         cancelPrefetchOutsideRange(mediaItems)
-        
+
         let itemsToFetch = mediaItems.filter { media in
             cache.object(forKey: media.url as NSURL) == nil &&
                 !tasks.keys.contains(media.url)
@@ -67,6 +80,16 @@ actor ArtworkManager {
         for media in itemsToFetch {
             let task = Task<Data, Error>(priority: .utility) {
                 defer { self.removeTask(for: media.url) }
+
+                while self.activeFetches >= self.maxConcurrentFetches {
+                    try await Task.sleep(for: .milliseconds(50))
+                    if Task.isCancelled {
+                        throw CancellationError()
+                    }
+                }
+
+                self.activeFetches += 1
+                defer { self.activeFetches -= 1 }
 
                 let data = try await ConnectionManager.artwork().getArtworkData(
                     for: media.url)
@@ -99,20 +122,20 @@ actor ArtworkManager {
     ///
     /// - Parameter prefetchRange: The media items that should be in the prefetch range.
     private func cancelPrefetchOutsideRange(_ prefetchRange: [any Playable]) {
-        let prefetchURLs = Set(prefetchRange.map { $0.url })
+        let prefetchURLs = Set(prefetchRange.map(\.url))
         var remainingTasks = [URL: (task: Task<Data, Error>, isPrefetch: Bool)]()
-        
+
         for (url, taskInfo) in tasks {
-            if taskInfo.isPrefetch && !prefetchURLs.contains(url) {
+            if taskInfo.isPrefetch, !prefetchURLs.contains(url) {
                 taskInfo.task.cancel()
             } else {
                 remainingTasks[url] = taskInfo
             }
         }
-        
+
         tasks = remainingTasks
     }
-    
+
     private func storeInCache(_ data: Data, for url: URL) {
         cache.setObject(data as NSData, forKey: url as NSURL, cost: data.count)
     }

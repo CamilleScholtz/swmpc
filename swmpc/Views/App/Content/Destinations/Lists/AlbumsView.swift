@@ -48,13 +48,13 @@ struct AlbumsView: View {
 
             mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
         }
-        .task(id: visibleRange, priority: .high) {
+        .task(id: visibleRange, priority: .background) {
             guard let range = visibleRange, !albums.isEmpty, !Task.isCancelled else {
                 return
             }
 
-            let lowerBound = max(0, range.lowerBound - 3)
-            let upperBound = min(albums.count, range.upperBound + 3)
+            let lowerBound = max(0, range.lowerBound - 2)
+            let upperBound = min(albums.count, range.upperBound + 2)
 
             let prefetchRange = lowerBound ..< upperBound
             let albumsToPrefetch = prefetchRange.map {
