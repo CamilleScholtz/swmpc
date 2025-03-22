@@ -11,9 +11,10 @@ actor ArtworkManager {
     static let shared = ArtworkManager()
 
     private let cache = NSCache<NSURL, NSData>()
+    private var tasks: [URL: (task: Task<Data, Error>, isPrefetch: Bool)] = [:]
 
     private init() {
-        cache.countLimit = 64
+        cache.totalCostLimit = 50 * 1024 * 1024
     }
 
     /// Fetches the artwork data for a given media.
@@ -30,13 +31,73 @@ actor ArtworkManager {
             return data as Data
         }
 
-        let data = try await ConnectionManager.artwork().getArtworkData(for:
-            media.url)
-
-        if shouldCache {
-            cache.setObject(data as NSData, forKey: media.url as NSURL)
+        if let existing = tasks[media.url] {
+            return try await existing.task.value
         }
 
-        return data
+        let task = Task<Data, Error>(priority: .high) { [shouldCache] in
+            defer { removeTask(for: media.url) }
+
+            let data = try await ConnectionManager.artwork().getArtworkData(for:
+                media.url)
+            if shouldCache {
+                storeInCache(data, for: media.url)
+            }
+
+            return data
+        }
+
+        tasks[media.url] = (task, false)
+        return try await task.value
+    }
+
+    /// Prefetches artwork for multiple media items.
+    ///
+    /// - Parameter mediaItems: The media items for which to prefetch the
+    ///                         artwork.
+    /// - Throws: An error if the artwork data could not be fetched.
+    func prefetch(for mediaItems: [any Playable]) {
+        let itemsToFetch = mediaItems.filter { media in
+            cache.object(forKey: media.url as NSURL) == nil &&
+                !tasks.keys.contains(media.url)
+        }
+
+        for media in itemsToFetch {
+            let task = Task<Data, Error>(priority: .utility) {
+                defer { self.removeTask(for: media.url) }
+
+                let data = try await ConnectionManager.artwork().getArtworkData(
+                    for: media.url)
+                self.storeInCache(data, for: media.url)
+
+                return data
+            }
+
+            tasks[media.url] = (task, true)
+        }
+    }
+
+    /// Cancels all prefetching tasks.
+    func cancelPrefetching() {
+        var remainingTasks = [URL: (task: Task<Data, Error>, isPrefetch:
+            Bool)]()
+
+        for (url, taskInfo) in tasks {
+            if taskInfo.isPrefetch {
+                taskInfo.task.cancel()
+            } else {
+                remainingTasks[url] = taskInfo
+            }
+        }
+
+        tasks = remainingTasks
+    }
+
+    private func storeInCache(_ data: Data, for url: URL) {
+        cache.setObject(data as NSData, forKey: url as NSURL, cost: data.count)
+    }
+
+    private func removeTask(for url: URL) {
+        tasks.removeValue(forKey: url)
     }
 }

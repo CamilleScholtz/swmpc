@@ -78,7 +78,7 @@ struct AlbumView: View {
                 return
             }
 
-            guard let data = try? await ArtworkManager.shared.get(for: album) else {
+            guard let data = try? await ArtworkManager.shared.get(for: album), !Task.isCancelled else {
                 return
             }
 

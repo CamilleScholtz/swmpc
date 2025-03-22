@@ -16,7 +16,7 @@ struct ArtworkView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .scaledToFit()
-                .transition(.opacity.animation(.easeInOut(duration: 0.3)))
+                .transition(.opacity.animation(.easeInOut(duration: 0.2)))
         } else {
             Rectangle()
                 .fill(Color(.secondarySystemFill).opacity(0.3))
