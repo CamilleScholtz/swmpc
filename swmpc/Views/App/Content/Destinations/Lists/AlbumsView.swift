@@ -53,8 +53,8 @@ struct AlbumsView: View {
                 return
             }
 
-            let lowerBound = max(0, range.lowerBound - 5)
-            let upperBound = min(albums.count, range.upperBound + 5)
+            let lowerBound = max(0, range.lowerBound - 3)
+            let upperBound = min(albums.count, range.upperBound + 3)
 
             let prefetchRange = lowerBound ..< upperBound
             let albumsToPrefetch = prefetchRange.map {

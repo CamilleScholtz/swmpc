@@ -57,6 +57,8 @@ actor ArtworkManager {
     ///                         artwork.
     /// - Throws: An error if the artwork data could not be fetched.
     func prefetch(for mediaItems: [any Playable]) {
+        cancelPrefetchOutsideRange(mediaItems)
+        
         let itemsToFetch = mediaItems.filter { media in
             cache.object(forKey: media.url as NSURL) == nil &&
                 !tasks.keys.contains(media.url)
@@ -93,6 +95,24 @@ actor ArtworkManager {
         tasks = remainingTasks
     }
 
+    /// Cancels prefetch tasks for media items not in the given prefetch range.
+    ///
+    /// - Parameter prefetchRange: The media items that should be in the prefetch range.
+    private func cancelPrefetchOutsideRange(_ prefetchRange: [any Playable]) {
+        let prefetchURLs = Set(prefetchRange.map { $0.url })
+        var remainingTasks = [URL: (task: Task<Data, Error>, isPrefetch: Bool)]()
+        
+        for (url, taskInfo) in tasks {
+            if taskInfo.isPrefetch && !prefetchURLs.contains(url) {
+                taskInfo.task.cancel()
+            } else {
+                remainingTasks[url] = taskInfo
+            }
+        }
+        
+        tasks = remainingTasks
+    }
+    
     private func storeInCache(_ data: Data, for url: URL) {
         cache.setObject(data as NSData, forKey: url as NSURL, cost: data.count)
     }
