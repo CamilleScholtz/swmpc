@@ -57,7 +57,7 @@ struct AppView: View {
             } else {
                 NavigationSplitView {
                     SidebarView(destination: $destination)
-                        .navigationSplitViewColumnWidth(180)
+                        .navigationSplitViewColumnWidth(ideal: 180)
                 } content: {
                     ManagedNavigationStack(name: "content") {
                         destination
