@@ -5,9 +5,9 @@
 //  Created by Camille Scholtz on 04/03/2025.
 //
 
+import KeychainStorageKit
 import OpenAI
 import SwiftUI
-import KeychainStorageKit
 
 enum IntelligenceManagerError: Error {
     case intelligenceDisabled
@@ -47,7 +47,7 @@ actor IntelligenceManager {
 
         switch model {
         case .deepSeek:
-            @KeychainStorage(Setting.deepSeekToken) var deepSeekToken: String?            
+            @KeychainStorage(Setting.deepSeekToken) var deepSeekToken: String?
             guard let deepSeekToken, !deepSeekToken.isEmpty else {
                 throw IntelligenceManagerError.missingToken
             }

@@ -5,10 +5,10 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import KeychainStorageKit
 import LaunchAtLogin
 import SFSafeSymbols
 import SwiftUI
-import KeychainStorageKit
 
 enum Setting {
     static let host = "host"
@@ -121,7 +121,9 @@ struct SettingsView: View {
                 Toggle("Show in Status Bar", isOn: $showStatusBar)
                 Toggle(isOn: $showStatusbarSong) {
                     Text("Show Song in Status Bar")
-                    Text("If this is disabled, only the swmpc icon will be shown.")
+                    Text("If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 .disabled(!showStatusBar)
             }
@@ -167,7 +169,7 @@ struct SettingsView: View {
                             guard !value.isEmpty else {
                                 return
                             }
-                            
+
                             @KeychainStorage(Setting.deepSeekToken) var deepSeekTokenSecureStorage: String?
                             deepSeekTokenSecureStorage = value
                         }
@@ -183,7 +185,7 @@ struct SettingsView: View {
                             guard !value.isEmpty else {
                                 return
                             }
-                            
+
                             @KeychainStorage(Setting.openAIToken) var openAITokenSecureStorage: String?
                             openAITokenSecureStorage = value
                         }
