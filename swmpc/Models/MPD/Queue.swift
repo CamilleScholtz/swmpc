@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+enum QueueError: Error {
+    case invalidType
+}
+
 @Observable final class Queue {
     /// The media in the queue. This represent the actual MPD queue.
     var internalMedia: [any Mediable] = []
@@ -60,6 +64,10 @@ import SwiftUI
         defer { self.type = current }
 
         media = switch type {
+        case .album:
+            try await idle
+                ? ConnectionManager.idle.getAlbums()
+                : ConnectionManager.command().getAlbums()
         case .artist:
             try await idle
                 ? ConnectionManager.idle.getArtists()
@@ -69,9 +77,7 @@ import SwiftUI
                 ? ConnectionManager.idle.getSongs()
                 : ConnectionManager.command().getSongs()
         default:
-            try await idle
-                ? ConnectionManager.idle.getAlbums()
-                : ConnectionManager.command().getAlbums()
+            throw QueueError.invalidType
         }
     }
 
@@ -109,6 +115,11 @@ import SwiftUI
         try await set(using: current)
 
         results = switch current {
+        case .album:
+            (internalMedia as! [Album]).filter {
+                $0.artist.range(of: query, options: .caseInsensitive) != nil ||
+                    $0.title.range(of: query, options: .caseInsensitive) != nil
+            }
         case .artist:
             (internalMedia as! [Artist]).filter {
                 $0.name.range(of: query, options: .caseInsensitive) != nil
@@ -119,10 +130,7 @@ import SwiftUI
                     $0.title.range(of: query, options: .caseInsensitive) != nil
             }
         default:
-            (internalMedia as! [Album]).filter {
-                $0.artist.range(of: query, options: .caseInsensitive) != nil ||
-                    $0.title.range(of: query, options: .caseInsensitive) != nil
-            }
+            throw QueueError.invalidType
         }
     }
 
@@ -150,12 +158,14 @@ import SwiftUI
             internalMedia
         } else {
             switch type {
+            case .album:
+                try await ConnectionManager.command().getAlbums()
             case .artist:
                 try await ConnectionManager.command().getArtists()
             case .song, .playlist:
                 try await ConnectionManager.command().getSongs()
             default:
-                try await ConnectionManager.command().getAlbums()
+                throw QueueError.invalidType
             }
         }
 
