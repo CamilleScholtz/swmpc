@@ -11,8 +11,8 @@ struct HeaderView: View {
     @Environment(MPD.self) private var mpd
 
     @Binding var destination: SidebarDestination
+    @Binding var isSearching: Bool
 
-    @State private var isSearching = false
     @State private var isHovering = false
     @State private var query = ""
 

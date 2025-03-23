@@ -42,7 +42,7 @@ extension SidebarDestination: NavigationDestination {
         var body: some View {
             ScrollViewReader { proxy in
                 ScrollView {
-                    HeaderView(destination: .constant(destination))
+                    HeaderView(destination: .constant(destination), isSearching: $isSearching)
                         .id("top")
 
                     LazyVStack(alignment: .leading, spacing: 15) {
