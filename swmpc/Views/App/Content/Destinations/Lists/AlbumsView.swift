@@ -22,7 +22,6 @@ struct AlbumsView: View {
     var body: some View {
         ForEach(Array(albums.enumerated()), id: \.element.id) { index, album in
             AlbumView(for: album)
-                .id(album.id)
                 .onAppear {
                     updateVisibleRange(currentIndex: index)
                 }

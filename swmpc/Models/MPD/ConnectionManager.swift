@@ -1020,7 +1020,7 @@ extension ConnectionManager where Mode == ArtworkMode {
     /// - Throws: An error if the server response is malformed, if the read
     ///           operation fails, or if other connection related errors occur.
     func getArtworkData(for url: URL) async throws -> Data {
-        @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.embedded
+        @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
         var data = Data()
         var offset = 0
