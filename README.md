@@ -4,7 +4,7 @@
 	</a>
 	<h3 align="center">swmpc</h3>
 	<p align="center">
-		A native macOS client for MPD.
+		An MPD client for macOS.
 		<br />
 		<a href="https://github.com/CamilleScholtz/swmpc/issues">Report Bug</a>
 		·
