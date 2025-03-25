@@ -42,16 +42,18 @@ import SwiftUI
         let data = try await ConnectionManager.idle.getStatusData()
 
         if state.update(to: data.state) {
-            let image = switch data.state {
-            case .play:
-                "play"
-            case .pause:
-                "pause"
-            default:
-                "stop"
-            }
+            #if os(macOS)
+                let image = switch data.state {
+                case .play:
+                    "play"
+                case .pause:
+                    "pause"
+                default:
+                    "stop"
+                }
 
-            AppDelegate.shared.setPopoverAnchorImage(changed: image)
+                AppDelegate.shared.setPopoverAnchorImage(changed: image)
+            #endif
 
             if trackElapsed {
                 state == .play ? startTrackingElapsed() : stopTrackingElapsed()
@@ -59,11 +61,15 @@ import SwiftUI
         }
 
         if isRandom.update(to: data.isRandom ?? false) {
-            AppDelegate.shared.setPopoverAnchorImage(changed: data.isRandom ?? false ? "random" : "sequential")
+            #if os(macOS)
+                AppDelegate.shared.setPopoverAnchorImage(changed: data.isRandom ?? false ? "random" : "sequential")
+            #endif
         }
 
         if isRepeat.update(to: data.isRepeat ?? false) {
-            AppDelegate.shared.setPopoverAnchorImage(changed: data.isRepeat ?? false ? "repeat" : "single")
+            #if os(macOS)
+                AppDelegate.shared.setPopoverAnchorImage(changed: data.isRepeat ?? false ? "repeat" : "single")
+            #endif
         }
 
         _ = elapsed.update(to: data.elapsed ?? 0)
@@ -75,7 +81,9 @@ import SwiftUI
         }
 
         if song.update(to: data.song) {
-            AppDelegate.shared.setStatusItemTitle()
+            #if os(macOS)
+                AppDelegate.shared.setStatusItemTitle()
+            #endif
         }
 
         _ = playlist.update(to: data.playlist)

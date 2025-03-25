@@ -1,5 +1,5 @@
 //
-//  swmpcApp.swift
+//  Delegate.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 08/11/2024.
@@ -9,7 +9,7 @@ import SFSafeSymbols
 import SwiftUI
 
 @main
-struct swmpcApp: App {
+struct Delegate: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {

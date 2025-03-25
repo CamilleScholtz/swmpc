@@ -47,7 +47,6 @@ struct AppView: View {
                 }
                 .task(priority: .medium) {
                     try? await Task.sleep(for: .seconds(2))
-
                     guard !Task.isCancelled else {
                         return
                     }
