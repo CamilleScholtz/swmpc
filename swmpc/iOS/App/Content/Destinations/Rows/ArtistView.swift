@@ -18,7 +18,7 @@ struct ArtistView: View {
     }
 
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: 5) {
             let initials = artist.name.split(separator: " ")
                 .prefix(2)
                 .compactMap(\.first)

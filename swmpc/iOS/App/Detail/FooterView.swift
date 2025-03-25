@@ -44,8 +44,6 @@ struct FooterView: View {
     struct PauseView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var isHovering = false
-
         var body: some View {
             ZStack {
                 Circle()
@@ -55,11 +53,6 @@ struct FooterView: View {
                 Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
                     .font(.system(size: 30))
             }
-            .scaleEffect(isHovering ? 1.2 : 1)
-            .animation(.interactiveSpring, value: isHovering)
-            .onHover(perform: { value in
-                isHovering = value
-            })
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().pause(mpd.status.isPlaying)
@@ -69,17 +62,10 @@ struct FooterView: View {
     }
 
     struct PreviousView: View {
-        @State private var isHovering = false
-
         var body: some View {
             Image(systemSymbol: .backwardFill)
                 .font(.system(size: 18))
                 .padding(12)
-                .scaleEffect(isHovering ? 1.2 : 1)
-                .animation(.interactiveSpring, value: isHovering)
-                .onHover(perform: { value in
-                    isHovering = value
-                })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().previous()
@@ -89,17 +75,10 @@ struct FooterView: View {
     }
 
     struct NextView: View {
-        @State private var isHovering = false
-
         var body: some View {
             Image(systemSymbol: .forwardFill)
                 .font(.system(size: 18))
                 .padding(12)
-                .scaleEffect(isHovering ? 1.2 : 1)
-                .animation(.interactiveSpring, value: isHovering)
-                .onHover(perform: { value in
-                    isHovering = value
-                })
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().next()
@@ -111,17 +90,10 @@ struct FooterView: View {
     struct RandomView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var isHovering = false
-
         var body: some View {
             ZStack {
                 Image(systemSymbol: .shuffle)
                     .padding(10)
-                    .scaleEffect(isHovering ? 1.2 : 1)
-                    .animation(.interactiveSpring, value: isHovering)
-                    .onHover(perform: { value in
-                        isHovering = value
-                    })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
@@ -141,7 +113,6 @@ struct FooterView: View {
     struct FavoriteView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var isHovering = false
         @State private var isFavorited = false
 
         private let addCurrentToFavoritesNotifaction = NotificationCenter.default
@@ -149,16 +120,11 @@ struct FooterView: View {
 
         var body: some View {
             Image(systemSymbol: .heartFill)
-                .scaleEffect(isHovering ? 1.2 : 1)
-                .animation(.interactiveSpring, value: isHovering)
                 .foregroundColor(isFavorited ? .red : Color(.secondarySystemFill))
                 .opacity(isFavorited ? 0.7 : 1)
                 .animation(.interactiveSpring, value: isFavorited)
                 .scaleEffect(isFavorited ? 1.1 : 1)
                 .animation(isFavorited ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: isFavorited)
-                .onHover(perform: { value in
-                    isHovering = value
-                })
                 .onTapGesture(perform: {
                     NotificationCenter.default.post(name: .addCurrentToFavoritesNotifaction, object: nil)
                 })
@@ -190,17 +156,10 @@ struct FooterView: View {
     struct RepeatView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var isHovering = false
-
         var body: some View {
             ZStack {
                 Image(systemSymbol: .repeat)
                     .padding(10)
-                    .scaleEffect(isHovering ? 1.2 : 1)
-                    .animation(.interactiveSpring, value: isHovering)
-                    .onHover(perform: { value in
-                        isHovering = value
-                    })
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
@@ -219,8 +178,6 @@ struct FooterView: View {
 
     struct ProgressView: View {
         @Environment(MPD.self) private var mpd
-
-        @State private var isHovering = false
 
         private var progress: CGFloat {
             guard let elapsed = mpd.status.elapsed,
@@ -249,8 +206,6 @@ struct FooterView: View {
                         Circle()
                             .fill(Color(.accent))
                             .frame(width: 8, height: 8)
-                            .scaleEffect(isHovering ? 1.5 : 1)
-                            .animation(.spring, value: isHovering)
                             .offset(x: (progress * geometry.size.width) - 4)
                             .animation(.spring, value: progress)
                     }
@@ -264,9 +219,6 @@ struct FooterView: View {
                                 }
                             }
                     )
-                    .onHover(perform: { value in
-                        isHovering = value
-                    })
 
                     HStack(alignment: .center) {
                         Text(mpd.status.elapsed?.timeString ?? "0:00")

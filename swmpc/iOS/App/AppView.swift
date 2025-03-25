@@ -5,9 +5,9 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import LNPopupUI
 import NavigatorUI
 import SwiftUI
-import LNPopupUI
 
 struct AppView: View {
     @Environment(\.navigator) private var navigator
@@ -19,7 +19,7 @@ struct AppView: View {
 
     @State private var showQueueAlert = false
     @State private var playlistToQueue: Playlist?
-    
+
     @State private var isPopupBarPresented = true
     @State private var isPopupOpen = false
 
@@ -60,39 +60,20 @@ struct AppView: View {
             } else {
                 TabView(selection: $destination) {
                     ForEach(SidebarDestination.categories) { category in
-                        NavigationStack {
-                            ManagedNavigationStack(name: "content") {
-                                category
-                                    .navigationDestination(ContentDestination.self)
-                            }
-                            .overlay(
-                                LoadingView(destination: $destination)
-                            )
+                        ManagedNavigationStack {
+                            category
+                                .navigationDestination(ContentDestination.self)
                         }
                         .tabItem {
                             Label(category.label, systemSymbol: category.symbol)
                         }
                         .tag(category)
                     }
-
-                    if let playlists = mpd.queue.playlists {
-                        ForEach(playlists) { playlist in
-                            NavigationStack {
-                                ManagedNavigationStack(name: "content") {
-                                    SidebarDestination.playlist(playlist)
-                                        .navigationDestination(ContentDestination.self)
-                                }
-                                .overlay(
-                                    LoadingView(destination: $destination)
-                                )
-                            }
-                            .tabItem {
-                                Label(playlist.name, systemSymbol: .musicNoteList)
-                            }
-                            .tag(SidebarDestination.playlist(playlist))
-                        }
-                    }
                 }
+                .overlay(
+                    LoadingView(destination: $destination)
+                )
+                .handleQueueChange(destination: $destination)
                 .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
                     DetailView()
                 }

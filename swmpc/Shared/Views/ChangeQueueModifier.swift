@@ -54,6 +54,8 @@ struct ChangeQueueModifier: ViewModifier {
                     }
 
                     playlistToQueue = playlist
+                case .playlists:
+                    return
                 }
 
                 navigator.perform(

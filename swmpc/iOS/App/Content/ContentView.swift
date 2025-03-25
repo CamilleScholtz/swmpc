@@ -45,18 +45,21 @@ extension SidebarDestination: NavigationDestination {
                     HeaderView(destination: .constant(destination), isSearching: $isSearching)
                         .id("top")
 
-                    LazyVStack(alignment: .leading, spacing: 15) {
+                    LazyVStack(alignment: .leading, spacing: 5) {
                         switch destination {
                         case .albums:
                             AlbumsView()
                         case .artists:
                             ArtistsView()
+                        case .playlists:
+                            // TODO:
+                            EmptyView()
                         case .songs, .playlist:
                             SongsView()
                         }
                     }
-                    .padding(.horizontal, 15)
-                    .padding(.bottom, 15)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 14)
                 }
                 .onAppear {
                     // TODO: For some reason this fires twice.
@@ -117,7 +120,7 @@ extension SidebarDestination: NavigationDestination {
         var body: some View {
             VStack {
                 switch destination {
-                case .albums, .artists, .songs:
+                case .albums, .artists, .songs, .playlists:
                     Text("No \(destination.label.lowercased()) in library.")
                         .font(.headline)
 
@@ -159,7 +162,7 @@ extension SidebarDestination: NavigationDestination {
 extension ContentDestination: NavigationDestination {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 15) {
+            VStack(alignment: .leading, spacing: 5) {
                 switch self {
                 case let .album(album):
                     AlbumSongsView(for: album)
@@ -167,8 +170,8 @@ extension ContentDestination: NavigationDestination {
                     ArtistAlbumsView(for: artist)
                 }
             }
-            .padding(.horizontal, 15)
-            .padding(.bottom, 15)
+            .padding(.horizontal, 14)
+            .padding(.bottom, 14)
         }
     }
 }

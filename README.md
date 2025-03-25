@@ -4,7 +4,7 @@
 	</a>
 	<h3 align="center">swmpc</h3>
 	<p align="center">
-		An MPD client for macOS.
+		An MPD client for macOS & iOS.
 		<br />
 		<a href="https://github.com/CamilleScholtz/swmpc/issues">Report Bug</a>
 		·
@@ -14,7 +14,7 @@
 
 ## Features
 
-`swmpc` is designed to be a simple, yet powerful MPD client that is easy to use, and looks great on macOS. It supports all the basic features you would expect from a MPD client, and more. It also has a beautiful album art popover that can be accessed from the menu bar.
+`swmpc` is designed to be a simple, yet powerful MPD client that is easy to use, and looks great on macOS & iOS. It supports all the basic features you would expect from a MPD client, and more. It also has a beautiful album art popover that can be accessed from the menu bar.
 
 - [x] Playback controls
 - [x] Library browsing (search by artist, album, etc.)
@@ -33,6 +33,7 @@
 ## Requirements
 
 - macOS 15.0 or later
+- iOS 18.0 or later
 - MPD 0.24 or later
 
 

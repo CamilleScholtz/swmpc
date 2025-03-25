@@ -85,6 +85,7 @@
 				Shared/Models/MPD/MPD.swift,
 				Shared/Models/MPD/Queue.swift,
 				Shared/Models/MPD/Status.swift,
+				Shared/Views/ChangeQueueModifier.swift,
 			);
 			target = 91775EF02D933F3D002589C5 /* swmpc-iOS */;
 		};

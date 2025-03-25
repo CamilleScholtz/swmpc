@@ -5,9 +5,9 @@
 //  Created by Camille Scholtz on 14/11/2024.
 //
 
+import LNPopupUI
 import SFSafeSymbols
 import SwiftUI
-import LNPopupUI
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
@@ -32,7 +32,7 @@ struct DetailView: View {
 
         return Float(elapsed / duration)
     }
-    
+
     var body: some View {
         ZStack {
             ZStack {
@@ -151,12 +151,12 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let navigator = navigator.root.child(named: "content") else {
-                                return
-                            }
-
-                            // TODO: Check if top of stack is same album.
-                            navigator.navigate(to: ContentDestination.album(album))
+//                            guard let navigator = navigator.root.child(named: "content") else {
+//                                return
+//                            }
+//
+//                            // TODO: Check if top of stack is same album.
+//                            navigator.navigate(to: ContentDestination.album(album))
                         }
                     })
             }
@@ -167,6 +167,7 @@ struct DetailView: View {
 
                 FooterView()
                     .frame(height: 80)
+                    .padding(.horizontal, 30)
             }
         }
         .task(id: mpd.status.song) {
@@ -196,6 +197,7 @@ struct DetailView: View {
         }
         .popupImage((artwork != nil) ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
         .popupTitle(mpd.status.song?.title ?? "Unknown Title", subtitle: mpd.status.song?.artist ?? "Unknown Artist")
+        // swiftformat:disable:next trailingClosures
         .popupBarItems({
             ToolbarItemGroup(placement: .popupBar) {
                 Button {

@@ -16,8 +16,16 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
     case songs
     case playlist(Playlist)
 
+    #if os(iOS)
+        case playlists
+    #endif
+
     static var categories: [Self] {
-        [.albums, .artists, .songs]
+        #if os(macOS)
+            [.albums, .artists, .songs]
+        #else
+            [.albums, .artists, .songs, .playlists]
+        #endif
     }
 
     var type: MediaType {
@@ -26,6 +34,10 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
         case .artists: .artist
         case .songs: .song
         case .playlist: .playlist
+
+        #if os(iOS)
+            case .playlists: .playlist
+        #endif
         }
     }
 
@@ -35,6 +47,10 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
         case .artists: String(localized: "Artists")
         case .songs: String(localized: "Songs")
         case let .playlist(playlist): playlist.name
+
+        #if os(iOS)
+            case .playlists: String(localized: "Playlists")
+        #endif
         }
     }
 
@@ -44,6 +60,10 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
         case .artists: .musicMicrophone
         case .songs: .musicNote
         case .playlist: .musicNoteList
+
+        #if os(iOS)
+            case .playlists: .musicNoteList
+        #endif
         }
     }
 }
