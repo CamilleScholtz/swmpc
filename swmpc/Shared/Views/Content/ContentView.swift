@@ -45,21 +45,29 @@ extension SidebarDestination: NavigationDestination {
                     HeaderView(destination: .constant(destination), isSearching: $isSearching)
                         .id("top")
 
-                    LazyVStack(alignment: .leading, spacing: 5) {
+                    #if os(iOS)
+                        let spacing: CGFloat = 10
+                    #elseif os(macOS)
+                        let spacing: CGFloat = 15
+                    #endif
+
+                    LazyVStack(alignment: .leading, spacing: spacing) {
                         switch destination {
                         case .albums:
                             AlbumsView()
                         case .artists:
                             ArtistsView()
-                        case .playlists:
-                            // TODO:
-                            EmptyView()
+                        #if os(iOS)
+                            case .playlists:
+                                // TODO:
+                                EmptyView()
+                        #endif
                         case .songs, .playlist:
                             SongsView()
                         }
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 14)
+                    .padding(.horizontal, 15)
+                    .padding(.bottom, 15)
                 }
                 .onAppear {
                     // TODO: For some reason this fires twice.
@@ -120,12 +128,20 @@ extension SidebarDestination: NavigationDestination {
         var body: some View {
             VStack {
                 switch destination {
-                case .albums, .artists, .songs, .playlists:
+                case .albums, .artists, .songs:
                     Text("No \(destination.label.lowercased()) in library.")
                         .font(.headline)
 
                     Text("Add songs to your library.")
                         .font(.subheadline)
+                #if os(iOS)
+                    case .playlists:
+                        Text("No playlists in library.")
+                            .font(.headline)
+
+                        Text("Create a playlist.")
+                            .font(.subheadline)
+                #endif
                 case let .playlist(playlist):
                     Text("No songs in playlist.")
                         .font(.headline)
@@ -162,7 +178,18 @@ extension SidebarDestination: NavigationDestination {
 extension ContentDestination: NavigationDestination {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 5) {
+            #if os(iOS)
+                let spacing: CGFloat = 10
+            #elseif os(macOS)
+                let spacing: CGFloat = 15
+            #endif
+
+            VStack(alignment: .leading, spacing: spacing) {
+                #if os(macOS)
+                    BackButtonView()
+                        .offset(y: 5)
+                #endif
+
                 switch self {
                 case let .album(album):
                     AlbumSongsView(for: album)
@@ -170,8 +197,11 @@ extension ContentDestination: NavigationDestination {
                     ArtistAlbumsView(for: artist)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 15)
+            .padding(.bottom, 15)
         }
+        #if os(macOS)
+        .ignoresSafeArea()
+        #endif
     }
 }

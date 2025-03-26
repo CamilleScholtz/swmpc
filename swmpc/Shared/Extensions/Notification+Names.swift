@@ -1,5 +1,5 @@
 //
-//  Notification.swift
+//  Notification+Names.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 22/12/2024.

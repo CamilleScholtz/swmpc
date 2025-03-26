@@ -1,5 +1,5 @@
 //
-//  Double.swift
+//  Double+Formatting.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 08/11/2024.

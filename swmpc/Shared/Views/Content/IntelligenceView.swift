@@ -192,7 +192,11 @@ struct IntelligenceButtonView: View {
         self.title = title
     }
 
-    @State private var isHovering = false
+    #if os(iOS)
+        @State private var isPressed = false
+    #elseif os(macOS)
+        @State private var isHovering = false
+    #endif
 
     var body: some View {
         VStack {
@@ -200,6 +204,16 @@ struct IntelligenceButtonView: View {
                 IntelligenceSparklesView()
                 Text(title)
             }
+            #if os(iOS)
+            .padding(12)
+            .padding(.horizontal, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.thinMaterial)
+            )
+            .scaleEffect(isPressed ? 0.95 : 1)
+            .animation(.interactiveSpring, value: isPressed)
+            #elseif os(macOS)
             .padding(8)
             .padding(.horizontal, 2)
             .background(
@@ -208,14 +222,31 @@ struct IntelligenceButtonView: View {
             )
             .scaleEffect(isHovering ? 1.05 : 1)
             .animation(.interactiveSpring, value: isHovering)
+            #endif
             .opacity(isIntelligenceEnabled ? 1 : 0.7)
-            .onHover(perform: { value in
-                guard isIntelligenceEnabled else {
-                    return
-                }
+            #if os(iOS)
+                .onTapGesture {
+                    guard isIntelligenceEnabled else {
+                        return
+                    }
 
-                isHovering = value
-            })
+                    withAnimation(.spring) {
+                        isPressed = true
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isPressed = false
+                        }
+                    }
+                }
+            #elseif os(macOS)
+                .onHover(perform: { value in
+                    guard isIntelligenceEnabled else {
+                        return
+                    }
+
+                    isHovering = value
+                })
+            #endif
 
             if !isIntelligenceEnabled {
                 Text("Enable AI features in settings to use this feature.")

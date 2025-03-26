@@ -13,7 +13,6 @@ struct HeaderView: View {
     @Binding var destination: SidebarDestination
     @Binding var isSearching: Bool
 
-    @State private var isHovering = false
     @State private var query = ""
 
     @FocusState private var isFocused: Bool
@@ -23,29 +22,37 @@ struct HeaderView: View {
             if !isSearching {
                 Text(destination.label)
                     .font(.headline)
+                #if os(iOS)
+                    .padding(.leading, 4)
+                #endif
 
                 Spacer()
 
-                Image(systemSymbol: .magnifyingglass)
-                    .frame(width: 22, height: 22)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(isHovering ? Color(.secondarySystemFill) : .clear)
-                    )
-                    .animation(.interactiveSpring, value: isHovering)
-                    .onHover(perform: { value in
-                        isHovering = value
-                    })
-                    .onTapGesture(perform: {
-                        isSearching = true
-                    })
+                Button(action: {
+                    isSearching = true
+                }) {
+                    Image(systemSymbol: .magnifyingglass)
+                        .frame(width: 22, height: 22)
+                        .foregroundColor(.primary)
+                        .padding(4)
+                }
+                .buttonStyle(.plain)
+                .hoverEffect()
             } else {
                 TextField("Search", text: $query)
+                #if os(iOS)
+                    .textFieldStyle(.roundedBorder)
+                    .padding(.vertical, 8)
+                #elseif os(macOS)
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(Color(.secondarySystemFill))
                     .cornerRadius(4)
+                #endif
                     .disableAutocorrection(true)
+                #if os(iOS)
+                    .autocapitalization(.none)
+                #endif
                     .focused($isFocused)
                     .onAppear {
                         query = ""
@@ -56,22 +63,23 @@ struct HeaderView: View {
                         isFocused = false
                     }
 
-                Image(systemSymbol: .xmarkCircle)
-                    .frame(width: 22, height: 22)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(isHovering ? Color(.secondarySystemFill) : .clear)
-                    )
-                    .animation(.interactiveSpring, value: isHovering)
-                    .onHover(perform: { value in
-                        isHovering = value
-                    })
-                    .onTapGesture(perform: {
-                        isSearching = false
-                    })
+                Button(action: {
+                    isSearching = false
+                }) {
+                    Image(systemSymbol: .xmarkCircleFill)
+                        .frame(width: 22, height: 22)
+                        .foregroundColor(.secondary)
+                        .padding(4)
+                }
+                .buttonStyle(.plain)
+                .hoverEffect()
             }
         }
+        #if os(iOS)
+        .frame(height: 44)
+        #elseif os(macOS)
         .frame(height: 50 - 7.5)
+        #endif
         .padding(.horizontal, 15)
         .padding(.top, 7.5)
         .onChange(of: destination) {

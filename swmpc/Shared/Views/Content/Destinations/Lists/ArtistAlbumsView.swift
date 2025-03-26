@@ -21,7 +21,11 @@ struct ArtistAlbumsView: View {
             HStack(spacing: 15) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(artist.name)
+                    #if os(iOS)
                         .font(.system(size: 24))
+                    #elseif os(macOS)
+                        .font(.system(size: 18))
+                    #endif
                         .fontWeight(.semibold)
                         .fontDesign(.rounded)
                         .lineLimit(3)

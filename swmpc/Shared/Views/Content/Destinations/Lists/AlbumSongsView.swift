@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if os(iOS)
+    import SFSafeSymbols
+#endif
 
 struct AlbumSongsView: View {
     @Environment(MPD.self) private var mpd
@@ -17,10 +20,13 @@ struct AlbumSongsView: View {
     }
 
     @State private var album: Album
-    @State private var artwork: NSImage?
+    #if os(iOS)
+        @State private var artwork: UIImage?
+    #elseif os(macOS)
+        @State private var artwork: NSImage?
+        @State private var isHovering = false
+    #endif
     @State private var songs: [Int: [Song]]?
-
-    @State private var isHovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
@@ -74,27 +80,31 @@ struct AlbumSongsView: View {
                                 )
                         }
 
-                        if isHovering, mpd.status.media?.id != album.id {
-                            ZStack {
-                                Circle()
-                                    .fill(.accent)
-                                    .frame(width: 60, height: 60)
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                                    .frame(width: 60, height: 60)
+                        #if os(macOS)
+                            if isHovering, mpd.status.media?.id != album.id {
+                                ZStack {
+                                    Circle()
+                                        .fill(.accent)
+                                        .frame(width: 60, height: 60)
+                                    Circle()
+                                        .fill(.ultraThinMaterial)
+                                        .frame(width: 60, height: 60)
 
-                                Image(systemSymbol: .playFill)
-                                    .font(.title)
-                                    .foregroundColor(.white)
+                                    Image(systemSymbol: .playFill)
+                                        .font(.title)
+                                        .foregroundColor(.white)
+                                }
+                                .transition(.opacity)
                             }
-                            .transition(.opacity)
-                        }
+                        #endif
                     }
+                    #if os(macOS)
                     .onHover(perform: { value in
                         withAnimation(.interactiveSpring) {
                             isHovering = value
                         }
                     })
+                    #endif
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             if mpd.status.media?.id != album.id {
@@ -161,11 +171,18 @@ struct AlbumSongsView: View {
                     }
                 }
             }
+            #if os(iOS)
+            .padding(.top, 5)
+            #endif
             .task {
                 async let artworkDataTask = ArtworkManager.shared.get(for: album, shouldCache: true)
                 async let songsTask = ConnectionManager.command().getSongs(for: album)
 
-                artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
+                #if os(iOS)
+                    artwork = await UIImage(data: (try? artworkDataTask) ?? Data())
+                #elseif os(macOS)
+                    artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
+                #endif
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
         }
