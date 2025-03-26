@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 14/11/2024.
 //
 
+import Noise
 import SFSafeSymbols
 import SwiftUI
 
@@ -46,7 +47,7 @@ struct DetailView: View {
                         RadialGradient(
                             gradient: Gradient(colors: [.white, .clear]),
                             center: .center,
-                            startRadius: -25,
+                            startRadius: -15,
                             endRadius: 225
                         )
                     )
@@ -85,6 +86,13 @@ struct DetailView: View {
                 }
                 .saturation(1.5)
                 .blendMode(colorScheme == .dark ? .softLight : .normal)
+
+                Noise(style: .random)
+                    .monochrome()
+                    .blur(radius: 0.2)
+                    // TODO: Doesn't really work on dark mode.
+                    .blendMode(colorScheme == .dark ? .darken : .softLight)
+                    .opacity(0.3)
 
                 ArtworkView(image: artwork)
                     .overlay(

@@ -6,6 +6,7 @@
 //
 
 import LNPopupUI
+import Noise
 import SFSafeSymbols
 import SwiftUI
 
@@ -20,8 +21,7 @@ struct DetailView: View {
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
 
-    @State private var isHovering = false
-
+    // TODO: Pass this to FooterView.
     private var progress: Float {
         guard let elapsed = mpd.status.elapsed,
               let duration = mpd.status.song?.duration,
@@ -58,8 +58,8 @@ struct DetailView: View {
                         RadialGradient(
                             gradient: Gradient(colors: [.white, .clear]),
                             center: .center,
-                            startRadius: -25,
-                            endRadius: 225
+                            startRadius: -15,
+                            endRadius: 225 + 50
                         )
                     )
                     .offset(y: 20)
@@ -88,15 +88,23 @@ struct DetailView: View {
                             gradient: Gradient(colors: [.white, .clear]),
                             center: .center,
                             startRadius: -25,
-                            endRadius: 225
+                            endRadius: 200
                         )
                     )
+                    .scaleEffect(1.3)
                     .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
                     .offset(y: 105)
                     .blur(radius: 5)
                 }
                 .saturation(1.5)
                 .blendMode(colorScheme == .dark ? .softLight : .normal)
+
+                Noise(style: .random)
+                    .monochrome()
+                    .blur(radius: 0.2)
+                    // TODO: Doesn't really work on dark mode.
+                    .blendMode(colorScheme == .dark ? .darken : .softLight)
+                    .opacity(0.3)
 
                 ArtworkView(image: artwork)
                     .overlay(
@@ -135,12 +143,7 @@ struct DetailView: View {
                     )
                     .cornerRadius(20)
                     .shadow(color: .black.opacity(0.2), radius: 16)
-                    .frame(width: 250)
-                    .scaleEffect(isHovering ? 1.02 : 1)
-                    .animation(.spring, value: isHovering)
-                    .onHover(perform: { value in
-                        isHovering = value
-                    })
+                    .frame(width: 250 + 50)
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             guard let song = mpd.status.song else {

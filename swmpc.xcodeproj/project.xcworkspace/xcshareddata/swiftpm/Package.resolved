@@ -1,5 +1,5 @@
 {
-  "originHash" : "d4d22deddc0df544ee71cace95b82c798c089bdeaee87744468b2760efc7b553",
+  "originHash" : "0762021848660002a5ca48da07cf8385e0a3df98cf5b071a3e4e75e431583b6d",
   "pins" : [
     {
       "identity" : "keychainstoragekit",
@@ -53,6 +53,15 @@
       "state" : {
         "revision" : "c86f201c35c6ed621ddd561206f5aec1a5a67dab",
         "version" : "0.9.26"
+      }
+    },
+    {
+      "identity" : "noise",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/heestand-xyz/Noise",
+      "state" : {
+        "revision" : "9fc3dd5b86995913f4cd58152f4d8d7da245ce7e",
+        "version" : "2.0.5"
       }
     },
     {

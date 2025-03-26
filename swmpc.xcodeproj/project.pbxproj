@@ -15,6 +15,8 @@
 		91775F422D934415002589C5 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F412D934415002589C5 /* OpenAI */; };
 		91775F442D93441F002589C5 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F432D93441F002589C5 /* AsyncAlgorithms */; };
 		91775F472D934EBC002589C5 /* LNPopupUI-Static in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F462D934EBC002589C5 /* LNPopupUI-Static */; };
+		91775F5E2D93729F002589C5 /* Noise in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F5D2D93729F002589C5 /* Noise */; };
+		91775F612D9372AD002589C5 /* Noise in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F602D9372AD002589C5 /* Noise */; };
 		9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */; };
 		919709D92D8C39C800FC54B9 /* NavigatorUI in Frameworks */ = {isa = PBXBuildFile; productRef = 919709D82D8C39C800FC54B9 /* NavigatorUI */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
@@ -127,6 +129,7 @@
 			files = (
 				91775F3E2D934402002589C5 /* SFSafeSymbols in Frameworks */,
 				91775F3C2D9343F9002589C5 /* NavigatorUI in Frameworks */,
+				91775F612D9372AD002589C5 /* Noise in Frameworks */,
 				91775F422D934415002589C5 /* OpenAI in Frameworks */,
 				91775F402D93440D002589C5 /* KeychainStorageKit in Frameworks */,
 				91775F442D93441F002589C5 /* AsyncAlgorithms in Frameworks */,
@@ -140,6 +143,7 @@
 			files = (
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
 				919709D92D8C39C800FC54B9 /* NavigatorUI in Frameworks */,
+				91775F5E2D93729F002589C5 /* Noise in Frameworks */,
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
 				91489BC42D7648350038092A /* OpenAI in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
@@ -191,6 +195,7 @@
 				91775F412D934415002589C5 /* OpenAI */,
 				91775F432D93441F002589C5 /* AsyncAlgorithms */,
 				91775F462D934EBC002589C5 /* LNPopupUI-Static */,
+				91775F602D9372AD002589C5 /* Noise */,
 			);
 			productName = "swmpc-iOS";
 			productReference = 91775EF12D933F3D002589C5 /* swmpc-iOS.app */;
@@ -220,6 +225,7 @@
 				91489BC32D7648350038092A /* OpenAI */,
 				919709D82D8C39C800FC54B9 /* NavigatorUI */,
 				9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */,
+				91775F5D2D93729F002589C5 /* Noise */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc-macOS.app */;
@@ -261,6 +267,7 @@
 				919709D72D8C39C800FC54B9 /* XCRemoteSwiftPackageReference "Navigator" */,
 				9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */,
 				91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */,
+				91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -630,6 +637,14 @@
 				minimumVersion = 1.9.5;
 			};
 		};
+		91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/heestand-xyz/Noise";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.5;
+			};
+		};
 		9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/maxhumber/KeychainStorageKit";
@@ -704,6 +719,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */;
 			productName = "LNPopupUI-Static";
+		};
+		91775F5D2D93729F002589C5 /* Noise */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */;
+			productName = Noise;
+		};
+		91775F602D9372AD002589C5 /* Noise */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */;
+			productName = Noise;
 		};
 		9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */ = {
 			isa = XCSwiftPackageProductDependency;

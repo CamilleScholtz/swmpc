@@ -27,10 +27,10 @@ struct FooterView: View {
         }
 
         VStack {
-            HStack(alignment: .center, spacing: 40) {
+            HStack(alignment: .center, spacing: 20) {
                 RepeatView()
 
-                HStack(spacing: 20) {
+                HStack(spacing: 15) {
                     PreviousView()
                     PauseView()
                     NextView()
