@@ -35,7 +35,9 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
         case .artists: .artist
         case .songs: .song
         case .playlist: .playlist
-        default: nil
+        #if os(iOS)
+            default: nil
+        #endif
         }
     }
 

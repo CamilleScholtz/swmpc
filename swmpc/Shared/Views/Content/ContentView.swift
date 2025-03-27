@@ -163,8 +163,10 @@ extension SidebarDestination: NavigationDestination {
 
                             NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: playlist)
                         }
-                default:
-                    EmptyView()
+                #if os(iOS)
+                    default:
+                        EmptyView()
+                #endif
                 }
             }
             .offset(y: -20)
