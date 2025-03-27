@@ -1442,6 +1442,9 @@
         }
       }
     },
+    "Leave empty if no password is set." : {
+
+    },
     "Library" : {
       "localizations" : {
         "de" : {
@@ -1665,6 +1668,9 @@
           }
         }
       }
+    },
+    "MPD Password:" : {
+
     },
     "MPD Port:" : {
       "localizations" : {

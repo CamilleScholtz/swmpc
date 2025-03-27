@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 16/11/2024.
 //
 
+import KeychainStorageKit
 import Network
 import SwiftUI
 
@@ -74,6 +75,8 @@ enum ConnectionManagerError: LocalizedError {
 actor ConnectionManager<Mode: ConnectionMode> {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
+
+    @KeychainStorage(Setting.password) var password: String?
 
     private var connection: NWConnection?
     private var buffer = Data()
@@ -150,6 +153,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         version = lines.first?.split(separator: " ").last.map(String.init)
         try ensureVersionSupported()
+
+        if let password {
+            _ = try await run(["password \"\(password)\""])
+        }
     }
 
     /// Disconnects from the current network connection and clears internal

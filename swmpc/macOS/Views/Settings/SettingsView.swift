@@ -58,12 +58,27 @@ struct SettingsView: View {
         @AppStorage(Setting.host) var host = "localhost"
         @AppStorage(Setting.port) var port = 6600
 
+        @State private var password = ""
+
         @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
         var body: some View {
             Form {
                 TextField("MPD Host:", text: $host)
                 TextField("MPD Port:", value: $port, formatter: NumberFormatter())
+
+                SecureField("MPD Password:", text: $password)
+                    .onAppear {
+                        @KeychainStorage(Setting.password) var passwordSecureStorage: String?
+                        password = passwordSecureStorage ?? ""
+                    }
+                    .onChange(of: password) { _, value in
+                        @KeychainStorage(Setting.password) var passwordSecureStorage: String?
+                        passwordSecureStorage = value.isEmpty ? nil : value
+                    }
+                Text("Leave empty if no password is set.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
 
                 Divider()
                     .frame(height: 32, alignment: .center)
@@ -150,12 +165,8 @@ struct SettingsView: View {
                             deepSeekToken = deepSeekTokenSecureStorage ?? ""
                         }
                         .onChange(of: deepSeekToken) { _, value in
-                            guard !value.isEmpty else {
-                                return
-                            }
-
                             @KeychainStorage(Setting.deepSeekToken) var deepSeekTokenSecureStorage: String?
-                            deepSeekTokenSecureStorage = value
+                            deepSeekTokenSecureStorage = value.isEmpty ? nil : value
                         }
                 case .openAI:
                     SecureField("API Token:", text: $openAIToken)
@@ -166,12 +177,8 @@ struct SettingsView: View {
                             openAIToken = openAITokenSecureStorage ?? ""
                         }
                         .onChange(of: openAIToken) { _, value in
-                            guard !value.isEmpty else {
-                                return
-                            }
-
                             @KeychainStorage(Setting.openAIToken) var openAITokenSecureStorage: String?
-                            openAITokenSecureStorage = value
+                            openAITokenSecureStorage = value.isEmpty ? nil : value
                         }
                 }
             }

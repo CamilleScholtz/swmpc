@@ -8,6 +8,7 @@
 enum Setting {
     static let host = "host"
     static let port = "port"
+    static let password = "password"
 
     static let showStatusBar = "show_status_bar"
     static let showStatusbarSong = "show_statusbar_song"
