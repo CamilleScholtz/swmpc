@@ -13,7 +13,8 @@ struct AlbumsView: View {
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
-    @State private var visibleRange: Range<Int>?
+    @State private var previousVisibleIndex = 0
+    @State private var lastVisibleIndex = 0
 
     private var albums: [Album] {
         mpd.queue.media as? [Album] ?? []
@@ -22,11 +23,13 @@ struct AlbumsView: View {
     var body: some View {
         ForEach(Array(albums.enumerated()), id: \.element.id) { index, album in
             AlbumView(for: album)
-                .onAppear {
-                    updateVisibleRange(currentIndex: index)
-                }
-                .onDisappear {
-                    updateVisibleRange(currentIndex: index, isDisappearing: true)
+                .onScrollVisibilityChange { isVisible in
+                    guard isVisible else {
+                        return
+                    }
+
+                    previousVisibleIndex = lastVisibleIndex
+                    lastVisibleIndex = index
                 }
         }
         .onChange(of: mpd.status.media as? Album) { previous, _ in
@@ -47,21 +50,19 @@ struct AlbumsView: View {
 
             mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
         }
-        .task(id: visibleRange, priority: .background) {
-            guard let range = visibleRange, !albums.isEmpty, !Task.isCancelled else {
+        .task(id: lastVisibleIndex, priority: .background) {
+            guard !albums.isEmpty, !Task.isCancelled else {
                 return
             }
 
-            let lowerBound = max(0, range.lowerBound - 2)
-            let upperBound = min(albums.count, range.upperBound + 2)
-            guard lowerBound < upperBound else {
-                return
-            }
+            let isScrollingUp = lastVisibleIndex < previousVisibleIndex
 
-            let prefetchRange = lowerBound ..< upperBound
-            let albumsToPrefetch = prefetchRange.map {
-                albums[$0]
-            }
+            let albumsToPrefetch = {
+                let start = isScrollingUp ? max(0, lastVisibleIndex - 5) : lastVisibleIndex + 1
+                let end = isScrollingUp ? lastVisibleIndex : min(albums.count, lastVisibleIndex + 6)
+                
+                return Array(albums[start ..< end])
+            }()
 
             await ArtworkManager.shared.prefetch(for: albumsToPrefetch)
         }
@@ -69,28 +70,6 @@ struct AlbumsView: View {
             Task(priority: .high) {
                 await ArtworkManager.shared.cancelPrefetching()
             }
-        }
-    }
-
-    private func updateVisibleRange(currentIndex: Int, isDisappearing: Bool = false) {
-        guard !albums.isEmpty else {
-            return
-        }
-
-        if var range = visibleRange {
-            if isDisappearing {
-                if currentIndex == range.lowerBound {
-                    range = (currentIndex + 1) ..< range.upperBound
-                } else if currentIndex == range.upperBound - 1 {
-                    range = range.lowerBound ..< currentIndex
-                }
-            } else {
-                range = min(range.lowerBound, currentIndex) ..< max(range.upperBound, currentIndex + 1)
-            }
-
-            visibleRange = range
-        } else {
-            visibleRange = currentIndex ..< (currentIndex + 1)
         }
     }
 }
