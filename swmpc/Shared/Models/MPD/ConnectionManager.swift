@@ -9,6 +9,18 @@ import KeychainStorageKit
 import Network
 import SwiftUI
 
+/// Shared storage manager to avoid re-initializing property wrappers for each connection
+/// manager instance.
+final class ConnectionStorage: @unchecked Sendable {
+    static let shared = ConnectionStorage()
+
+    @AppStorage(Setting.host) var host = "localhost"
+    @AppStorage(Setting.port) var port = 6600
+    @KeychainStorage(Setting.password) var password: String?
+
+    private init() {}
+}
+
 protocol ConnectionMode {
     static var enableKeepalive: Bool { get }
     static var bufferSize: Int { get }
@@ -73,10 +85,11 @@ enum ConnectionManagerError: LocalizedError {
 }
 
 actor ConnectionManager<Mode: ConnectionMode> {
-    @AppStorage(Setting.host) var host = "localhost"
-    @AppStorage(Setting.port) var port = 6600
+    private let storage = ConnectionStorage.shared
 
-    @KeychainStorage(Setting.password) var password: String?
+    var host: String { storage.host }
+    var port: Int { storage.port }
+    var password: String? { storage.password }
 
     private var connection: NWConnection?
     private var buffer = Data()
@@ -89,8 +102,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     /// The version of the MPD server.
     private var version: String?
-
-    private init() {}
 
     // TODO: I want to just use `disconnect()` here, but that gives me an `Call
     // to actor-isolated instance method 'disconnect()' in a synchronous
@@ -153,10 +164,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         version = lines.first?.split(separator: " ").last.map(String.init)
         try ensureVersionSupported()
-
-        if let password {
-            _ = try await run(["password \"\(password)\""])
-        }
+        try await ensureAuthenticated()
     }
 
     /// Disconnects from the current network connection and clears internal
@@ -204,6 +212,18 @@ actor ConnectionManager<Mode: ConnectionMode> {
         else {
             throw ConnectionManagerError.unsupportedServerVersion
         }
+    }
+
+    /// Ensures that the client is authenticated with the server.
+    ///
+    /// This function checks if a password is set and sends it to the server for
+    /// authentication. If no password is set, the function returns immediately.
+    func ensureAuthenticated() async throws {
+        guard let password else {
+            return
+        }
+
+        _ = try await run(["password", password])
     }
 
     /// Executes one or more commands asynchronously over the connection.
