@@ -34,8 +34,6 @@
 			membershipExceptions = (
 				iOS/Delegate.swift,
 				iOS/Views/AppView.swift,
-				iOS/Views/Detail/DetailView.swift,
-				iOS/Views/Detail/FooterView.swift,
 			);
 			target = 91A141DF2CDE3988000A74BC /* swmpc-macOS */;
 		};
@@ -44,8 +42,6 @@
 			membershipExceptions = (
 				iOS/Delegate.swift,
 				iOS/Views/AppView.swift,
-				iOS/Views/Detail/DetailView.swift,
-				iOS/Views/Detail/FooterView.swift,
 				Shared/Assets.xcassets,
 				"Shared/Extensions/Double+Formatting.swift",
 				"Shared/Extensions/Notification+Names.swift",
@@ -76,6 +72,8 @@
 				Shared/Views/Content/HeaderView.swift,
 				Shared/Views/Content/IntelligenceView.swift,
 				Shared/Views/Content/LoadingView.swift,
+				Shared/Views/Detail/DetailView.swift,
+				Shared/Views/Detail/FooterView.swift,
 			);
 			target = 91775EF02D933F3D002589C5 /* swmpc-iOS */;
 		};

@@ -9,18 +9,43 @@ import Noise
 import SFSafeSymbols
 import SwiftUI
 
+#if os(iOS)
+    import LNPopupUI
+#endif
+
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.navigator) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var artwork: NSImage?
-    @State private var previousArtwork: NSImage?
+    #if os(iOS)
+        @State private var artwork: UIImage?
+        @State private var previousArtwork: UIImage?
+    #elseif os(macOS)
+        @State private var artwork: NSImage?
+        @State private var previousArtwork: NSImage?
+    #endif
 
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
+    @State private var dragOffset: CGSize = .zero
 
-    @State private var isHovering = false
+    #if os(macOS)
+        @State private var isHovering = false
+    #endif
+
+    #if os(iOS)
+        private var progress: Float {
+            guard let elapsed = mpd.status.elapsed,
+                  let duration = mpd.status.song?.duration,
+                  duration > 0
+            else {
+                return 0
+            }
+
+            return Float(elapsed / duration)
+        }
+    #endif
 
     var body: some View {
         ZStack {
@@ -43,17 +68,28 @@ struct DetailView: View {
                             .background(.ultraThinMaterial)
                     }
                     .scaledToFit()
-                    .mask(
-                        RadialGradient(
-                            gradient: Gradient(colors: [.white, .clear]),
-                            center: .center,
-                            startRadius: -15,
-                            endRadius: 225
+                    #if os(iOS)
+                        .mask(
+                            RadialGradient(
+                                gradient: Gradient(colors: [.white, .clear]),
+                                center: .center,
+                                startRadius: -15,
+                                endRadius: 275
+                            )
                         )
-                    )
-                    .offset(y: 20)
-                    .blur(radius: 20)
-                    .opacity(0.6)
+                    #elseif os(macOS)
+                        .mask(
+                            RadialGradient(
+                                gradient: Gradient(colors: [.white, .clear]),
+                                center: .center,
+                                startRadius: -15,
+                                endRadius: 225
+                            )
+                        )
+                    #endif
+                        .offset(y: 20)
+                        .blur(radius: 20)
+                        .opacity(0.6)
 
                     ZStack {
                         ArtworkView(image: artwork)
@@ -72,17 +108,29 @@ struct DetailView: View {
                             .background(.ultraThinMaterial)
                     }
                     .scaledToFit()
-                    .mask(
-                        RadialGradient(
-                            gradient: Gradient(colors: [.white, .clear]),
-                            center: .center,
-                            startRadius: -25,
-                            endRadius: 225
+                    #if os(iOS)
+                        .mask(
+                            RadialGradient(
+                                gradient: Gradient(colors: [.white, .clear]),
+                                center: .center,
+                                startRadius: -25,
+                                endRadius: 200
+                            )
                         )
-                    )
-                    .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
-                    .offset(y: 105)
-                    .blur(radius: 5)
+                        .scaleEffect(1.3)
+                    #elseif os(macOS)
+                        .mask(
+                            RadialGradient(
+                                gradient: Gradient(colors: [.white, .clear]),
+                                center: .center,
+                                startRadius: -25,
+                                endRadius: 225
+                            )
+                        )
+                    #endif
+                        .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
+                        .offset(y: 105)
+                        .blur(radius: 5)
                 }
                 .saturation(1.5)
                 .blendMode(colorScheme == .dark ? .softLight : .normal)
@@ -131,12 +179,53 @@ struct DetailView: View {
                     )
                     .cornerRadius(20)
                     .shadow(color: .black.opacity(0.2), radius: 16)
+                #if os(iOS)
+                    .frame(width: 300)
+                #elseif os(macOS)
                     .frame(width: 250)
                     .scaleEffect(isHovering ? 1.02 : 1)
                     .animation(.spring, value: isHovering)
                     .onHover(perform: { value in
                         isHovering = value
                     })
+                #endif
+                    // On swipe left, go to previous song, on right, next song.
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.7)) {
+                                    dragOffset = value.translation
+                                }
+                            }
+                            .onEnded { value in
+                                guard mpd.status.song != nil else {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        dragOffset = .zero
+                                    }
+
+                                    return
+                                }
+
+                                let threshold: CGFloat = 50
+                                let distance = value.translation.width
+
+                                if distance < -threshold {
+                                    Task(priority: .userInitiated) {
+                                        try? await ConnectionManager.command().previous()
+                                    }
+                                } else if distance > threshold {
+                                    Task(priority: .userInitiated) {
+                                        try? await ConnectionManager.command().next()
+                                    }
+                                }
+
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    dragOffset = .zero
+                                }
+                            }
+                    )
+                    .offset(x: dragOffset.width)
+                    .rotationEffect(.degrees(dragOffset.width / 20 * ((dragOffset.height + 50) / 150)))
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             guard let song = mpd.status.song else {
@@ -163,9 +252,14 @@ struct DetailView: View {
 
                 FooterView()
                     .frame(height: 80)
+                #if os(iOS)
+                    .padding(.horizontal, 30)
+                #endif
             }
         }
+        #if os(macOS)
         .ignoresSafeArea()
+        #endif
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
                 artwork = nil
@@ -177,7 +271,11 @@ struct DetailView: View {
                 return
             }
 
-            artwork = NSImage(data: data)
+            #if os(iOS)
+                artwork = UIImage(data: data)
+            #elseif os(macOS)
+                artwork = NSImage(data: data)
+            #endif
         }
         .onChange(of: artwork) { previous, _ in
             previousArtwork = previous
@@ -191,16 +289,50 @@ struct DetailView: View {
                 isArtworkTransitioning = false
             }
         }
+        #if os(iOS)
+        .popupImage((artwork != nil) ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
+        .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
+        // swiftformat:disable:next trailingClosures
+        .popupBarItems({
+            ToolbarItemGroup(placement: .popupBar) {
+                Button {
+                    Task(priority: .userInitiated) {
+                        try? await ConnectionManager.command().pause(mpd.status.isPlaying)
+                    }
+                } label: {
+                    Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
+                }
+
+                Button {
+                    Task(priority: .userInitiated) {
+                        try? await ConnectionManager.command().next()
+                    }
+                } label: {
+                    Image(systemSymbol: .forwardFill)
+                }
+            }
+        })
+        .popupProgress(progress)
+        #endif
     }
 
     struct ArtworkView: View {
-        let image: NSImage?
+        #if os(iOS)
+            let image: UIImage?
+        #elseif os(macOS)
+            let image: NSImage?
+        #endif
 
         var body: some View {
             ZStack {
                 if let image {
-                    Image(nsImage: image)
-                        .resizable()
+                    #if os(iOS)
+                        Image(uiImage: image)
+                            .resizable()
+                    #elseif os(macOS)
+                        Image(nsImage: image)
+                            .resizable()
+                    #endif
                 } else {
                     Color(.secondarySystemFill)
                 }

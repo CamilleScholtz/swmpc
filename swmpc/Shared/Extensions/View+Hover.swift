@@ -14,7 +14,7 @@ extension View {
     ///   - animation: The animation to use (default: .interactiveSpring)
     /// - Returns: A view with hover effects applied
     func hoverEffect(
-        scale: CGFloat = 1.05,
+        scale: CGFloat = 1.2,
         animation: Animation = .interactiveSpring()
     ) -> some View {
         modifier(HoverEffectModifier(scale: scale, animation: animation))
@@ -29,13 +29,13 @@ struct HoverEffectModifier: ViewModifier {
     @State private var isHovering = false
 
     func body(content: Content) -> some View {
+        content
         #if os(macOS)
-            content
-                .scaleEffect(isHovering ? scale : 1.0)
-                .animation(animation, value: isHovering)
-                .onHover { hovering in
-                    isHovering = hovering
-                }
+        .scaleEffect(isHovering ? scale : 1.0)
+        .animation(animation, value: isHovering)
+        .onHover { hovering in
+            isHovering = hovering
+        }
         #endif
     }
 }

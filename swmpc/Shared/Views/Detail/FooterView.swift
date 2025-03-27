@@ -9,14 +9,16 @@ import SwiftUI
 
 struct FooterView: View {
     @Environment(MPD.self) private var mpd
-    
-    var progress: Float = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(alignment: .center) {
                 Text(mpd.status.song?.title ?? "No song playing")
-                    .font(.system(size: 24))
+                #if os(iOS)
+                    .font(.system(size: 22))
+                #elseif os(macOS)
+                    .font(.system(size: 18))
+                #endif
                     .fontWeight(.semibold)
                     .fontDesign(.rounded)
 
@@ -25,21 +27,35 @@ struct FooterView: View {
                 FavoriteView()
             }
 
-            ProgressView(progress: progress)
+            PlayerProgressView()
         }
 
         VStack {
-            HStack(alignment: .center, spacing: 20) {
-                RepeatView()
+            #if os(iOS)
+                HStack(alignment: .center, spacing: 20) {
+                    RepeatView()
 
-                HStack(spacing: 15) {
-                    PreviousView()
-                    PauseView()
-                    NextView()
+                    HStack(spacing: 15) {
+                        PreviousView()
+                        PauseView()
+                        NextView()
+                    }
+
+                    RandomView()
                 }
+            #elseif os(macOS)
+                HStack(alignment: .center, spacing: 40) {
+                    RepeatView()
 
-                RandomView()
-            }
+                    HStack(spacing: 20) {
+                        PreviousView()
+                        PauseView()
+                        NextView()
+                    }
+
+                    RandomView()
+                }
+            #endif
         }
     }
 
@@ -55,6 +71,7 @@ struct FooterView: View {
                 Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
                     .font(.system(size: 30))
             }
+            .hoverEffect()
             .onTapGesture(perform: {
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().pause(mpd.status.isPlaying)
@@ -68,6 +85,7 @@ struct FooterView: View {
             Image(systemSymbol: .backwardFill)
                 .font(.system(size: 18))
                 .padding(12)
+                .hoverEffect()
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().previous()
@@ -81,6 +99,7 @@ struct FooterView: View {
             Image(systemSymbol: .forwardFill)
                 .font(.system(size: 18))
                 .padding(12)
+                .hoverEffect()
                 .onTapGesture(perform: {
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().next()
@@ -96,6 +115,7 @@ struct FooterView: View {
             ZStack {
                 Image(systemSymbol: .shuffle)
                     .padding(10)
+                    .hoverEffect()
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
@@ -122,6 +142,7 @@ struct FooterView: View {
 
         var body: some View {
             Image(systemSymbol: .heartFill)
+                .hoverEffect()
                 .foregroundColor(isFavorited ? .red : Color(.secondarySystemFill))
                 .opacity(isFavorited ? 0.7 : 1)
                 .animation(.interactiveSpring, value: isFavorited)
@@ -162,6 +183,7 @@ struct FooterView: View {
             ZStack {
                 Image(systemSymbol: .repeat)
                     .padding(10)
+                    .hoverEffect()
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
@@ -178,12 +200,12 @@ struct FooterView: View {
         }
     }
 
-    struct ProgressView: View {
+    struct PlayerProgressView: View {
         @Environment(MPD.self) private var mpd
-        
-        var progress: Float = 0
-        
-        private var calculatedProgress: CGFloat {
+
+        @State private var isHovering = false
+
+        private var progress: CGFloat {
             guard let elapsed = mpd.status.elapsed,
                   let duration = mpd.status.song?.duration,
                   duration > 0
@@ -204,14 +226,16 @@ struct FooterView: View {
 
                         RoundedRectangle(cornerRadius: 2)
                             .fill(Color(.accent))
-                            .frame(width: (progress > 0 ? CGFloat(progress) : calculatedProgress) * geometry.size.width, height: 3)
-                            .animation(.spring, value: progress > 0 ? CGFloat(progress) : calculatedProgress)
+                            .frame(width: progress * geometry.size.width, height: 3)
+                            .animation(.spring, value: progress)
 
                         Circle()
                             .fill(Color(.accent))
                             .frame(width: 8, height: 8)
-                            .offset(x: ((progress > 0 ? CGFloat(progress) : calculatedProgress) * geometry.size.width) - 4)
-                            .animation(.spring, value: progress > 0 ? CGFloat(progress) : calculatedProgress)
+                            .scaleEffect(isHovering ? 1.5 : 1)
+                            .animation(.spring, value: isHovering)
+                            .offset(x: (progress * geometry.size.width) - 4)
+                            .animation(.spring, value: progress)
                     }
                     .padding(.vertical, 3)
                     .contentShape(Rectangle())
@@ -223,6 +247,9 @@ struct FooterView: View {
                                 }
                             }
                     )
+                    .onHover(perform: { value in
+                        isHovering = value
+                    })
 
                     HStack(alignment: .center) {
                         Text(mpd.status.elapsed?.timeString ?? "0:00")
