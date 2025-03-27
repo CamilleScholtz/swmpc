@@ -21,7 +21,6 @@ struct DetailView: View {
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
 
-    // TODO: Pass this to FooterView.
     private var progress: Float {
         guard let elapsed = mpd.status.elapsed,
               let duration = mpd.status.song?.duration,
@@ -199,7 +198,7 @@ struct DetailView: View {
             }
         }
         .popupImage((artwork != nil) ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
-        .popupTitle(mpd.status.song?.title ?? "Unknown Title", subtitle: mpd.status.song?.artist ?? "Unknown Artist")
+        .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
         // swiftformat:disable:next trailingClosures
         .popupBarItems({
             ToolbarItemGroup(placement: .popupBar) {

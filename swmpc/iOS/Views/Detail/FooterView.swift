@@ -9,12 +9,14 @@ import SwiftUI
 
 struct FooterView: View {
     @Environment(MPD.self) private var mpd
+    
+    var progress: Float = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(alignment: .center) {
                 Text(mpd.status.song?.title ?? "No song playing")
-                    .font(.system(size: 18))
+                    .font(.system(size: 24))
                     .fontWeight(.semibold)
                     .fontDesign(.rounded)
 
@@ -23,7 +25,7 @@ struct FooterView: View {
                 FavoriteView()
             }
 
-            ProgressView()
+            ProgressView(progress: progress)
         }
 
         VStack {
@@ -178,8 +180,10 @@ struct FooterView: View {
 
     struct ProgressView: View {
         @Environment(MPD.self) private var mpd
-
-        private var progress: CGFloat {
+        
+        var progress: Float = 0
+        
+        private var calculatedProgress: CGFloat {
             guard let elapsed = mpd.status.elapsed,
                   let duration = mpd.status.song?.duration,
                   duration > 0
@@ -200,14 +204,14 @@ struct FooterView: View {
 
                         RoundedRectangle(cornerRadius: 2)
                             .fill(Color(.accent))
-                            .frame(width: progress * geometry.size.width, height: 3)
-                            .animation(.spring, value: progress)
+                            .frame(width: (progress > 0 ? CGFloat(progress) : calculatedProgress) * geometry.size.width, height: 3)
+                            .animation(.spring, value: progress > 0 ? CGFloat(progress) : calculatedProgress)
 
                         Circle()
                             .fill(Color(.accent))
                             .frame(width: 8, height: 8)
-                            .offset(x: (progress * geometry.size.width) - 4)
-                            .animation(.spring, value: progress)
+                            .offset(x: ((progress > 0 ? CGFloat(progress) : calculatedProgress) * geometry.size.width) - 4)
+                            .animation(.spring, value: progress > 0 ? CGFloat(progress) : calculatedProgress)
                     }
                     .padding(.vertical, 3)
                     .contentShape(Rectangle())

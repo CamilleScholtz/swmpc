@@ -57,7 +57,7 @@ struct AlbumsView: View {
             guard lowerBound <= upperBound else {
                 return
             }
-            
+
             let prefetchRange = lowerBound ..< upperBound
             let albumsToPrefetch = prefetchRange.map {
                 albums[$0]
