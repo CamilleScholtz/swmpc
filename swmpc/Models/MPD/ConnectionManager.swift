@@ -113,6 +113,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///           `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
     func connect() async throws {
+        try ensureVersionSupported()
         guard connection?.state != .ready else {
             return
         }
@@ -148,11 +149,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         version = lines.first?.split(separator: " ").last.map(String.init)
-        guard version?.compare("0.24", options: .numeric) !=
-            .orderedAscending
-        else {
-            throw ConnectionManagerError.unsupportedServerVersion
-        }
+        try ensureVersionSupported()
     }
 
     /// Disconnects from the current network connection and clears internal
@@ -185,6 +182,21 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         return connection
+    }
+
+    /// Ensures that the server version is supported.
+    ///
+    /// This function checks the version of the MPD server and throws an error if
+    /// the version is not supported. The minimum supported version is 0.24.
+    ///
+    /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
+    ///           server version is not supported.
+    func ensureVersionSupported() throws {
+        guard version?.compare("0.24", options: .numeric) !=
+            .orderedAscending
+        else {
+            throw ConnectionManagerError.unsupportedServerVersion
+        }
     }
 
     /// Executes one or more commands asynchronously over the connection.
