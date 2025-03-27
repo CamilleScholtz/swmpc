@@ -6,9 +6,12 @@
 //
 
 import KeychainStorageKit
-import LaunchAtLogin
 import SFSafeSymbols
 import SwiftUI
+
+#if os(macOS)
+    import LaunchAtLogin
+#endif
 
 struct SettingsView: View {
     enum SettingCategory: String, CaseIterable, Identifiable {
@@ -92,10 +95,12 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
 
-                Divider()
-                    .frame(height: 32, alignment: .center)
+                #if os(macOS)
+                    Divider()
+                        .frame(height: 32, alignment: .center)
 
-                LaunchAtLogin.Toggle()
+                    LaunchAtLogin.Toggle()
+                #endif
             }
             .padding(32)
             .navigationTitle("General")
@@ -105,7 +110,11 @@ struct SettingsView: View {
     struct BehaviorView: View {
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-        @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
+        #if os(iOS)
+            @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = true
+        #elseif os(macOS)
+            @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
+        #endif
 
         var body: some View {
             Form {
@@ -114,17 +123,19 @@ struct SettingsView: View {
                     Text("Scroll to the current song when the song changes.")
                 }
 
-                Divider()
-                    .frame(height: 32, alignment: .center)
+                #if os(macOS)
+                    Divider()
+                        .frame(height: 32, alignment: .center)
 
-                Toggle("Show in Status Bar", isOn: $showStatusBar)
-                Toggle(isOn: $showStatusbarSong) {
-                    Text("Show Song in Status Bar")
-                    Text("If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .disabled(!showStatusBar)
+                    Toggle("Show in Status Bar", isOn: $showStatusBar)
+                    Toggle(isOn: $showStatusbarSong) {
+                        Text("Show Song in Status Bar")
+                        Text("If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .disabled(!showStatusBar)
+                #endif
             }
             .padding(32)
             .navigationTitle("Behavior")

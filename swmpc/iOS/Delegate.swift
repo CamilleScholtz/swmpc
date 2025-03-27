@@ -5,7 +5,6 @@
 //  Created by Camille Scholtz on 25/03/2025.
 //
 
-import SFSafeSymbols
 import SwiftUI
 
 @main
@@ -17,9 +16,5 @@ struct Delegate: App {
             AppView()
                 .environment(mpd)
         }
-
-//        Settings {
-//            SettingsView()
-//        }
     }
 }

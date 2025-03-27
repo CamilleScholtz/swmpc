@@ -19,11 +19,26 @@ extension SidebarDestination: NavigationDestination {
         let destination: SidebarDestination
 
         var body: some View {
-            if mpd.queue.internalMedia.isEmpty {
-                EmptyContentView(destination: destination)
-            } else {
-                ContentView(destination: destination)
-            }
+            #if os(iOS)
+                switch destination {
+                case .playlists:
+                    EmptyView()
+                case .settings:
+                    SettingsView()
+                default:
+                    if mpd.queue.internalMedia.isEmpty {
+                        EmptyContentView(destination: destination)
+                    } else {
+                        ContentView(destination: destination)
+                    }
+                }
+            #elseif os(macOS)
+                if mpd.queue.internalMedia.isEmpty {
+                    EmptyContentView(destination: destination)
+                } else {
+                    ContentView(destination: destination)
+                }
+            #endif
         }
     }
 
@@ -57,13 +72,12 @@ extension SidebarDestination: NavigationDestination {
                             AlbumsView()
                         case .artists:
                             ArtistsView()
-                        #if os(iOS)
-                            case .playlists:
-                                // TODO:
-                                EmptyView()
-                        #endif
                         case .songs, .playlist:
                             SongsView()
+                        #if os(iOS)
+                            default:
+                                EmptyView()
+                        #endif
                         }
                     }
                     .padding(.horizontal, 15)
@@ -134,14 +148,6 @@ extension SidebarDestination: NavigationDestination {
 
                     Text("Add songs to your library.")
                         .font(.subheadline)
-                #if os(iOS)
-                    case .playlists:
-                        Text("No playlists in library.")
-                            .font(.headline)
-
-                        Text("Create a playlist.")
-                            .font(.subheadline)
-                #endif
                 case let .playlist(playlist):
                     Text("No songs in playlist.")
                         .font(.headline)
@@ -157,6 +163,8 @@ extension SidebarDestination: NavigationDestination {
 
                             NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: playlist)
                         }
+                default:
+                    EmptyView()
                 }
             }
             .offset(y: -20)

@@ -18,26 +18,24 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
 
     #if os(iOS)
         case playlists
+        case settings
     #endif
 
     static var categories: [Self] {
         #if os(iOS)
-            [.albums, .artists, .songs, .playlists]
+            [.albums, .artists, .songs, .playlists, .settings]
         #elseif os(macOS)
             [.albums, .artists, .songs]
         #endif
     }
 
-    var type: MediaType {
+    var type: MediaType? {
         switch self {
         case .albums: .album
         case .artists: .artist
         case .songs: .song
         case .playlist: .playlist
-
-        #if os(iOS)
-            case .playlists: .playlist
-        #endif
+        default: nil
         }
     }
 
@@ -50,6 +48,7 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
 
         #if os(iOS)
             case .playlists: String(localized: "Playlists")
+            case .settings: String(localized: "Settings")
         #endif
         }
     }
@@ -63,6 +62,7 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
 
         #if os(iOS)
             case .playlists: .musicNoteList
+            case .settings: .gear
         #endif
         }
     }

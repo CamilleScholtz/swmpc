@@ -74,6 +74,8 @@
 				Shared/Views/Content/LoadingView.swift,
 				Shared/Views/Detail/DetailView.swift,
 				Shared/Views/Detail/FooterView.swift,
+				Shared/Views/ErrorView.swift,
+				Shared/Views/Settings/SettingsView.swift,
 			);
 			target = 91775EF02D933F3D002589C5 /* swmpc-iOS */;
 		};

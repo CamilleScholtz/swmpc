@@ -4,6 +4,9 @@
     "" : {
       "shouldTranslate" : false
     },
+    " and server." : {
+
+    },
     "%@ albums" : {
       "localizations" : {
         "de" : {
@@ -956,9 +959,6 @@
         }
       }
     },
-    "Create a playlist." : {
-
-    },
     "Cross-referencing mood with melodies…" : {
       "localizations" : {
         "de" : {
@@ -1784,9 +1784,6 @@
         }
       }
     },
-    "No playlists in library." : {
-
-    },
     "No songs in playlist." : {
       "localizations" : {
         "de" : {
@@ -1958,7 +1955,11 @@
         }
       }
     },
+    "Please check your " : {
+
+    },
     "Please check your configuration and server." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2546,6 +2547,9 @@
         }
       }
     },
+    "Settings" : {
+
+    },
     "Show in Status Bar" : {
       "localizations" : {
         "de" : {
@@ -2744,6 +2748,9 @@
     },
     "swmpc" : {
       "shouldTranslate" : false
+    },
+    "swmpc settings" : {
+
     },
     "Syncing sounds with taste…" : {
       "localizations" : {
