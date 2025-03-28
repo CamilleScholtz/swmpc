@@ -25,10 +25,6 @@ struct Delegate: App {
         .windowStyle(.hiddenTitleBar)
         .commandsRemoved()
         .commands {
-            CommandGroup(replacing: .undoRedo) {}
-            CommandGroup(replacing: .pasteboard) {}
-            CommandGroup(replacing: .toolbar) {}
-
             CommandMenu("Controls") {
                 Button(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
                     Task(priority: .userInitiated) {

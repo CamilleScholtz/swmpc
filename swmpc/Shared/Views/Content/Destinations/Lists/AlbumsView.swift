@@ -60,7 +60,7 @@ struct AlbumsView: View {
             let albumsToPrefetch = {
                 let start = isScrollingUp ? max(0, lastVisibleIndex - 5) : lastVisibleIndex + 1
                 let end = isScrollingUp ? lastVisibleIndex : min(albums.count, lastVisibleIndex + 6)
-                
+
                 return Array(albums[start ..< end])
             }()
 
