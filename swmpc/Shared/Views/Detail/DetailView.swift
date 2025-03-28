@@ -68,6 +68,7 @@ struct DetailView: View {
                             .background(.ultraThinMaterial)
                     }
                     .scaledToFit()
+                    .drawingGroup()
                     #if os(iOS)
                         .mask(
                             RadialGradient(
@@ -108,6 +109,7 @@ struct DetailView: View {
                             .background(.ultraThinMaterial)
                     }
                     .scaledToFit()
+                    .drawingGroup()
                     #if os(iOS)
                         .mask(
                             RadialGradient(
@@ -189,7 +191,6 @@ struct DetailView: View {
                         isHovering = value
                     })
                 #endif
-                    // On swipe left, go to previous song, on right, next song.
                     .gesture(
                         DragGesture()
                             .onChanged { value in
@@ -211,11 +212,11 @@ struct DetailView: View {
 
                                 if distance < -threshold {
                                     Task(priority: .userInitiated) {
-                                        try? await ConnectionManager.command().previous()
+                                        try? await ConnectionManager.command().next()
                                     }
                                 } else if distance > threshold {
                                     Task(priority: .userInitiated) {
-                                        try? await ConnectionManager.command().next()
+                                        try? await ConnectionManager.command().previous()
                                     }
                                 }
 

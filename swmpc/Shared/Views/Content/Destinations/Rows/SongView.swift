@@ -70,7 +70,6 @@ struct SongView: View {
 
             Spacer()
         }
-        .id(song)
         .contentShape(Rectangle())
         #if os(macOS)
             .onHover(perform: { value in
@@ -122,42 +121,42 @@ struct SongView: View {
                 }
             }
     }
+}
 
-    struct WaveView: View {
-        @Environment(MPD.self) private var mpd
+struct WaveView: View {
+    @Environment(MPD.self) private var mpd
 
-        @State private var isAnimating = false
+    @State private var isAnimating = false
 
-        var body: some View {
-            let isPlaying = mpd.status.isPlaying
+    var body: some View {
+        let isPlaying = mpd.status.isPlaying
 
-            HStack(spacing: 1.5) {
-                bar(low: 0.4)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.5).repeatForever() : .linear(duration: 0.5), value: isAnimating)
-                bar(low: 0.3)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.2).repeatForever() : .linear(duration: 0.5), value: isAnimating)
-                bar(low: 0.5)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: isAnimating)
-                bar(low: 0.3)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.7).repeatForever() : .linear(duration: 0.5), value: isAnimating)
-                bar(low: 0.5)
-                    .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: isAnimating)
-            }
-            .onAppear {
-                isAnimating = isPlaying
-            }
-            .onDisappear {
-                isAnimating = false
-            }
-            .onChange(of: isPlaying) { _, value in
-                isAnimating = value
-            }
+        HStack(spacing: 1.5) {
+            bar(low: 0.4)
+                .animation(isPlaying ? .linear(duration: 0.5).speed(1.5).repeatForever() : .linear(duration: 0.5), value: isAnimating)
+            bar(low: 0.3)
+                .animation(isPlaying ? .linear(duration: 0.5).speed(1.2).repeatForever() : .linear(duration: 0.5), value: isAnimating)
+            bar(low: 0.5)
+                .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: isAnimating)
+            bar(low: 0.3)
+                .animation(isPlaying ? .linear(duration: 0.5).speed(1.7).repeatForever() : .linear(duration: 0.5), value: isAnimating)
+            bar(low: 0.5)
+                .animation(isPlaying ? .linear(duration: 0.5).speed(1.0).repeatForever() : .linear(duration: 0.5), value: isAnimating)
         }
-
-        private func bar(low: CGFloat = 0.0, high: CGFloat = 1.0) -> some View {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(.secondary)
-                .frame(width: 2, height: (isAnimating ? high : low) * 12)
+        .onAppear {
+            isAnimating = isPlaying
         }
+        .onDisappear {
+            isAnimating = false
+        }
+        .onChange(of: isPlaying) { _, value in
+            isAnimating = value
+        }
+    }
+
+    private func bar(low: CGFloat = 0.0, high: CGFloat = 1.0) -> some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(.secondary)
+            .frame(width: 2, height: (isAnimating ? high : low) * 12)
     }
 }

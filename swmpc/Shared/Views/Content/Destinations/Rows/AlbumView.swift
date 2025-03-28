@@ -83,7 +83,6 @@ struct AlbumView: View {
 
             Spacer()
         }
-        .id(album)
         .task(id: album, priority: .high) {
             guard !Task.isCancelled else {
                 return
