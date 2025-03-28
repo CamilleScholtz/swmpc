@@ -39,10 +39,10 @@ struct AppView: View {
                         }
                         .tag(category)
                     }
+                    .overlay(
+                        LoadingView(destination: $destination)
+                    )
                 }
-                .overlay(
-                    LoadingView(destination: $destination)
-                )
                 .handleQueueChange(destination: $destination)
                 .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
                     DetailView()
