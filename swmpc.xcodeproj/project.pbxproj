@@ -8,85 +8,36 @@
 
 /* Begin PBXBuildFile section */
 		91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91489B852D6A6C6C0038092A /* SFSafeSymbols */; };
-		91489BC42D7648350038092A /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 91489BC32D7648350038092A /* OpenAI */; };
-		91775F3C2D9343F9002589C5 /* NavigatorUI in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F3B2D9343F9002589C5 /* NavigatorUI */; };
-		91775F3E2D934402002589C5 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F3D2D934402002589C5 /* SFSafeSymbols */; };
-		91775F402D93440D002589C5 /* KeychainStorageKit in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F3F2D93440D002589C5 /* KeychainStorageKit */; };
-		91775F422D934415002589C5 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F412D934415002589C5 /* OpenAI */; };
-		91775F442D93441F002589C5 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F432D93441F002589C5 /* AsyncAlgorithms */; };
-		91775F472D934EBC002589C5 /* LNPopupUI-Static in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F462D934EBC002589C5 /* LNPopupUI-Static */; };
 		91775F5E2D93729F002589C5 /* Noise in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F5D2D93729F002589C5 /* Noise */; };
-		91775F612D9372AD002589C5 /* Noise in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F602D9372AD002589C5 /* Noise */; };
+		9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = 9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */; };
+		9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 9182FEF32D97757000FED9D4 /* OpenAI */; };
 		9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */; };
 		919709D92D8C39C800FC54B9 /* NavigatorUI in Frameworks */ = {isa = PBXBuildFile; productRef = 919709D82D8C39C800FC54B9 /* NavigatorUI */; };
-		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
+		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		91775EF12D933F3D002589C5 /* swmpc-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "swmpc-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		91A141E02CDE3988000A74BC /* swmpc-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "swmpc-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		91A141E02CDE3988000A74BC /* swmpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swmpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		91775F012D9340B8002589C5 /* Exceptions for "swmpc" folder in "swmpc-macOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				iOS/Delegate.swift,
-				iOS/Views/AppView.swift,
-			);
-			target = 91A141DF2CDE3988000A74BC /* swmpc-macOS */;
-		};
-		91775F032D9340EA002589C5 /* Exceptions for "swmpc" folder in "swmpc-iOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				iOS/Delegate.swift,
-				iOS/Views/AppView.swift,
-				Shared/Assets.xcassets,
-				"Shared/Extensions/Double+Formatting.swift",
-				"Shared/Extensions/Notification+Names.swift",
-				"Shared/Extensions/Optional+Update.swift",
-				"Shared/Extensions/View+Hover.swift",
-				Shared/Localizable.xcstrings,
-				Shared/Models/App/ArtworkManager.swift,
-				Shared/Models/App/Destinations.swift,
-				Shared/Models/App/IntelligenceManager.swift,
-				Shared/Models/App/Settings.swift,
-				Shared/Models/MPD/ConnectionManager.swift,
-				Shared/Models/MPD/Enums.swift,
-				Shared/Models/MPD/Mediable.swift,
-				Shared/Models/MPD/MPD.swift,
-				Shared/Models/MPD/Queue.swift,
-				Shared/Models/MPD/Status.swift,
-				Shared/Views/ChangeQueueModifier.swift,
-				Shared/Views/Content/ArtworkView.swift,
-				Shared/Views/Content/ContentView.swift,
-				Shared/Views/Content/Destinations/Lists/AlbumSongsView.swift,
-				Shared/Views/Content/Destinations/Lists/AlbumsView.swift,
-				Shared/Views/Content/Destinations/Lists/ArtistAlbumsView.swift,
-				Shared/Views/Content/Destinations/Lists/ArtistsView.swift,
-				Shared/Views/Content/Destinations/Lists/SongsView.swift,
-				Shared/Views/Content/Destinations/Rows/AlbumView.swift,
-				Shared/Views/Content/Destinations/Rows/ArtistView.swift,
-				Shared/Views/Content/Destinations/Rows/SongView.swift,
-				Shared/Views/Content/HeaderView.swift,
-				Shared/Views/Content/IntelligenceView.swift,
-				Shared/Views/Content/LoadingView.swift,
-				Shared/Views/Detail/DetailView.swift,
-				Shared/Views/Detail/FooterView.swift,
-				Shared/Views/ErrorView.swift,
-				Shared/Views/Settings/SettingsView.swift,
-			);
-			target = 91775EF02D933F3D002589C5 /* swmpc-iOS */;
-		};
-		91775F042D93410C002589C5 /* Exceptions for "Assets" folder in "swmpc-macOS" target */ = {
+		91775F042D93410C002589C5 /* Exceptions for "Assets" folder in "swmpc" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				1.webp,
 				2.webp,
 				swmpc.webp,
 			);
-			target = 91A141DF2CDE3988000A74BC /* swmpc-macOS */;
+			target = 91A141DF2CDE3988000A74BC /* swmpc */;
+		};
+		9182FEF52D97764600FED9D4 /* Exceptions for "swmpc" folder in "swmpc" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			platformFiltersByRelativePath = {
+				Views/Popover/PopoverView.swift = (macos, );
+				Views/Sidebar/SidebarView.swift = (macos, );
+			};
+			target = 91A141DF2CDE3988000A74BC /* swmpc */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -94,7 +45,7 @@
 		9183AF022D4BB8DF00CDC987 /* Assets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				91775F042D93410C002589C5 /* Exceptions for "Assets" folder in "swmpc-macOS" target */,
+				91775F042D93410C002589C5 /* Exceptions for "Assets" folder in "swmpc" target */,
 			);
 			path = Assets;
 			sourceTree = "<group>";
@@ -102,8 +53,7 @@
 		91A141E22CDE3988000A74BC /* swmpc */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				91775F012D9340B8002589C5 /* Exceptions for "swmpc" folder in "swmpc-macOS" target */,
-				91775F032D9340EA002589C5 /* Exceptions for "swmpc" folder in "swmpc-iOS" target */,
+				9182FEF52D97764600FED9D4 /* Exceptions for "swmpc" folder in "swmpc" target */,
 			);
 			path = swmpc;
 			sourceTree = "<group>";
@@ -111,29 +61,16 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		91775EEE2D933F3D002589C5 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				91775F3E2D934402002589C5 /* SFSafeSymbols in Frameworks */,
-				91775F3C2D9343F9002589C5 /* NavigatorUI in Frameworks */,
-				91775F612D9372AD002589C5 /* Noise in Frameworks */,
-				91775F422D934415002589C5 /* OpenAI in Frameworks */,
-				91775F402D93440D002589C5 /* KeychainStorageKit in Frameworks */,
-				91775F442D93441F002589C5 /* AsyncAlgorithms in Frameworks */,
-				91775F472D934EBC002589C5 /* LNPopupUI-Static in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		91A141DD2CDE3988000A74BC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
+				9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */,
+				9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */,
 				919709D92D8C39C800FC54B9 /* NavigatorUI in Frameworks */,
 				91775F5E2D93729F002589C5 /* Noise in Frameworks */,
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
-				91489BC42D7648350038092A /* OpenAI in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
 				9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */,
 			);
@@ -142,11 +79,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9182FEF22D97757000FED9D4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		91A141D72CDE3987000A74BC = {
 			isa = PBXGroup;
 			children = (
 				9183AF022D4BB8DF00CDC987 /* Assets */,
 				91A141E22CDE3988000A74BC /* swmpc */,
+				9182FEF22D97757000FED9D4 /* Frameworks */,
 				91A141E12CDE3988000A74BC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -154,8 +99,7 @@
 		91A141E12CDE3988000A74BC /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				91A141E02CDE3988000A74BC /* swmpc-macOS.app */,
-				91775EF12D933F3D002589C5 /* swmpc-iOS.app */,
+				91A141E02CDE3988000A74BC /* swmpc.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -163,35 +107,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		91775EF02D933F3D002589C5 /* swmpc-iOS */ = {
+		91A141DF2CDE3988000A74BC /* swmpc */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 91775EFC2D933F3D002589C5 /* Build configuration list for PBXNativeTarget "swmpc-iOS" */;
-			buildPhases = (
-				91775EED2D933F3D002589C5 /* Sources */,
-				91775EEE2D933F3D002589C5 /* Frameworks */,
-				91775EEF2D933F3D002589C5 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "swmpc-iOS";
-			packageProductDependencies = (
-				91775F3B2D9343F9002589C5 /* NavigatorUI */,
-				91775F3D2D934402002589C5 /* SFSafeSymbols */,
-				91775F3F2D93440D002589C5 /* KeychainStorageKit */,
-				91775F412D934415002589C5 /* OpenAI */,
-				91775F432D93441F002589C5 /* AsyncAlgorithms */,
-				91775F462D934EBC002589C5 /* LNPopupUI-Static */,
-				91775F602D9372AD002589C5 /* Noise */,
-			);
-			productName = "swmpc-iOS";
-			productReference = 91775EF12D933F3D002589C5 /* swmpc-iOS.app */;
-			productType = "com.apple.product-type.application";
-		};
-		91A141DF2CDE3988000A74BC /* swmpc-macOS */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 91A141EF2CDE398A000A74BC /* Build configuration list for PBXNativeTarget "swmpc-macOS" */;
+			buildConfigurationList = 91A141EF2CDE398A000A74BC /* Build configuration list for PBXNativeTarget "swmpc" */;
 			buildPhases = (
 				91A141DC2CDE3988000A74BC /* Sources */,
 				91A141DD2CDE3988000A74BC /* Frameworks */,
@@ -205,18 +123,19 @@
 				9183AF022D4BB8DF00CDC987 /* Assets */,
 				91A141E22CDE3988000A74BC /* swmpc */,
 			);
-			name = "swmpc-macOS";
+			name = swmpc;
 			packageProductDependencies = (
 				91A142142CDEA27E000A74BC /* LaunchAtLogin */,
 				91F55B392CFE5D300027BBFE /* AsyncAlgorithms */,
 				91489B852D6A6C6C0038092A /* SFSafeSymbols */,
-				91489BC32D7648350038092A /* OpenAI */,
 				919709D82D8C39C800FC54B9 /* NavigatorUI */,
 				9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */,
 				91775F5D2D93729F002589C5 /* Noise */,
+				9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */,
+				9182FEF32D97757000FED9D4 /* OpenAI */,
 			);
 			productName = swmpc;
-			productReference = 91A141E02CDE3988000A74BC /* swmpc-macOS.app */;
+			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -229,9 +148,6 @@
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
-					91775EF02D933F3D002589C5 = {
-						CreatedOnToolsVersion = 16.2;
-					};
 					91A141DF2CDE3988000A74BC = {
 						CreatedOnToolsVersion = 16.1;
 					};
@@ -262,20 +178,12 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				91A141DF2CDE3988000A74BC /* swmpc-macOS */,
-				91775EF02D933F3D002589C5 /* swmpc-iOS */,
+				91A141DF2CDE3988000A74BC /* swmpc */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		91775EEF2D933F3D002589C5 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		91A141DE2CDE3988000A74BC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -286,13 +194,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		91775EED2D933F3D002589C5 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		91A141DC2CDE3988000A74BC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -303,81 +204,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		91775EFD2D933F3D002589C5 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-iOS";
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 9Y37TMD63Q;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = swmpc;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 0.0.3;
-				PRODUCT_BUNDLE_IDENTIFIER = com.camille.swmpc;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		91775EFE2D933F3D002589C5 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-iOS";
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 9Y37TMD63Q;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = swmpc;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 0.0.3;
-				PRODUCT_BUNDLE_IDENTIFIER = com.camille.swmpc;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
 		91A141ED2CDE398A000A74BC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -432,14 +258,13 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -491,95 +316,105 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
 		91A141F02CDE398A000A74BC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-macOS";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = swmpc/swmpc.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 9Y37TMD63Q;
 				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
+				ENABLE_PREVIEWS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = swmpc;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.0.3;
+				MARKETING_VERSION = 0.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.camille.swmpc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = macosx;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
 		};
 		91A141F12CDE398A000A74BC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-macOS";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = swmpc/swmpc.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 9Y37TMD63Q;
 				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
+				ENABLE_PREVIEWS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = swmpc;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.0.3;
+				MARKETING_VERSION = 0.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.camille.swmpc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = macosx;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		91775EFC2D933F3D002589C5 /* Build configuration list for PBXNativeTarget "swmpc-iOS" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				91775EFD2D933F3D002589C5 /* Debug */,
-				91775EFE2D933F3D002589C5 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		91A141DB2CDE3987000A74BC /* Build configuration list for PBXProject "swmpc" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -589,7 +424,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		91A141EF2CDE398A000A74BC /* Build configuration list for PBXNativeTarget "swmpc-macOS" */ = {
+		91A141EF2CDE398A000A74BC /* Build configuration list for PBXNativeTarget "swmpc" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				91A141F02CDE398A000A74BC /* Debug */,
@@ -673,50 +508,20 @@
 			package = 91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
 			productName = SFSafeSymbols;
 		};
-		91489BC32D7648350038092A /* OpenAI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */;
-			productName = OpenAI;
-		};
-		91775F3B2D9343F9002589C5 /* NavigatorUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 919709D72D8C39C800FC54B9 /* XCRemoteSwiftPackageReference "Navigator" */;
-			productName = NavigatorUI;
-		};
-		91775F3D2D934402002589C5 /* SFSafeSymbols */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
-			productName = SFSafeSymbols;
-		};
-		91775F3F2D93440D002589C5 /* KeychainStorageKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */;
-			productName = KeychainStorageKit;
-		};
-		91775F412D934415002589C5 /* OpenAI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */;
-			productName = OpenAI;
-		};
-		91775F432D93441F002589C5 /* AsyncAlgorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
-			productName = AsyncAlgorithms;
-		};
-		91775F462D934EBC002589C5 /* LNPopupUI-Static */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */;
-			productName = "LNPopupUI-Static";
-		};
 		91775F5D2D93729F002589C5 /* Noise */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */;
 			productName = Noise;
 		};
-		91775F602D9372AD002589C5 /* Noise */ = {
+		9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */;
-			productName = Noise;
+			package = 91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */;
+			productName = "LNPopupUI-Static";
+		};
+		9182FEF32D97757000FED9D4 /* OpenAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */;
+			productName = OpenAI;
 		};
 		9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */ = {
 			isa = XCSwiftPackageProductDependency;
