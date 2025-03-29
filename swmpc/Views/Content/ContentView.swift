@@ -80,6 +80,7 @@ extension SidebarDestination: NavigationDestination {
                         #endif
                         }
                     }
+                    .id(destination)
                     .padding(.horizontal, 15)
                     .padding(.bottom, 15)
                 }
@@ -109,10 +110,10 @@ extension SidebarDestination: NavigationDestination {
 
             if animate {
                 withAnimation {
-                    proxy.scrollTo(media, anchor: .center)
+                    proxy.scrollTo(media.id, anchor: .center)
                 }
             } else {
-                proxy.scrollTo(media, anchor: .center)
+                proxy.scrollTo(media.id, anchor: .center)
             }
         }
 

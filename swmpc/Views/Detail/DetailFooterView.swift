@@ -183,30 +183,37 @@ struct DetailFooterView: View {
                     .animation(.interactiveSpring, value: isFavorited)
                     .scaleEffect(isFavorited ? 1.1 : 1)
                     .animation(isFavorited ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: isFavorited)
-                    .onReceive(addCurrentToFavoritesNotifaction) { _ in
-                        Task(priority: .userInitiated) {
-                            guard let song = mpd.status.song else {
-                                return
-                            }
-
-                            isFavorited.toggle()
-
-                            if isFavorited {
-                                try? await ConnectionManager.command().addToFavorites(songs: [song])
-                            } else {
-                                try? await ConnectionManager.command().removeFromFavorites(songs: [song])
-                            }
-                        }
-                    }
-                    .onChange(of: mpd.status.song) {
-                        guard let song = mpd.status.song else {
-                            return
-                        }
-
-                        isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
-                    }
             }
             .button()
+            .onChange(of: mpd.status.song) { _, value in
+                guard let song = value else {
+                    return
+                }
+
+                isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
+            }
+            .onChange(of: mpd.queue.favorites) { _, value in
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                isFavorited = value.contains { $0.url == song.url }
+            }
+            .onReceive(addCurrentToFavoritesNotifaction) { _ in
+                Task(priority: .userInitiated) {
+                    guard let song = mpd.status.song else {
+                        return
+                    }
+
+                    isFavorited.toggle()
+
+                    if isFavorited {
+                        try? await ConnectionManager.command().addToFavorites(songs: [song])
+                    } else {
+                        try? await ConnectionManager.command().removeFromFavorites(songs: [song])
+                    }
+                }
+            }
         }
     }
 

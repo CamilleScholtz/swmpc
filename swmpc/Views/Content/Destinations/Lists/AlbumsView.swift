@@ -21,15 +21,17 @@ struct AlbumsView: View {
     }
 
     var body: some View {
-        ForEach(Array(albums.enumerated()), id: \.element.id) { index, album in
+        ForEach(albums) { album in
             AlbumView(for: album)
                 .onScrollVisibilityChange { isVisible in
                     guard isVisible else {
                         return
                     }
 
-                    previousVisibleIndex = lastVisibleIndex
-                    lastVisibleIndex = index
+                    if let index = albums.firstIndex(of: album) {
+                        previousVisibleIndex = lastVisibleIndex
+                        lastVisibleIndex = index
+                    }
                 }
         }
         .onChange(of: mpd.status.media as? Album) { previous, _ in
@@ -43,14 +45,14 @@ struct AlbumsView: View {
                 NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
-        .task(id: mpd.status.song) {
+        .task(id: mpd.status.song, priority: .high) {
             guard let song = mpd.status.song else {
                 return
             }
 
             mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
         }
-        .task(id: lastVisibleIndex, priority: .background) {
+        .task(id: lastVisibleIndex, priority: .medium) {
             guard !albums.isEmpty, !Task.isCancelled else {
                 return
             }
@@ -58,8 +60,8 @@ struct AlbumsView: View {
             let isScrollingUp = lastVisibleIndex < previousVisibleIndex
 
             let albumsToPrefetch = {
-                let start = isScrollingUp ? max(0, lastVisibleIndex - 5) : lastVisibleIndex + 1
-                let end = isScrollingUp ? lastVisibleIndex : min(albums.count, lastVisibleIndex + 6)
+                let start = isScrollingUp ? max(0, lastVisibleIndex - 2) : lastVisibleIndex + 1
+                let end = isScrollingUp ? lastVisibleIndex : min(albums.count, lastVisibleIndex + 3)
 
                 return Array(albums[start ..< end])
             }()
@@ -67,7 +69,7 @@ struct AlbumsView: View {
             await ArtworkManager.shared.prefetch(for: albumsToPrefetch)
         }
         .onDisappear {
-            Task(priority: .high) {
+            Task(priority: .medium) {
                 await ArtworkManager.shared.cancelPrefetching()
             }
         }

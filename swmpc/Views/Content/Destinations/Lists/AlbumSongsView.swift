@@ -157,6 +157,7 @@ struct AlbumSongsView: View {
                                 guard let artist = try? await mpd.queue.get(for: album, using: .artist) as? Artist else {
                                     return
                                 }
+
                                 navigator.push(ContentDestination.artist(artist))
                             }
                         })
@@ -186,7 +187,7 @@ struct AlbumSongsView: View {
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
         }
-        .padding(.bottom, 15)
+        .padding(.bottom, 10)
 
         if let songs {
             ForEach(songs.keys.sorted(), id: \.self) { disc in

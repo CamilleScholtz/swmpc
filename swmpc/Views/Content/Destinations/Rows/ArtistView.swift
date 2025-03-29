@@ -57,6 +57,7 @@ struct ArtistView: View {
 
             Spacer()
         }
+        .id(artist.id)
         .contentShape(Rectangle())
         .onTapGesture {
             navigator.push(ContentDestination.artist(artist))

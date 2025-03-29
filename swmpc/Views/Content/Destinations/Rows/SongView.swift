@@ -70,6 +70,7 @@ struct SongView: View {
 
             Spacer()
         }
+        .id(song.id)
         .contentShape(Rectangle())
         #if os(macOS)
             .onHover(perform: { value in

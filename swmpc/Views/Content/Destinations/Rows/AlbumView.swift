@@ -83,6 +83,8 @@ struct AlbumView: View {
 
             Spacer()
         }
+        .id(album.id)
+        .contentShape(Rectangle())
         .task(id: album, priority: .high) {
             guard !Task.isCancelled else {
                 return
@@ -98,35 +100,34 @@ struct AlbumView: View {
                 artwork = NSImage(data: data)
             #endif
         }
-        .contentShape(Rectangle())
         #if os(macOS)
-            .onHover(perform: { value in
-                withAnimation(.interactiveSpring) {
-                    isHovering = value
-                }
-            })
-        #endif
-            .onTapGesture {
-                navigator.push(ContentDestination.album(album))
+        .onHover(perform: { value in
+            withAnimation(.interactiveSpring) {
+                isHovering = value
             }
-            .contextMenu {
-                Button("Add Album to Favorites") {
-                    Task {
-                        try? await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
-                    }
+        })
+        #endif
+        .onTapGesture {
+            navigator.push(ContentDestination.album(album))
+        }
+        .contextMenu {
+            Button("Add Album to Favorites") {
+                Task {
+                    try? await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
                 }
+            }
 
-                if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
-                    Menu("Add Album to Playlist") {
-                        ForEach(playlists) { playlist in
-                            Button(playlist.name) {
-                                Task {
-                                    try? await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
-                                }
+            if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
+                Menu("Add Album to Playlist") {
+                    ForEach(playlists) { playlist in
+                        Button(playlist.name) {
+                            Task {
+                                try? await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
                             }
                         }
                     }
                 }
             }
+        }
     }
 }
