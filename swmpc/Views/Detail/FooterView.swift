@@ -63,48 +63,54 @@ struct FooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            ZStack {
-                Circle()
-                    .fill(.thinMaterial)
-                    .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-
-                Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
-                    .font(.system(size: 30))
-            }
-            .hoverEffect()
-            .onTapGesture(perform: {
+            Button(action: {
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().pause(mpd.status.isPlaying)
                 }
-            })
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(.thinMaterial)
+                        .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+
+                    Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
+                        .font(.system(size: 30))
+                }
+            }
+            .buttonStyle(PressedButtonStyle())
+            .hoverEffect()
         }
     }
 
     struct PreviousView: View {
         var body: some View {
-            Image(systemSymbol: .backwardFill)
-                .font(.system(size: 18))
-                .padding(12)
-                .hoverEffect()
-                .onTapGesture(perform: {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().previous()
-                    }
-                })
+            Button(action: {
+                Task(priority: .userInitiated) {
+                    try? await ConnectionManager.command().previous()
+                }
+            }) {
+                Image(systemSymbol: .backwardFill)
+                    .font(.system(size: 18))
+                    .padding(12)
+            }
+            .buttonStyle(PressedButtonStyle())
+            .hoverEffect()
         }
     }
 
     struct NextView: View {
         var body: some View {
-            Image(systemSymbol: .forwardFill)
-                .font(.system(size: 18))
-                .padding(12)
-                .hoverEffect()
-                .onTapGesture(perform: {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().next()
-                    }
-                })
+            Button(action: {
+                Task(priority: .userInitiated) {
+                    try? await ConnectionManager.command().next()
+                }
+            }) {
+                Image(systemSymbol: .forwardFill)
+                    .font(.system(size: 18))
+                    .padding(12)
+            }
+            .buttonStyle(PressedButtonStyle())
+            .hoverEffect()
         }
     }
 
@@ -112,23 +118,25 @@ struct FooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            ZStack {
-                Image(systemSymbol: .shuffle)
-                    .padding(10)
-                    .hoverEffect()
-                    .onTapGesture(perform: {
-                        Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
-                        }
-                    })
+            Button(action: {
+                Task(priority: .userInitiated) {
+                    try? await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
+                }
+            }) {
+                ZStack {
+                    Image(systemSymbol: .shuffle)
+                        .padding(10)
 
-                if mpd.status.isRandom ?? false {
-                    Circle()
-                        .fill(Color(.accent))
-                        .frame(width: 3.5, height: 3.5)
-                        .offset(y: 12)
+                    if mpd.status.isRandom ?? false {
+                        Circle()
+                            .fill(Color(.accent))
+                            .frame(width: 3.5, height: 3.5)
+                            .offset(y: 12)
+                    }
                 }
             }
+            .buttonStyle(PressedButtonStyle())
+            .hoverEffect()
         }
     }
 
@@ -141,38 +149,40 @@ struct FooterView: View {
             .publisher(for: .addCurrentToFavoritesNotifaction)
 
         var body: some View {
-            Image(systemSymbol: .heartFill)
-                .hoverEffect()
-                .foregroundColor(isFavorited ? .red : Color(.secondarySystemFill))
-                .opacity(isFavorited ? 0.7 : 1)
-                .animation(.interactiveSpring, value: isFavorited)
-                .scaleEffect(isFavorited ? 1.1 : 1)
-                .animation(isFavorited ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: isFavorited)
-                .onTapGesture(perform: {
-                    NotificationCenter.default.post(name: .addCurrentToFavoritesNotifaction, object: nil)
-                })
-                .onReceive(addCurrentToFavoritesNotifaction) { _ in
-                    Task(priority: .userInitiated) {
+            Button(action: {
+                NotificationCenter.default.post(name: .addCurrentToFavoritesNotifaction, object: nil)
+            }) {
+                Image(systemSymbol: .heartFill)
+                    .foregroundColor(isFavorited ? .red : Color(.secondarySystemFill))
+                    .opacity(isFavorited ? 0.7 : 1)
+                    .animation(.interactiveSpring, value: isFavorited)
+                    .scaleEffect(isFavorited ? 1.1 : 1)
+                    .animation(isFavorited ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: isFavorited)
+                    .onReceive(addCurrentToFavoritesNotifaction) { _ in
+                        Task(priority: .userInitiated) {
+                            guard let song = mpd.status.song else {
+                                return
+                            }
+
+                            isFavorited.toggle()
+
+                            if isFavorited {
+                                try? await ConnectionManager.command().addToFavorites(songs: [song])
+                            } else {
+                                try? await ConnectionManager.command().removeFromFavorites(songs: [song])
+                            }
+                        }
+                    }
+                    .onChange(of: mpd.status.song) {
                         guard let song = mpd.status.song else {
                             return
                         }
 
-                        isFavorited.toggle()
-
-                        if isFavorited {
-                            try? await ConnectionManager.command().addToFavorites(songs: [song])
-                        } else {
-                            try? await ConnectionManager.command().removeFromFavorites(songs: [song])
-                        }
+                        isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
                     }
-                }
-                .onChange(of: mpd.status.song) {
-                    guard let song = mpd.status.song else {
-                        return
-                    }
-
-                    isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
-                }
+            }
+            .buttonStyle(PressedButtonStyle())
+            .hoverEffect()
         }
     }
 
@@ -180,23 +190,25 @@ struct FooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            ZStack {
-                Image(systemSymbol: .repeat)
-                    .padding(10)
-                    .hoverEffect()
-                    .onTapGesture(perform: {
-                        Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
-                        }
-                    })
+            Button(action: {
+                Task(priority: .userInitiated) {
+                    try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
+                }
+            }) {
+                ZStack {
+                    Image(systemSymbol: .repeat)
+                        .padding(10)
 
-                if mpd.status.isRepeat ?? false {
-                    Circle()
-                        .fill(Color(.accent))
-                        .frame(width: 3.5, height: 3.5)
-                        .offset(y: 12)
+                    if mpd.status.isRepeat ?? false {
+                        Circle()
+                            .fill(Color(.accent))
+                            .frame(width: 3.5, height: 3.5)
+                            .offset(y: 12)
+                    }
                 }
             }
+            .buttonStyle(PressedButtonStyle())
+            .hoverEffect()
         }
     }
 

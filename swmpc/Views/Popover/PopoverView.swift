@@ -20,6 +20,8 @@ struct PopoverView: View {
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
 
+    @State private var dragOffset: CGSize = .zero
+
     @State private var isHovering = false
     @State private var showInfo = false
 
@@ -82,6 +84,42 @@ struct PopoverView: View {
                 .offset(y: showInfo ? -7 : 0)
                 .animation(.spring(response: 0.7, dampingFraction: 1, blendDuration: 0.7), value: showInfo)
                 .shadow(color: .black.opacity(0.4), radius: 25)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.7)) {
+                                dragOffset = value.translation
+                            }
+                        }
+                        .onEnded { value in
+                            guard mpd.status.song != nil else {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    dragOffset = .zero
+                                }
+
+                                return
+                            }
+
+                            let threshold: CGFloat = 50
+                            let distance = value.translation.width
+
+                            if distance < -threshold {
+                                Task(priority: .userInitiated) {
+                                    try? await ConnectionManager.command().next()
+                                }
+                            } else if distance > threshold {
+                                Task(priority: .userInitiated) {
+                                    try? await ConnectionManager.command().previous()
+                                }
+                            }
+
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                dragOffset = .zero
+                            }
+                        }
+                )
+                .offset(x: dragOffset.width)
+                .rotationEffect(.degrees(dragOffset.width / 20 * ((dragOffset.height + 25) / 150)))
                 .background(.ultraThinMaterial)
 
             FooterView()

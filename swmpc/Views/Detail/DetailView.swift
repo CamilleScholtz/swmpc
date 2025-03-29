@@ -28,6 +28,7 @@ struct DetailView: View {
 
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
+
     @State private var dragOffset: CGSize = .zero
 
     #if os(macOS)
@@ -226,7 +227,7 @@ struct DetailView: View {
                             }
                     )
                     .offset(x: dragOffset.width)
-                    .rotationEffect(.degrees(dragOffset.width / 20 * ((dragOffset.height + 50) / 150)))
+                    .rotationEffect(.degrees(dragOffset.width / 20 * ((dragOffset.height + 25) / 150)))
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             guard let song = mpd.status.song else {

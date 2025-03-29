@@ -5,7 +5,14 @@
       "shouldTranslate" : false
     },
     " and server." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " en server."
+          }
+        }
+      }
     },
     "%@ albums" : {
       "localizations" : {
@@ -1382,37 +1389,15 @@
         }
       }
     },
-    "If this is disabled, only the swmpc icon will be shown." : {
-      "extractionState" : "stale",
+    "If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect." : {
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn dies deaktiviert ist, wird nur das swmpc-Symbol angezeigt."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si esto está desactivado, solo se mostrará el ícono de swmpc."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si cette option est désactivée, seule l'icône swmpc sera affichée."
-          }
-        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Als dit uit staat, wordt alleen het swmpc-pictogram getoond."
+            "value" : "Als dit uit staat, wordt alleen het swmpc-pictogram getoond. Een herstart is vereist om deze wijzigingen door te voeren."
           }
         }
       }
-    },
-    "If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect." : {
-
     },
     "Intelligence" : {
       "localizations" : {
@@ -1443,7 +1428,14 @@
       }
     },
     "Leave empty if no password is set." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat leeg als er geen wachtwoord is ingesteld."
+          }
+        }
+      }
     },
     "Library" : {
       "localizations" : {
@@ -1670,7 +1662,14 @@
       }
     },
     "MPD Password:" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MPD-wachtwoord:"
+          }
+        }
+      }
     },
     "MPD Port:" : {
       "localizations" : {
@@ -1956,33 +1955,11 @@
       }
     },
     "Please check your " : {
-
-    },
-    "Please check your configuration and server." : {
-      "extractionState" : "stale",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitte überprüfen Sie Ihre Konfiguration und Ihren Server."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Por favor, revisa tu configuración y tu servidor."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veuillez vérifier votre configuration et votre serveur."
-          }
-        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Controleer je configuratie en server."
+            "value" : "Controleer je "
           }
         }
       }
@@ -2548,7 +2525,14 @@
       }
     },
     "Settings" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellingen"
+          }
+        }
+      }
     },
     "Show in Status Bar" : {
       "localizations" : {
@@ -2750,7 +2734,14 @@
       "shouldTranslate" : false
     },
     "swmpc settings" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "swmpc instellingen"
+          }
+        }
+      }
     },
     "Syncing sounds with taste…" : {
       "localizations" : {
