@@ -66,8 +66,7 @@ struct PopoverFooterView: View {
                     .font(.system(size: 35))
                     .blendMode(.overlay)
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -81,9 +80,9 @@ struct PopoverFooterView: View {
                 Image(systemSymbol: .backwardFill)
                     .blendMode(.overlay)
                     .padding(10)
+                    .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -97,9 +96,9 @@ struct PopoverFooterView: View {
                 Image(systemSymbol: .forwardFill)
                     .blendMode(.overlay)
                     .padding(10)
+                    .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -125,9 +124,9 @@ struct PopoverFooterView: View {
                     }
                 }
                 .blendMode(.overlay)
+                .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -153,9 +152,9 @@ struct PopoverFooterView: View {
                     }
                 }
                 .blendMode(.overlay)
+                .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -178,7 +177,7 @@ struct PopoverFooterView: View {
         var body: some View {
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2)
-                    //.fill(Color(.secondarySystemFill))
+                    // .fill(Color(.secondarySystemFill))
                     .frame(width: 190, height: 3)
 
                 RoundedRectangle(cornerRadius: 2)

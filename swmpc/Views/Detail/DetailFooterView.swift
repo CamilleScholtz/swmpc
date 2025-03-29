@@ -77,8 +77,7 @@ struct DetailFooterView: View {
                         .font(.system(size: 30))
                 }
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -92,9 +91,9 @@ struct DetailFooterView: View {
                 Image(systemSymbol: .backwardFill)
                     .font(.system(size: 18))
                     .padding(12)
+                    .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -108,9 +107,9 @@ struct DetailFooterView: View {
                 Image(systemSymbol: .forwardFill)
                     .font(.system(size: 18))
                     .padding(12)
+                    .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -134,9 +133,9 @@ struct DetailFooterView: View {
                             .offset(y: 12)
                     }
                 }
+                .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -160,9 +159,9 @@ struct DetailFooterView: View {
                             .offset(y: 12)
                     }
                 }
+                .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 
@@ -207,8 +206,7 @@ struct DetailFooterView: View {
                         isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
                     }
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
     }
 

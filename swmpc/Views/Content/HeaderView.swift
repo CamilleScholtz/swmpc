@@ -60,9 +60,9 @@ struct HeaderView: View {
                     .frame(width: 22, height: 22)
                     .foregroundColor(.primary)
                     .padding(4)
+                    .contentShape(Circle())
             }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
+            .button()
         }
         #if os(iOS)
         .frame(height: 44)

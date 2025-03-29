@@ -203,8 +203,14 @@ extension ContentDestination: NavigationDestination {
                 switch self {
                 case let .album(album):
                     AlbumSongsView(for: album)
+                    #if os(macOS)
+                        .padding(.top, 5)
+                    #endif
                 case let .artist(artist):
                     ArtistAlbumsView(for: artist)
+                    #if os(macOS)
+                        .padding(.top, 5)
+                    #endif
                 }
             }
             .padding(.horizontal, 15)
