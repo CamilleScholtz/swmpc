@@ -252,7 +252,7 @@ struct DetailView: View {
             VStack {
                 Spacer()
 
-                FooterView()
+                DetailFooterView()
                     .frame(height: 80)
                 #if os(iOS)
                     .padding(.horizontal, 30)

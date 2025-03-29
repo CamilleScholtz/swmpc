@@ -34,6 +34,7 @@
 		9182FEF52D97764600FED9D4 /* Exceptions for "swmpc" folder in "swmpc" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			platformFiltersByRelativePath = {
+				Views/Popover/PopoverFooterView.swift = (macos, );
 				Views/Popover/PopoverView.swift = (macos, );
 				Views/Sidebar/SidebarView.swift = (macos, );
 			};

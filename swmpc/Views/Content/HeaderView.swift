@@ -27,17 +27,6 @@ struct HeaderView: View {
                 #endif
 
                 Spacer()
-
-                Button(action: {
-                    isSearching = true
-                }) {
-                    Image(systemSymbol: .magnifyingglass)
-                        .frame(width: 22, height: 22)
-                        .foregroundColor(.primary)
-                        .padding(4)
-                }
-                .buttonStyle(.plain)
-                .hoverEffect()
             } else {
                 TextField("Search", text: $query)
                 #if os(iOS)
@@ -62,18 +51,18 @@ struct HeaderView: View {
                         query = ""
                         isFocused = false
                     }
-
-                Button(action: {
-                    isSearching = false
-                }) {
-                    Image(systemSymbol: .xmarkCircleFill)
-                        .frame(width: 22, height: 22)
-                        .foregroundColor(.secondary)
-                        .padding(4)
-                }
-                .buttonStyle(.plain)
-                .hoverEffect()
             }
+
+            Button(action: {
+                isSearching.toggle()
+            }) {
+                Image(systemSymbol: isSearching ? .xmarkCircleFill : .magnifyingglass)
+                    .frame(width: 22, height: 22)
+                    .foregroundColor(.primary)
+                    .padding(4)
+            }
+            .buttonStyle(PressedButtonStyle())
+            .hoverEffect()
         }
         #if os(iOS)
         .frame(height: 44)

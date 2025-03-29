@@ -1,5 +1,5 @@
 //
-//  FooterView.swift
+//  DetailFooterView.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 18/03/2025.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct FooterView: View {
+struct DetailFooterView: View {
     @Environment(MPD.self) private var mpd
 
     var body: some View {
@@ -140,6 +140,32 @@ struct FooterView: View {
         }
     }
 
+    struct RepeatView: View {
+        @Environment(MPD.self) private var mpd
+
+        var body: some View {
+            Button(action: {
+                Task(priority: .userInitiated) {
+                    try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
+                }
+            }) {
+                ZStack {
+                    Image(systemSymbol: .repeat)
+                        .padding(10)
+
+                    if mpd.status.isRepeat ?? false {
+                        Circle()
+                            .fill(Color(.accent))
+                            .frame(width: 3.5, height: 3.5)
+                            .offset(y: 12)
+                    }
+                }
+            }
+            .buttonStyle(PressedButtonStyle())
+            .hoverEffect()
+        }
+    }
+
     struct FavoriteView: View {
         @Environment(MPD.self) private var mpd
 
@@ -180,32 +206,6 @@ struct FooterView: View {
 
                         isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
                     }
-            }
-            .buttonStyle(PressedButtonStyle())
-            .hoverEffect()
-        }
-    }
-
-    struct RepeatView: View {
-        @Environment(MPD.self) private var mpd
-
-        var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
-                }
-            }) {
-                ZStack {
-                    Image(systemSymbol: .repeat)
-                        .padding(10)
-
-                    if mpd.status.isRepeat ?? false {
-                        Circle()
-                            .fill(Color(.accent))
-                            .frame(width: 3.5, height: 3.5)
-                            .offset(y: 12)
-                    }
-                }
             }
             .buttonStyle(PressedButtonStyle())
             .hoverEffect()
