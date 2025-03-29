@@ -2,11 +2,7 @@
 
 ## Build Commands
 - Build (macOS): `xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Debug build`
-- Build (iOS): `xcodebuild -project swmpc.xcodeproj -scheme iOS-swmpc -configuration Debug build`
-- Run (iOS Simulator): `xcodebuild -project swmpc.xcodeproj -scheme iOS-swmpc -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 15' run`
 - Clean: `xcodebuild -project swmpc.xcodeproj clean`
-- Test: `xcodebuild -project swmpc.xcodeproj -scheme swmpc test`
-- Test Single File: `xcodebuild -project swmpc.xcodeproj -scheme swmpc test -only-testing:swmpcTests/[TestClassName]`
 - Formatting: `swiftformat --swiftversion 6 .`
 
 ## Code Style Guidelines
