@@ -108,11 +108,11 @@ struct AlbumView: View {
         })
         #endif
         .onTapGesture {
-            navigator.push(ContentDestination.album(album))
+            navigator.navigate(to: ContentDestination.album(album))
         }
         .contextMenu {
             Button("Add Album to Favorites") {
-                Task {
+                Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
                 }
             }
@@ -121,7 +121,7 @@ struct AlbumView: View {
                 Menu("Add Album to Playlist") {
                     ForEach(playlists) { playlist in
                         Button(playlist.name) {
-                            Task {
+                            Task(priority: .userInitiated) {
                                 try? await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
                             }
                         }

@@ -158,7 +158,7 @@ struct AlbumSongsView: View {
                                     return
                                 }
 
-                                navigator.push(ContentDestination.artist(artist))
+                                navigator.navigate(to: ContentDestination.artist(artist))
                             }
                         })
 

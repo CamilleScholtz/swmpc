@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  DestinationsView.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 16/03/2025.
