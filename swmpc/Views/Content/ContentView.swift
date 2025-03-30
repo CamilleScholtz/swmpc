@@ -198,6 +198,7 @@ extension ContentDestination: NavigationDestination {
             VStack(alignment: .leading, spacing: spacing) {
                 #if os(macOS)
                     BackButtonView()
+                        .padding(.top, 12)
                         .offset(y: 5)
                 #endif
 
@@ -227,23 +228,15 @@ extension ContentDestination: NavigationDestination {
     struct BackButtonView: View {
         @Environment(\.navigator) private var navigator
 
-        @State private var isHovering = false
-
         var body: some View {
-            Image(systemSymbol: .chevronBackward)
-                .frame(width: 22, height: 22)
-                .background(
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(isHovering ? Color(.secondarySystemFill) : .clear)
-                )
-                .padding(.top, 12)
-                .animation(.interactiveSpring, value: isHovering)
-                .onHover { value in
-                    isHovering = value
-                }
-                .onTapGesture {
-                    navigator.back()
-                }
+            Button(action: {
+                navigator.back()
+            }) {
+                Image(systemSymbol: .chevronBackward)
+                    .frame(width: 22, height: 22)
+                    .contentShape(Circle())
+            }
+            .button()
         }
     }
 #endif

@@ -26,33 +26,31 @@ struct SongView: View {
     var body: some View {
         HStack(spacing: 15) {
             Group {
-                #if os(iOS)
-                    if mpd.status.song != song {
+                if mpd.status.song != song {
+                    #if os(iOS)
                         Text(String(song.track))
                             .font(.title3)
                             .fontWeight(.regular)
                             .foregroundStyle(.secondary)
                             .frame(width: 20)
-                    } else {
-                        WaveView()
-                    }
-                #elseif os(macOS)
-                    if !isHovering, mpd.status.song != song {
-                        Text(String(song.track))
-                            .font(.title3)
-                            .fontWeight(.regular)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 20)
-                    } else {
-                        if mpd.status.song == song {
-                            WaveView()
-                        } else {
+                    #elseif os(macOS)
+                        if isHovering {
                             Image(systemSymbol: .playFill)
                                 .font(.title3)
                                 .foregroundColor(.accentColor)
+                                .transition(.opacity)
+
+                        } else {
+                            Text(String(song.track))
+                                .font(.title3)
+                                .fontWeight(.regular)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 20)
                         }
-                    }
-                #endif
+                    #endif
+                } else {
+                    WaveView()
+                }
             }
             .frame(width: 20)
 
