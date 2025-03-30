@@ -32,6 +32,7 @@ struct PopoverFooterView: View {
                 RandomView()
                     .offset(x: -10)
             }
+            .opacity(0.6)
             .frame(width: 250 - 30)
             .offset(y: -4)
         }
@@ -41,13 +42,11 @@ struct PopoverFooterView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5)
-                .blendMode(.screen)
         )
         .padding(1)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(Color.black.opacity(0.2), lineWidth: 1)
-                .blendMode(.screen)
         )
         .shadow(color: .black.opacity(colorScheme == .dark ? 0.15 : 0.05), radius: 3, x: 0, y: 2)
         .shadow(radius: 20)
@@ -64,7 +63,6 @@ struct PopoverFooterView: View {
             }) {
                 Image(systemSymbol: mpd.status.isPlaying ? .pauseCircleFill : .playCircleFill)
                     .font(.system(size: 35))
-                    .blendMode(.overlay)
             }
             .button()
         }
@@ -78,7 +76,6 @@ struct PopoverFooterView: View {
                 }
             }) {
                 Image(systemSymbol: .backwardFill)
-                    .blendMode(.overlay)
                     .padding(10)
                     .contentShape(Circle())
             }
@@ -94,7 +91,6 @@ struct PopoverFooterView: View {
                 }
             }) {
                 Image(systemSymbol: .forwardFill)
-                    .blendMode(.overlay)
                     .padding(10)
                     .contentShape(Circle())
             }
@@ -123,7 +119,6 @@ struct PopoverFooterView: View {
                             .offset(y: 12)
                     }
                 }
-                .blendMode(.overlay)
                 .contentShape(Circle())
             }
             .button()
@@ -151,7 +146,6 @@ struct PopoverFooterView: View {
                             .offset(y: 12)
                     }
                 }
-                .blendMode(.overlay)
                 .contentShape(Circle())
             }
             .button()
@@ -177,7 +171,7 @@ struct PopoverFooterView: View {
         var body: some View {
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2)
-                    // .fill(Color(.secondarySystemFill))
+                    .fill(Color(.secondarySystemFill))
                     .frame(width: 190, height: 3)
 
                 RoundedRectangle(cornerRadius: 2)
@@ -195,7 +189,6 @@ struct PopoverFooterView: View {
             }
             .padding(.vertical, 3)
             .compositingGroup()
-            .blendMode(.overlay)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)

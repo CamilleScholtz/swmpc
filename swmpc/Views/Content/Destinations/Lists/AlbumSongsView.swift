@@ -187,7 +187,7 @@ struct AlbumSongsView: View {
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
         }
-        .padding(.bottom, 10)
+        .padding(.bottom, 5)
 
         if let songs {
             ForEach(songs.keys.sorted(), id: \.self) { disc in

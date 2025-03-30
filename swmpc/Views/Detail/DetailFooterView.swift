@@ -25,6 +25,7 @@ struct DetailFooterView: View {
                 Spacer()
 
                 FavoriteView()
+                    .offset(x: 4, y: 1)
             }
 
             PlayerProgressView()
@@ -77,7 +78,7 @@ struct DetailFooterView: View {
                         .font(.system(size: 30))
                 }
             }
-            .button()
+            .button(scale: 1.13)
         }
     }
 
@@ -183,6 +184,8 @@ struct DetailFooterView: View {
                     .animation(.interactiveSpring, value: isFavorited)
                     .scaleEffect(isFavorited ? 1.1 : 1)
                     .animation(isFavorited ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: isFavorited)
+                    .padding(4)
+                    .contentShape(Circle())
             }
             .button()
             .onChange(of: mpd.status.song) { _, value in

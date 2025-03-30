@@ -36,7 +36,7 @@ struct ArtistAlbumsView: View {
                 }
             }
         }
-        .padding(.bottom, 10)
+        .padding(.bottom, 5)
         .task(priority: .high) {
             guard let song = mpd.status.song else {
                 return
