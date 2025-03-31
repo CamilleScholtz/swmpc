@@ -5,18 +5,18 @@
 //  Created by Camille Scholtz on 27/03/2025.
 //
 
-import NavigatorUI
 import SwiftUI
 
 struct ErrorView: View {
     @Environment(MPD.self) private var mpd
-    #if os(iOS)
-        @Environment(\.navigator) private var navigator
-    #elseif os(macOS)
+    @Environment(PathManager.self) private var pathManager
+
+    #if os(macOS)
         @Environment(\.openSettings) private var openSettings
     #endif
 
     @State private var showError = false
+    @State private var showSettingsSheet = false
 
     var body: some View {
         VStack(alignment: .center) {
@@ -34,7 +34,7 @@ struct ErrorView: View {
                         .foregroundColor(.secondary)
                     Button {
                         #if os(iOS)
-                            navigator.navigate(to: SidebarDestination.settings, method: .sheet)
+                            showSettingsSheet = true
                         #elseif os(macOS)
                             openSettings()
                         #endif
@@ -68,5 +68,12 @@ struct ErrorView: View {
 
             showError = true
         }
+        #if os(iOS)
+        .sheet(isPresented: $showSettingsSheet) {
+            NavigationStack {
+                SettingsView()
+            }
+        }
+        #endif
     }
 }

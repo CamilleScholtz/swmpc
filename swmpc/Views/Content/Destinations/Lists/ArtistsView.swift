@@ -9,7 +9,10 @@ import SwiftUI
 
 struct ArtistsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
+    @Environment(PathManager.self) private var pathManager
+    
+    // The current sidebar destination context
+    let sidebarDestination: SidebarDestination = .artists
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
@@ -19,7 +22,7 @@ struct ArtistsView: View {
 
     var body: some View {
         ForEach(artists) { artist in
-            ArtistView(for: artist)
+            ArtistView(for: artist, sidebarDestination: sidebarDestination)
         }
         .onAppear {
             NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)

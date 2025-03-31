@@ -5,7 +5,6 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import NavigatorUI
 import SwiftUI
 
 extension View {
@@ -16,13 +15,15 @@ extension View {
 
 struct ChangeQueueModifier: ViewModifier {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) var navigator: Navigator
+    @Environment(PathManager.self) private var pathManager
 
     @Binding var destination: SidebarDestination
 
+    @State private var previousDestination: SidebarDestination?
+    @State private var navigationPaused = false
+    
     @State private var showAlert = false
     @State private var playlistToQueue: Playlist?
-    @State private var previousDestination: SidebarDestination?
 
     func body(content: Content) -> some View {
         content
@@ -60,17 +61,14 @@ struct ChangeQueueModifier: ViewModifier {
                     #endif
                 }
 
-                navigator.perform(
-                    .reset,
-                    .send(value),
-                    .pause
-                )
+                pathManager.popToRoot(for: value)
+                navigationPaused = true
 
                 showAlert = true
             }
             .alert(playlistToQueue == nil ? "Queue Library" : "Queue Playlist \(playlistToQueue!.name)", isPresented: $showAlert) {
                 Button("Cancel", role: .cancel) {
-                    navigator.cancelResume()
+                    navigationPaused = false
                     destination = previousDestination ?? .albums
                 }
 
@@ -79,7 +77,7 @@ struct ChangeQueueModifier: ViewModifier {
                         try? await ConnectionManager.command().loadPlaylist(playlistToQueue)
                         try? await mpd.queue.set(using: destination.type, force: true)
 
-                        navigator.resume()
+                        navigationPaused = false
                     }
                 }
             } message: {

@@ -5,7 +5,6 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import NavigatorUI
 import SwiftUI
 
 struct LoadingView: View {
@@ -26,7 +25,7 @@ struct LoadingView: View {
                 ProgressView()
             }
         }
-        .onChange(of: $destination) {
+        .onChange(of: destination) { _, _ in
             isLoading = true
         }
         .task(id: mpd.queue.lastUpdated) {

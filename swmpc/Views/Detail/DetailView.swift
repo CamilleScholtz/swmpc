@@ -15,7 +15,7 @@ import SwiftUI
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
+    @Environment(PathManager.self) private var pathManager
     @Environment(\.colorScheme) private var colorScheme
 
     #if os(iOS)
@@ -238,12 +238,20 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let navigator = navigator.root.child(named: "content") else {
-                                return
-                            }
-
-                            // TODO: Check if top of stack is same album.
-                            navigator.navigate(to: ContentDestination.album(album))
+                            #if os(iOS)
+                                // Default to albums sidebar section for detail view navigation
+                                let sidebarDest = SidebarDestination.albums
+                                pathManager.navigate(to: ContentDestination.album(album), from: sidebarDest)
+                            #elseif os(macOS)
+                                // Don't navigate if this is already the current album (avoid duplicates)
+                                let destination = ContentDestination.album(album)
+                                let isCurrentAlbum = mpd.status.media?.id == album.id
+                                
+                                // Only navigate if this isn't the currently playing album
+                                if !isCurrentAlbum {
+                                    pathManager.contentPath.append(destination)
+                                }
+                            #endif
                         }
                     })
             }
