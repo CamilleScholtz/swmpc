@@ -24,7 +24,7 @@ struct LoadingView: View {
                 ProgressView()
             }
         }
-        .onChange(of: navigationManager.selection) { _, _ in
+        .onChange(of: navigationManager.category) { _, _ in
             isLoading = true
         }
         .task(id: mpd.queue.lastUpdated) {

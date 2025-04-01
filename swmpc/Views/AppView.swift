@@ -26,20 +26,15 @@ struct AppView: View {
                 ErrorView()
             } else {
                 @Bindable var boundNavigator = navigator
-                
+
                 #if os(iOS)
-                    TabView(selection: $boundNavigator.selection) {
+                    TabView(selection: $boundNavigator.category) {
                         ForEach(SidebarDestination.categories) { category in
-                            NavigationStack(path: $boundNavigator.path) {
-                                SidebarDestinationViewBuilder(destination: category)
-                                    .navigationDestination(for: ContentDestination.self) { destination in
-                                        ContentDestinationViewBuilder(destination: destination)
-                                    }
-                            }
-                            .tabItem {
-                                Label(category.label, systemSymbol: category.symbol)
-                            }
-                            .tag(category)
+                            DestinationsView()
+                                .tabItem {
+                                    Label(category.label, systemSymbol: category.symbol)
+                                }
+                                .tag(category)
                         }
                         .overlay(
                             LoadingView()
@@ -55,18 +50,11 @@ struct AppView: View {
                         SidebarView()
                             .navigationSplitViewColumnWidth(min: 180, ideal: 180, max: .infinity)
                     } content: {
-                        NavigationStack(path: $boundNavigator.path) {
-                            SidebarDestinationViewBuilder(destination: navigator.selection)
-                                .navigationDestination(for: ContentDestination.self) { destination in
-                                    ContentDestinationViewBuilder(destination: destination)
-                                }
-                        }
-                        .navigationSplitViewColumnWidth(310)
-                        .navigationBarBackButtonHidden(true)
-                        .ignoresSafeArea()
-                        .overlay(
-                            LoadingView()
-                        )
+                        DestinationsView()
+                            .navigationSplitViewColumnWidth(310)
+                            .overlay(
+                                LoadingView()
+                            )
                     } detail: {
                         ViewThatFits {
                             DetailView()
@@ -82,75 +70,6 @@ struct AppView: View {
         .toolbar {
             Color.clear
         }
-        #endif
-    }
-}
-
-struct SidebarDestinationViewBuilder: View {
-    @Environment(MPD.self) private var mpd
-
-    let destination: SidebarDestination
-
-    var body: some View {
-        #if os(iOS)
-            switch destination {
-            case .playlists:
-                EmptyView()
-            case .settings:
-                SettingsView()
-            default:
-                if mpd.queue.internalMedia.isEmpty {
-                    EmptyContentView(destination: destination)
-                } else {
-                    ContentView(destination: destination)
-                }
-            }
-        #elseif os(macOS)
-            if mpd.queue.internalMedia.isEmpty {
-                EmptyContentView(destination: destination)
-            } else {
-                ContentView(destination: destination)
-            }
-        #endif
-    }
-}
-
-struct ContentDestinationViewBuilder: View {
-    let destination: ContentDestination
-
-    var body: some View {
-        ScrollView {
-            #if os(iOS)
-                let spacing: CGFloat = 10
-            #elseif os(macOS)
-                let spacing: CGFloat = 15
-            #endif
-
-            VStack(alignment: .leading, spacing: spacing) {
-                #if os(macOS)
-                    BackButtonView()
-                        .padding(.top, 12)
-                        .offset(y: 5)
-                #endif
-
-                switch destination {
-                case let .album(album):
-                    AlbumSongsView(for: album)
-                    #if os(macOS)
-                        .padding(.top, 5)
-                    #endif
-                case let .artist(artist):
-                    ArtistAlbumsView(for: artist)
-                    #if os(macOS)
-                        .padding(.top, 5)
-                    #endif
-                }
-            }
-            .padding(.horizontal, 15)
-            .padding(.bottom, 15)
-        }
-        #if os(macOS)
-        .ignoresSafeArea()
         #endif
     }
 }

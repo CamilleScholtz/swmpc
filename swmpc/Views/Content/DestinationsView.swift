@@ -7,10 +7,99 @@
 
 import SwiftUI
 
+struct DestinationsView: View {
+    @Environment(MPD.self) private var mpd
+    @Environment(NavigationManager.self) private var navigator
+
+    var body: some View {
+        @Bindable var boundNavigator = navigator
+
+        NavigationStack(path: $boundNavigator.path) {
+            SidebarDestinationView(destination: navigator.category)
+                .navigationDestination(for: ContentDestination.self) { destination in
+                    ContentDestinationView(destination: destination)
+                }
+        }
+        #if os(macOS)
+        .navigationBarBackButtonHidden(true)
+        .ignoresSafeArea()
+        #endif
+    }
+}
+
+struct SidebarDestinationView: View {
+    @Environment(MPD.self) private var mpd
+
+    let destination: CategoryDestination
+
+    var body: some View {
+        #if os(iOS)
+            switch destination {
+            case .playlists:
+                EmptyView()
+            case .settings:
+                SettingsView()
+            default:
+                if mpd.queue.internalMedia.isEmpty {
+                    EmptyContentView(destination: destination)
+                } else {
+                    ContentView(destination: destination)
+                }
+            }
+        #elseif os(macOS)
+            if mpd.queue.internalMedia.isEmpty {
+                EmptyContentView(destination: destination)
+            } else {
+                ContentView(destination: destination)
+            }
+        #endif
+    }
+}
+
+struct ContentDestinationView: View {
+    let destination: ContentDestination
+
+    var body: some View {
+        ScrollView {
+            #if os(iOS)
+                let spacing: CGFloat = 10
+            #elseif os(macOS)
+                let spacing: CGFloat = 15
+            #endif
+
+            VStack(alignment: .leading, spacing: spacing) {
+                #if os(macOS)
+                    BackButtonView()
+                        .padding(.top, 12)
+                        .offset(y: 5)
+                #endif
+
+                switch destination {
+                case let .album(album):
+                    AlbumSongsView(for: album)
+                    #if os(macOS)
+                        .padding(.top, 5)
+                    #endif
+                case let .artist(artist):
+                    ArtistAlbumsView(for: artist)
+                    #if os(macOS)
+                        .padding(.top, 5)
+                    #endif
+                }
+            }
+            .padding(.horizontal, 15)
+            .padding(.bottom, 15)
+        }
+        #if os(macOS)
+        .ignoresSafeArea()
+        #endif
+    }
+}
+
 struct ContentView: View {
     @Environment(MPD.self) private var mpd
 
-    let destination: SidebarDestination
+    let destination: CategoryDestination
 
     @State private var isSearching = false
 
@@ -96,7 +185,7 @@ struct ContentView: View {
 struct EmptyContentView: View {
     @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
 
-    let destination: SidebarDestination
+    let destination: CategoryDestination
 
     @State private var showIntelligencePlaylistSheet = false
     @State private var playlistToEdit: Playlist?

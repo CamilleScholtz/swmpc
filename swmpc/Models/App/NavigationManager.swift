@@ -10,9 +10,9 @@ import SwiftUI
 @Observable
 class NavigationManager {
     var path = NavigationPath()
-    var selection: SidebarDestination = .albums {
+    var category: CategoryDestination = .albums {
         didSet {
-            if oldValue != selection {
+            if oldValue != category {
                 reset()
             }
         }

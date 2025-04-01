@@ -19,11 +19,11 @@ struct ChangeQueueModifier: ViewModifier {
 
     @State private var showAlert = false
     @State private var playlistToQueue: Playlist?
-    @State private var previousDestination: SidebarDestination?
+    @State private var previousDestination: CategoryDestination?
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: navigator.selection) { previous, value in
+            .onChange(of: navigator.category) { previous, value in
                 guard previous != value else {
                     return
                 }
@@ -68,7 +68,7 @@ struct ChangeQueueModifier: ViewModifier {
                 Button("Queue") {
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().loadPlaylist(playlistToQueue)
-                        try? await mpd.queue.set(using: navigator.selection.type, force: true)
+                        try? await mpd.queue.set(using: navigator.category.type, force: true)
 
                         // navigator.resumeNavigation()
                     }

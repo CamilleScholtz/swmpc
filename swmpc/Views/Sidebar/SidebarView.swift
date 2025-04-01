@@ -25,14 +25,14 @@ struct SidebarView: View {
     var body: some View {
         @Bindable var boundNavigator = navigator
 
-        List(selection: $boundNavigator.selection) {
+        List(selection: $boundNavigator.category) {
             Text("swmpc")
                 .font(.system(size: 18))
                 .fontWeight(.semibold)
                 .fontDesign(.rounded)
                 .padding(.bottom, 15)
 
-            ForEach(SidebarDestination.categories) { category in
+            ForEach(CategoryDestination.categories) { category in
                 NavigationLink(value: category) {
                     Label(category.label, systemSymbol: category.symbol)
                 }
@@ -65,7 +65,7 @@ struct SidebarView: View {
                                     }
                                 }
                         } else {
-                            NavigationLink(value: SidebarDestination.playlist(playlist)) {
+                            NavigationLink(value: CategoryDestination.playlist(playlist)) {
                                 Label(playlist.name, systemSymbol: .musicNoteList)
                             }
                             .help(Text(playlist.name))

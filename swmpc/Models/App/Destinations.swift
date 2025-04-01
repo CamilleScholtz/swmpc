@@ -8,7 +8,7 @@
 import SFSafeSymbols
 import SwiftUI
 
-enum SidebarDestination: Identifiable, Codable, Hashable {
+enum CategoryDestination: Identifiable, Codable, Hashable {
     var id: Self { self }
 
     case albums
