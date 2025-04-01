@@ -5,12 +5,12 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
+import SFSafeSymbols
 import SwiftUI
 
-import NavigatorUI
-import SFSafeSymbols
-
 enum SidebarDestination: Identifiable, Codable, Hashable {
+    var id: Self { self }
+
     case albums
     case artists
     case songs
@@ -71,6 +71,8 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
 }
 
 enum ContentDestination: Identifiable, Codable, Hashable {
+    var id: Self { self }
+
     case album(Album)
     case artist(Artist)
 }

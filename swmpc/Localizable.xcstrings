@@ -462,7 +462,11 @@
         }
       }
     },
+    "Are you sure you want to delete playlist '%@'?" : {
+
+    },
     "Are you sure you want to delete playlist ’%@’?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

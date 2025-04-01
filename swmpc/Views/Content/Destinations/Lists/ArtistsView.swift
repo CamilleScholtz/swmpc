@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ArtistsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
@@ -35,12 +34,6 @@ struct ArtistsView: View {
                 NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
-        .task(id: mpd.status.song, priority: .high) {
-            guard let song = mpd.status.song else {
-                return
-            }
-
-            mpd.status.media = try? await mpd.queue.get(for: song, using: .artist)
-        }
+        // Don't update media on song change - this breaks navigation
     }
 }

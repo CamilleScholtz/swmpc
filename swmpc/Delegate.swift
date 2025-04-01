@@ -28,12 +28,14 @@ struct Delegate: App {
                 .environment(mpd)
             #elseif os(macOS)
                 .environment(appDelegate.mpd)
+                .environment(NavigationManager())
                 .onAppear {
                     for window in NSApplication.shared.windows {
                         window.tabbingMode = .disallowed
                     }
                 }
             #endif
+                .environment(NavigationManager())
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)

@@ -12,7 +12,7 @@ import SwiftUI
 
 struct AlbumView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
+    @Environment(NavigationManager.self) private var navigator
 
     private let album: Album
 

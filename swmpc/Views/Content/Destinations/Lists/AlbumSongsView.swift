@@ -12,7 +12,7 @@ import SwiftUI
 
 struct AlbumSongsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
+    @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
     init(for album: Album) {

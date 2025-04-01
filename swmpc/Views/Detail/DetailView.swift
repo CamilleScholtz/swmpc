@@ -15,7 +15,7 @@ import SwiftUI
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
+    @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
     #if os(iOS)
@@ -235,10 +235,6 @@ struct DetailView: View {
                             }
 
                             guard let album = try? await mpd.queue.get(for: song, using: .album) as? Album else {
-                                return
-                            }
-
-                            guard let navigator = navigator.root.child(named: "content") else {
                                 return
                             }
 

@@ -9,8 +9,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @Environment(MPD.self) private var mpd
-
-    @Binding var destination: SidebarDestination
+    @Environment(NavigationManager.self) private var navigator
 
     @State private var showDeleteAlert = false
     @State private var playlistToDelete: Playlist?
@@ -24,7 +23,9 @@ struct SidebarView: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        List(selection: $destination) {
+        @Bindable var boundNavigator = navigator
+
+        List(selection: $boundNavigator.selection) {
             Text("swmpc")
                 .font(.system(size: 18))
                 .fontWeight(.semibold)
@@ -122,7 +123,7 @@ struct SidebarView: View {
             }
         }
         .toolbar(removing: .sidebarToggle)
-        .handleQueueChange(destination: $destination)
+        .handleQueueChange()
         .alert("Delete Playlist", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {
                 playlistToDelete = nil
@@ -143,7 +144,7 @@ struct SidebarView: View {
             }
         } message: {
             if let playlist = playlistToDelete {
-                Text("Are you sure you want to delete playlist ’\(playlist.name)’?")
+                Text("Are you sure you want to delete playlist '\(playlist.name)'?")
             }
         }
     }
