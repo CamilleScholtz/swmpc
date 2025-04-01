@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 16/11/2024.
 //
 
+import DequeModule
 import KeychainStorageKit
 import Network
 import SwiftUI
@@ -99,7 +100,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         target: .global(qos: Mode.qos.qosClass)
     )
 
-    private var buffer = Data()
+    private var buffer = Deque<UInt8>()
 
     /// The version of the MPD server.
     private(set) var version: String?
@@ -111,7 +112,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         connection?.cancel()
         connection = nil
 
-        buffer.removeAll()
+        buffer.removeAll(keepingCapacity: false)
     }
 
     /// Establishes a TCP connection to the MPD server.
@@ -178,7 +179,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         connection?.cancel()
         connection = nil
 
-        buffer.removeAll()
+        buffer.removeAll(keepingCapacity: false)
     }
 
     /// Ensures that the current network connection is available and ready.
@@ -439,28 +440,23 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private func readFixedLengthData(_ length: Int) async throws -> Data {
         guard length >= 0 else {
             throw ConnectionManagerError.malformedResponse(
-                "Invalid data length")
+                "Invalid data length requested: \(length)")
         }
 
         guard length > 0 else {
             return Data()
         }
 
-        var data = Data(capacity: length)
-        var remaining = length
-
-        while remaining > 0 {
-            if buffer.isEmpty {
-                try await receiveDataChunk()
-            }
-
-            let chunkCount = min(buffer.count, remaining)
-
-            data.append(buffer.prefix(chunkCount))
-            buffer.removeFirst(chunkCount)
-
-            remaining -= chunkCount
+        while buffer.count < length {
+            try await receiveDataChunk()
         }
+
+        guard buffer.count >= length else {
+            throw ConnectionManagerError.connectionUnexpectedClosure
+        }
+
+        let data = Data(buffer.prefix(length))
+        buffer.removeFirst(length)
 
         return data
     }
@@ -478,14 +474,17 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: `ConnectionManagerError.malformedResponse` if the extracted
     ///           data cannot be converted to a valid UTF-8 string.
     private func extractLineFromBuffer() throws -> String? {
-        guard let index = buffer.firstIndex(of: 0x0A) else { return nil }
+        guard let index = buffer.firstIndex(of: 0x0A) else {
+            return nil
+        }
 
-        let data = buffer.prefix(upTo: index)
-        buffer.removeSubrange(...index)
+        let data = Data(buffer[..<index])
+
+        buffer.removeFirst(index + 1)
 
         guard let string = String(data: data, encoding: .utf8) else {
             throw ConnectionManagerError.malformedResponse(
-                "Failed to decode line from buffer")
+                "Failed to decode line from buffer (invalid UTF-8)")
         }
 
         return string
@@ -527,7 +526,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
-        buffer.append(chunk)
+        buffer.append(contentsOf: chunk)
     }
 
     /// Groups an array of lines into chunks, starting a new chunk when a line
