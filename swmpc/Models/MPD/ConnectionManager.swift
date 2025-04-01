@@ -92,7 +92,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     var password: String? { storage.password }
 
     private var connection: NWConnection?
-    private var buffer = Data()
     private let connectionQueue = DispatchQueue(
         label: "com.camille.swmpc.connection.\(Mode.self)",
         qos: Mode.qos,
@@ -100,8 +99,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
         target: .global(qos: Mode.qos.qosClass)
     )
 
+    private var buffer = Data()
+
     /// The version of the MPD server.
-    private var version: String?
+    private(set) var version: String?
 
     // TODO: I want to just use `disconnect()` here, but that gives me an `Call
     // to actor-isolated instance method 'disconnect()' in a synchronous
@@ -1035,8 +1036,13 @@ extension ConnectionManager where Mode == IdleMode {
                 "Missing 'changed' line")
         }
 
-        return IdleEvent(rawValue: String(changedLine.dropFirst("changed: "
-                .count)))!
+        let changed = String(changedLine.dropFirst("changed: ".count))
+        guard let event = IdleEvent(rawValue: changed) else {
+            throw ConnectionManagerError.malformedResponse(
+                "Received unknown idle event: \(changed)")
+        }
+
+        return event
     }
 }
 
