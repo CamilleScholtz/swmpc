@@ -9,8 +9,8 @@ import SwiftUI
 
 struct HeaderView: View {
     @Environment(MPD.self) private var mpd
+    @Environment(NavigationManager.self) private var navigation
 
-    @Binding var destination: SidebarDestination
     @Binding var isSearching: Bool
 
     @State private var query = ""
@@ -20,7 +20,7 @@ struct HeaderView: View {
     var body: some View {
         HStack {
             if !isSearching {
-                Text(destination.label)
+                Text(navigation.categoryDestination.label)
                     .font(.headline)
                 #if os(iOS)
                     .padding(.leading, 4)
@@ -71,7 +71,7 @@ struct HeaderView: View {
         #endif
         .padding(.horizontal, 15)
         .padding(.top, 7.5)
-        .onChange(of: destination) {
+        .onChange(of: navigation.categoryDestination) {
             isSearching = false
         }
         .task(id: isSearching) {

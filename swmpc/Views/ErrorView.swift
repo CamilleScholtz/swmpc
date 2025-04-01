@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ErrorView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(PathManager.self) private var pathManager
 
     #if os(macOS)
         @Environment(\.openSettings) private var openSettings

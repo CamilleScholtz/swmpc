@@ -34,6 +34,7 @@ struct Delegate: App {
                     }
                 }
             #endif
+                .environment(NavigationManager())
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)

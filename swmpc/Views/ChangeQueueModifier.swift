@@ -8,18 +8,16 @@
 import SwiftUI
 
 extension View {
-    func handleQueueChange(destination: Binding<SidebarDestination>) -> some View {
-        modifier(ChangeQueueModifier(destination: destination))
+    func handleQueueChange() -> some View {
+        modifier(ChangeQueueModifier())
     }
 }
 
 struct ChangeQueueModifier: ViewModifier {
     @Environment(MPD.self) private var mpd
-    @Environment(PathManager.self) private var pathManager
+    @Environment(NavigationManager.self) private var navigation
 
-    @Binding var destination: SidebarDestination
-
-    @State private var previousDestination: SidebarDestination?
+    @State private var previousDestination: CategoryDestination?
     @State private var navigationPaused = false
     
     @State private var showAlert = false
@@ -27,7 +25,7 @@ struct ChangeQueueModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: destination) { previous, value in
+            .onChange(of: navigation.categoryDestination) { previous, value in
                 guard previous != value else {
                     return
                 }
@@ -61,7 +59,7 @@ struct ChangeQueueModifier: ViewModifier {
                     #endif
                 }
 
-                pathManager.popToRoot(for: value)
+                navigation.path = NavigationPath()
                 navigationPaused = true
 
                 showAlert = true
@@ -69,13 +67,13 @@ struct ChangeQueueModifier: ViewModifier {
             .alert(playlistToQueue == nil ? "Queue Library" : "Queue Playlist \(playlistToQueue!.name)", isPresented: $showAlert) {
                 Button("Cancel", role: .cancel) {
                     navigationPaused = false
-                    destination = previousDestination ?? .albums
+                    navigation.categoryDestination = previousDestination ?? .albums
                 }
 
                 Button("Queue") {
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().loadPlaylist(playlistToQueue)
-                        try? await mpd.queue.set(using: destination.type, force: true)
+                        try? await mpd.queue.set(using: navigation.categoryDestination.type, force: true)
 
                         navigationPaused = false
                     }

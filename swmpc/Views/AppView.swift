@@ -13,9 +13,7 @@ import SwiftUI
 
 struct AppView: View {
     @Environment(MPD.self) private var mpd
-
-    @State private var pathManager = PathManager()
-    @State private var destination: SidebarDestination = .albums
+    @Environment(NavigationManager.self) private var navigation
 
     #if os(iOS)
         @State private var isPopupBarPresented = true
@@ -28,35 +26,47 @@ struct AppView: View {
                 ErrorView()
             } else {
                 #if os(iOS)
-                    TabView(selection: $destination) {
-                        ForEach(SidebarDestination.categories) { category in
-                            NavigationStack(path: pathManager.path(for: category)) {
-                                SidebarDestinationViewBuilder(destination: category)
-                                    .navigationDestination(for: ContentDestination.self) { destination in
-                                        ContentDestinationViewBuilder(destination: destination)
-                                    }
-                            }
-                            .tabItem {
-                                Label(category.label, systemSymbol: category.symbol)
-                            }
-                            .tag(category)
-                        }
-                        .overlay(
-                            LoadingView(destination: $destination)
-                        )
-                    }
-                    .handleQueueChange(destination: $destination)
-                    .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
-                        DetailView()
-                    }
-                    .popupBarProgressViewStyle(.top)
+                EmptyView()
+
+//                    TabView(selection: $destination) {
+//                        ForEach(navigation.sidebarDestination.categories) { category in
+//                            Group {
+//                                if category == destination {
+//                                    NavigationStack(path: $path) {
+//                                        SidebarDestinationViewBuilder(destination: destination)
+//                                            .navigationDestination(for: ContentDestination.self) { destination in
+//                                                ContentDestinationViewBuilder(destination: destination)
+//                                            }
+//                                    }
+//                                } else {
+//                                    Color.clear
+//                                }
+//                            }
+//                            .tabItem {
+//                                Label(category.label, systemSymbol: category.symbol)
+//                            }
+//                            .tag(category)
+//                        }
+//                        .overlay(
+//                            LoadingView()
+//                        )
+//                    }
+//                    .onChange(of: destination) { _, _ in
+//                    }
+//                    .handleQueueChange(destination: $destination)
+//                    .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
+//                        DetailView()
+//                    }
+//                    .popupBarProgressViewStyle(.top)
                 #elseif os(macOS)
                     NavigationSplitView {
-                        SidebarView(destination: $destination)
+                        SidebarView()
                             .navigationSplitViewColumnWidth(min: 180, ideal: 180, max: .infinity)
                     } content: {
-                        NavigationStack(path: $pathManager.contentPath) {
-                            SidebarDestinationViewBuilder(destination: destination)
+                        @Bindable var boundNavigation = navigation
+                        
+                        NavigationStack(path: $boundNavigation.path) {
+                            SidebarDestinationViewBuilder(destination: navigation.categoryDestination)
                                 .navigationDestination(for: ContentDestination.self) { destination in
                                     ContentDestinationViewBuilder(destination: destination)
                                 }
@@ -65,7 +75,7 @@ struct AppView: View {
                         .navigationBarBackButtonHidden(true)
                         .ignoresSafeArea()
                         .overlay(
-                            LoadingView(destination: $destination)
+                            LoadingView()
                         )
                     } detail: {
                         ViewThatFits {
@@ -73,12 +83,16 @@ struct AppView: View {
                         }
                         .padding(60)
                     }
+                    .onChange(of: navigation.categoryDestination) { _, value in
+                        print(value)
+                        //if value != .playlists {
+                            navigation.path = NavigationPath()
+                        //}
+                    }
                     .background(.background)
                 #endif
             }
         }
-        .environment(pathManager)
-        // Destination is now tracked at view level, not in Status
         #if os(macOS)
         .frame(minWidth: 180 + 310 + 650, minHeight: 650)
         .toolbar {
@@ -88,40 +102,38 @@ struct AppView: View {
     }
 }
 
-// Helper view builders for SidebarDestination
 private struct SidebarDestinationViewBuilder: View {
     @Environment(MPD.self) private var mpd
-
-    let destination: SidebarDestination
+    
+    let destination: CategoryDestination
 
     var body: some View {
         #if os(iOS)
-            switch destination {
+        switch destination {
             case .playlists:
                 EmptyView()
             case .settings:
                 SettingsView()
             default:
                 if mpd.queue.internalMedia.isEmpty {
-                    EmptyContentView(destination: destination)
+                    EmptyContentView()
                 } else {
-                    ContentView(destination: destination)
+                    ContentView()
                 }
             }
         #elseif os(macOS)
             if mpd.queue.internalMedia.isEmpty {
-                EmptyContentView(destination: destination)
+                EmptyContentView()
             } else {
-                ContentView(destination: destination)
+                ContentView()
             }
         #endif
     }
 }
 
-// Helper view builder for ContentDestination
 private struct ContentDestinationViewBuilder: View {
     let destination: ContentDestination
-
+    
     var body: some View {
         ScrollView {
             #if os(iOS)
@@ -148,6 +160,7 @@ private struct ContentDestinationViewBuilder: View {
                     #if os(macOS)
                         .padding(.top, 5)
                     #endif
+
                 }
             }
             .padding(.horizontal, 15)

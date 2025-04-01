@@ -15,9 +15,9 @@ import SwiftUI
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(PathManager.self) private var pathManager
+    @Environment(NavigationManager.self) private var navigation
     @Environment(\.colorScheme) private var colorScheme
-
+    
     #if os(iOS)
         @State private var artwork: UIImage?
         @State private var previousArtwork: UIImage?
@@ -238,20 +238,13 @@ struct DetailView: View {
                                 return
                             }
 
-                            #if os(iOS)
-                                // Default to albums sidebar section for detail view navigation
-                                let sidebarDest = SidebarDestination.albums
-                                pathManager.navigate(to: ContentDestination.album(album), from: sidebarDest)
-                            #elseif os(macOS)
-                                // Don't navigate if this is already the current album (avoid duplicates)
-                                let destination = ContentDestination.album(album)
-                                let isCurrentAlbum = mpd.status.media?.id == album.id
-                                
-                                // Only navigate if this isn't the currently playing album
-                                if !isCurrentAlbum {
-                                    pathManager.contentPath.append(destination)
-                                }
-                            #endif
+                            // Don't navigate if this is already the current album (avoid duplicates)
+                            let destination = ContentDestination.album(album)
+                            let isCurrentAlbum = mpd.status.media?.id == album.id
+                            
+                            if !isCurrentAlbum {
+                                navigation.path.append(destination)
+                            }
                         }
                     })
             }

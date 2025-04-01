@@ -9,8 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(MPD.self) private var mpd
-
-    let destination: SidebarDestination
+    @Environment(NavigationManager.self) private var navigation
 
     @State private var isSearching = false
 
@@ -22,7 +21,7 @@ struct ContentView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                HeaderView(destination: .constant(destination), isSearching: $isSearching)
+                HeaderView(isSearching: $isSearching)
                     .id("top")
 
                 #if os(iOS)
@@ -32,7 +31,7 @@ struct ContentView: View {
                 #endif
 
                 LazyVStack(alignment: .leading, spacing: spacing) {
-                    switch destination {
+                    switch navigation.categoryDestination {
                     case .albums:
                         AlbumsView()
                     case .artists:
@@ -45,7 +44,7 @@ struct ContentView: View {
                     #endif
                     }
                 }
-                .id(destination)
+                .id(navigation.categoryDestination)
                 .padding(.horizontal, 15)
                 .padding(.bottom, 15)
             }
@@ -94,9 +93,9 @@ struct ContentView: View {
 }
 
 struct EmptyContentView: View {
+    @Environment(NavigationManager.self) private var navigation
+    
     @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
-
-    let destination: SidebarDestination
 
     @State private var showIntelligencePlaylistSheet = false
     @State private var playlistToEdit: Playlist?
@@ -107,9 +106,9 @@ struct EmptyContentView: View {
 
     var body: some View {
         VStack {
-            switch destination {
+            switch navigation.categoryDestination {
             case .albums, .artists, .songs:
-                Text("No \(destination.label.lowercased()) in library.")
+                Text("No \(navigation.categoryDestination.label.lowercased()) in library.")
                     .font(.headline)
 
                 Text("Add songs to your library.")
@@ -152,12 +151,11 @@ struct EmptyContentView: View {
 
 #if os(macOS)
     struct BackButtonView: View {
-        @Environment(PathManager.self) private var pathManager
-        @Environment(\.presentationMode) private var presentationMode
+        @Environment(NavigationManager.self) private var navigation
 
         var body: some View {
             Button(action: {
-                presentationMode.wrappedValue.dismiss()
+                navigation.path.removeLast()
             }) {
                 Image(systemSymbol: .chevronBackward)
                     .frame(width: 22, height: 22)

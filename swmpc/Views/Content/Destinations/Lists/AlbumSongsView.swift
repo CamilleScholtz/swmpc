@@ -12,7 +12,7 @@ import SwiftUI
 
 struct AlbumSongsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(PathManager.self) private var pathManager
+    @Environment(NavigationManager.self) private var navigation
     @Environment(\.colorScheme) private var colorScheme
 
     init(for album: Album) {
@@ -158,13 +158,7 @@ struct AlbumSongsView: View {
                                     return
                                 }
 
-                                #if os(iOS)
-                                    // Default to artists sidebar tab
-                                    let sidebarDest = SidebarDestination.artists
-                                    pathManager.navigate(to: ContentDestination.artist(artist), from: sidebarDest)
-                                #elseif os(macOS)
-                                    pathManager.contentPath.append(ContentDestination.artist(artist))
-                                #endif
+                                navigation.path.append(ContentDestination.artist(artist))
                             }
                         })
 

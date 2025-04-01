@@ -12,14 +12,12 @@ import SwiftUI
 
 struct AlbumView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(PathManager.self) private var pathManager
+    @Environment(NavigationManager.self) private var navigation
 
     private let album: Album
-    private let sidebarDestination: SidebarDestination
-    
-    init(for album: Album, sidebarDestination: SidebarDestination = .albums) {
+
+    init(for album: Album) {
         self.album = album
-        self.sidebarDestination = sidebarDestination
     }
 
     #if os(iOS)
@@ -110,12 +108,7 @@ struct AlbumView: View {
         })
         #endif
         .onTapGesture {
-            #if os(iOS)
-                // Use the provided sidebar destination context
-                pathManager.navigate(to: ContentDestination.album(album), from: sidebarDestination)
-            #elseif os(macOS)
-                pathManager.contentPath.append(ContentDestination.album(album))
-            #endif
+            navigation.path.append(ContentDestination.album(album))
         }
         .contextMenu {
             Button("Add Album to Favorites") {

@@ -9,10 +9,6 @@ import SwiftUI
 
 struct AlbumsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(PathManager.self) private var pathManager
-    
-    // The current sidebar destination context
-    let sidebarDestination: SidebarDestination = .albums
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
@@ -25,7 +21,7 @@ struct AlbumsView: View {
 
     var body: some View {
         ForEach(albums) { album in
-            AlbumView(for: album, sidebarDestination: sidebarDestination)
+            AlbumView(for: album)
                 .onScrollVisibilityChange { isVisible in
                     guard isVisible else {
                         return

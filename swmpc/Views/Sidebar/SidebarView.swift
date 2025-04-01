@@ -9,8 +9,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @Environment(MPD.self) private var mpd
-
-    @Binding var destination: SidebarDestination
+    @Environment(NavigationManager.self) private var navigation
 
     @State private var showDeleteAlert = false
     @State private var playlistToDelete: Playlist?
@@ -24,14 +23,16 @@ struct SidebarView: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        List(selection: $destination) {
+        @Bindable var boundNavigation = navigation
+
+        List(selection: $boundNavigation.categoryDestination) {
             Text("swmpc")
                 .font(.system(size: 18))
                 .fontWeight(.semibold)
                 .fontDesign(.rounded)
                 .padding(.bottom, 15)
 
-            ForEach(SidebarDestination.categories) { category in
+            ForEach(CategoryDestination.categories) { category in
                 NavigationLink(value: category) {
                     Label(category.label, systemSymbol: category.symbol)
                 }
@@ -64,7 +65,7 @@ struct SidebarView: View {
                                     }
                                 }
                         } else {
-                            NavigationLink(value: SidebarDestination.playlist(playlist)) {
+                            NavigationLink(value: CategoryDestination.playlist(playlist)) {
                                 Label(playlist.name, systemSymbol: .musicNoteList)
                             }
                             .help(Text(playlist.name))
@@ -122,7 +123,7 @@ struct SidebarView: View {
             }
         }
         .toolbar(removing: .sidebarToggle)
-        .handleQueueChange(destination: $destination)
+        // .handleQueueChange()
         .alert("Delete Playlist", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {
                 playlistToDelete = nil

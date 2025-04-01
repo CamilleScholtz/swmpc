@@ -9,14 +9,12 @@ import SwiftUI
 
 struct ArtistView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(PathManager.self) private var pathManager
+    @Environment(NavigationManager.self) private var navigation
 
     private let artist: Artist
-    private let sidebarDestination: SidebarDestination
-    
-    init(for artist: Artist, sidebarDestination: SidebarDestination = .artists) {
+
+    init(for artist: Artist) {
         self.artist = artist
-        self.sidebarDestination = sidebarDestination
     }
 
     var body: some View {
@@ -62,13 +60,7 @@ struct ArtistView: View {
         .id(artist.id)
         .contentShape(Rectangle())
         .onTapGesture {
-            #if os(iOS)
-                // Use the provided sidebar destination context
-                let destination = ContentDestination.artist(artist)
-                pathManager.navigate(to: destination, from: sidebarDestination)
-            #elseif os(macOS)
-                pathManager.contentPath.append(ContentDestination.artist(artist))
-            #endif
+            navigation.path.append(ContentDestination.artist(artist))
         }
     }
 }
