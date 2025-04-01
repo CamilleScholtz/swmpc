@@ -31,10 +31,4 @@ class NavigationManager {
     func reset() {
         path = NavigationPath()
     }
-
-    func contains(_: any Hashable) -> Bool {
-        let encodedPath = try! jsonEncoder.encode(path.codable)
-
-        print(encodedPath)
-    }
 }

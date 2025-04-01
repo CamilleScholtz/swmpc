@@ -1,5 +1,5 @@
 {
-  "originHash" : "c2aa4cf8e720914b5ff2a5f4837090944f85ccff7a3ea2bd8d3fd2ef46b91d60",
+  "originHash" : "6225e489cfdb67de304caa5dae4b196f38c3aac52d1e2bac0df2c3b6804289e8",
   "pins" : [
     {
       "identity" : "keychainstoragekit",
@@ -44,15 +44,6 @@
       "state" : {
         "revision" : "7be14fd7942f6b215f4b1912315f9e67266cb082",
         "version" : "1.1.2"
-      }
-    },
-    {
-      "identity" : "navigator",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/hmlongco/Navigator",
-      "state" : {
-        "revision" : "c86f201c35c6ed621ddd561206f5aec1a5a67dab",
-        "version" : "0.9.26"
       }
     },
     {

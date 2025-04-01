@@ -25,10 +25,12 @@ struct AppView: View {
             if mpd.status.state == nil {
                 ErrorView()
             } else {
+                @Bindable var boundNavigator = navigator
+                
                 #if os(iOS)
-                    TabView(selection: $navigationManager.selection) {
+                    TabView(selection: $boundNavigator.selection) {
                         ForEach(SidebarDestination.categories) { category in
-                            NavigationStack(path: $navigationManager.path) {
+                            NavigationStack(path: $boundNavigator.path) {
                                 SidebarDestinationViewBuilder(destination: category)
                                     .navigationDestination(for: ContentDestination.self) { destination in
                                         ContentDestinationViewBuilder(destination: destination)
@@ -53,8 +55,6 @@ struct AppView: View {
                         SidebarView()
                             .navigationSplitViewColumnWidth(min: 180, ideal: 180, max: .infinity)
                     } content: {
-                        @Bindable var boundNavigator = navigator
-
                         NavigationStack(path: $boundNavigator.path) {
                             SidebarDestinationViewBuilder(destination: navigator.selection)
                                 .navigationDestination(for: ContentDestination.self) { destination in
