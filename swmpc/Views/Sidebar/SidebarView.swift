@@ -35,6 +35,7 @@ struct SidebarView: View {
                 NavigationLink(value: category) {
                     Label(category.label, systemSymbol: category.symbol)
                 }
+                .keyboardShortcut(category.shortcut ?? .none)
             }
 
             Section("Playlists") {
@@ -67,6 +68,7 @@ struct SidebarView: View {
                             NavigationLink(value: SidebarDestination.playlist(playlist)) {
                                 Label(playlist.name, systemSymbol: .musicNoteList)
                             }
+                            .keyboardShortcut(.none)
                             .help(Text(playlist.name))
                             .contextMenu {
                                 if playlist.name != "Favorites" {

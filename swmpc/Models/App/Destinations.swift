@@ -5,10 +5,8 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import SwiftUI
-
-import NavigatorUI
 import SFSafeSymbols
+import SwiftUI
 
 enum SidebarDestination: Identifiable, Codable, Hashable {
     case albums
@@ -66,6 +64,15 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
             case .playlists: .musicNoteList
             case .settings: .gear
         #endif
+        }
+    }
+
+    var shortcut: KeyboardShortcut? {
+        switch self {
+        case .albums: KeyboardShortcut("1", modifiers: [])
+        case .artists: KeyboardShortcut("2", modifiers: [])
+        case .songs: KeyboardShortcut("3", modifiers: [])
+        default: nil
         }
     }
 }
