@@ -9,9 +9,9 @@ import SwiftUI
 
 struct ArtworkView: View {
     #if os(iOS)
-        @Binding var image: UIImage?
+        let image: UIImage?
     #elseif os(macOS)
-        @Binding var image: NSImage?
+        let image: NSImage?
     #endif
 
     var body: some View {

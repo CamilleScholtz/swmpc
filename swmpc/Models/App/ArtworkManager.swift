@@ -13,7 +13,7 @@ actor ArtworkManager {
     private let cache = NSCache<NSURL, NSData>()
     private var tasks: [URL: (task: Task<Data, Error>, isPrefetch: Bool)] = [:]
 
-    private let maxConcurrentFetches = 16
+    private let maxConcurrentFetches = 24
     private var activeFetches = 0
 
     private init() {

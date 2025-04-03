@@ -34,7 +34,7 @@ struct AlbumSongsView: View {
                 if artwork != nil {
                     ZStack {
                         ZStack(alignment: .bottom) {
-                            ArtworkView(image: $artwork)
+                            ArtworkView(image: artwork)
                                 .frame(width: 80)
                                 .blur(radius: 17)
                                 .offset(y: 7)
@@ -42,7 +42,7 @@ struct AlbumSongsView: View {
                                 .blendMode(colorScheme == .dark ? .softLight : .normal)
                                 .opacity(0.5)
 
-                            ArtworkView(image: $artwork)
+                            ArtworkView(image: artwork)
                                 .cornerRadius(10)
                                 .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                                 .frame(width: 100)

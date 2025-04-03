@@ -32,7 +32,7 @@ struct AlbumView: View {
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
-                ArtworkView(image: $artwork)
+                ArtworkView(image: artwork)
                     .cornerRadius(5)
                     .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                     .frame(width: 60)
