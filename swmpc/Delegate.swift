@@ -37,7 +37,6 @@ struct Delegate: App {
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)
-        .commandsRemoved()
         .commands {
             CommandMenu("Controls") {
                 Button(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
