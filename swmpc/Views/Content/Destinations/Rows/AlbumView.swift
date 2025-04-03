@@ -28,6 +28,8 @@ struct AlbumView: View {
         @State private var isHovering = false
         @State private var isHoveringArtwork = false
     #endif
+    
+    private let prefetchDistance = 5 
 
     var body: some View {
         HStack(spacing: 15) {
@@ -85,7 +87,7 @@ struct AlbumView: View {
         }
         .id(album.id)
         .contentShape(Rectangle())
-        .task(id: album, priority: .high) {
+        .task(id: album, priority: .medium) {
             guard !Task.isCancelled else {
                 return
             }

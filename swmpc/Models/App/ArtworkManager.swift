@@ -38,7 +38,7 @@ actor ArtworkManager {
             return try await existing.task.value
         }
 
-        let task = Task<Data, Error>(priority: .high) { [shouldCache] in
+        let task = Task<Data, Error>(priority: .medium) { [shouldCache] in
             defer { removeTask(for: media.url) }
 
             while self.activeFetches >= self.maxConcurrentFetches {

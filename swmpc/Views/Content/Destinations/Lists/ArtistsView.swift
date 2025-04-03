@@ -35,7 +35,7 @@ struct ArtistsView: View {
                 NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
-        .task(id: mpd.status.song, priority: .high) {
+        .task(id: mpd.status.song, priority: .medium) {
             guard let song = mpd.status.song else {
                 return
             }
