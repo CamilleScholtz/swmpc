@@ -10,21 +10,6 @@ import KeychainStorageKit
 import Network
 import SwiftUI
 
-/// Shared storage manager to avoid re-initializing property wrappers for each connection
-/// manager instance.
-final class ConnectionStorage: @unchecked Sendable {
-    static let shared = ConnectionStorage()
-
-    @AppStorage(Setting.host) var host = "localhost"
-    @AppStorage(Setting.port) var port = 6600
-
-    @AppStorage(Setting.isDemoMode) var isDemoMode = false
-
-    @KeychainStorage(Setting.password) var password: String?
-
-    private init() {}
-}
-
 protocol ConnectionMode {
     static var enableKeepalive: Bool { get }
     static var bufferSize: Int { get }
@@ -89,14 +74,13 @@ enum ConnectionManagerError: LocalizedError {
 }
 
 actor ConnectionManager<Mode: ConnectionMode> {
-    private let storage = ConnectionStorage.shared
+    @AppStorage(Setting.host) private var host = "localhost"
+    @AppStorage(Setting.port) private var port = 6600
 
-    var host: String { storage.host }
-    var port: Int { storage.port }
-    var password: String? { storage.password }
-
-    var isDemoMode: Bool { storage.isDemoMode }
-
+    @AppStorage(Setting.isDemoMode) private var isDemoMode = false
+    
+    @KeychainStorage(Setting.password) private var password: String?
+    
     private var connection: NWConnection?
     private let connectionQueue = DispatchQueue(
         label: "com.camille.swmpc.connection.\(Mode.self)",
