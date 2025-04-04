@@ -11,7 +11,7 @@
 		<a href="https://github.com/CamilleScholtz/swmpc/issues">Request Feature</a>
 	</p>
 	<a href="https://apps.apple.com/app/swmpc/id6743818735" target="_blank">
-		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/Download.webp" alt="Download">
+		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/Download.svg" alt="Download">
 	</a>
 </div>
 
