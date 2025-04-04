@@ -1109,6 +1109,9 @@
         }
       }
     },
+    "Demo Mode" : {
+
+    },
     "Disc %@" : {
       "localizations" : {
         "de" : {
@@ -2910,6 +2913,9 @@
           }
         }
       }
+    },
+    "When enabled, uses mock data instead of connecting to MPD." : {
+
     },
     "Workout Tunes" : {
       "localizations" : {

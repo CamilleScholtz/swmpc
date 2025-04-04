@@ -17,6 +17,9 @@ final class ConnectionStorage: @unchecked Sendable {
 
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
+    
+    @AppStorage(Setting.isDemoMode) var isDemoMode = false
+    
     @KeychainStorage(Setting.password) var password: String?
 
     private init() {}
@@ -92,6 +95,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     var port: Int { storage.port }
     var password: String? { storage.password }
 
+    var isDemoMode: Bool { storage.isDemoMode }
+    
     private var connection: NWConnection?
     private let connectionQueue = DispatchQueue(
         label: "com.camille.swmpc.connection.\(Mode.self)",
@@ -105,9 +110,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The version of the MPD server.
     private(set) var version: String?
 
-    // TODO: I want to just use `disconnect()` here, but that gives me an `Call
+    // XXX: I want to just use `disconnect()` here, but that gives me an `Call
     // to actor-isolated instance method 'disconnect()' in a synchronous
-    // nonisolated context` error.
+    // nonisolated context` error. The existing approach is reasonable.
     deinit {
         connection?.cancel()
         connection = nil
@@ -129,6 +134,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///           `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
     func connect() async throws {
+        guard !isDemoMode else {
+             version = "0.24.0 (Demo Mode)"
+             return
+         }
+        
         try ensureVersionSupported()
         guard connection?.state != .ready else {
             return
@@ -818,6 +828,11 @@ extension ConnectionManager {
                                           isRepeat: Bool?, elapsed: Double?,
                                           playlist: Playlist?, song: Song?)
     {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.getStatusData()
+        }
+        
         let lines = try await run(["status"])
 
         var state: PlayerState?
@@ -874,6 +889,11 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs() async throws -> [Song] {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.getSongs()
+        }
+        
         let lines = try await run(["playlistinfo"])
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -892,6 +912,11 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(for artist: Artist) async throws -> [Song] {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.getSongs(for: artist)
+        }
+        
         let lines = try await run(["playlistfind \(filter(key: "albumArtist", value: artist.name))"])
         let chunks = chunkLines(lines, startingWith: "file")
 
@@ -909,6 +934,11 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(for album: Album) async throws -> [Song] {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.getSongs(for: album)
+        }
+        
         let lines = try await run(["playlistfind \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumArtist", value: album.artist, quote: false)))\""])
         let chunks = chunkLines(lines, startingWith: "file")
 
@@ -930,6 +960,11 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(for playlist: Playlist) async throws -> [Song] {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.getSongs(for: playlist)
+        }
+        
         let lines = try await run(["listplaylistinfo \(playlist.name)"])
         let chunks = chunkLines(lines, startingWith: "file")
 
@@ -951,6 +986,11 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getAlbums() async throws -> [Album] {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.getAlbums()
+        }
+        
         let lines = try await run(["playlistfind \"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
         let chunks = chunkLines(lines, startingWith: "file")
 
@@ -969,6 +1009,11 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getArtists() async throws -> [Artist] {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.getArtists()
+        }
+        
         let albums = try await getAlbums()
         let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
 
@@ -990,6 +1035,11 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getPlaylists() async throws -> [Playlist] {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.getPlaylists()
+        }
+        
         let lines = try await run(["listplaylists"])
         var index: UInt32 = 0
         var playlists = [Playlist]()
@@ -1140,6 +1190,11 @@ extension ConnectionManager where Mode == CommandMode {
     ///                       `name` is used to load the corresponding playlist.
     /// - Throws: An error if the underlying command execution fails.
     func loadPlaylist(_ playlist: Playlist? = nil) async throws {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.loadPlaylist(playlist)
+        }
+        
         if let playlist {
             _ = try await run(["clear", "load \(playlist.name)"])
         } else {
@@ -1260,6 +1315,11 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Parameter media: The `Playable` object to play.
     /// - Throws: An error if the underlying command execution fails.
     func play(_ media: any Playable) async throws {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.play(media)
+        }
+        
         _ = try await run(["playid \(media.id)"])
     }
 
@@ -1269,6 +1329,11 @@ extension ConnectionManager where Mode == CommandMode {
     ///                    or resume (`false`) playback.
     /// - Throws: An error if the underlying command execution fails.
     func pause(_ value: Bool) async throws {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.pause(value)
+        }
+        
         _ = try await run([value ? "pause 1" : "pause 0"])
     }
 
@@ -1276,6 +1341,11 @@ extension ConnectionManager where Mode == CommandMode {
     ///
     /// - Throws: An error if the underlying command execution fails.
     func previous() async throws {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.previous()
+        }
+        
         _ = try await run(["previous"])
     }
 
@@ -1283,6 +1353,11 @@ extension ConnectionManager where Mode == CommandMode {
     ///
     /// - Throws: An error if the underlying command execution fails.
     func next() async throws {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.next()
+        }
+        
         _ = try await run(["next"])
     }
 
@@ -1292,6 +1367,11 @@ extension ConnectionManager where Mode == CommandMode {
     ///                    or disable (`false`) repeat mode.
     /// - Throws: An error if the underlying command execution fails.
     func `repeat`(_ value: Bool) async throws {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.repeat(value)
+        }
+        
         _ = try await run([value ? "repeat 1" : "repeat 0"])
     }
 
@@ -1301,6 +1381,11 @@ extension ConnectionManager where Mode == CommandMode {
     ///                    or disable (`false`) random mode.
     /// - Throws: An error if the underlying command execution fails.
     func random(_ value: Bool) async throws {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.random(value)
+        }
+        
         _ = try await run([value ? "random 1" : "random 0"])
     }
 
@@ -1310,6 +1395,11 @@ extension ConnectionManager where Mode == CommandMode {
     ///                    of the song's total duration.
     /// - Throws: An error if the underlying command execution fails.
     func seek(_ value: Double) async throws {
+        guard !isDemoMode else {
+            let mockData = MockData()
+            return await mockData.seek(value)
+        }
+        
         _ = try await run(["seekcur \(value)"])
     }
 }

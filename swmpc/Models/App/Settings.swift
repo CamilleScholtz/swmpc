@@ -20,4 +20,6 @@ enum Setting {
     static let openAIToken = "openai_token"
 
     static let artworkGetter = "artwork_getter"
+
+    static let isDemoMode = "is_demo_mode"
 }
