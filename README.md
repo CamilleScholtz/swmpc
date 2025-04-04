@@ -1,6 +1,6 @@
 <div align="center">
 	<a href="https://github.com/CamilleScholtz/swmpc">
-		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/swmpc.webp" width="256" alt="swmpc">
+		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/Icon.webp" width="256" alt="swmpc">
 	</a>
 	<h3 align="center">swmpc</h3>
 	<p align="center">
@@ -10,6 +10,9 @@
 		·
 		<a href="https://github.com/CamilleScholtz/swmpc/issues">Request Feature</a>
 	</p>
+	<a href="https://apps.apple.com/app/swmpc/id6743818735" target="_blank">
+		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/Download.webp" alt="Download">
+	</a>
 </div>
 
 ## Features
@@ -19,7 +22,6 @@
 Key Features:
 
 - Intuitive music library browsing: quickly search by artist, album, or track
-- Intuitive music library browsing: quickly search by artist, album, or track
 - Seamless playback controls directly accessible from your menu bar
 - Efficient playlist management, enabling you to easily create and organize playlists
 - Smart playlists generated with cutting-edge AI (powered by OpenAI or DeepSeek)
@@ -27,8 +29,13 @@ Key Features:
 
 ## Screenshots
 
-![Screenshot 1](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/1.webp)
-![Screenshot 2](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/2.webp)
+![App](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/App.webp)
+![Popover](https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/Popover.webp)
+
+
+## Installation
+
+The latest version of `swmpc` is available on the [App Store](https://apps.apple.com/app/swmpc/id6743818735). I've decided to make `swmpc` a paid app to help offset the many hours spend developing it, as well as expenses like the annual $100 Apple Developer License fee. Of course, you're also welcome to compile `swmpc` yourself from source.
 
 
 ## Requirements
@@ -36,8 +43,3 @@ Key Features:
 - macOS 15.0 or later
 - iOS 18.0 or later
 - MPD 0.24 or later
-
-
-## Installation
-
-This project is still in early beta stages, as such it is not yet available on the App Store. There are some tagged pre-releases available on the [releases page](https://github.com/CamilleScholtz/swmpc/releases). You can download the latest version, unzip it, and move the app to your Applications folder. Alternatively, you can clone the repository and build the app yourself.

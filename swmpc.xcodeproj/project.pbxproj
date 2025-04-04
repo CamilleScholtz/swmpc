@@ -25,9 +25,10 @@
 		91775F042D93410C002589C5 /* Exceptions for "Assets" folder in "swmpc" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				1.webp,
-				2.webp,
-				swmpc.webp,
+				App.jpg,
+				Download.svg,
+				Icon.webp,
+				Popover.webp,
 			);
 			target = 91A141DF2CDE3988000A74BC /* swmpc */;
 		};
