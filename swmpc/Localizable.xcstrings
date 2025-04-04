@@ -1110,7 +1110,14 @@
       }
     },
     "Demo Mode" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-modus"
+          }
+        }
+      }
     },
     "Disc %@" : {
       "localizations" : {
@@ -2915,7 +2922,14 @@
       }
     },
     "When enabled, uses mock data instead of connecting to MPD." : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indien ingeschakeld, worden schijngegevens gebruikt in plaats van een verbinding met MPD."
+          }
+        }
+      }
     },
     "Workout Tunes" : {
       "localizations" : {

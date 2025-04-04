@@ -11,13 +11,13 @@ actor ArtworkManager {
     static let shared = ArtworkManager()
 
     @AppStorage(Setting.isDemoMode) private var isDemoMode = false
-    
+
     private let cache = NSCache<NSURL, NSData>()
     private var tasks: [URL: (task: Task<Data, Error>, isPrefetch: Bool)] = [:]
 
     private let maxConcurrentFetches = 24
     private var activeFetches = 0
-    
+
     private init() {
         cache.totalCostLimit = 64 * 1024 * 1024
     }
@@ -39,9 +39,9 @@ actor ArtworkManager {
         if let existing = tasks[media.url] {
             return try await existing.task.value
         }
-        
+
         if isDemoMode {
-            return generateMockArtwork(for: media.url)
+            return await MockData.shared.generateMockArtwork(for: media.url)
         }
 
         let task = Task<Data, Error>(priority: .medium) { [shouldCache] in
@@ -148,83 +148,5 @@ actor ArtworkManager {
 
     private func removeTask(for url: URL) {
         tasks.removeValue(forKey: url)
-    }
-    
-    /// Generates mock artwork data for demo mode
-    ///
-    /// - Parameter url: The URL to base the artwork on
-    /// - Returns: Data containing a generated image
-    private func generateMockArtwork(for url: URL) -> Data {
-        #if os(macOS)
-        let size = CGSize(width: 300, height: 300)
-        let image = NSImage(size: size)
-        image.lockFocus()
-        
-        // Generate two random colors
-        let startColor = NSColor(
-            red: CGFloat.random(in: 0...1),
-            green: CGFloat.random(in: 0...1),
-            blue: CGFloat.random(in: 0...1),
-            alpha: 1.0
-        )
-        let endColor = NSColor(
-            red: CGFloat.random(in: 0...1),
-            green: CGFloat.random(in: 0...1),
-            blue: CGFloat.random(in: 0...1),
-            alpha: 1.0
-        )
-        
-        // Create and draw a vertical gradient
-        if let gradient = NSGradient(starting: startColor, ending: endColor) {
-            let rect = NSRect(origin: .zero, size: size)
-            gradient.draw(in: rect, angle: 90)
-        }
-        
-        image.unlockFocus()
-        
-        // Convert image to PNG Data
-        guard let tiffData = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiffData),
-              let pngData = bitmap.representation(using: .png, properties: [:]) else {
-            return Data()
-        }
-        
-        return pngData
-        #else
-        let size = CGSize(width: 300, height: 300)
-        UIGraphicsBeginImageContextWithOptions(size, false, 0)
-        guard let context = UIGraphicsGetCurrentContext() else { return Data() }
-        
-        // Generate two random colors
-        let startColor = UIColor(
-            red: CGFloat.random(in: 0...1),
-            green: CGFloat.random(in: 0...1),
-            blue: CGFloat.random(in: 0...1),
-            alpha: 1.0
-        )
-        let endColor = UIColor(
-            red: CGFloat.random(in: 0...1),
-            green: CGFloat.random(in: 0...1),
-            blue: CGFloat.random(in: 0...1),
-            alpha: 1.0
-        )
-        
-        // Create gradient with two colors
-        let colors = [startColor.cgColor, endColor.cgColor] as CFArray
-        guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: nil) else {
-            return Data()
-        }
-        
-        // Draw a vertical gradient
-        let startPoint = CGPoint(x: size.width / 2, y: size.height)
-        let endPoint = CGPoint(x: size.width / 2, y: 0)
-        context.drawLinearGradient(gradient, start: startPoint, end: endPoint, options: [])
-        
-        // Get the image and convert to PNG Data
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        return image?.pngData() ?? Data()
-        #endif
     }
 }

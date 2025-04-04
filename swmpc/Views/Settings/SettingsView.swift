@@ -106,19 +106,16 @@ struct SettingsView: View {
 
                     LaunchAtLogin.Toggle()
                 #endif
-                
+
                 Divider()
                     .frame(height: 32, alignment: .center)
-                
+
                 Toggle(isOn: $isDemoMode) {
                     Text("Demo Mode")
                     Text("When enabled, uses mock data instead of connecting to MPD.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
-                Divider()
-                    .frame(height: 32, alignment: .center)
             }
             .padding(32)
             .navigationTitle("General")
