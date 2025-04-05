@@ -19,6 +19,7 @@ struct SongView: View {
         self.song = song
     }
 
+    @State private var duration: String?
     #if os(macOS)
         @State private var isHovering = false
     #endif
@@ -60,10 +61,13 @@ struct SongView: View {
                     .foregroundColor(mpd.status.song == song ? .accentColor : .primary)
                     .lineLimit(2)
 
-                Text((song.artist) + " • " + song.duration.timeString)
+                Text((song.artist) + " • " + (duration ?? "0:00"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                    .onAppear {
+                        duration = song.duration.timeString
+                    }
             }
 
             Spacer()
