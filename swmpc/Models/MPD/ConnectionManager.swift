@@ -887,9 +887,10 @@ extension ConnectionManager {
 
     /// Retrieves songs from the queue that match a specific artist name.
     ///
-    /// - Parameter album: The `Artist` object for which the songs should be
-    ///                    retrieved.
-    /// - Returns: An array of `Song` objects corresponding to the specified
+    /// - Parameter artist: The `Artist` object for which the songs should be
+    ///                     retrieved.
+    /// - Returns: An array of
+    /// `Song` objects corresponding to the specified
     ///            album.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.

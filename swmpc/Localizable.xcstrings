@@ -29,6 +29,12 @@
             "state" : "translated",
             "value" : " en server."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " 和服务器。"
+          }
         }
       }
     },
@@ -56,6 +62,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ albums"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 张专辑"
           }
         }
       }
@@ -85,6 +97,12 @@
             "state" : "translated",
             "value" : "%d nummer"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 首歌曲"
+          }
         }
       }
     },
@@ -112,6 +130,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%d nummers"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 首歌曲"
           }
         }
       }
@@ -141,6 +165,12 @@
             "state" : "translated",
             "value" : "%lld albums"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 张专辑"
+          }
         }
       }
     },
@@ -168,6 +198,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 album"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 张专辑"
           }
         }
       }
@@ -197,6 +233,12 @@
             "state" : "translated",
             "value" : "Album aan favorieten toevoegen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将专辑添加到收藏夹"
+          }
         }
       }
     },
@@ -224,6 +266,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Album aan afspeellijst toevoegen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将专辑添加到播放列表"
           }
         }
       }
@@ -253,6 +301,12 @@
             "state" : "translated",
             "value" : "Huidig nummer aan favorieten toevoegen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将当前歌曲添加到收藏夹"
+          }
         }
       }
     },
@@ -280,6 +334,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nummer aan favorieten toevoegen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将歌曲添加到收藏夹"
           }
         }
       }
@@ -309,6 +369,12 @@
             "state" : "translated",
             "value" : "Nummer aan afspeellijst toevoegen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将歌曲添加到播放列表"
+          }
         }
       }
     },
@@ -336,6 +402,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voeg nummers toe aan je collectie."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将歌曲添加到您的媒体库。"
           }
         }
       }
@@ -365,6 +437,12 @@
             "state" : "translated",
             "value" : "Voeg nummers toe aan je afspeellijst."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将歌曲添加到您的播放列表。"
+          }
         }
       }
     },
@@ -392,6 +470,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Albums"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "专辑"
           }
         }
       }
@@ -421,6 +505,12 @@
             "state" : "translated",
             "value" : "Beats per minuut analyseren…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在分析每分钟节拍数…"
+          }
         }
       }
     },
@@ -448,6 +538,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Muziekvoorkeuren analyseren…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在分析音乐偏好…"
           }
         }
       }
@@ -477,6 +573,12 @@
             "state" : "translated",
             "value" : "Songteksten analyseren…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在分析歌词…"
+          }
         }
       }
     },
@@ -504,6 +606,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Golfvorm analyseren…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在分析波形…"
           }
         }
       }
@@ -533,6 +641,12 @@
             "state" : "translated",
             "value" : "API-token:"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API 令牌："
+          }
         }
       }
     },
@@ -560,6 +674,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Weet je zeker dat je de afspeellijst „%@” wilt verwijderen?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您确定要删除播放列表“%@”吗？"
           }
         }
       }
@@ -589,6 +709,12 @@
             "state" : "translated",
             "value" : "Artiesten"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "艺人"
+          }
         }
       }
     },
@@ -616,6 +742,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Albumhoes ophalen:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面检索："
           }
         }
       }
@@ -645,6 +777,12 @@
             "state" : "translated",
             "value" : "Aziatische muziek"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "亚洲音乐"
+          }
         }
       }
     },
@@ -672,6 +810,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Barok poppunk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "巴洛克流行朋克"
           }
         }
       }
@@ -701,6 +845,12 @@
             "state" : "translated",
             "value" : "Gedrag"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "行为"
+          }
         }
       }
     },
@@ -728,6 +878,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Populariteit van nummer berekenen…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在计算歌曲热度…"
           }
         }
       }
@@ -757,6 +913,12 @@
             "state" : "translated",
             "value" : "Nummervolgorde berekenen…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在计算歌曲顺序…"
+          }
         }
       }
     },
@@ -784,6 +946,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Annuleren"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
@@ -813,6 +981,12 @@
             "state" : "translated",
             "value" : "Zoeken naar dubbele items…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在检查重复项…"
+          }
         }
       }
     },
@@ -840,6 +1014,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Controleren op expliciete inhoud…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在检查露骨内容…"
           }
         }
       }
@@ -869,6 +1049,12 @@
             "state" : "translated",
             "value" : "Chille sferen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放松氛围"
+          }
         }
       }
     },
@@ -896,6 +1082,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Klassieke muziek"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "古典音乐"
           }
         }
       }
@@ -925,6 +1117,12 @@
             "state" : "translated",
             "value" : "Nummers ophalen uit de cloud…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在云端搜寻歌曲…"
+          }
         }
       }
     },
@@ -952,6 +1150,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Raadplegen van /mu/…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在查阅 /mu/…"
           }
         }
       }
@@ -981,6 +1185,12 @@
             "state" : "translated",
             "value" : "Bediening"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制"
+          }
         }
       }
     },
@@ -1008,6 +1218,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kon geen verbinding maken met MPD."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法建立到 MPD 的连接。"
           }
         }
       }
@@ -1037,6 +1253,12 @@
             "state" : "translated",
             "value" : "Aanmaken"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建"
+          }
         }
       }
     },
@@ -1064,6 +1286,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stemming vergelijken met melodieën…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在交叉参考情绪与旋律…"
           }
         }
       }
@@ -1093,6 +1321,12 @@
             "state" : "translated",
             "value" : "Afspeellijst samenstellen…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在整理播放列表…"
+          }
         }
       }
     },
@@ -1120,6 +1354,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wordt gebruikt voor het genereren van slimme afspeellijsten."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前用于生成智能播放列表。"
           }
         }
       }
@@ -1152,6 +1392,12 @@
             "state" : "translated",
             "value" : "Verwijderen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
         }
       }
     },
@@ -1179,6 +1425,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afspeellijst verwijderen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除播放列表"
           }
         }
       }
@@ -1208,6 +1460,12 @@
             "state" : "translated",
             "value" : "Demo-modus"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "演示模式"
+          }
         }
       }
     },
@@ -1235,6 +1493,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disc %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "光盘 %@"
           }
         }
       }
@@ -1264,6 +1528,12 @@
             "state" : "translated",
             "value" : "Ingebed"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "嵌入式"
+          }
         }
       }
     },
@@ -1291,6 +1561,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AI-functies inschakelen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用 AI 功能"
           }
         }
       }
@@ -1320,6 +1596,12 @@
             "state" : "translated",
             "value" : "Schakel AI-functies in de instellingen in om dit te gebruiken."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在设置中启用 AI 功能以使用此特性。"
+          }
         }
       }
     },
@@ -1347,6 +1629,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ruis wegfilteren…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在过滤噪音…"
           }
         }
       }
@@ -1376,6 +1664,12 @@
             "state" : "translated",
             "value" : "Algemeen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通用"
+          }
         }
       }
     },
@@ -1403,6 +1697,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gnomenmuziek"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "侏儒音乐"
           }
         }
       }
@@ -1432,6 +1732,12 @@
             "state" : "translated",
             "value" : "Ga naar huidig nummer"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "转到当前歌曲"
+          }
         }
       }
     },
@@ -1459,6 +1765,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ik wil luisteren naar…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我想听…"
           }
         }
       }
@@ -1488,6 +1800,12 @@
             "state" : "translated",
             "value" : "Harmonieuze nummers identificeren…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在识别和谐曲目…"
+          }
         }
       }
     },
@@ -1515,6 +1833,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Als dit uit staat, wordt alleen het swmpc-pictogram getoond. Een herstart is vereist om deze wijzigingen door te voeren."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果禁用此项，将仅显示 swmpc 图标。需要重新启动才能使更改生效。"
           }
         }
       }
@@ -1544,6 +1868,12 @@
             "state" : "translated",
             "value" : "Intelligentie"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能"
+          }
         }
       }
     },
@@ -1571,6 +1901,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Laat leeg als er geen wachtwoord is ingesteld."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果未设置密码，请留空。"
           }
         }
       }
@@ -1600,6 +1936,12 @@
             "state" : "translated",
             "value" : "Collectie"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒体库"
+          }
         }
       }
     },
@@ -1627,6 +1969,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Collectie zoekt naar albumhoezen (cover.png, cover.jpg of cover.webp) in de map van het bestand. „Ingebed” haalt de hoes uit het bestand zelf."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒体库将通过在文件所在目录中搜索名为 cover.png、cover.jpg 或 cover.webp 的文件来获取封面。嵌入式将直接从文件本身获取封面。"
           }
         }
       }
@@ -1656,6 +2004,12 @@
             "state" : "translated",
             "value" : "Afspeellijst laden"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载播放列表"
+          }
         }
       }
     },
@@ -1683,6 +2037,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Liefdesliedjes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "情歌"
           }
         }
       }
@@ -1712,6 +2072,12 @@
             "state" : "translated",
             "value" : "Nummers afstemmen op de sfeer…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在匹配曲目与氛围…"
+          }
         }
       }
     },
@@ -1739,6 +2105,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Muziek mixen…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在混合音乐…"
           }
         }
       }
@@ -1768,6 +2140,12 @@
             "state" : "translated",
             "value" : "Model:"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型："
+          }
         }
       }
     },
@@ -1795,6 +2173,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "MPD-host:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MPD 主机："
           }
         }
       }
@@ -1824,6 +2208,12 @@
             "state" : "translated",
             "value" : "MPD-wachtwoord:"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MPD 密码："
+          }
         }
       }
     },
@@ -1851,6 +2241,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "MPD-poort:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MPD 端口："
           }
         }
       }
@@ -1880,6 +2276,12 @@
             "state" : "translated",
             "value" : "Nieuwe afspeellijst"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建播放列表"
+          }
         }
       }
     },
@@ -1907,6 +2309,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Volgend nummer"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一首"
           }
         }
       }
@@ -1936,6 +2344,12 @@
             "state" : "translated",
             "value" : "Geen %@ in collectie."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "媒体库中没有 %@。"
+          }
         }
       }
     },
@@ -1963,6 +2377,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geen nummers in afspeellijst."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放列表中没有歌曲。"
           }
         }
       }
@@ -1995,6 +2415,12 @@
             "state" : "translated",
             "value" : "Feestmix"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "派对合辑"
+          }
         }
       }
     },
@@ -2022,6 +2448,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pauzeren"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂停"
           }
         }
       }
@@ -2051,6 +2483,12 @@
             "state" : "translated",
             "value" : "Afspelen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放"
+          }
         }
       }
     },
@@ -2078,6 +2516,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Speelt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在播放"
           }
         }
       }
@@ -2107,6 +2551,12 @@
             "state" : "translated",
             "value" : "Afspeellijsten"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放列表"
+          }
         }
       }
     },
@@ -2134,6 +2584,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Controleer je "
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请检查您的 "
           }
         }
       }
@@ -2163,6 +2619,12 @@
             "state" : "translated",
             "value" : "Postapocalyptische polka"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "末世波尔卡"
+          }
         }
       }
     },
@@ -2190,6 +2652,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vorig nummer"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一首"
           }
         }
       }
@@ -2219,6 +2687,12 @@
             "state" : "translated",
             "value" : "Wachtrij"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "队列"
+          }
         }
       }
     },
@@ -2246,6 +2720,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Collectie aan wachtrij toevoegen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将媒体库加入队列"
           }
         }
       }
@@ -2275,6 +2755,12 @@
             "state" : "translated",
             "value" : "Afspeellijst %@ aan wachtrij toevoegen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将播放列表 %@ 加入队列"
+          }
         }
       }
     },
@@ -2302,6 +2788,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nummers beoordelen…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在为歌曲评分…"
           }
         }
       }
@@ -2331,6 +2823,12 @@
             "state" : "translated",
             "value" : "Tracks aanbevelen…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在推荐曲目…"
+          }
         }
       }
     },
@@ -2358,6 +2856,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Collectie verversen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新媒体库"
           }
         }
       }
@@ -2387,6 +2891,12 @@
             "state" : "translated",
             "value" : "Ontspannende muziek"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放松音乐"
+          }
         }
       }
     },
@@ -2414,6 +2924,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Album uit afspeellijst verwijderen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从播放列表移除专辑"
           }
         }
       }
@@ -2443,6 +2959,12 @@
             "state" : "translated",
             "value" : "Nummer uit favorieten verwijderen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从收藏夹移除歌曲"
+          }
         }
       }
     },
@@ -2470,6 +2992,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nummer uit afspeellijst verwijderen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从播放列表移除歌曲"
           }
         }
       }
@@ -2499,6 +3027,12 @@
             "state" : "translated",
             "value" : "Afspeellijst hernoemen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重命名播放列表"
+          }
         }
       }
     },
@@ -2526,6 +3060,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Russische muziek"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "俄罗斯音乐"
           }
         }
       }
@@ -2555,6 +3095,12 @@
             "state" : "translated",
             "value" : "Zoeken naar verborgen parels…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在扫描隐藏的佳作…"
+          }
         }
       }
     },
@@ -2582,6 +3128,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Zoeken naar vergelijkbare nummers…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在扫描相似曲目…"
           }
         }
       }
@@ -2611,6 +3163,12 @@
             "state" : "translated",
             "value" : "Scroll naar huidig nummer"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滚动到当前歌曲"
+          }
         }
       }
     },
@@ -2638,6 +3196,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Scroll naar huidig nummer wanneer het nummer wijzigt."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌曲切换时滚动到当前歌曲。"
           }
         }
       }
@@ -2667,6 +3231,12 @@
             "state" : "translated",
             "value" : "Zoeken"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索"
+          }
         }
       }
     },
@@ -2694,6 +3264,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ideale nummers selecteren…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在选择理想曲目…"
           }
         }
       }
@@ -2723,6 +3299,12 @@
             "state" : "translated",
             "value" : "Instellingen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
         }
       }
     },
@@ -2750,6 +3332,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In statusbalk tonen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在状态栏显示"
           }
         }
       }
@@ -2779,6 +3367,12 @@
             "state" : "translated",
             "value" : "Nummer in statusbalk tonen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在状态栏显示歌曲"
+          }
         }
       }
     },
@@ -2806,6 +3400,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nummers husselen…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在随机播放歌曲…"
           }
         }
       }
@@ -2835,6 +3435,12 @@
             "state" : "translated",
             "value" : "Nummers"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歌曲"
+          }
         }
       }
     },
@@ -2862,6 +3468,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nummers sorteren op genre…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在按流派对歌曲进行排序…"
           }
         }
       }
@@ -2891,6 +3503,12 @@
             "state" : "translated",
             "value" : "Spontane jazz"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即兴爵士"
+          }
         }
       }
     },
@@ -2918,6 +3536,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Studeerbeats"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "学习节拍"
           }
         }
       }
@@ -2950,6 +3574,12 @@
             "state" : "translated",
             "value" : "swmpc instellingen"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "swmpc 设置"
+          }
         }
       }
     },
@@ -2977,6 +3607,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geluiden synchroniseren met smaak…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在同步声音与品味…"
           }
         }
       }
@@ -3006,6 +3642,12 @@
             "state" : "translated",
             "value" : "Dit overschrijft de huidige wachtrij."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这将覆盖当前队列。"
+          }
         }
       }
     },
@@ -3033,6 +3675,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turkse muziek"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "土耳其音乐"
           }
         }
       }
@@ -3062,6 +3710,12 @@
             "state" : "translated",
             "value" : "Naamloze afspeellijst"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未命名播放列表"
+          }
         }
       }
     },
@@ -3089,6 +3743,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Soundtracks van videogames"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "视频游戏原声带"
           }
         }
       }
@@ -3118,6 +3778,12 @@
             "state" : "translated",
             "value" : "Wachten op inspiratie…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在等待灵感…"
+          }
         }
       }
     },
@@ -3146,6 +3812,12 @@
             "state" : "translated",
             "value" : "Indien ingeschakeld, worden testgegevens gebruikt in plaats van een verbinding met MPD."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用后，将使用模拟数据而不是连接到 MPD。"
+          }
         }
       }
     },
@@ -3173,6 +3845,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Workoutmuziek"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "锻炼音乐"
           }
         }
       }
