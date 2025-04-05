@@ -19,10 +19,13 @@ struct DetailView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     #if os(iOS)
-        @State private var artwork: UIImage?
+        @Binding var artwork: UIImage?
+        @Binding var isPopupOpen: Bool
+
         @State private var previousArtwork: UIImage?
     #elseif os(macOS)
-        @State private var artwork: NSImage?
+        @Binding var artwork: NSImage?
+
         @State private var previousArtwork: NSImage?
     #endif
 
@@ -137,6 +140,10 @@ struct DetailView: View {
                 }
                 .saturation(1.5)
                 .blendMode(colorScheme == .dark ? .softLight : .normal)
+                #if os(iOS)
+                    .opacity(isPopupOpen ? 1 : 0)
+                    .animation(.spring.delay(isPopupOpen ? 0.2 : 0), value: isPopupOpen)
+                #endif
 
                 Noise(style: .random)
                     .monochrome()
@@ -184,6 +191,7 @@ struct DetailView: View {
                     .shadow(color: .black.opacity(0.2), radius: 16)
                 #if os(iOS)
                     .frame(width: 300)
+                    .popupTransitionTarget()
                 #elseif os(macOS)
                     .frame(width: 250)
                     .scaleEffect(isHovering ? 1.02 : 1)
@@ -262,23 +270,6 @@ struct DetailView: View {
         #if os(macOS)
         .ignoresSafeArea()
         #endif
-        .task(id: mpd.status.song) {
-            guard let song = mpd.status.song else {
-                artwork = nil
-                return
-            }
-
-            guard let data = try? await ArtworkManager.shared.get(for: song, shouldCache: false) else {
-                artwork = nil
-                return
-            }
-
-            #if os(iOS)
-                artwork = UIImage(data: data)
-            #elseif os(macOS)
-                artwork = NSImage(data: data)
-            #endif
-        }
         .onChange(of: artwork) { previous, _ in
             previousArtwork = previous
 

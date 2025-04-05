@@ -78,9 +78,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     @AppStorage(Setting.port) private var port = 6600
 
     @AppStorage(Setting.isDemoMode) private var isDemoMode = false
-    
+
     @KeychainStorage(Setting.password) private var password: String?
-    
+
     private var connection: NWConnection?
     private let connectionQueue = DispatchQueue(
         label: "com.camille.swmpc.connection.\(Mode.self)",
