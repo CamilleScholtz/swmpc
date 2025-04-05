@@ -17,14 +17,11 @@ struct AppView: View {
     @Environment(\.navigator) private var navigator
 
     @State private var destination: SidebarDestination = .albums
+    @State private var artwork: PlatformImage?
 
     #if os(iOS)
-        @State private var artwork: UIImage?
-
         @State private var isPopupBarPresented = true
         @State private var isPopupOpen = false
-    #elseif os(macOS)
-        @State private var artwork: NSImage?
     #endif
 
     var body: some View {
@@ -89,11 +86,7 @@ struct AppView: View {
                         return
                     }
 
-                    #if os(iOS)
-                        artwork = UIImage(data: data)
-                    #elseif os(macOS)
-                        artwork = NSImage(data: data)
-                    #endif
+                    artwork = PlatformImage(data: data)
                 }
             }
         }

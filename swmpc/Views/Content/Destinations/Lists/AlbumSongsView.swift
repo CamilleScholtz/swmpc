@@ -20,13 +20,12 @@ struct AlbumSongsView: View {
     }
 
     @State private var album: Album
-    #if os(iOS)
-        @State private var artwork: UIImage?
-    #elseif os(macOS)
-        @State private var artwork: NSImage?
+    @State private var artwork: PlatformImage?
+    @State private var songs: [Int: [Song]]?
+
+    #if os(macOS)
         @State private var isHovering = false
     #endif
-    @State private var songs: [Int: [Song]]?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
@@ -166,8 +165,8 @@ struct AlbumSongsView: View {
                         let flat = songs.values.flatMap(\.self)
                         Text(
                             String(format: flat.count > 1
-                                   ? NSLocalizedString("%d songs", comment: "")
-                                   : NSLocalizedString("%d song", comment: ""), flat.count)
+                                ? NSLocalizedString("%d songs", comment: "")
+                                : NSLocalizedString("%d song", comment: ""), flat.count)
                                 + " • "
                                 + (flat.reduce(0) { $0 + $1.duration }.humanTimeString)
                         )
@@ -183,11 +182,7 @@ struct AlbumSongsView: View {
                 async let artworkDataTask = ArtworkManager.shared.get(for: album, shouldCache: true)
                 async let songsTask = ConnectionManager.command().getSongs(for: album)
 
-                #if os(iOS)
-                    artwork = await UIImage(data: (try? artworkDataTask) ?? Data())
-                #elseif os(macOS)
-                    artwork = await NSImage(data: (try? artworkDataTask) ?? Data())
-                #endif
+                artwork = await PlatformImage(data: (try? artworkDataTask) ?? Data())
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
         }

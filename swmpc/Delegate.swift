@@ -11,6 +11,12 @@ import SwiftUI
     import SFSafeSymbols
 #endif
 
+#if os(iOS)
+    typealias PlatformImage = UIImage
+#elseif os(macOS)
+    typealias PlatformImage = NSImage
+#endif
+
 @main
 struct Delegate: App {
     #if os(macOS)

@@ -20,11 +20,11 @@ struct AlbumView: View {
         self.album = album
     }
 
+    @State private var artwork: PlatformImage?
+
     #if os(iOS)
-        @State private var artwork: UIImage?
         @State private var isShowingContextMenu = false
     #elseif os(macOS)
-        @State private var artwork: NSImage?
         @State private var isHovering = false
         @State private var isHoveringArtwork = false
     #endif
@@ -94,11 +94,7 @@ struct AlbumView: View {
                 return
             }
 
-            #if os(iOS)
-                artwork = UIImage(data: data)
-            #elseif os(macOS)
-                artwork = NSImage(data: data)
-            #endif
+            artwork = PlatformImage(data: data)
         }
         #if os(macOS)
         .onHover(perform: { value in

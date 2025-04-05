@@ -18,15 +18,11 @@ struct DetailView: View {
     @Environment(\.navigator) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
+    let artwork: PlatformImage?
+    @State private var previousArtwork: PlatformImage?
+
     #if os(iOS)
-        let artwork: UIImage?
         @Binding var isPopupOpen: Bool
-
-        @State private var previousArtwork: UIImage?
-    #elseif os(macOS)
-        let artwork: NSImage?
-
-        @State private var previousArtwork: NSImage?
     #endif
 
     @State private var isBackgroundArtworkTransitioning = false
@@ -310,11 +306,7 @@ struct DetailView: View {
     }
 
     struct ArtworkView: View {
-        #if os(iOS)
-            let image: UIImage?
-        #elseif os(macOS)
-            let image: NSImage?
-        #endif
+        let image: PlatformImage?
 
         var body: some View {
             ZStack {

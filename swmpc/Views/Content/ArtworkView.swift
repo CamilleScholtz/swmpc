@@ -8,11 +8,7 @@
 import SwiftUI
 
 struct ArtworkView: View {
-    #if os(iOS)
-        let image: UIImage?
-    #elseif os(macOS)
-        let image: NSImage?
-    #endif
+    let image: PlatformImage?
 
     var body: some View {
         if let image {

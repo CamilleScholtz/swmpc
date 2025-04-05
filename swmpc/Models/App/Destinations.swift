@@ -21,7 +21,7 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
 
     static var categories: [Self] {
         #if os(iOS)
-            [.albums, .artists, .songs, .playlists, .settings]
+            [.albums, .artists, .songs, .playlists]
         #elseif os(macOS)
             [.albums, .artists, .songs]
         #endif
