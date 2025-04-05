@@ -19,13 +19,13 @@ extension Double {
     var humanTimeString: String {
         if self < 60 {
             let minuteFormatter = DateComponentsFormatter()
-            
+
             minuteFormatter.allowedUnits = [.minute]
             minuteFormatter.unitsStyle = .abbreviated
-            
+
             return minuteFormatter.string(from: self)!
         }
-        
+
         let formatter = DateComponentsFormatter()
 
         formatter.allowedUnits = [.hour, .minute]

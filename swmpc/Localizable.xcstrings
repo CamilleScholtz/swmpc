@@ -42,6 +42,26 @@
         }
       }
     },
+    "%d song" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d nummer"
+          }
+        }
+      }
+    },
+    "%d songs" : {
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d nummers"
+          }
+        }
+      }
+    },
     "%lld albums" : {
       "localizations" : {
         "de" : {
@@ -1925,13 +1945,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "En cours de lecture"
+            "value" : "Lecture"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wordt afgespeeld"
+            "value" : "Speelt"
           }
         }
       }
@@ -2926,7 +2946,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Indien ingeschakeld, worden schijngegevens gebruikt in plaats van een verbinding met MPD."
+            "value" : "Indien ingeschakeld, worden testgegevens gebruikt in plaats van een verbinding met MPD."
           }
         }
       }
