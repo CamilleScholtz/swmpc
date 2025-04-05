@@ -6,6 +6,24 @@
     },
     " and server." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " und Server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " y servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " et serveur."
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -44,6 +62,24 @@
     },
     "%d song" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d Lied"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d canción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d morceau"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -54,6 +90,24 @@
     },
     "%d songs" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d Lieder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d canciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d morceaux"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -263,7 +317,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Füge Songs zu deiner Bibliothek hinzu."
+            "value" : "Füge Lieder zu deiner Bibliothek hinzu."
           }
         },
         "es" : {
@@ -291,7 +345,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Füge Songs zu deiner Playlist hinzu."
+            "value" : "Füge Lieder zu deiner Playlist hinzu."
           }
         },
         "es" : {
@@ -487,25 +541,25 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sind Sie sicher, dass Sie die Playlist ’%@’ löschen möchten?"
+            "value" : "Sind Sie sicher, dass Sie die Playlist „%@“ löschen möchten?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Estás seguro de que deseas eliminar la lista de reproducción ’%@’?"
+            "value" : "¿Estás seguro de que deseas eliminar la lista de reproducción «%@»?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Êtes-vous sûr de vouloir supprimer la playlist ’%@’?"
+            "value" : "Êtes-vous sûr de vouloir supprimer la playlist « %@ » ?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weet je zeker dat je de afspeellijst ’%@’ wilt verwijderen?"
+            "value" : "Weet je zeker dat je de afspeellijst „%@” wilt verwijderen?"
           }
         }
       }
@@ -561,7 +615,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Albumhoes ophaalmethode:"
+            "value" : "Albumhoes ophalen:"
           }
         }
       }
@@ -645,7 +699,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Acties"
+            "value" : "Gedrag"
           }
         }
       }
@@ -655,7 +709,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Berechne Song-Beliebtheit…"
+            "value" : "Berechne Song-Popularität…"
           }
         },
         "es" : {
@@ -667,7 +721,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Calcul de la popularité de la chanson…"
+            "value" : "Calcul de la popularité du morceau…"
           }
         },
         "nl" : {
@@ -683,7 +737,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Berechne Song-Sequenz…"
+            "value" : "Berechne Song-Reihenfolge…"
           }
         },
         "es" : {
@@ -695,7 +749,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Calcul de la séquence de la chanson…"
+            "value" : "Calcul de la séquence du morceau…"
           }
         },
         "nl" : {
@@ -767,13 +821,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Suche nach anstößigen Inhalten…"
+            "value" : "Prüfe auf explizite Inhalte…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buscando contenido explícito…"
+            "value" : "Comprobando contenido explícito…"
           }
         },
         "fr" : {
@@ -785,7 +839,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zoeken naar expliciete inhoud…"
+            "value" : "Controleren op expliciete inhoud…"
           }
         }
       }
@@ -801,7 +855,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vibras tranquilas"
+            "value" : "Vibras relajadas"
           }
         },
         "fr" : {
@@ -851,7 +905,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Beschaffe Songs aus der Cloud…"
+            "value" : "Beschaffe Lieder aus der Cloud…"
           }
         },
         "es" : {
@@ -863,7 +917,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collecte de chansons dans le cloud…"
+            "value" : "Collecte de morceaux dans le cloud…"
           }
         },
         "nl" : {
@@ -953,7 +1007,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kan geen verbinding maken met MPD."
+            "value" : "Kon geen verbinding maken met MPD."
           }
         }
       }
@@ -997,19 +1051,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Comparando estado de ánimo con melodías…"
+            "value" : "Cruzando referencias de ánimo con melodías…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Croisement de l'humeur avec les mélodies…"
+            "value" : "Croisement de l'ambiance avec les mélodies…"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kruisverwijzing van stemming en melodieën…"
+            "value" : "Stemming vergelijken met melodieën…"
           }
         }
       }
@@ -1019,25 +1073,25 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kuratiere Playlist…"
+            "value" : "Stelle Playlist zusammen…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curando la lista de reproducción…"
+            "value" : "Creando lista de reproducción…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curation de la playlist…"
+            "value" : "Composition de la playlist…"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afspeellijst cureren…"
+            "value" : "Afspeellijst samenstellen…"
           }
         }
       }
@@ -1047,13 +1101,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Derzeit verwendet für die Erstellung intelligenter Playlists."
+            "value" : "Wird derzeit zur Generierung intelligenter Playlists verwendet."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Actualmente se utiliza para la generación de listas de reproducción inteligentes."
+            "value" : "Se utiliza actualmente para la generación de listas de reproducción inteligentes."
           }
         },
         "fr" : {
@@ -1131,6 +1185,24 @@
     },
     "Demo Mode" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo-Modus"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo demo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode démo"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1190,7 +1262,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Embedded"
+            "value" : "Ingebed"
           }
         }
       }
@@ -1228,7 +1300,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aktivieren Sie KI-Funktionen in den Einstellungen, um dies zu verwenden."
+            "value" : "Aktiviere KI-Funktionen in den Einstellungen, um dies zu verwenden."
           }
         },
         "es" : {
@@ -1256,7 +1328,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtere Störgeräusche…"
+            "value" : "Filtere Störgeräusche heraus…"
           }
         },
         "es" : {
@@ -1396,7 +1468,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erkenne harmonische Titel…"
+            "value" : "Identifiziere harmonische Titel…"
           }
         },
         "es" : {
@@ -1408,7 +1480,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Identification de pistes harmonieuses…"
+            "value" : "Identification des morceaux harmonieux…"
           }
         },
         "nl" : {
@@ -1421,6 +1493,24 @@
     },
     "If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn dies deaktiviert ist, wird nur das swmpc-Symbol angezeigt. Ein Neustart ist erforderlich, damit diese Änderungen wirksam werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si está desactivado, solo se mostrará el icono de swmpc. Se requiere un reinicio para que estos cambios surtan efecto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si désactivé, seule l'icône swmpc sera affichée. Un redémarrage est requis pour que ces changements prennent effet."
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1459,6 +1549,24 @@
     },
     "Leave empty if no password is set." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer lassen, wenn kein Passwort festgelegt ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dejar vacío si no se ha establecido contraseña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laisser vide si aucun mot de passe n'est défini."
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1500,25 +1608,25 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Bibliothek sucht nach Albumcovern, indem sie das Verzeichnis, in dem sich die Datei befindet, nach cover.png, cover.jpg oder cover.webp durchsucht. Eingebettet ruft das Cover direkt aus der Datei ab."
+            "value" : "Die Bibliothek sucht nach Albumcovern (cover.png, cover.jpg oder cover.webp) im Verzeichnis der Datei. „Eingebettet“ ruft das Cover direkt aus der Datei ab."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La biblioteca buscará la carátula buscando en el directorio en el que se encuentra el archivo un archivo llamado cover.png, cover.jpg o cover.webp. Integrado obtendrá la carátula directamente del archivo."
+            "value" : "La biblioteca buscará la carátula (cover.png, cover.jpg o cover.webp) en el directorio del archivo. «Incrustado» obtendrá la carátula directamente del archivo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La bibliothèque récupérera la pochette en recherchant dans le répertoire où se trouve le fichier un fichier nommé cover.png, cover.jpg ou cover.webp. L'option intégrée récupérera la pochette directement depuis le fichier."
+            "value" : "La bibliothèque récupérera la pochette (cover.png, cover.jpg ou cover.webp) dans le répertoire du fichier. L'option « Intégré » récupérera la pochette directement depuis le fichier."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collectie zoekt naar albumhoezen (cover.png/jpg/webp) in de map. Ingebed haalt de hoes uit het bestand zelf."
+            "value" : "Collectie zoekt naar albumhoezen (cover.png, cover.jpg of cover.webp) in de map van het bestand. „Ingebed” haalt de hoes uit het bestand zelf."
           }
         }
       }
@@ -1584,13 +1692,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passende Titel zur Stimmung suchen…"
+            "value" : "Suche passende Titel zur Stimmung…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buscando pistas que coincidan con el ambiente…"
+            "value" : "Buscando pistas que coincidan con la vibra…"
           }
         },
         "fr" : {
@@ -1693,6 +1801,24 @@
     },
     "MPD Password:" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MPD-Passwort:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseña MPD:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe MPD :"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1818,7 +1944,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine Songs in der Playlist."
+            "value" : "Keine Lieder in der Playlist."
           }
         },
         "es" : {
@@ -1933,7 +2059,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spielt gerade"
+            "value" : "Wiedergabe"
           }
         },
         "es" : {
@@ -1986,6 +2112,24 @@
     },
     "Please check your " : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte überprüfe deine "
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, comprueba tu "
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez vérifier votre "
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2027,7 +2171,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voriger Song"
+            "value" : "Vorheriger Song"
           }
         },
         "es" : {
@@ -2073,7 +2217,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afspeelwachtrij"
+            "value" : "Wachtrij"
           }
         }
       }
@@ -2083,7 +2227,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bibliothek in Warteschlange"
+            "value" : "Bibliothek zur Warteschlange hinzufügen"
           }
         },
         "es" : {
@@ -2101,7 +2245,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collectie in afspeelwachtrij"
+            "value" : "Collectie aan wachtrij toevoegen"
           }
         }
       }
@@ -2111,7 +2255,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Playlist %@ in Warteschlange"
+            "value" : "Playlist %@ zur Warteschlange hinzufügen"
           }
         },
         "es" : {
@@ -2129,7 +2273,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afspeellijst %@ in afspeelwachtrij"
+            "value" : "Afspeellijst %@ aan wachtrij toevoegen"
           }
         }
       }
@@ -2139,7 +2283,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bewerte Songs…"
+            "value" : "Bewerte Lieder…"
           }
         },
         "es" : {
@@ -2207,7 +2351,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rafraîchir la bibliothèque"
+            "value" : "Actualiser la bibliothèque"
           }
         },
         "nl" : {
@@ -2403,7 +2547,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recherche de perles cachées…"
+            "value" : "Recherche de pépites cachées…"
           }
         },
         "nl" : {
@@ -2459,7 +2603,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Faire défiler jusqu'au morceau actuel"
+            "value" : "Aller au morceau actuel"
           }
         },
         "nl" : {
@@ -2475,7 +2619,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Beim Wechsel des Songs zum aktuellen Song scrollen."
+            "value" : "Beim Songwechsel zum aktuellen Song scrollen."
           }
         },
         "es" : {
@@ -2487,13 +2631,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Faire défiler jusqu'au morceau actuel lorsque celui-ci change."
+            "value" : "Aller au morceau actuel lorsque celui-ci change."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scroll automatisch naar huidig nummer bij wijzigingen"
+            "value" : "Scroll naar huidig nummer wanneer het nummer wijzigt."
           }
         }
       }
@@ -2556,6 +2700,24 @@
     },
     "Settings" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2603,7 +2765,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar la canción en la barra de estado"
+            "value" : "Mostrar canción en la barra de estado"
           }
         },
         "fr" : {
@@ -2625,13 +2787,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mische Songs…"
+            "value" : "Mische Lieder…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Barajando canciones…"
+            "value" : "Mezclando canciones…"
           }
         },
         "fr" : {
@@ -2643,7 +2805,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nummers willekeurig afspelen…"
+            "value" : "Nummers husselen…"
           }
         }
       }
@@ -2653,7 +2815,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Songs"
+            "value" : "Lieder"
           }
         },
         "es" : {
@@ -2681,7 +2843,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sortiere Songs nach Genre…"
+            "value" : "Sortiere Lieder nach Genre…"
           }
         },
         "es" : {
@@ -2755,7 +2917,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Studeer-beats"
+            "value" : "Studeerbeats"
           }
         }
       }
@@ -2765,6 +2927,24 @@
     },
     "swmpc settings" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "swmpc-Einstellungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes de swmpc"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres swmpc"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2778,7 +2958,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Synchronisiere Klänge mit dem Geschmack…"
+            "value" : "Synchronisiere Klänge mit Geschmack…"
           }
         },
         "es" : {
@@ -2824,7 +3004,7 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dit overschrijft de huidige afspeelwachtrij."
+            "value" : "Dit overschrijft de huidige wachtrij."
           }
         }
       }
@@ -2868,7 +3048,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lista sin título"
+            "value" : "Lista de reproducción sin título"
           }
         },
         "fr" : {
@@ -2902,7 +3082,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bandes-son de jeux vidéo"
+            "value" : "Bandes originales de jeux vidéo"
           }
         },
         "nl" : {
@@ -2943,6 +3123,24 @@
     },
     "When enabled, uses mock data instead of connecting to MPD." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn aktiviert, werden Mock-Daten anstelle einer Verbindung zu MPD verwendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si está habilitado, usa datos de prueba en lugar de conectarse a MPD."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si activé, utilise des données fictives au lieu de se connecter à MPD."
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2968,13 +3166,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Musiques d'entraînement"
+            "value" : "Musique pour l'entraînement"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fitnessmuziek"
+            "value" : "Workoutmuziek"
           }
         }
       }
