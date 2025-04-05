@@ -57,7 +57,7 @@ extension SidebarDestination: NavigationDestination {
         var body: some View {
             ScrollViewReader { proxy in
                 ScrollView {
-                    HeaderView(destination: .constant(destination), isSearching: $isSearching)
+                    HeaderView(destination: destination, isSearching: $isSearching)
                         .id("top")
 
                     #if os(iOS)

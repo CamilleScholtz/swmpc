@@ -10,7 +10,7 @@ import SwiftUI
 struct HeaderView: View {
     @Environment(MPD.self) private var mpd
 
-    @Binding var destination: SidebarDestination
+    let destination: SidebarDestination
     @Binding var isSearching: Bool
 
     @State private var query = ""

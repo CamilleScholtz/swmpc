@@ -19,12 +19,12 @@ struct DetailView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     #if os(iOS)
-        @Binding var artwork: UIImage?
+        let artwork: UIImage?
         @Binding var isPopupOpen: Bool
 
         @State private var previousArtwork: UIImage?
     #elseif os(macOS)
-        @Binding var artwork: NSImage?
+        let artwork: NSImage?
 
         @State private var previousArtwork: NSImage?
     #endif

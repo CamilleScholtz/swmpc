@@ -46,12 +46,12 @@ struct AppView: View {
                                 .tag(category)
                             }
                             .overlay(
-                                LoadingView(destination: $destination)
+                                LoadingView(destination: destination)
                             )
                         }
                         .handleQueueChange(destination: $destination)
                         .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
-                            DetailView(artwork: $artwork, isPopupOpen: $isPopupOpen)
+                            DetailView(artwork: artwork, isPopupOpen: $isPopupOpen)
                         }
                         .popupBarProgressViewStyle(.top)
                     #elseif os(macOS)
@@ -67,11 +67,11 @@ struct AppView: View {
                             .navigationBarBackButtonHidden(true)
                             .ignoresSafeArea()
                             .overlay(
-                                LoadingView(destination: $destination)
+                                LoadingView(destination: destination)
                             )
                         } detail: {
                             ViewThatFits {
-                                DetailView(artwork: $artwork)
+                                DetailView(artwork: artwork)
                             }
                             .padding(60)
                         }
