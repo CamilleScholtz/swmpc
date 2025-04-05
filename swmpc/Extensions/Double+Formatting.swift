@@ -17,14 +17,22 @@ extension Double {
     }
 
     var humanTimeString: String {
-        var hours = self / 3600
-        hours.round(.down)
-        let minutes = (self - hours * 3600) / 60
-
-        guard hours >= 1 else {
-            return String(format: "%02dm", Int(minutes))
+        if self < 60 {
+            let minuteFormatter = DateComponentsFormatter()
+            
+            minuteFormatter.allowedUnits = [.minute]
+            minuteFormatter.unitsStyle = .abbreviated
+            
+            return minuteFormatter.string(from: self)!
         }
+        
+        let formatter = DateComponentsFormatter()
 
-        return String(format: "%01dh %02dm", Int(hours), Int(minutes))
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .abbreviated
+        formatter.maximumUnitCount = 2
+        formatter.allowsFractionalUnits = false
+
+        return formatter.string(from: self)!
     }
 }
