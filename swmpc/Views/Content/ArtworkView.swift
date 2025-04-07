@@ -11,25 +11,23 @@ struct ArtworkView: View {
     let image: PlatformImage?
 
     var body: some View {
-        if let image {
-            #if os(iOS)
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .scaledToFit()
-                    .transition(.opacity.animation(.easeInOut(duration: 0.2)))
-            #elseif os(macOS)
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .scaledToFit()
-                    .transition(.opacity.animation(.easeInOut(duration: 0.2)))
-            #endif
-        } else {
-            Rectangle()
-                .fill(Color(.secondarySystemFill).opacity(0.3))
-                .aspectRatio(contentMode: .fit)
-                .scaledToFill()
+        Group {
+            if let image {
+                #if os(iOS)
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                #elseif os(macOS)
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                #endif
+            } else {
+                Rectangle()
+                    .fill(Color(.secondarySystemFill).opacity(0.3))
+                    .aspectRatio(1.0, contentMode: .fit)
+            }
         }
+        .transition(.opacity.animation(.easeInOut(duration: 0.2)))
     }
 }
