@@ -5,7 +5,6 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
-import NavigatorUI
 import SwiftUI
 
 #if os(iOS)
@@ -14,9 +13,8 @@ import SwiftUI
 
 struct AppView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
+    @Environment(NavigationManager.self) private var navigator
 
-    @State private var destination: SidebarDestination = .albums
     @State private var artwork: PlatformImage?
 
     #if os(iOS)
@@ -30,47 +28,53 @@ struct AppView: View {
                 ErrorView()
             } else {
                 Group {
+                    @Bindable var boundNavigator = navigator
+
                     #if os(iOS)
-                        TabView(selection: $destination) {
-                            ForEach(SidebarDestination.categories) { category in
-                                ManagedNavigationStack {
-                                    category
-                                        .navigationDestination(ContentDestination.self)
+                        TabView(selection: $boundNavigator.destination) {
+                            ForEach(CategoryDestination.categories) { category in
+                                NavigationStack(path: $boundNavigator.path) {
+                                    CategoryDestinationView(destination: category)
+                                        .navigationDestination(for: ContentDestination.self) { destination in
+                                            ContentDestinationView(destination: destination)
+                                        }
                                 }
+                                // Adding id to preserve navigation stack state across redraws
+                                .id("navigationStack-\(category.id)")
                                 .tabItem {
                                     Label(category.label, systemSymbol: category.symbol)
                                 }
                                 .tag(category)
                             }
                             .overlay(
-                                LoadingView(destination: destination)
+                                LoadingView()
                             )
                         }
-                        .handleQueueChange(destination: $destination)
+                        .handleQueueChange()
                         .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
                             DetailView(artwork: artwork, isPopupOpen: $isPopupOpen)
                         }
                         .popupBarProgressViewStyle(.top)
                     #elseif os(macOS)
                         NavigationSplitView {
-                            SidebarView(destination: $destination)
+                            SidebarView()
                                 .navigationSplitViewColumnWidth(min: 180, ideal: 180, max: .infinity)
                         } content: {
-                            ManagedNavigationStack(name: "content") {
-                                destination
-                                    .navigationDestination(ContentDestination.self)
+                            NavigationStack(path: $boundNavigator.path) {
+                                CategoryDestinationView(destination: navigator.category)
+                                    .navigationDestination(for: ContentDestination.self) { destination in
+                                        ContentDestinationView(destination: destination)
+                                    }
                             }
                             .navigationSplitViewColumnWidth(310)
                             .navigationBarBackButtonHidden(true)
                             .ignoresSafeArea()
                             .overlay(
-                                LoadingView(destination: destination)
+                                LoadingView()
                             )
                         } detail: {
-                            ViewThatFits {
-                                DetailView(artwork: artwork)
-                            }
-                            .padding(60)
+                            DetailView(artwork: artwork)
+                                .padding(60)
                         }
                         .background(.background)
                     #endif

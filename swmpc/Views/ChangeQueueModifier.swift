@@ -5,28 +5,25 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import NavigatorUI
 import SwiftUI
 
 extension View {
-    func handleQueueChange(destination: Binding<SidebarDestination>) -> some View {
-        modifier(ChangeQueueModifier(destination: destination))
+    func handleQueueChange() -> some View {
+        modifier(ChangeQueueModifier())
     }
 }
 
 struct ChangeQueueModifier: ViewModifier {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) var navigator: Navigator
-
-    @Binding var destination: SidebarDestination
+    @Environment(NavigationManager.self) private var navigator
 
     @State private var showAlert = false
     @State private var playlistToQueue: Playlist?
-    @State private var previousDestination: SidebarDestination?
+    @State private var previousDestination: CategoryDestination?
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: destination) { previous, value in
+            .onChange(of: navigator.category) { previous, value in
                 guard previous != value else {
                     return
                 }
@@ -60,26 +57,20 @@ struct ChangeQueueModifier: ViewModifier {
                     #endif
                 }
 
-                navigator.perform(
-                    .reset,
-                    .send(value),
-                    .pause
-                )
-
+                navigator.reset()
                 showAlert = true
             }
             .alert(playlistToQueue == nil ? "Queue Library" : "Queue Playlist \(playlistToQueue!.name)", isPresented: $showAlert) {
                 Button("Cancel", role: .cancel) {
-                    navigator.cancelResume()
-                    destination = previousDestination ?? .albums
+                    navigator.category = previousDestination ?? .albums
                 }
 
                 Button("Queue") {
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().loadPlaylist(playlistToQueue)
-                        try? await mpd.queue.set(using: destination.type, force: true)
+                        try? await mpd.queue.set(using: navigator.category.type, force: true)
 
-                        navigator.resume()
+                        // navigator.resume()
                     }
                 }
             } message: {

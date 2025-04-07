@@ -5,13 +5,12 @@
 //  Created by Camille Scholtz on 27/03/2025.
 //
 
-import NavigatorUI
 import SwiftUI
 
 struct ErrorView: View {
     @Environment(MPD.self) private var mpd
     #if os(iOS)
-        @Environment(\.navigator) private var navigator
+        @Environment(NavigationManager.self) private var navigator
     #elseif os(macOS)
         @Environment(\.openSettings) private var openSettings
     #endif
@@ -34,7 +33,7 @@ struct ErrorView: View {
                         .foregroundColor(.secondary)
                     Button {
                         #if os(iOS)
-                            navigator.navigate(to: SidebarDestination.settings, method: .sheet)
+                            navigator.destination = .settings
                         #elseif os(macOS)
                             openSettings()
                         #endif

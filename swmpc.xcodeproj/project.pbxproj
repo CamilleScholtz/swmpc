@@ -12,7 +12,6 @@
 		9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = 9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */; };
 		9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 9182FEF32D97757000FED9D4 /* OpenAI */; };
 		9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */; };
-		919709D92D8C39C800FC54B9 /* NavigatorUI in Frameworks */ = {isa = PBXBuildFile; productRef = 919709D82D8C39C800FC54B9 /* NavigatorUI */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
@@ -70,7 +69,6 @@
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
 				9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */,
 				9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */,
-				919709D92D8C39C800FC54B9 /* NavigatorUI in Frameworks */,
 				91775F5E2D93729F002589C5 /* Noise in Frameworks */,
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
@@ -130,7 +128,6 @@
 				91A142142CDEA27E000A74BC /* LaunchAtLogin */,
 				91F55B392CFE5D300027BBFE /* AsyncAlgorithms */,
 				91489B852D6A6C6C0038092A /* SFSafeSymbols */,
-				919709D82D8C39C800FC54B9 /* NavigatorUI */,
 				9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */,
 				91775F5D2D93729F002589C5 /* Noise */,
 				9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */,
@@ -171,7 +168,6 @@
 				91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */,
-				919709D72D8C39C800FC54B9 /* XCRemoteSwiftPackageReference "Navigator" */,
 				9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */,
 				91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */,
 				91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */,
@@ -339,7 +335,7 @@
 				CODE_SIGN_ENTITLEMENTS = swmpc/swmpc.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3.0.2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = NO;
@@ -381,7 +377,7 @@
 				CODE_SIGN_ENTITLEMENTS = swmpc/swmpc.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3.0.2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = NO;
@@ -479,14 +475,6 @@
 				minimumVersion = 1.0.0;
 			};
 		};
-		919709D72D8C39C800FC54B9 /* XCRemoteSwiftPackageReference "Navigator" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/hmlongco/Navigator";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.26;
-			};
-		};
 		91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
@@ -530,11 +518,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */;
 			productName = KeychainStorageKit;
-		};
-		919709D82D8C39C800FC54B9 /* NavigatorUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 919709D72D8C39C800FC54B9 /* XCRemoteSwiftPackageReference "Navigator" */;
-			productName = NavigatorUI;
 		};
 		91A142142CDEA27E000A74BC /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;

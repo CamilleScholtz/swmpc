@@ -15,7 +15,7 @@ import SwiftUI
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
+    @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
     let artwork: PlatformImage?
@@ -242,11 +242,6 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let navigator = navigator.root.child(named: "content") else {
-                                return
-                            }
-
-                            // TODO: Check if top of stack is same album.
                             navigator.navigate(to: ContentDestination.album(album))
                         }
                     })

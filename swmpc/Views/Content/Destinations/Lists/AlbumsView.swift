@@ -9,7 +9,6 @@ import SwiftUI
 
 struct AlbumsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.navigator) private var navigator
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 

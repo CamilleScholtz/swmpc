@@ -5,13 +5,11 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import NavigatorUI
 import SwiftUI
 
 struct LoadingView: View {
     @Environment(MPD.self) private var mpd
-
-    let destination: SidebarDestination
+    @Environment(NavigationManager.self) private var navigator
 
     @State private var isLoading = true
 
@@ -26,7 +24,7 @@ struct LoadingView: View {
                 ProgressView()
             }
         }
-        .onChange(of: destination) {
+        .onChange(of: navigator.category) {
             isLoading = true
         }
         .task(id: mpd.queue.lastUpdated) {

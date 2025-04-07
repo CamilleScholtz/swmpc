@@ -1,14 +1,62 @@
 //
-//  Destinations.swift
+//  NavigationManager.swift
 //  swmpc
 //
-//  Created by Camille Scholtz on 16/03/2025.
+//  Created by Camille Scholtz on 07/04/2025.
 //
 
 import SFSafeSymbols
 import SwiftUI
 
-enum SidebarDestination: Identifiable, Codable, Hashable {
+// XXX: `content` and `path` feel a duplicate, but I really cant figure out how
+// to get the "contents" of the `path`.
+@Observable
+final class NavigationManager {
+    var path = NavigationPath()
+
+    var category: CategoryDestination = .albums {
+        didSet {
+            if oldValue != category {
+                reset()
+            }
+        }
+    }
+
+    var content: [ContentDestination] = []
+
+    func navigate(to content: ContentDestination) {
+        guard content != self.content.last else {
+            return
+        }
+
+        if self.content.contains(content) {
+            while self.content.last != content {
+                goBack()
+            }
+        } else {
+            path.append(content)
+            self.content.append(content)
+        }
+    }
+
+    func goBack() {
+        guard !path.isEmpty else {
+            return
+        }
+        
+        path.removeLast()
+        content.removeLast()
+    }
+
+    func reset() {
+        path = NavigationPath()
+        content = []
+    }
+}
+
+enum CategoryDestination: Identifiable, Codable, Hashable {
+    var id: Self { self }
+
     case albums
     case artists
     case songs
@@ -78,6 +126,8 @@ enum SidebarDestination: Identifiable, Codable, Hashable {
 }
 
 enum ContentDestination: Identifiable, Codable, Hashable {
+    var id: Self { self }
+
     case album(Album)
     case artist(Artist)
 }

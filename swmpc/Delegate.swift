@@ -26,10 +26,12 @@ struct Delegate: App {
     #if os(iOS)
         let mpd = MPD()
     #endif
+    let navigator = NavigationManager()
 
     var body: some Scene {
         WindowGroup {
             AppView()
+                .environment(navigator)
             #if os(iOS)
                 .environment(mpd)
             #elseif os(macOS)
@@ -86,7 +88,7 @@ struct Delegate: App {
                 Divider()
 
                 Button("Refresh Library") {
-                    Task {
+                    Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().update()
                     }
                 }
