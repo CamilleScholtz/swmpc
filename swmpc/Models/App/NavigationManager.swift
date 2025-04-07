@@ -43,7 +43,7 @@ final class NavigationManager {
         guard !path.isEmpty else {
             return
         }
-        
+
         path.removeLast()
         content.removeLast()
     }

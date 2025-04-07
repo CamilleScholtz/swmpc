@@ -69,8 +69,6 @@ struct ChangeQueueModifier: ViewModifier {
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command().loadPlaylist(playlistToQueue)
                         try? await mpd.queue.set(using: navigator.category.type, force: true)
-
-                        // navigator.resume()
                     }
                 }
             } message: {
