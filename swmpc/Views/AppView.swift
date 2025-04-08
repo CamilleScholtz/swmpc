@@ -31,7 +31,7 @@ struct AppView: View {
                     @Bindable var boundNavigator = navigator
 
                     #if os(iOS)
-                        TabView(selection: $boundNavigator.destination) {
+                        TabView(selection: $boundNavigator.category) {
                             ForEach(CategoryDestination.categories) { category in
                                 NavigationStack(path: $boundNavigator.path) {
                                     CategoryDestinationView(destination: category)
@@ -39,8 +39,6 @@ struct AppView: View {
                                             ContentDestinationView(destination: destination)
                                         }
                                 }
-                                // Adding id to preserve navigation stack state across redraws
-                                .id("navigationStack-\(category.id)")
                                 .tabItem {
                                     Label(category.label, systemSymbol: category.symbol)
                                 }
