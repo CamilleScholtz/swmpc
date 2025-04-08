@@ -16,7 +16,7 @@ struct CategoryDestinationView: View {
         #if os(iOS)
             switch destination {
             case .playlists:
-                EmptyView()
+                PlaylistsView()
             case .settings:
                 SettingsView()
             default:
@@ -136,7 +136,6 @@ struct CategoryView: View {
                 .padding(.bottom, 15)
             }
             .onAppear {
-                // TODO: For some reason this fires twice.
                 guard mpd.status.media != nil else {
                     return
                 }
