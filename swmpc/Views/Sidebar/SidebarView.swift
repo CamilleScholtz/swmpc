@@ -40,57 +40,11 @@ struct SidebarView: View {
             }
 
             Section("Playlists") {
-                if let playlists = mpd.queue.playlists {
-                    ForEach(playlists) { playlist in
-                        if isRenamingPlaylist, playlist == playlistToRename {
-                            TextField(playlistName, text: $playlistName)
-                                .focused($isFocused)
-                                .onChange(of: isFocused) { _, value in
-                                    guard !value else {
-                                        return
-                                    }
+                let playlists = [Playlist(name: "Favorites")] + (mpd.queue.playlists ?? [])
 
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                        isRenamingPlaylist = false
-                                        playlistToRename = nil
-                                        playlistName = ""
-                                    }
-                                }
-                                .onSubmit {
-                                    Task(priority: .userInitiated) {
-                                        try await ConnectionManager.command().renamePlaylist(playlist, to: playlistName)
-
-                                        isRenamingPlaylist = false
-                                        playlistToRename = nil
-                                        playlistName = ""
-                                    }
-                                }
-                        } else {
-                            NavigationLink(value: CategoryDestination.playlist(playlist)) {
-                                Label(playlist.name, systemSymbol: .musicNoteList)
-                            }
-                            .keyboardShortcut(.none)
-                            .help(Text(playlist.name))
-                            .contextMenu {
-                                if playlist.name != "Favorites" {
-                                    Button("Rename Playlist") {
-                                        isRenamingPlaylist = true
-                                        playlistName = playlist.name
-                                        playlistToRename = playlist
-                                        isFocused = true
-                                    }
-
-                                    Button("Delete Playlist") {
-                                        playlistToDelete = playlist
-                                        showDeleteAlert = true
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if isCreatingPlaylist {
-                        TextField("Untitled Playlist", text: $playlistName)
+                ForEach(playlists) { playlist in
+                    if isRenamingPlaylist, playlist == playlistToRename {
+                        TextField(playlistName, text: $playlistName)
                             .focused($isFocused)
                             .onChange(of: isFocused) { _, value in
                                 guard !value else {
@@ -98,30 +52,76 @@ struct SidebarView: View {
                                 }
 
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    isCreatingPlaylist = false
+                                    isRenamingPlaylist = false
+                                    playlistToRename = nil
                                     playlistName = ""
                                 }
                             }
                             .onSubmit {
                                 Task(priority: .userInitiated) {
-                                    try? await ConnectionManager.command().createPlaylist(named: playlistName)
+                                    try await ConnectionManager.command().renamePlaylist(playlist, to: playlistName)
 
-                                    isCreatingPlaylist = false
+                                    isRenamingPlaylist = false
+                                    playlistToRename = nil
                                     playlistName = ""
                                 }
                             }
-                    }
+                    } else {
+                        NavigationLink(value: CategoryDestination.playlist(playlist)) {
+                            Label(playlist.name, systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)
+                        }
+                        .keyboardShortcut(.none)
+                        .help(Text(playlist.name))
+                        .contextMenu {
+                            if playlist.name != "Favorites" {
+                                Button("Rename Playlist") {
+                                    isRenamingPlaylist = true
+                                    playlistName = playlist.name
+                                    playlistToRename = playlist
+                                    isFocused = true
+                                }
 
-                    // TODO: This button doesn't take up the full width.
-                    Button(action: {
-                        isCreatingPlaylist = true
-                        isFocused = true
-                    }) {
-                        Label("New Playlist", systemSymbol: .plus)
+                                Button("Delete Playlist") {
+                                    playlistToDelete = playlist
+                                    showDeleteAlert = true
+                                }
+                            }
+                        }
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .keyboardShortcut("n", modifiers: [.command])
                 }
+
+                if isCreatingPlaylist {
+                    TextField("Untitled Playlist", text: $playlistName)
+                        .focused($isFocused)
+                        .onChange(of: isFocused) { _, value in
+                            guard !value else {
+                                return
+                            }
+
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                isCreatingPlaylist = false
+                                playlistName = ""
+                            }
+                        }
+                        .onSubmit {
+                            Task(priority: .userInitiated) {
+                                try? await ConnectionManager.command().createPlaylist(named: playlistName)
+
+                                isCreatingPlaylist = false
+                                playlistName = ""
+                            }
+                        }
+                }
+
+                // TODO: This button doesn't take up the full width.
+                Button(action: {
+                    isCreatingPlaylist = true
+                    isFocused = true
+                }) {
+                    Label("New Playlist", systemSymbol: .plus)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .keyboardShortcut("n", modifiers: [.command])
             }
         }
         .toolbar(removing: .sidebarToggle)

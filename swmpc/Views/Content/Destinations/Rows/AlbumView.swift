@@ -58,17 +58,17 @@ struct AlbumView: View {
                 #endif
             }
             #if os(macOS)
-                .onHover(perform: { value in
-                    withAnimation(.interactiveSpring) {
-                        isHoveringArtwork = value
-                    }
-                })
-            #endif
-                .onTapGesture {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().play(album)
-                    }
+            .onHover(perform: { value in
+                withAnimation(.interactiveSpring) {
+                    isHoveringArtwork = value
                 }
+            })
+            #endif
+            .onTapGesture {
+                Task(priority: .userInitiated) {
+                    try? await ConnectionManager.command().play(album)
+                }
+            }
 
             VStack(alignment: .leading) {
                 Text(album.title)
