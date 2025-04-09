@@ -33,14 +33,13 @@ struct SongView: View {
                             .font(.title3)
                             .fontWeight(.regular)
                             .foregroundStyle(.secondary)
-                            .frame(width: 20)
+                            .frame(width: 60)
                     #elseif os(macOS)
                         if isHovering {
                             Image(systemSymbol: .playFill)
                                 .font(.title3)
                                 .foregroundColor(.accentColor)
                                 .transition(.opacity)
-
                         } else {
                             Text(String(song.track))
                                 .font(.title3)

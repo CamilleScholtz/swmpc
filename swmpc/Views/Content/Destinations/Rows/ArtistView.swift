@@ -35,7 +35,11 @@ struct ArtistView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 ))
+            #if os(iOS)
+                .frame(width: 60, height: 60)
+            #elseif os(macOS)
                 .frame(width: 50, height: 50)
+            #endif
                 .overlay(
                     Text(initials)
                         .font(.system(size: 18))
