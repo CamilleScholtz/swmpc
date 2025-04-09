@@ -22,6 +22,10 @@ struct SidebarView: View {
 
     @FocusState private var isFocused: Bool
 
+    private var playlists: [Playlist] {
+        [Playlist(name: "Favorites")] + (mpd.queue.playlists ?? [])
+    }
+
     var body: some View {
         @Bindable var boundNavigator = navigator
 
@@ -40,8 +44,6 @@ struct SidebarView: View {
             }
 
             Section("Playlists") {
-                let playlists = [Playlist(name: "Favorites")] + (mpd.queue.playlists ?? [])
-
                 ForEach(playlists) { playlist in
                     if isRenamingPlaylist, playlist == playlistToRename {
                         TextField(playlistName, text: $playlistName)
