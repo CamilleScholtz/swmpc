@@ -12,6 +12,16 @@ protocol Mediable: Identifiable, Equatable, Hashable, Codable, Sendable {
     var position: UInt32 { get }
 }
 
+extension Mediable {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
 protocol Playable: Mediable {
     var url: URL { get }
 }
