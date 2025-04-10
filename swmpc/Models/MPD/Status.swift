@@ -62,13 +62,15 @@ import SwiftUI
 
         if isRandom.update(to: data.isRandom ?? false) {
             #if os(macOS)
-                AppDelegate.shared.setPopoverAnchorImage(changed: data.isRandom ?? false ? "random" : "sequential")
+                AppDelegate.shared.setPopoverAnchorImage(changed:
+                    data.isRandom ?? false ? "random" : "sequential")
             #endif
         }
 
         if isRepeat.update(to: data.isRepeat ?? false) {
             #if os(macOS)
-                AppDelegate.shared.setPopoverAnchorImage(changed: data.isRepeat ?? false ? "repeat" : "single")
+                AppDelegate.shared.setPopoverAnchorImage(changed:
+                    data.isRepeat ?? false ? "repeat" : "single")
             #endif
         }
 
@@ -102,7 +104,8 @@ import SwiftUI
                 return
             }
 
-            let timer = AsyncTimerSequence(interval: .seconds(1), tolerance: .seconds(0.1), clock: .suspending)
+            let timer = AsyncTimerSequence(interval: .seconds(1), tolerance:
+                .seconds(0.1), clock: .suspending)
             for await _ in timer {
                 guard trackElapsed else {
                     break
