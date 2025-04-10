@@ -119,7 +119,9 @@ actor IntelligenceManager {
         var songs: [Song] = []
 
         for row in data.playlist {
-            guard let album = albums.first(where: { $0.description == row }) else {
+            guard let album = albums.first(where: {
+                $0.description == row
+            }) else {
                 continue
             }
 
