@@ -143,7 +143,6 @@ struct DetailView: View {
 
                 Noise(style: .random)
                     .monochrome()
-                    .blur(radius: 0.2)
                     // TODO: Doesn't really work on dark mode.
                     .blendMode(colorScheme == .dark ? .darken : .softLight)
                     .opacity(0.3)
