@@ -8,7 +8,8 @@
 import SwiftUI
 
 extension View {
-    /// Adds a hover effect to the view, applying animations when the cursor hovers over the view.
+    /// Adds a hover effect to the view, applying animations when the cursor
+    /// hovers over the view.
     /// - Parameters:
     ///   - scale: The scale factor to apply when hovered (default: 1.05)
     ///   - animation: The animation to use (default: .interactiveSpring)
