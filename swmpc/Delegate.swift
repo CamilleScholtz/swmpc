@@ -52,7 +52,6 @@ struct Delegate: App {
                         try? await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
                     }
                 }
-                .keyboardShortcut(.space, modifiers: [.command])
 
                 Button("Next Song") {
                     Task(priority: .userInitiated) {
