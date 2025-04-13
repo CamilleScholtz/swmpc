@@ -11,6 +11,7 @@ import Network
 import SwiftUI
 
 protocol ConnectionMode {
+    static var label: String { get }
     static var enableKeepalive: Bool { get }
     static var bufferSize: Int { get }
     static var queueAttributes: DispatchQueue.Attributes { get }
@@ -19,6 +20,7 @@ protocol ConnectionMode {
 
 /// Represents the connection configuration for idle operations.
 enum IdleMode: ConnectionMode {
+    static let label = "idle"
     static let enableKeepalive = true
     static let bufferSize = 4096
     static let queueAttributes: DispatchQueue.Attributes = []
@@ -27,6 +29,7 @@ enum IdleMode: ConnectionMode {
 
 /// Represents the connection configuration for artwork retrieval.
 enum ArtworkMode: ConnectionMode {
+    static let label = "artwork"
     static let enableKeepalive = false
     static let bufferSize = 8192
     static let queueAttributes: DispatchQueue.Attributes = .concurrent
@@ -35,6 +38,7 @@ enum ArtworkMode: ConnectionMode {
 
 /// Represents the connection configuration for executing commands.
 enum CommandMode: ConnectionMode {
+    static let label = "command"
     static let enableKeepalive = false
     static let bufferSize = 4096
     static let queueAttributes: DispatchQueue.Attributes = []
@@ -83,7 +87,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     private var connection: NWConnection?
     private let connectionQueue = DispatchQueue(
-        label: "com.camille.swmpc.connection.\(Mode.self)",
+        label: "com.camille.swmpc.connection.\(Mode.label)",
         qos: Mode.qos,
         attributes: Mode.queueAttributes,
         target: .global(qos: Mode.qos.qosClass)
