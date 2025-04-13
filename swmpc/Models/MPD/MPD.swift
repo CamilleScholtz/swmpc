@@ -13,6 +13,7 @@ import SwiftUI
 
     var error: Error?
 
+    private let connection: any Connectionable
     private var updateLoopTask: Task<Void, Never>?
 
     @MainActor
@@ -30,7 +31,7 @@ import SwiftUI
     private func connect() async {
         while true {
             do {
-                try await ConnectionManager.idle.connect()
+                try await connection.idle.connect()
                 error = nil
 
                 return

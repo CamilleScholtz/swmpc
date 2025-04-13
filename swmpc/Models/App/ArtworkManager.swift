@@ -10,7 +10,11 @@ import SwiftUI
 actor ArtworkManager {
     static let shared = ArtworkManager()
 
-    @AppStorage(Setting.isDemoMode) private var isDemoMode = false
+    @AppStorage("connectionType") private var connectionRaw: String = Connection.mpd.rawValue
+    private var connection: Connection {
+        get { Connection(rawValue: connectionRaw) ?? .mpd }
+        set { connectionRaw = newValue.rawValue }
+    }
 
     private let cache = NSCache<NSURL, NSData>()
     private var tasks: [URL: (task: Task<Data, Error>, isPrefetch: Bool)] = [:]
@@ -40,10 +44,6 @@ actor ArtworkManager {
             return try await existing.task.value
         }
 
-        if isDemoMode {
-            return await MockData.shared.generateMockArtwork(for: media.url)
-        }
-
         let task = Task<Data, Error>(priority: .medium) { [shouldCache] in
             defer { removeTask(for: media.url) }
 
@@ -57,7 +57,7 @@ actor ArtworkManager {
             self.activeFetches += 1
             defer { self.activeFetches -= 1 }
 
-            let data = try await ConnectionManager.artwork().getArtworkData(for:
+            let data = try await connection.get(using: .artwork).getArtworkData(for:
                 media.url)
             if shouldCache {
                 storeInCache(data, for: media.url)
@@ -97,7 +97,7 @@ actor ArtworkManager {
                 self.activeFetches += 1
                 defer { self.activeFetches -= 1 }
 
-                let data = try await ConnectionManager.artwork().getArtworkData(
+                let data = try await connection.artwork().getArtworkData(
                     for: media.url)
                 self.storeInCache(data, for: media.url)
 

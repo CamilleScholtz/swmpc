@@ -1,5 +1,5 @@
 //
-//  ConnectionManager.swift
+//  MPDConnection.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 16/11/2024.
@@ -41,7 +41,7 @@ enum CommandMode: ConnectionMode {
     static let qos: DispatchQoS = .userInitiated
 }
 
-enum ConnectionManagerError: LocalizedError {
+enum MPDConnectionError: LocalizedError {
     case invalidPort
     case unsupportedServerVersion
 
@@ -73,7 +73,7 @@ enum ConnectionManagerError: LocalizedError {
     }
 }
 
-actor ConnectionManager<Mode: ConnectionMode> {
+actor MPDConnection<Mode: ConnectionMode>: Connectionable {
     @AppStorage(Setting.host) private var host = "localhost"
     @AppStorage(Setting.port) private var port = 6600
 
@@ -111,11 +111,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// depending on the `ConnectionMode`. If a connection is already active
     /// (i.e. in the `.ready` state), the function returns immediately.
     ///
-    /// - Throws: `ConnectionManagerError.invalidPort` if the port is
-    ///           invalid, `ConnectionManagerError.connectionSetupFailed` if the
+    /// - Throws: `MPDConnectionError.invalidPort` if the port is
+    ///           invalid, `MPDConnectionError.connectionSetupFailed` if the
     ///           connection cannot be created, the connection fails to become
     ///           ready, or the expected server greeting is not received,
-    ///           `ConnectionManagerError.unsupportedServerVersion` if the
+    ///           `MPDConnectionError.unsupportedServerVersion` if the
     ///           server version is not supported.
     func connect() async throws {
         guard !isDemoMode else {
@@ -133,7 +133,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         options.enableKeepalive = Mode.enableKeepalive
 
         guard let port = NWEndpoint.Port(rawValue: UInt16(port)) else {
-            throw ConnectionManagerError.invalidPort
+            throw MPDConnectionError.invalidPort
         }
 
         connection = NWConnection(
@@ -142,7 +142,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             using: NWParameters(tls: nil, tcp: options)
         )
         guard let connection else {
-            throw ConnectionManagerError.connectionSetupFailed
+            throw MPDConnectionError.connectionSetupFailed
         }
 
         connection.start(queue: connectionQueue)
@@ -155,7 +155,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
-            throw ConnectionManagerError.connectionSetupFailed
+            throw MPDConnectionError.connectionSetupFailed
         }
 
         version = lines.first?.split(separator: " ").last.map(String.init)
@@ -181,15 +181,15 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// This function checks if there is an active `NWConnection` that is in the
     /// `.ready` state. If the connection is valid and ready, it returns the
     /// connection for use. Otherwise, it throws a
-    /// `ConnectionManagerError.connectionUnexpectedClosure` error indicating
+    /// `MPDConnectionError.connectionUnexpectedClosure` error indicating
     /// that the connection is either not established or not ready.
     ///
-    /// - Throws: `ConnectionManagerError.connectionUnexpectedClosure` if there
+    /// - Throws: `MPDConnectionError.connectionUnexpectedClosure` if there
     ///           is no active connection or if the connection is not ready.
     /// - Returns: A ready-to-use `NWConnection` instance.
     func ensureConnectionReady() throws -> NWConnection {
         guard let connection, connection.state == .ready else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
+            throw MPDConnectionError.connectionUnexpectedClosure
         }
 
         return connection
@@ -200,13 +200,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// This function checks the version of the MPD server and throws an error if
     /// the version is not supported. The minimum supported version is 0.24.
     ///
-    /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
+    /// - Throws: `MPDConnectionError.unsupportedServerVersion` if the
     ///           server version is not supported.
     func ensureVersionSupported() throws {
         guard version?.compare("0.24", options: .numeric) !=
             .orderedAscending
         else {
-            throw ConnectionManagerError.unsupportedServerVersion
+            throw MPDConnectionError.unsupportedServerVersion
         }
     }
 
@@ -260,15 +260,15 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   In these cases, it calls `disconnect()` to clean up the connection and
     ///   then throws the corresponding error.
     /// - If no connection exists, it immediately throws a
-    ///   `ConnectionManagerError.connectionError`.
+    ///   `MPDConnectionError.connectionError`.
     ///
     /// - Throws: An error from the connection's failure, waiting, or
     ///           cancellation state, or a
-    ///           `ConnectionManagerError.connectionUnexpectedClosure` if the
+    ///           `MPDConnectionError.connectionUnexpectedClosure` if the
     ///           connection is missing.
     private func waitForConnectionReady() async throws {
         guard let connection else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
+            throw MPDConnectionError.connectionUnexpectedClosure
         }
 
         let states = AsyncStream<NWConnection.State> { continuation in
@@ -293,13 +293,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
             case let .waiting(error):
                 throw error
             case .cancelled:
-                throw ConnectionManagerError.connectionUnexpectedClosure
+                throw MPDConnectionError.connectionUnexpectedClosure
             default:
                 continue
             }
         }
 
-        throw ConnectionManagerError.connectionUnexpectedClosure
+        throw MPDConnectionError.connectionUnexpectedClosure
     }
 
     // MARK: - Writing
@@ -396,7 +396,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// calling `extractLineFromBuffer()`.
     /// - If a complete line is available:
     ///   - If the line starts with `ACK`, it indicates a protocol error and
-    ///     throws `ConnectionManagerError.protocolViolation` with the offending
+    ///     throws `MPDConnectionError.protocolViolation` with the offending
     ///     line.
     ///   - Otherwise, it returns the line.
     /// - If no complete line is present, the function awaits additional data by
@@ -410,7 +410,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         while true {
             if let line = try extractLineFromBuffer() {
                 if line.hasPrefix("ACK") {
-                    throw ConnectionManagerError.protocolViolation(line)
+                    throw MPDConnectionError.protocolViolation(line)
                 }
 
                 return line
@@ -433,7 +433,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: An error if receiving additional data fails.
     private func readFixedLengthData(_ length: Int) async throws -> Data {
         guard length >= 0 else {
-            throw ConnectionManagerError.malformedResponse(
+            throw MPDConnectionError.malformedResponse(
                 "Invalid data length requested: \(length)")
         }
 
@@ -446,7 +446,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard buffer.count >= length else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
+            throw MPDConnectionError.connectionUnexpectedClosure
         }
 
         let data = Data(buffer.prefix(length))
@@ -461,11 +461,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// buffer, and if found, it extracts all data up to (but not including) the
     /// newline. The extracted data is then removed from the buffer and
     /// converted into a UTF-8 encoded string. If the conversion fails, it
-    /// throws a `ConnectionManagerError.malformedResponse`.
+    /// throws a `MPDConnectionError.malformedResponse`.
     ///
     /// - Returns: A string representing the extracted line, or `nil` if no
     ///            complete line (terminated by a newline) is available.
-    /// - Throws: `ConnectionManagerError.malformedResponse` if the extracted
+    /// - Throws: `MPDConnectionError.malformedResponse` if the extracted
     ///           data cannot be converted to a valid UTF-8 string.
     private func extractLineFromBuffer() throws -> String? {
         guard let index = buffer.firstIndex(of: 0x0A) else {
@@ -477,7 +477,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         buffer.removeFirst(index + 1)
 
         guard let string = String(data: data, encoding: .utf8) else {
-            throw ConnectionManagerError.malformedResponse(
+            throw MPDConnectionError.malformedResponse(
                 "Failed to decode line from buffer (invalid UTF-8)")
         }
 
@@ -517,7 +517,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 }
             }
         }) else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
+            throw MPDConnectionError.connectionUnexpectedClosure
         }
 
         buffer.append(contentsOf: chunk)
@@ -571,13 +571,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// closure), the function returns the array of all collected lines,
     /// including the line that met the condition. If the stream ends without
     /// meeting the condition, the function throws a
-    /// `ConnectionManagerError.readUntilConditionNotMet` error.
+    /// `MPDConnectionError.readUntilConditionNotMet` error.
     ///
     /// - Parameter condition: A closure that receives a line of text and
     ///                        returns `true` when the desired condition is met.
     /// - Returns: An array of strings containing all lines read up to and
     ///            including the line that satisfies the condition.
-    /// - Throws: `ConnectionManagerError.readUntilConditionNotMet` if the
+    /// - Throws: `MPDConnectionError.readUntilConditionNotMet` if the
     ///           condition is never met, or any error encountered by
     ///           `readLine()`.
     private func readUntil(_ condition: @escaping (String) -> Bool) async throws
@@ -593,7 +593,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             }
         }
 
-        throw ConnectionManagerError.readUntilConditionNotMet
+        throw MPDConnectionError.readUntilConditionNotMet
     }
 
     /// Reads lines from the connection until a line starting with `OK` is
@@ -606,7 +606,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// - Returns: An array of strings containing the lines read, including the
     ///            final line that starts with `OK`.
-    /// - Throws: `ConnectionManagerError.readUntilConditionNotMet` if the
+    /// - Throws: `MPDConnectionError.readUntilConditionNotMet` if the
     ///           condition is never met, or any error encountered by
     ///           `readLine()`.
     private func readUntilOK() async throws -> [String] {
@@ -621,13 +621,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// (`:`) as the delimiter, with a maximum of one split. It trims whitespace
     /// from both components and converts the key to lowercase. If the line does
     /// not contain exactly one colon resulting in two parts, a
-    /// `ConnectionManagerError.malformedResponse` error is thrown.
+    /// `MPDConnectionError.malformedResponse` error is thrown.
     ///
     /// - Parameter line: The string to be parsed, expected to be in the format
     ///                   `"key: value"`.
     /// - Returns: A tuple where the first element is the lowercase key and the
     ///            second element is the value.
-    /// - Throws: `ConnectionManagerError.malformedResponse` if the line does
+    /// - Throws: `MPDConnectionError.malformedResponse` if the line does
     ///           not contain exactly one colon.
     private func parseLine(_ line: String) throws -> (String, String) {
         let parts = line.split(separator: ":", maxSplits: 1).map {
@@ -635,7 +635,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard parts.count == 2 else {
-            throw ConnectionManagerError.malformedResponse(
+            throw MPDConnectionError.malformedResponse(
                 "Line does not contain exactly one colon")
         }
 
@@ -662,7 +662,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The function requires that the response includes mandatory fields such
     /// as `id`, `pos`, and `file` (used for the URL). If any of these are
     /// missing, or if the response is malformed, it throws a
-    /// `ConnectionManagerError.malformedResponse` error.
+    /// `MPDConnectionError.malformedResponse` error.
     ///
     /// Additionally, if an optional `index` is provided, it overrides the
     /// parsed `id` and `position` values. This workaround is used for responses
@@ -677,7 +677,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            values. Defaults to `nil`.
     /// - Returns: A media object conforming to `Playable` (either an `Album` or
     ///            a `Song`) based on the parsed data.
-    /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
+    /// - Throws: `MPDConnectionError.malformedResponse` if mandatory fields
     ///           are missing or if the response is improperly formatted.
     private func parseMediaResponse(_ lines: [String], using media: MediaType,
                                     index: UInt32? = nil) throws -> (any
@@ -712,7 +712,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
                     withAllowedCharacters: .urlPathAllowed),
                     let formatted = URL(string: encoded)
                 else {
-                    throw ConnectionManagerError.malformedResponse(
+                    throw MPDConnectionError.malformedResponse(
                         "Failed to parse URL")
                 }
 
@@ -746,7 +746,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard let id, let position, let url else {
-            throw ConnectionManagerError.malformedResponse(
+            throw MPDConnectionError.malformedResponse(
                 "Missing mandatory fields")
         }
 
@@ -777,7 +777,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
 // MARK: - Shared commands
 
-extension ConnectionManager {
+extension MPDConnection {
     /// Retrieves the current status of the media player from the server.
     ///
     /// This asynchronous function sends a "status" command to the media server
@@ -842,7 +842,7 @@ extension ConnectionManager {
                 case "stop":
                     .stop
                 default:
-                    throw ConnectionManagerError.malformedResponse(
+                    throw MPDConnectionError.malformedResponse(
                         "Invalid player state")
                 }
             case "random":
@@ -1041,8 +1041,8 @@ extension ConnectionManager {
 
 // MARK: - Idle mode commands
 
-extension ConnectionManager where Mode == IdleMode {
-    static let idle = ConnectionManager<IdleMode>()
+extension MPDConnection: IdleConnection where Mode == IdleMode {
+    static let idle = MPDConnection<IdleMode>()
 
     /// Waits for an idle event from the media server that matches the specified
     /// mask.
@@ -1051,20 +1051,20 @@ extension ConnectionManager where Mode == IdleMode {
     ///                   to listen for.
     /// - Returns: The `IdleEvent` that triggered the idle state, as indicated
     ///            by the server response.
-    /// - Throws: A `ConnectionManagerError.malformedResponse` if the server
+    /// - Throws: A `MPDConnectionError.malformedResponse` if the server
     ///           response does not contain a `changed` line.
     func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
         let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
         guard let changedLine = lines.first(where: { $0.hasPrefix(
             "changed: ") })
         else {
-            throw ConnectionManagerError.malformedResponse(
+            throw MPDConnectionError.malformedResponse(
                 "Missing 'changed' line")
         }
 
         let changed = String(changedLine.dropFirst("changed: ".count))
         guard let event = IdleEvent(rawValue: changed) else {
-            throw ConnectionManagerError.malformedResponse(
+            throw MPDConnectionError.malformedResponse(
                 "Received unknown idle event: \(changed)")
         }
 
@@ -1074,9 +1074,9 @@ extension ConnectionManager where Mode == IdleMode {
 
 // MARK: - Artwork mode commands
 
-extension ConnectionManager where Mode == ArtworkMode {
-    static func artwork() async throws -> ConnectionManager<ArtworkMode> {
-        let manager = ConnectionManager<ArtworkMode>()
+extension MPDConnection: ArtworkConnection where Mode == ArtworkMode {
+    static func artwork() async throws -> MPDConnection<ArtworkMode> {
+        let manager = MPDConnection<ArtworkMode>()
         try await manager.connect()
 
         return manager
@@ -1120,7 +1120,7 @@ extension ConnectionManager where Mode == ArtworkMode {
             }
 
             guard let chunkSize else {
-                throw ConnectionManagerError.malformedResponse(
+                throw MPDConnectionError.malformedResponse(
                     "Missing chunk size")
             }
 
@@ -1139,16 +1139,16 @@ extension ConnectionManager where Mode == ArtworkMode {
                 }
             }
 
-            throw ConnectionManagerError.malformedResponse("Missing 'OK' line")
+            throw MPDConnectionError.malformedResponse("Missing 'OK' line")
         }
     }
 }
 
 // MARK: - Command mode commands
 
-extension ConnectionManager where Mode == CommandMode {
-    static func command() async throws -> ConnectionManager<CommandMode> {
-        let manager = ConnectionManager<CommandMode>()
+extension MPDConnection: CommandConnection where Mode == CommandMode {
+    static func command() async throws -> MPDConnection<CommandMode> {
+        let manager = MPDConnection<CommandMode>()
         try await manager.connect()
 
         return manager
