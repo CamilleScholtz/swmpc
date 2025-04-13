@@ -289,7 +289,7 @@ struct Delegate: App {
 
             switch event.type {
             case .rightMouseDown:
-                Task(priority: .userInitiated) { @MainActor in
+                Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().pause(mpd.status.isPlaying)
                 }
             default:
@@ -300,19 +300,19 @@ struct Delegate: App {
         @objc private func handleMenuItemAction(_ sender: NSMenuItem) {
             switch sender.title {
             case "Play":
-                Task(priority: .userInitiated) { @MainActor in
+                Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().pause(false)
                 }
             case "Pause":
-                Task(priority: .userInitiated) { @MainActor in
+                Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().pause(true)
                 }
             case "Next song":
-                Task(priority: .userInitiated) { @MainActor in
+                Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().next()
                 }
             case "Previous song":
-                Task(priority: .userInitiated) { @MainActor in
+                Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().previous()
                 }
             default:
