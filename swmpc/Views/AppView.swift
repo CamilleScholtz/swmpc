@@ -45,7 +45,6 @@ struct AppView: View {
                                         }
 
                                         LoadingView()
-                                            .id("loading")
                                     }
                                 }
                             }

@@ -33,6 +33,14 @@ struct LoadingView: View {
             }
 
             #if os(iOS)
+                guard navigator.category != .playlists else {
+                    withAnimation(.interactiveSpring) {
+                        isLoading = false
+                    }
+
+                    return
+                }
+
                 guard mpd.queue.lastUpdated != nil, mpd.queue.lastUpdated! > Date.now.addingTimeInterval(-0.4) else {
                     return
                 }

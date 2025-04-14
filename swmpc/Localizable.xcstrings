@@ -650,6 +650,9 @@
         }
       }
     },
+    "Are you sure you want to delete playlist '%@'?" : {
+
+    },
     "Are you sure you want to delete playlist ’%@’?" : {
       "localizations" : {
         "de" : {

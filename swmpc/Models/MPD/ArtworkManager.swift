@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 22/12/2024.
 //
 
+import DequeModule
 import SwiftUI
 
 actor ArtworkManager {
@@ -14,9 +15,6 @@ actor ArtworkManager {
 
     private let cache = NSCache<NSURL, NSData>()
     private var tasks: [URL: (task: Task<Data, Error>, isPrefetch: Bool)] = [:]
-
-    private let maxConcurrentFetches = 24
-    private var activeFetches = 0
 
     private init() {
         cache.totalCostLimit = 64 * 1024 * 1024
@@ -36,7 +34,12 @@ actor ArtworkManager {
             return data as Data
         }
 
-        if let existing = tasks[media.url] {
+        if var existing = tasks[media.url] {
+            if existing.isPrefetch {
+                existing.isPrefetch = false
+                tasks[media.url] = existing
+            }
+
             return try await existing.task.value
         }
 
@@ -44,49 +47,9 @@ actor ArtworkManager {
             return await MockData.shared.generateMockArtwork(for: media.url)
         }
 
-        let task = Task<Data, Error>(priority: .medium) { [shouldCache] in
-            defer { removeTask(for: media.url) }
-
-            while self.activeFetches >= self.maxConcurrentFetches {
-                try await Task.sleep(for: .milliseconds(50))
-                if Task.isCancelled {
-                    throw CancellationError()
-                }
-            }
-
-            self.activeFetches += 1
-            defer { self.activeFetches -= 1 }
-
-            var connection: ConnectionManager<ArtworkMode>? = nil // Hold the connection
-            do {
-                connection = try await ArtworkConnectionPool.shared.acquireConnection()
-                guard let acquiredConnection = connection else {
-                    // Should not happen if acquireConnection doesn't throw on failure
-                    // but acquireConnection is designed to throw now.
-                    throw ConnectionManagerError.connectionSetupFailed // Or a pool specific error
-                }
-
-                let data = try await acquiredConnection.getArtworkData(for: media.url)
-
-                // Release connection *before* caching/returning
-                await ArtworkConnectionPool.shared.releaseConnection(acquiredConnection)
-                connection = nil // Nullify to prevent double release in defer
-
-                if shouldCache {
-                    storeInCache(data, for: media.url)
-                }
-                return data
-            } catch {
-                // Ensure connection is released even if getArtworkData fails
-                if let connToRelease = connection {
-                    await ArtworkConnectionPool.shared.releaseConnection(connToRelease)
-                }
-                // Re-throw the error that occurred
-                throw error
-            }
-        }
-
-        tasks[media.url] = (task, false)
+        let task = createFetchTask(for: media.url, priority: .high,
+                                   shouldCache: shouldCache)
+        tasks[media.url] = (task: task, isPrefetch: false)
 
         return try await task.value
     }
@@ -100,104 +63,87 @@ actor ArtworkManager {
         cancelPrefetchOutsideRange(playables)
 
         let itemsToFetch = playables.filter { media in
-            cache.object(forKey: media.url as NSURL) == nil &&
-                !tasks.keys.contains(media.url)
+            cache.object(forKey: media.url as NSURL) == nil
+                && tasks[media.url] == nil
         }
 
         for media in itemsToFetch {
-            let task = Task<Data, Error>(priority: .utility) {
-                defer { self.removeTask(for: media.url) }
-
-                while self.activeFetches >= self.maxConcurrentFetches {
-                    try await Task.sleep(for: .milliseconds(50))
-                    if Task.isCancelled {
-                        throw CancellationError()
-                    }
-                }
-
-                self.activeFetches += 1
-                defer { self.activeFetches -= 1 }
-
-                var connection: ConnectionManager<ArtworkMode>? = nil
-                do {
-                    // Don't fetch if cancelled before acquiring connection
-                    guard !Task.isCancelled else { throw CancellationError() }
-
-                    connection = try await ArtworkConnectionPool.shared.acquireConnection()
-                    guard let acquiredConnection = connection else {
-                        throw ConnectionManagerError.connectionSetupFailed
-                    }
-
-                    // Don't fetch if cancelled after acquiring connection
-                    guard !Task.isCancelled else {
-                        await ArtworkConnectionPool.shared.releaseConnection(acquiredConnection)
-                        throw CancellationError()
-                    }
-
-                    let data = try await acquiredConnection.getArtworkData(for: media.url)
-
-                    // Release connection *before* caching/returning
-                    await ArtworkConnectionPool.shared.releaseConnection(acquiredConnection)
-                    connection = nil
-
-                    // Only cache if the task wasn't cancelled during the fetch
-                    if !Task.isCancelled {
-                        storeInCache(data, for: media.url)
-                        return data
-                    } else {
-                        throw CancellationError()
-                    }
-
-                } catch {
-                    // Ensure connection is released even if getArtworkData fails or task is cancelled
-                    if let connToRelease = connection {
-                        await ArtworkConnectionPool.shared.releaseConnection(connToRelease)
-                    }
-                    // Don't log CancellationError as a failure
-                    if !(error is CancellationError) {
-                        print("[ArtworkPrefetch] Failed for \(media.url.lastPathComponent): \(error.localizedDescription)")
-                    }
-                    // Re-throw the error so the task completes with failure/cancellation
-                    throw error
-                }
-            }
-
-            tasks[media.url] = (task, true)
+            let task = createFetchTask(for: media.url, priority: .medium,
+                                       shouldCache: true)
+            tasks[media.url] = (task: task, isPrefetch: true)
         }
     }
 
     /// Cancels all prefetching tasks.
     func cancelPrefetching() {
-        var remainingTasks = [URL: (task: Task<Data, Error>, isPrefetch:
-            Bool)]()
+        for (url, info) in tasks where info.isPrefetch {
+            info.task.cancel()
+            tasks.removeValue(forKey: url)
+        }
+    }
 
-        for (url, taskInfo) in tasks {
-            if taskInfo.isPrefetch {
-                taskInfo.task.cancel()
-            } else {
-                remainingTasks[url] = taskInfo
+    /// Creates a new Task responsible for fetching artwork data.
+    /// Handles connection pooling, data fetching, caching, and task removal.
+    ///
+    /// - Parameters:
+    ///     - url: The URL of the artwork to fetch.
+    ///     - priority: The priority of the task.
+    ///     - shouldCache: Whether or not to cache the fetched data.
+    private func createFetchTask(for url: URL, priority: TaskPriority,
+                                 shouldCache: Bool) -> Task<Data, Error>
+    {
+        Task(priority: priority) {
+            defer { removeTask(for: url) }
+
+            try Task.checkCancellation()
+
+            var connection: ConnectionManager<ArtworkMode>?
+            do {
+                connection = try await ArtworkConnectionPool.shared
+                    .acquireConnection()
+                guard let acquiredConnection = connection else {
+                    throw ConnectionManagerError.connectionSetupFailed
+                }
+
+                try Task.checkCancellation()
+
+                let data = try await acquiredConnection.getArtworkData(for: url)
+
+                await ArtworkConnectionPool.shared.releaseConnection(
+                    acquiredConnection)
+                connection = nil
+
+                try Task.checkCancellation()
+
+                if shouldCache {
+                    storeInCache(data, for: url)
+                }
+
+                return data
+            } catch {
+                if let acquiredConnection = connection {
+                    await ArtworkConnectionPool.shared.releaseConnection(
+                        acquiredConnection)
+                }
+
+                throw error
             }
         }
-
-        tasks = remainingTasks
     }
 
     /// Cancels prefetch tasks for media items not in the given prefetch range.
     ///
-    /// - Parameter playables: The media items that should be in the prefetch range.
+    /// - Parameter playables: The media items that should be in the prefetch
+    ///                        range.
     private func cancelPrefetchOutsideRange(_ playables: [any Playable]) {
-        let prefetchURLs = Set(playables.map(\.url))
-        var remainingTasks = [URL: (task: Task<Data, Error>, isPrefetch: Bool)]()
+        let urls = Set(playables.map(\.url))
 
-        for (url, taskInfo) in tasks {
-            if taskInfo.isPrefetch, !prefetchURLs.contains(url) {
-                taskInfo.task.cancel()
-            } else {
-                remainingTasks[url] = taskInfo
+        for (url, info) in tasks where info.isPrefetch {
+            if !urls.contains(url) {
+                info.task.cancel()
+                tasks.removeValue(forKey: url)
             }
         }
-
-        tasks = remainingTasks
     }
 
     private func storeInCache(_ data: Data, for url: URL) {
@@ -206,5 +152,114 @@ actor ArtworkManager {
 
     private func removeTask(for url: URL) {
         tasks.removeValue(forKey: url)
+    }
+}
+
+actor ArtworkConnectionPool {
+    static let shared = ArtworkConnectionPool()
+
+    /// The maximum number of connections allowed to be active (checked out)
+    /// concurrently.
+    private let maxSize = 16
+
+    /// Available connections ready for immediate reuse.
+    private var pool: Deque<ConnectionManager<ArtworkMode>> = Deque()
+
+    /// How many connections are currently checked out and in use.
+    private var activeConnectionsCount = 0
+
+    /// Tasks waiting for a connection because the pool was empty and the limit
+    /// was reached.
+    private var waiters: [CheckedContinuation<ConnectionManager<ArtworkMode>,
+        Error>] = []
+
+    private init() {}
+
+    /// Acquires a connection from the pool.
+    ///
+    /// If a connection is available in the pool, it's returned immediately. If
+    /// the pool is empty but the maximum number of active connections hasn't
+    /// been reached, a new connection is created and returned. If the pool is
+    /// empty and the maximum number of connections are active,the calling task
+    /// will be suspended until a connection is released.
+    ///
+    /// - Returns: A connected `ConnectionManager<ArtworkMode>`.
+    /// - Throws: A `ConnectionManagerError` if creating or validating a
+    ///           connection fails.
+    func acquireConnection() async throws -> ConnectionManager<ArtworkMode> {
+        if let connection = pool.popFirst() {
+            do {
+                try await connection.connect()
+                activeConnectionsCount += 1
+
+                return connection
+            } catch {
+                await connection.disconnect()
+            }
+        }
+
+        if activeConnectionsCount < maxSize {
+            activeConnectionsCount += 1
+
+            do {
+                let connection = ConnectionManager<ArtworkMode>()
+                try await connection.connect()
+
+                return connection
+            } catch {
+                activeConnectionsCount -= 1
+
+                throw error
+            }
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    /// Returns a connection to the pool or passes it directly to a waiting
+    /// task.
+    ///
+    /// - Parameter connection: The `ConnectionManager<ArtworkMode>` to release.
+    func releaseConnection(_ connection: ConnectionManager<ArtworkMode>) {
+        activeConnectionsCount -= 1
+
+        if !waiters.isEmpty {
+            let waiter = waiters.removeFirst()
+
+            Task {
+                do {
+                    try await connection.connect()
+                    activeConnectionsCount += 1
+
+                    waiter.resume(returning: connection)
+                } catch {
+                    await connection.disconnect()
+
+                    waiter.resume(throwing:
+                        ConnectionManagerError.connectionSetupFailed)
+                }
+            }
+        } else {
+            pool.append(connection)
+        }
+    }
+
+    /// Disconnects all idle connections in the pool and cancels any waiting
+    /// tasks.
+    func reset() async {
+        while let connection = pool.popFirst() {
+            await connection.disconnect()
+        }
+
+        let currentWaiters = waiters
+        waiters.removeAll()
+        for waiter in currentWaiters {
+            waiter.resume(throwing:
+                ConnectionManagerError.connectionSetupFailed)
+        }
+
+        activeConnectionsCount = 0
     }
 }

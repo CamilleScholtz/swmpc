@@ -1079,13 +1079,6 @@ extension ConnectionManager where Mode == IdleMode {
 // MARK: - Artwork mode commands
 
 extension ConnectionManager where Mode == ArtworkMode {
-    static func artwork() async throws -> ConnectionManager<ArtworkMode> {
-        let manager = ConnectionManager<ArtworkMode>()
-        try await manager.connect()
-
-        return manager
-    }
-
     /// Retrieves the complete artwork data for a given URL by fetching it in
     /// chunks from the media server.
     ///
