@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/LeoNatan/LNPopupController.git",
       "state" : {
-        "revision" : "2f73e2240cd0a1ee1d7fb5a3a4f0315db3c80d8a",
-        "version" : "3.0.6"
+        "revision" : "e14712b8077f9d25c2b70d23241e922537673338",
+        "version" : "3.0.7"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MacPaw/OpenAI",
       "state" : {
-        "revision" : "f5b55e19b5a634d1c86ca4f77e614ffd19d5fc1d",
-        "version" : "0.3.9"
+        "revision" : "0da7b834bc318f99776d71b3ff2915573cdf8c66",
+        "version" : "0.4.0"
       }
     },
     {
