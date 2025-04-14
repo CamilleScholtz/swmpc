@@ -35,7 +35,11 @@ struct AlbumView: View {
                 ArtworkView(image: artwork)
                     .cornerRadius(5)
                     .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+                #if os(iOS)
+                    .frame(width: 70)
+                #elseif os(macOS)
                     .frame(width: 60)
+                #endif
 
                 #if os(macOS)
                     if isHovering {

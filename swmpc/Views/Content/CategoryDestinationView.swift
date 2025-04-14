@@ -111,13 +111,7 @@ struct CategoryView: View {
                 HeaderView(destination: destination, isSearching: $isSearching)
                     .id("top")
 
-                #if os(iOS)
-                    let spacing: CGFloat = 10
-                #elseif os(macOS)
-                    let spacing: CGFloat = 15
-                #endif
-
-                LazyVStack(alignment: .leading, spacing: spacing) {
+                LazyVStack(alignment: .leading, spacing: 15) {
                     switch destination {
                     case .albums:
                         AlbumsView()

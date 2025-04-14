@@ -14,13 +14,7 @@ struct ContentDestinationView: View {
 
     var body: some View {
         ScrollView {
-            #if os(iOS)
-                let spacing: CGFloat = 10
-            #elseif os(macOS)
-                let spacing: CGFloat = 15
-            #endif
-
-            VStack(alignment: .leading, spacing: spacing) {
+            VStack(alignment: .leading, spacing: 15) {
                 #if os(macOS)
                     BackButtonView()
                         .padding(.top, 12)

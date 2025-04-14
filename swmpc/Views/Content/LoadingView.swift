@@ -32,7 +32,17 @@ struct LoadingView: View {
                 return
             }
 
+            #if os(iOS)
+                guard mpd.queue.lastUpdated != nil, mpd.queue.lastUpdated! > Date.now.addingTimeInterval(-0.4) else {
+                    return
+                }
+            #endif
+
             try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled else {
+                return
+            }
+
             withAnimation(.interactiveSpring) {
                 isLoading = false
             }

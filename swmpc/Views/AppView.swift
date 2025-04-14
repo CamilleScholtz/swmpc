@@ -33,20 +33,22 @@ struct AppView: View {
                     #if os(iOS)
                         TabView(selection: $boundNavigator.category) {
                             ForEach(CategoryDestination.categories) { category in
-                                NavigationStack(path: $boundNavigator.path) {
-                                    CategoryDestinationView(destination: category)
-                                        .navigationDestination(for: ContentDestination.self) { destination in
-                                            ContentDestinationView(destination: destination)
+                                // XXX: Use SFSafeSymbols version when it is available.
+                                // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
+                                Tab(category.label, systemImage: category.symbol.rawValue, value: category) {
+                                    ZStack {
+                                        NavigationStack(path: $boundNavigator.path) {
+                                            CategoryDestinationView(destination: category)
+                                                .navigationDestination(for: ContentDestination.self) { destination in
+                                                    ContentDestinationView(destination: destination)
+                                                }
                                         }
+
+                                        LoadingView()
+                                            .id("loading")
+                                    }
                                 }
-                                .tabItem {
-                                    Label(category.label, systemSymbol: category.symbol)
-                                }
-                                .tag(category)
                             }
-                            .overlay(
-                                LoadingView()
-                            )
                         }
                         .handleQueueChange()
                         .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
