@@ -121,9 +121,9 @@ actor ArtworkManager {
 
                 return data
             } catch {
-                if let acquiredConnection = connection {
-                    await ArtworkConnectionPool.shared.releaseConnection(
-                        acquiredConnection)
+                if let failedConnection = connection {
+                    await ArtworkConnectionPool.shared.discardConnection(
+                        failedConnection)
                 }
 
                 throw error
@@ -160,7 +160,7 @@ actor ArtworkConnectionPool {
 
     /// The maximum number of connections allowed to be active (checked out)
     /// concurrently.
-    private let maxSize = 16
+    private let maxSize = 8
 
     /// Available connections ready for immediate reuse.
     private var pool: Deque<ConnectionManager<ArtworkMode>> = Deque()
@@ -170,8 +170,8 @@ actor ArtworkConnectionPool {
 
     /// Tasks waiting for a connection because the pool was empty and the limit
     /// was reached.
-    private var waiters: [CheckedContinuation<ConnectionManager<ArtworkMode>,
-        Error>] = []
+    private var waiters: Deque<CheckedContinuation<ConnectionManager<ArtworkMode>,
+        Error>> = Deque()
 
     private init() {}
 
@@ -187,34 +187,35 @@ actor ArtworkConnectionPool {
     /// - Throws: A `ConnectionManagerError` if creating or validating a
     ///           connection fails.
     func acquireConnection() async throws -> ConnectionManager<ArtworkMode> {
-        if let connection = pool.popFirst() {
-            do {
-                try await connection.connect()
+        while true {
+            if let connection = pool.popFirst() {
+                do {
+                    try await connection.ping()
+                    activeConnectionsCount += 1
+
+                    return connection
+                } catch {
+                    await connection.disconnect()
+                    continue
+                }
+            }
+
+            if activeConnectionsCount < maxSize {
                 activeConnectionsCount += 1
+                do {
+                    let connection = ConnectionManager<ArtworkMode>()
+                    try await connection.connect()
 
-                return connection
-            } catch {
-                await connection.disconnect()
+                    return connection
+                } catch {
+                    activeConnectionsCount -= 1
+                    throw ConnectionManagerError.connectionSetupFailed
+                }
             }
-        }
 
-        if activeConnectionsCount < maxSize {
-            activeConnectionsCount += 1
-
-            do {
-                let connection = ConnectionManager<ArtworkMode>()
-                try await connection.connect()
-
-                return connection
-            } catch {
-                activeConnectionsCount -= 1
-
-                throw error
+            return try await withCheckedThrowingContinuation { continuation in
+                waiters.append(continuation)
             }
-        }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            waiters.append(continuation)
         }
     }
 
@@ -225,24 +226,34 @@ actor ArtworkConnectionPool {
     func releaseConnection(_ connection: ConnectionManager<ArtworkMode>) {
         activeConnectionsCount -= 1
 
-        if !waiters.isEmpty {
-            let waiter = waiters.removeFirst()
-
-            Task {
-                do {
-                    try await connection.connect()
-                    activeConnectionsCount += 1
-
-                    waiter.resume(returning: connection)
-                } catch {
-                    await connection.disconnect()
-
-                    waiter.resume(throwing:
-                        ConnectionManagerError.connectionSetupFailed)
-                }
-            }
+        if let waiter = waiters.popFirst() {
+            waiter.resume(returning: connection)
+            activeConnectionsCount += 1
         } else {
             pool.append(connection)
+        }
+    }
+
+    func discardConnection(_ connection: ConnectionManager<ArtworkMode>) async {
+        activeConnectionsCount -= 1
+        await connection.disconnect()
+
+        if !waiters.isEmpty, activeConnectionsCount < maxSize {
+            activeConnectionsCount += 1
+
+            do {
+                let connection = ConnectionManager<ArtworkMode>()
+                try await connection.connect()
+
+                if let waiter = waiters.popFirst() {
+                    waiter.resume(returning: connection)
+                } else {
+                    activeConnectionsCount -= 1
+                    pool.append(connection)
+                }
+            } catch {
+                activeConnectionsCount -= 1
+            }
         }
     }
 
@@ -252,14 +263,12 @@ actor ArtworkConnectionPool {
         while let connection = pool.popFirst() {
             await connection.disconnect()
         }
+        pool.removeAll()
 
         let currentWaiters = waiters
         waiters.removeAll()
         for waiter in currentWaiters {
-            waiter.resume(throwing:
-                ConnectionManagerError.connectionSetupFailed)
+            waiter.resume(throwing: CancellationError())
         }
-
-        activeConnectionsCount = 0
     }
 }

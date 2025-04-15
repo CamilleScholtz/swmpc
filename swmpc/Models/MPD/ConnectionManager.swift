@@ -51,6 +51,7 @@ enum ConnectionManagerError: LocalizedError {
 
     case connectionSetupFailed
     case connectionUnexpectedClosure
+    case connectionTimeout
 
     case readUntilConditionNotMet
 
@@ -67,6 +68,8 @@ enum ConnectionManagerError: LocalizedError {
             "Failed to establish network connection to MPD server."
         case .connectionUnexpectedClosure:
             "Network connection was closed unexpectedly during operation."
+        case .connectionTimeout:
+            "Connection attempt timed out."
         case .readUntilConditionNotMet:
             "Failed to locate expected response termination sequence."
         case let .protocolViolation(details):
@@ -102,6 +105,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     // to actor-isolated instance method 'disconnect()' in a synchronous
     // nonisolated context` error. The existing approach is reasonable.
     deinit {
+        connection?.stateUpdateHandler = nil
         connection?.cancel()
         connection = nil
 
@@ -174,10 +178,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// all buffered data. This method should be called to cleanly terminate the
     /// connection and reset the internal state.
     func disconnect() {
+        connection?.stateUpdateHandler = nil
         connection?.cancel()
         connection = nil
 
         buffer.removeAll(keepingCapacity: false)
+
+        version = nil
     }
 
     /// Ensures that the current network connection is available and ready.
@@ -201,8 +208,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     /// Ensures that the server version is supported.
     ///
-    /// This function checks the version of the MPD server and throws an error if
-    /// the version is not supported. The minimum supported version is 0.24.
+    /// This function checks the version of the MPD server and throws an error
+    /// if the version is not supported. The minimum supported version is 0.24.
     ///
     /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
@@ -224,6 +231,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         _ = try await run(["password", password])
+    }
+
+    /// Sends a ping command to the server.
+    func ping() async throws {
+        _ = try await run(["ping"])
     }
 
     /// Executes one or more commands asynchronously over the connection.
@@ -253,57 +265,70 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     // MARK: - Connection lifecycle
 
-    /// Asynchronously waits until the network connection reaches a terminal
-    /// state, either becoming ready or failing.
+    /// Asynchronously waits for the connection to be ready.
     ///
-    /// This method monitors the connection’s state via an `AsyncStream` of
-    /// `NWConnection.State` updates. It suspends execution until:
-    /// - The connection becomes `.ready`, in which case the function returns
-    ///   successfully.
-    /// - The connection enters a `.failed`, `.waiting`, or `.cancelled` state.
-    ///   In these cases, it calls `disconnect()` to clean up the connection and
-    ///   then throws the corresponding error.
-    /// - If no connection exists, it immediately throws a
-    ///   `ConnectionManagerError.connectionError`.
+    /// This function uses a task group to monitor the connection state and
+    /// handle timeouts. It listens for the connection state updates and checks
+    /// if the connection is ready. If the connection fails or is cancelled,
+    /// appropriate errors are thrown. The function also includes a timeout
+    /// mechanism that throws a `ConnectionManagerError.connectionTimeout` error
+    /// if the connection does not become ready within a specified duration.
     ///
-    /// - Throws: An error from the connection's failure, waiting, or
-    ///           cancellation state, or a
-    ///           `ConnectionManagerError.connectionUnexpectedClosure` if the
-    ///           connection is missing.
+    /// - Throws: `ConnectionManagerError.connectionUnexpectedClosure` if the
+    ///           connection is closed unexpectedly, `ConnectionManagerError`
+    ///           `connectionTimeout` if the connection does not become ready
+    ///           within the specified duration, or any other error encountered
+    ///           during the connection state updates.
     private func waitForConnectionReady() async throws {
         guard let connection else {
             throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
-        let states = AsyncStream<NWConnection.State> { continuation in
-            connection.stateUpdateHandler = { state in
-                continuation.yield(state)
-
-                switch state {
-                case .cancelled, .failed, .ready:
-                    continuation.finish()
-                default:
-                    break
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { [weak self, connection] in
+                guard self != nil else {
+                    throw CancellationError()
                 }
-            }
-        }
 
-        for await state in states {
-            switch state {
-            case .ready:
-                return
-            case let .failed(error):
-                throw error
-            case let .waiting(error):
-                throw error
-            case .cancelled:
+                let states = AsyncStream<NWConnection.State> { continuation in
+                    connection.stateUpdateHandler = { state in
+                        continuation.yield(state)
+                        switch state {
+                        case .ready, .failed, .cancelled:
+                            continuation.finish()
+                        default:
+                            break
+                        }
+                    }
+                }
+
+                for await state in states {
+                    try Task.checkCancellation()
+
+                    switch state {
+                    case .ready:
+                        return
+                    case let .failed(error):
+                        throw error
+                    case .cancelled:
+                        throw ConnectionManagerError.connectionUnexpectedClosure
+                    default:
+                        continue
+                    }
+                }
+
                 throw ConnectionManagerError.connectionUnexpectedClosure
-            default:
-                continue
             }
-        }
 
-        throw ConnectionManagerError.connectionUnexpectedClosure
+            group.addTask {
+                try await Task.sleep(for: .seconds(10))
+                throw ConnectionManagerError.connectionTimeout
+            }
+
+            try await group.next()
+
+            group.cancelAll()
+        }
     }
 
     // MARK: - Writing
