@@ -18,7 +18,7 @@ struct HeaderView: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        HStack {
+        HStack(spacing: 4) {
             if !isSearching {
                 Text(destination.label)
                     .font(.headline)
