@@ -28,7 +28,7 @@ import SwiftUI
 
     @MainActor
     private func connect() async {
-        while true {
+        while !Task.isCancelled {
             do {
                 try await ConnectionManager.idle.connect()
                 error = nil
