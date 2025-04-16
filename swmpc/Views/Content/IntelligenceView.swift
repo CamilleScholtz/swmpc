@@ -94,7 +94,7 @@ struct IntelligencePlaylistView: View {
                 Text("I want to listen to…")
                     .font(.headline)
 
-                // XXX: So this is super hacky, but we create this invisible
+                // NOTE: So this is super hacky, but we create this invisible
                 // TextField that draws the focus, because `.focused` for
                 // some reason does not work.
                 TextField("", text: .constant(""))

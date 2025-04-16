@@ -101,7 +101,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The version of the MPD server.
     private(set) var version: String?
 
-    // XXX: I want to just use `disconnect()` here, but that gives me an `Call
+    // TODO: I want to just use `disconnect()` here, but that gives me an `Call
     // to actor-isolated instance method 'disconnect()' in a synchronous
     // nonisolated context` error. The existing approach is reasonable.
     deinit {
@@ -767,8 +767,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
             }
         }
 
-        // XXX: Hack because `listplaylistinfo` does not return id's, so we have
-        // set these ourselves.
+        // NOTE: Hack because `listplaylistinfo` does not return id's, so we
+        // have to set these ourselves.
         if index != nil {
             id = index
             position = index

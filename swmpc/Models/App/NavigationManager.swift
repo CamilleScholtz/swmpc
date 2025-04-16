@@ -8,7 +8,7 @@
 import SFSafeSymbols
 import SwiftUI
 
-// XXX: `content` and `path` feel a duplicate, but I really cant figure out how
+// TODO: `content` and `path` feel a duplicate, but I really cant figure out how
 // to get the "contents" of the `path`.
 @Observable
 final class NavigationManager {

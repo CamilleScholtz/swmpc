@@ -15,6 +15,7 @@ struct AppView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
+    @State private var initialFetch = true
     @State private var artwork: PlatformImage?
 
     #if os(iOS)
@@ -33,7 +34,7 @@ struct AppView: View {
                     #if os(iOS)
                         TabView(selection: $boundNavigator.category) {
                             ForEach(CategoryDestination.categories) { category in
-                                // XXX: Use SFSafeSymbols version when it is available.
+                                // NOTE: Use SFSafeSymbols version when it is available.
                                 // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
                                 Tab(category.label, systemImage: category.symbol.rawValue, value: category) {
                                     ZStack {
@@ -82,6 +83,15 @@ struct AppView: View {
                     guard let song = mpd.status.song else {
                         artwork = nil
                         return
+                    }
+
+                    // NOTE: Hack, without this getting the initial artwork
+                    // fails when not on localhost connections. I suspect
+                    // because the artwork connection pool has not properly
+                    // initialized yet.
+                    if initialFetch {
+                        initialFetch = false
+                        try? await Task.sleep(for: .milliseconds(200))
                     }
 
                     guard let data = try? await ArtworkManager.shared.get(for: song, shouldCache: false) else {
