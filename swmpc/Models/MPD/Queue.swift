@@ -40,7 +40,7 @@ enum QueueError: Error {
     var favorites: [Song] = []
 
     /// The date at which the queue was last updated.
-    var lastUpdated: Date?
+    var lastUpdated: Date = .distantPast
 
     /// This asynchronous function sets the media in the queue.
     ///

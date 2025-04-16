@@ -12,6 +12,7 @@ struct AlbumsView: View {
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
+    @State private var lastUpdated: Date = .distantPast
     @State private var previousVisibleIndex = 0
     @State private var lastVisibleIndex = 0
 
@@ -28,8 +29,12 @@ struct AlbumsView: View {
                     }
 
                     if let index = albums.firstIndex(of: album) {
-                        previousVisibleIndex = lastVisibleIndex
-                        lastVisibleIndex = index
+                        let now = Date()
+
+                        if now.timeIntervalSince(lastUpdated) > 0.01 {
+                            lastVisibleIndex = index
+                            lastUpdated = now
+                        }
                     }
                 }
         }
@@ -52,18 +57,23 @@ struct AlbumsView: View {
             mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
         }
         .task(id: lastVisibleIndex, priority: .medium) {
-            guard !albums.isEmpty, !Task.isCancelled else {
+            guard !Task.isCancelled else {
                 return
             }
 
-            let isScrollingUp = lastVisibleIndex < previousVisibleIndex
+            let currentPreviousIndex = previousVisibleIndex
+            let currentLastIndex = lastVisibleIndex
+
+            let isScrollingUp = currentLastIndex < currentPreviousIndex
 
             let albumsToPrefetch = {
-                let start = isScrollingUp ? max(0, lastVisibleIndex - 2) : lastVisibleIndex + 1
-                let end = isScrollingUp ? lastVisibleIndex : min(albums.count, lastVisibleIndex + 3)
+                let start = isScrollingUp ? max(0, currentLastIndex - 2) : currentLastIndex + 1
+                let end = isScrollingUp ? currentLastIndex : min(albums.count, currentLastIndex + 3)
 
                 return Array(albums[start ..< end])
             }()
+
+            previousVisibleIndex = currentLastIndex
 
             await ArtworkManager.shared.prefetch(for: albumsToPrefetch)
         }
