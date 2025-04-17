@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 18/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
 
 struct DetailFooterView: View {
@@ -44,6 +45,7 @@ struct DetailFooterView: View {
 
                     RandomView()
                 }
+                .asyncButtonStyle(.none)
             #elseif os(macOS)
                 HStack(alignment: .center, spacing: 40) {
                     RepeatView()
@@ -56,6 +58,7 @@ struct DetailFooterView: View {
 
                     RandomView()
                 }
+                .asyncButtonStyle(.none)
             #endif
         }
     }
@@ -64,11 +67,9 @@ struct DetailFooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().pause(mpd.status.isPlaying)
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().pause(mpd.status.isPlaying)
+            } label: {
                 ZStack {
                     Circle()
                         .fill(.thinMaterial)
@@ -78,39 +79,35 @@ struct DetailFooterView: View {
                         .font(.system(size: 30))
                 }
             }
-            .button(scale: 1.13)
+            .styledButton(scale: 1.13)
         }
     }
 
     struct PreviousView: View {
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().previous()
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().previous()
+            } label: {
                 Image(systemSymbol: .backwardFill)
                     .font(.system(size: 18))
                     .padding(12)
                     .contentShape(Circle())
             }
-            .button()
+            .styledButton()
         }
     }
 
     struct NextView: View {
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().next()
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().next()
+            } label: {
                 Image(systemSymbol: .forwardFill)
                     .font(.system(size: 18))
                     .padding(12)
                     .contentShape(Circle())
             }
-            .button()
+            .styledButton()
         }
     }
 
@@ -118,11 +115,9 @@ struct DetailFooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
+            } label: {
                 ZStack {
                     Image(systemSymbol: .shuffle)
                         .padding(10)
@@ -136,7 +131,7 @@ struct DetailFooterView: View {
                 }
                 .contentShape(Circle())
             }
-            .button()
+            .styledButton()
         }
     }
 
@@ -144,11 +139,9 @@ struct DetailFooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
+            } label: {
                 ZStack {
                     Image(systemSymbol: .repeat)
                         .padding(10)
@@ -162,7 +155,7 @@ struct DetailFooterView: View {
                 }
                 .contentShape(Circle())
             }
-            .button()
+            .styledButton()
         }
     }
 
@@ -171,13 +164,20 @@ struct DetailFooterView: View {
 
         @State private var isFavorited = false
 
-        private let addCurrentToFavoritesNotifaction = NotificationCenter.default
-            .publisher(for: .addCurrentToFavoritesNotifaction)
-
         var body: some View {
-            Button(action: {
-                NotificationCenter.default.post(name: .addCurrentToFavoritesNotifaction, object: nil)
-            }) {
+            AsyncButton(id: ButtonNotification.favorite) {
+                guard let song = mpd.status.song else {
+                    throw ViewError.missingData
+                }
+
+                isFavorited.toggle()
+
+                if isFavorited {
+                    try await ConnectionManager.command().addToFavorites(songs: [song])
+                } else {
+                    try await ConnectionManager.command().removeFromFavorites(songs: [song])
+                }
+            } label: {
                 Image(systemSymbol: .heartFill)
                     .foregroundColor(isFavorited ? .red : Color(.secondarySystemFill))
                     .opacity(isFavorited ? 0.7 : 1)
@@ -187,7 +187,8 @@ struct DetailFooterView: View {
                     .padding(4)
                     .contentShape(Circle())
             }
-            .button()
+            .styledButton()
+            .asyncButtonStyle(.none)
             .onChange(of: mpd.status.song) { _, value in
                 guard let song = value else {
                     return
@@ -201,21 +202,6 @@ struct DetailFooterView: View {
                 }
 
                 isFavorited = value.contains { $0.url == song.url }
-            }
-            .onReceive(addCurrentToFavoritesNotifaction) { _ in
-                Task(priority: .userInitiated) {
-                    guard let song = mpd.status.song else {
-                        return
-                    }
-
-                    isFavorited.toggle()
-
-                    if isFavorited {
-                        try? await ConnectionManager.command().addToFavorites(songs: [song])
-                    } else {
-                        try? await ConnectionManager.command().removeFromFavorites(songs: [song])
-                    }
-                }
             }
         }
     }

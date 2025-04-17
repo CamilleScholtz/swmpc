@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 08/04/2025.
 //
 
+import ButtonKit
 import SwiftUI
 
 struct PlaylistsView: View {
@@ -151,17 +152,15 @@ struct PlaylistsView: View {
                 showDeleteAlert = false
             }
 
-            Button("Delete", role: .destructive) {
+            AsyncButton("Delete", role: .destructive) {
                 guard let playlist = playlistToDelete else {
-                    return
+                    throw ViewError.missingData
                 }
 
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().removePlaylist(playlist)
+                try await ConnectionManager.command().removePlaylist(playlist)
 
-                    playlistToDelete = nil
-                    showDeleteAlert = false
-                }
+                playlistToDelete = nil
+                showDeleteAlert = false
             }
         } message: {
             if let playlist = playlistToDelete {

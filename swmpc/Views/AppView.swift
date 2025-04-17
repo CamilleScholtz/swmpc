@@ -11,6 +11,10 @@ import SwiftUI
     import LNPopupUI
 #endif
 
+enum ViewError: Error {
+    case missingData
+}
+
 struct AppView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator

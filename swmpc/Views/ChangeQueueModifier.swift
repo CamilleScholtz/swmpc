@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
 
 extension View {
@@ -65,11 +66,9 @@ struct ChangeQueueModifier: ViewModifier {
                     navigator.category = previousDestination ?? .albums
                 }
 
-                Button("Queue") {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().loadPlaylist(playlistToQueue)
-                        try? await mpd.queue.set(using: navigator.category.type, force: true)
-                    }
+                AsyncButton("Queue") {
+                    try await ConnectionManager.command().loadPlaylist(playlistToQueue)
+                    try await mpd.queue.set(using: navigator.category.type, force: true)
                 }
             } message: {
                 Text("This will overwrite the current queue.")

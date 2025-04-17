@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 14/11/2024.
 //
 
+import ButtonKit
 import Noise
 import SFSafeSymbols
 import SwiftUI
@@ -278,21 +279,19 @@ struct DetailView: View {
         // swiftformat:disable:next trailingClosures
         .popupBarItems({
             ToolbarItemGroup(placement: .popupBar) {
-                Button {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().pause(mpd.status.isPlaying)
-                    }
+                AsyncButton {
+                    try await ConnectionManager.command().pause(mpd.status.isPlaying)
                 } label: {
                     Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
                 }
+                .asyncButtonStyle(.none)
 
-                Button {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().next()
-                    }
+                AsyncButton {
+                    try await ConnectionManager.command().next()
                 } label: {
                     Image(systemSymbol: .forwardFill)
                 }
+                .asyncButtonStyle(.none)
             }
         })
         .popupProgress(progress)

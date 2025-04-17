@@ -5,10 +5,8 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
-#if os(iOS)
-    import SFSafeSymbols
-#endif
 
 struct AlbumSongsView: View {
     @Environment(MPD.self) private var mpd
@@ -112,28 +110,22 @@ struct AlbumSongsView: View {
                         }
                     })
                     .contextMenu {
-                        Button("Add Album to Favorites") {
-                            Task {
-                                try? await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
-                            }
+                        AsyncButton("Add Album to Favorites") {
+                            try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                         }
 
                         if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
                             Menu("Add Album to Playlist") {
                                 ForEach(playlists) { playlist in
-                                    Button(playlist.name) {
-                                        Task {
-                                            try? await ConnectionManager.command().addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
-                                        }
+                                    AsyncButton(playlist.name) {
+                                        try await ConnectionManager.command().addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                                     }
                                 }
                             }
 
                             if let playlist = mpd.status.playlist {
-                                Button("Remove Album from Playlist") {
-                                    Task {
-                                        try? await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
-                                    }
+                                AsyncButton("Remove Album from Playlist") {
+                                    try await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                                 }
                             }
                         }

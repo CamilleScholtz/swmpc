@@ -1,6 +1,15 @@
 {
-  "originHash" : "6225e489cfdb67de304caa5dae4b196f38c3aac52d1e2bac0df2c3b6804289e8",
+  "originHash" : "59cd415049a8deea47baa3e2a57f99d62b09c43376e2ffa5af14af4d8b8872f1",
   "pins" : [
+    {
+      "identity" : "buttonkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Dean151/ButtonKit",
+      "state" : {
+        "revision" : "5d049dec3ec474ea2ad79eb4acd066edeacb9953",
+        "version" : "0.6.1"
+      }
+    },
     {
       "identity" : "keychainstoragekit",
       "kind" : "remoteSourceControl",

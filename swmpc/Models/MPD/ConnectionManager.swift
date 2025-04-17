@@ -321,7 +321,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             }
 
             group.addTask {
-                try await Task.sleep(for: .seconds(10))
+                try await Task.sleep(for: .seconds(4))
                 throw ConnectionManagerError.connectionTimeout
             }
 

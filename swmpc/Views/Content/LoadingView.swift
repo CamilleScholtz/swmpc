@@ -41,7 +41,7 @@ struct LoadingView: View {
                     return
                 }
 
-                guard mpd.queue.lastUpdated != nil, mpd.queue.lastUpdated! > Date.now.addingTimeInterval(-0.4) else {
+                guard mpd.queue.lastUpdated > Date.now.addingTimeInterval(-0.4) else {
                     return
                 }
             #endif

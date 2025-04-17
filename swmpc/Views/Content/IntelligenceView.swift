@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
 
 struct IntelligencePlaylistView: View {
@@ -138,18 +139,17 @@ struct IntelligencePlaylistView: View {
                     }
                     .keyboardShortcut(.cancelAction)
 
-                    Button("Create") {
-                        Task(priority: .userInitiated) {
-                            isLoading = true
+                    AsyncButton("Create") {
+                        isLoading = true
 
-                            try? await IntelligenceManager.shared.fillPlaylist(using: playlistToEdit!, prompt: prompt)
-                            try? await mpd.queue.set(using: .playlist, force: true)
+                        try await IntelligenceManager.shared.fillPlaylist(using: playlistToEdit!, prompt: prompt)
+                        try await mpd.queue.set(using: .playlist, force: true)
 
-                            isLoading = false
-                            playlistToEdit = nil
-                            showIntelligencePlaylistSheet = false
-                        }
+                        isLoading = false
+                        playlistToEdit = nil
+                        showIntelligencePlaylistSheet = false
                     }
+                    .asyncButtonStyle(.none)
                     .keyboardShortcut(.defaultAction)
                 }
                 .offset(y: -15)

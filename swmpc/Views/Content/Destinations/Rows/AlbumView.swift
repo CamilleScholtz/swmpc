@@ -5,10 +5,8 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
-#if os(iOS)
-    import SFSafeSymbols
-#endif
 
 struct AlbumView: View {
     @Environment(MPD.self) private var mpd
@@ -111,19 +109,15 @@ struct AlbumView: View {
             navigator.navigate(to: ContentDestination.album(album))
         }
         .contextMenu {
-            Button("Add Album to Favorites") {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
-                }
+            AsyncButton("Add Album to Favorites") {
+                try await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
             }
 
             if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
                 Menu("Add Album to Playlist") {
                     ForEach(playlists) { playlist in
-                        Button(playlist.name) {
-                            Task(priority: .userInitiated) {
-                                try? await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
-                            }
+                        AsyncButton(playlist.name) {
+                            try await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
                         }
                     }
                 }

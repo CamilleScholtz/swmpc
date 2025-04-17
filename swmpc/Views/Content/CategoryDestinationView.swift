@@ -108,8 +108,10 @@ struct CategoryView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                HeaderView(destination: destination, isSearching: $isSearching)
-                    .id("top")
+                #if os(macOS)
+                    HeaderView(destination: destination, isSearching: $isSearching)
+                        .id("top")
+                #endif
 
                 LazyVStack(alignment: .leading, spacing: 15) {
                     switch destination {

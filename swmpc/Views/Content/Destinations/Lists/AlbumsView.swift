@@ -12,7 +12,7 @@ struct AlbumsView: View {
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
-    @State private var lastUpdated: Date = .distantPast
+    @State private var lastUpdated: Date = .now
     @State private var previousVisibleIndex = 0
     @State private var lastVisibleIndex = 0
 
@@ -23,6 +23,7 @@ struct AlbumsView: View {
     var body: some View {
         ForEach(albums) { album in
             AlbumView(for: album)
+
                 .onScrollVisibilityChange { isVisible in
                     guard isVisible else {
                         return

@@ -62,7 +62,7 @@ struct HeaderView: View {
                     .padding(4)
                     .contentShape(Circle())
             }
-            .button()
+            .styledButton()
         }
         #if os(iOS)
         .frame(height: 44)

@@ -125,11 +125,7 @@ struct SettingsView: View {
     struct BehaviorView: View {
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-        #if os(iOS)
-            @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = true
-        #elseif os(macOS)
-            @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
-        #endif
+        @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
 
         var body: some View {
             Form {

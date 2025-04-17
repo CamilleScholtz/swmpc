@@ -5,10 +5,8 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
-#if os(macOS)
-    import SFSafeSymbols
-#endif
 
 struct SongView: View {
     @Environment(MPD.self) private var mpd
@@ -85,20 +83,16 @@ struct SongView: View {
             })
             .contextMenu {
                 if mpd.status.playlist?.name != "Favorites" {
-                    Button("Add Song to Favorites") {
-                        Task {
-                            try? await ConnectionManager.command().addToFavorites(songs: [song])
-                        }
+                    AsyncButton("Add Song to Favorites") {
+                        try await ConnectionManager.command().addToFavorites(songs: [song])
                     }
                 }
 
                 if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
                     Menu("Add Song to Playlist") {
                         ForEach(playlists) { playlist in
-                            Button(playlist.name) {
-                                Task {
-                                    try? await ConnectionManager.command().addToPlaylist(playlist, songs: [song])
-                                }
+                            AsyncButton(playlist.name) {
+                                try await ConnectionManager.command().addToPlaylist(playlist, songs: [song])
                             }
                         }
                     }
@@ -107,16 +101,12 @@ struct SongView: View {
                         Divider()
 
                         if mpd.status.playlist?.name == "Favorites" {
-                            Button("Remove Song from Favorites") {
-                                Task {
-                                    try? await ConnectionManager.command().removeFromFavorites(songs: [song])
-                                }
+                            AsyncButton("Remove Song from Favorites") {
+                                try await ConnectionManager.command().removeFromFavorites(songs: [song])
                             }
                         } else {
-                            Button("Remove Song from Playlist") {
-                                Task {
-                                    try? await ConnectionManager.command().removeFromPlaylist(playlist, songs: [song])
-                                }
+                            AsyncButton("Remove Song from Playlist") {
+                                try await ConnectionManager.command().removeFromPlaylist(playlist, songs: [song])
                             }
                         }
                     }

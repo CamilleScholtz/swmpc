@@ -14,7 +14,7 @@ extension View {
     ///   - scale: The scale factor to apply when hovered (default: 1.05)
     ///   - animation: The animation to use (default: .interactiveSpring)
     /// - Returns: A view with hover effects applied
-    func button(
+    func styledButton(
         scale: CGFloat = 1.2,
         animation: Animation = .interactiveSpring()
     ) -> some View {

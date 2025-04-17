@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import ButtonKit
 import SwiftUI
 
 #if os(macOS)
@@ -21,6 +22,7 @@ import SwiftUI
 struct Delegate: App {
     #if os(macOS)
         @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+        @Environment(\.triggerButton) private var triggerButton
     #endif
 
     #if os(iOS)
@@ -47,30 +49,24 @@ struct Delegate: App {
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandMenu("Controls") {
-                Button(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
-                    }
+                AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
+                    try await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
                 }
 
-                Button("Next Song") {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().next()
-                    }
+                AsyncButton("Next Song") {
+                    try await ConnectionManager.command().next()
                 }
                 .keyboardShortcut(.downArrow, modifiers: [.command])
 
-                Button("Previous Song") {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().previous()
-                    }
+                AsyncButton("Previous Song") {
+                    try await ConnectionManager.command().previous()
                 }
                 .keyboardShortcut(.upArrow, modifiers: [.command])
 
                 Divider()
 
                 Button("Add Current Song to Favorites") {
-                    NotificationCenter.default.post(name: .addCurrentToFavoritesNotifaction, object: nil)
+                    triggerButton(id: ButtonNotification.favorite)
                 }
                 .keyboardShortcut("l", modifiers: [])
 
@@ -86,10 +82,8 @@ struct Delegate: App {
 
                 Divider()
 
-                Button("Refresh Library") {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().update()
-                    }
+                AsyncButton("Refresh Library") {
+                    try await ConnectionManager.command().update()
                 }
                 .keyboardShortcut("r", modifiers: [.command])
             }
@@ -98,10 +92,8 @@ struct Delegate: App {
                 CommandMenu("Playlists") {
                     Menu("Load Playlist") {
                         ForEach(playlists) { playlist in
-                            Button(playlist.name) {
-                                Task {
-                                    try? await ConnectionManager.command().loadPlaylist(playlist)
-                                }
+                            AsyncButton(playlist.name) {
+                                try await ConnectionManager.command().loadPlaylist(playlist)
                             }
                         }
                     }

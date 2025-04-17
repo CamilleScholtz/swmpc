@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 29/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
 
 struct PopoverFooterView: View {
@@ -56,45 +57,42 @@ struct PopoverFooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().pause(mpd.status.isPlaying)
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().pause(mpd.status.isPlaying)
+            } label: {
                 Image(systemSymbol: mpd.status.isPlaying ? .pauseCircleFill : .playCircleFill)
                     .font(.system(size: 35))
             }
-            .button()
+            .styledButton()
+            .asyncButtonStyle(.none)
         }
     }
 
     struct PreviousView: View {
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().previous()
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().previous()
+            } label: {
                 Image(systemSymbol: .backwardFill)
                     .padding(10)
                     .contentShape(Circle())
             }
-            .button()
+            .styledButton()
+            .asyncButtonStyle(.none)
         }
     }
 
     struct NextView: View {
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().next()
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().next()
+            } label: {
                 Image(systemSymbol: .forwardFill)
                     .padding(10)
                     .contentShape(Circle())
             }
-            .button()
+            .styledButton()
+            .asyncButtonStyle(.none)
         }
     }
 
@@ -102,11 +100,9 @@ struct PopoverFooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
+            } label: {
                 ZStack {
                     Image(systemSymbol: .shuffle)
                         .foregroundColor(Color(.textColor))
@@ -121,7 +117,8 @@ struct PopoverFooterView: View {
                 }
                 .contentShape(Circle())
             }
-            .button()
+            .styledButton()
+            .asyncButtonStyle(.none)
         }
     }
 
@@ -129,11 +126,9 @@ struct PopoverFooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            Button(action: {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
-                }
-            }) {
+            AsyncButton {
+                try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
+            } label: {
                 ZStack {
                     Image(systemSymbol: .repeat)
                         .foregroundColor(Color(.textColor))
@@ -148,7 +143,8 @@ struct PopoverFooterView: View {
                 }
                 .contentShape(Circle())
             }
-            .button()
+            .styledButton()
+            .asyncButtonStyle(.none)
         }
     }
 

@@ -50,7 +50,7 @@ struct ContentDestinationView: View {
                     .frame(width: 22, height: 22)
                     .contentShape(Circle())
             }
-            .button()
+            .styledButton()
         }
     }
 #endif
