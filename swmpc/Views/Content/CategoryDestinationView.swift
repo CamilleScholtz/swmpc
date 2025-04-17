@@ -63,15 +63,8 @@ struct EmptyCategoryView: View {
                 Text("Add songs to your playlist.")
                     .font(.subheadline)
 
-                IntelligenceButtonView("Create Playlist using AI")
+                IntelligenceButtonView(using: playlist)
                     .offset(y: 20)
-                    .onTapGesture {
-                        guard isIntelligenceEnabled else {
-                            return
-                        }
-
-                        NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: playlist)
-                    }
             #if os(iOS)
                 default:
                     EmptyView()
