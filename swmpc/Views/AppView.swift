@@ -23,8 +23,6 @@ struct AppView: View {
     @State private var artwork: PlatformImage?
 
     #if os(iOS)
-        @State private var songs: [Int: [Song]]?
-
         @State private var isPopupBarPresented = true
         @State private var isPopupOpen = false
     #endif
@@ -54,33 +52,15 @@ struct AppView: View {
                                         LoadingView()
                                     }
                                 }
+                                
                             }
+                        }
+                        .onTapGesture(count: 2) {
+                            print("d")
                         }
                         .handleQueueChange()
                         .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
-                            ScrollView {
-                                VStack(spacing: 50) {
-                                    DetailView(artwork: artwork, isPopupOpen: $isPopupOpen)
-                                        .frame(height: 550)
-
-                                    if let songs {
-                                        ForEach(songs.keys.sorted(), id: \.self) { disc in
-                                            VStack(alignment: .leading, spacing: 15) {
-                                                if songs.keys.count > 1 {
-                                                    Text("Disc \(String(disc))")
-                                                        .font(.headline)
-                                                        .padding(.top, disc == songs.keys.sorted().first ? 0 : 10)
-                                                }
-
-                                                ForEach(songs[disc] ?? []) { song in
-                                                    SongView(for: song)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 30)
-                            }
+                            DetailView(artwork: artwork, isPopupOpen: $isPopupOpen)
                         }
                         .popupBarProgressViewStyle(.top)
                     #elseif os(macOS)
@@ -128,18 +108,6 @@ struct AppView: View {
                     }
 
                     artwork = PlatformImage(data: data)
-
-                    #if os(iOS)
-                        guard let album = try? await mpd.queue.get(for: song, using: .album) as? Album else {
-                            return
-                        }
-
-                        guard let grouping = try? await ConnectionManager.command().getSongs(for: album) else {
-                            return
-                        }
-
-                        songs = Dictionary(grouping: grouping, by: { $0.disc })
-                    #endif
                 }
             }
         }

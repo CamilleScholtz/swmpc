@@ -246,17 +246,17 @@ struct DetailView: View {
                         }
                     })
             }
-            #if os(iOS)
-            .offset(y: -80)
-            #elseif os(macOS)
             .offset(y: -110)
-            #endif
 
             VStack {
                 Spacer()
 
                 DetailFooterView()
                     .frame(height: 80)
+                    #if os(iOS)
+                       .padding(.horizontal, 30)
+                       .offset(y: -60)
+                    #endif
             }
         }
         #if os(macOS)
@@ -284,6 +284,7 @@ struct DetailView: View {
                     try await ConnectionManager.command().pause(mpd.status.isPlaying)
                 } label: {
                     Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
+                        .foregroundColor(.primary)
                 }
                 .asyncButtonStyle(.none)
 
@@ -291,6 +292,7 @@ struct DetailView: View {
                     try await ConnectionManager.command().next()
                 } label: {
                     Image(systemSymbol: .forwardFill)
+                        .foregroundColor(.primary)
                 }
                 .asyncButtonStyle(.none)
             }

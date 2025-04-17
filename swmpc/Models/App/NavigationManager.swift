@@ -18,6 +18,8 @@ final class NavigationManager {
         didSet {
             if oldValue != category {
                 reset()
+            } else {
+                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
             }
         }
     }
