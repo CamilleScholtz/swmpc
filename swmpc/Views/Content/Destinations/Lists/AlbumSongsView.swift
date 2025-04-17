@@ -79,36 +79,38 @@ struct AlbumSongsView: View {
 
                         #if os(macOS)
                             if isHovering, mpd.status.media?.id != album.id {
-                                ZStack {
-                                    Circle()
-                                        .fill(.accent)
-                                        .frame(width: 60, height: 60)
-                                    Circle()
-                                        .fill(.ultraThinMaterial)
-                                        .frame(width: 60, height: 60)
+                                AsyncButton {
+                                    guard mpd.status.media?.id != album.id else {
+                                        return
+                                    }
 
-                                    Image(systemSymbol: .playFill)
-                                        .font(.title)
-                                        .foregroundColor(.white)
+                                    try await ConnectionManager.command().play(album)
+                                } label: {
+                                    ZStack {
+                                        Circle()
+                                            .fill(.accent)
+                                            .frame(width: 60, height: 60)
+                                        Circle()
+                                            .fill(.ultraThinMaterial)
+                                            .frame(width: 60, height: 60)
+
+                                        Image(systemSymbol: .playFill)
+                                            .font(.title)
+                                            .foregroundColor(.white)
+                                    }
                                 }
-                                .transition(.opacity)
+                                .styledButton(scale: 1.05)
+                                .asyncButtonStyle(.none)
                             }
                         #endif
                     }
                     #if os(macOS)
-                    .onHover(perform: { value in
+                    .onHover { value in
                         withAnimation(.interactiveSpring) {
                             isHovering = value
                         }
-                    })
+                    }
                     #endif
-                    .onTapGesture(perform: {
-                        Task(priority: .userInitiated) {
-                            if mpd.status.media?.id != album.id {
-                                try? await ConnectionManager.command().play(album)
-                            }
-                        }
-                    })
                     .contextMenu {
                         AsyncButton("Add Album to Favorites") {
                             try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
@@ -139,19 +141,29 @@ struct AlbumSongsView: View {
                         .fontDesign(.rounded)
                         .lineLimit(3)
 
-                    Text(album.artist)
-                        .font(.system(size: 12))
-                        .fontWeight(.semibold)
-                        .lineLimit(2)
-                        .onTapGesture(perform: {
-                            Task(priority: .userInitiated) {
-                                guard let artist = try? await mpd.queue.get(for: album, using: .artist) as? Artist else {
-                                    return
-                                }
+                    AsyncButton {
+                        guard let artist = try? await mpd.queue.get(for: album, using: .artist) as? Artist else {
+                            throw ViewError.missingData
+                        }
 
-                                navigator.navigate(to: ContentDestination.artist(artist))
-                            }
-                        })
+                        navigator.navigate(to: ContentDestination.artist(artist))
+                    } label: {
+                        Text(album.artist)
+                            .font(.system(size: 12))
+                            .fontWeight(.semibold)
+                            .lineLimit(2)
+                            .onTapGesture(perform: {
+                                Task(priority: .userInitiated) {
+                                    guard let artist = try? await mpd.queue.get(for: album, using: .artist) as? Artist else {
+                                        return
+                                    }
+
+                                    navigator.navigate(to: ContentDestination.artist(artist))
+                                }
+                            })
+                    }
+                    .buttonStyle(.plain)
+                    .asyncButtonStyle(.none)
 
                     if let songs {
                         let flat = songs.values.flatMap(\.self)

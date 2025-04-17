@@ -52,7 +52,7 @@ struct AlbumView: View {
                                 .frame(width: 40, height: 40)
 
                             Image(systemSymbol: .playFill)
-                                .font(.title3)
+                                .font(.title2)
                                 .foregroundColor(.white)
                         }
                         .transition(.opacity)
