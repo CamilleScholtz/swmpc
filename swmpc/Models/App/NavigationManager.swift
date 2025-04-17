@@ -19,7 +19,9 @@ final class NavigationManager {
             if oldValue != category {
                 reset()
             } else {
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
+                #if os(iOS)
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
+                #endif
             }
         }
     }

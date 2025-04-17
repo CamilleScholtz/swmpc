@@ -52,7 +52,6 @@ struct AppView: View {
                                         LoadingView()
                                     }
                                 }
-                                
                             }
                         }
                         .onTapGesture(count: 2) {

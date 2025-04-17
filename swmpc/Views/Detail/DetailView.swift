@@ -29,8 +29,6 @@ struct DetailView: View {
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
 
-    @State private var dragOffset: CGSize = .zero
-
     #if os(macOS)
         @State private var isHovering = false
     #endif
@@ -196,42 +194,26 @@ struct DetailView: View {
                         isHovering = value
                     })
                 #endif
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.7)) {
-                                    dragOffset = value.translation
-                                }
+                    .swipeActions(
+                        onSwipeLeft: {
+                            guard mpd.status.song != nil else {
+                                return
                             }
-                            .onEnded { value in
-                                guard mpd.status.song != nil else {
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                        dragOffset = .zero
-                                    }
 
-                                    return
-                                }
-
-                                let threshold: CGFloat = 50
-                                let distance = value.translation.width
-
-                                if distance < -threshold {
-                                    Task(priority: .userInitiated) {
-                                        try? await ConnectionManager.command().next()
-                                    }
-                                } else if distance > threshold {
-                                    Task(priority: .userInitiated) {
-                                        try? await ConnectionManager.command().previous()
-                                    }
-                                }
-
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                    dragOffset = .zero
-                                }
+                            Task(priority: .userInitiated) {
+                                try? await ConnectionManager.command().next()
                             }
+                        },
+                        onSwipeRight: {
+                            guard mpd.status.song != nil else {
+                                return
+                            }
+
+                            Task(priority: .userInitiated) {
+                                try? await ConnectionManager.command().previous()
+                            }
+                        }
                     )
-                    .offset(x: dragOffset.width)
-                    .rotationEffect(.degrees(dragOffset.width / 20 * ((dragOffset.height + 25) / 150)))
                     .onTapGesture(perform: {
                         Task(priority: .userInitiated) {
                             guard let song = mpd.status.song else {
@@ -253,10 +235,10 @@ struct DetailView: View {
 
                 DetailFooterView()
                     .frame(height: 80)
-                    #if os(iOS)
-                       .padding(.horizontal, 30)
-                       .offset(y: -60)
-                    #endif
+                #if os(iOS)
+                    .padding(.horizontal, 30)
+                    .offset(y: -60)
+                #endif
             }
         }
         #if os(macOS)
