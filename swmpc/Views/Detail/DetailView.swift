@@ -246,16 +246,17 @@ struct DetailView: View {
                         }
                     })
             }
+            #if os(iOS)
+            .offset(y: -80)
+            #elseif os(macOS)
             .offset(y: -110)
+            #endif
 
             VStack {
                 Spacer()
 
                 DetailFooterView()
                     .frame(height: 80)
-                #if os(iOS)
-                    .padding(.horizontal, 30)
-                #endif
             }
         }
         #if os(macOS)
