@@ -45,7 +45,7 @@ struct SwipeModifier: ViewModifier {
         content
             .offset(x: dragOffset.width)
             .rotationEffect(.degrees(dragOffset.width * rotationAngleMultiplier))
-            .gesture(dragGesture)
+            .simultaneousGesture(dragGesture)
             .animation(
                 isDragging
                     ? .interactiveSpring(response: 0.2, dampingFraction: 0.8)

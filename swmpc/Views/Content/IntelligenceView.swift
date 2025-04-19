@@ -149,7 +149,7 @@ struct IntelligencePlaylistView: View {
                         playlistToEdit = nil
                         showIntelligencePlaylistSheet = false
                     }
-                    .asyncButtonStyle(.none)
+                    .asyncButtonStyle(.pulse)
                     .keyboardShortcut(.defaultAction)
                 }
                 .offset(y: -15)
@@ -227,8 +227,8 @@ struct IntelligenceButtonView: View {
                 #endif
             }
         }
-        .styledButton(scale: 1.03)
-        .asyncButtonStyle(.none)
+        .styledButton(hoverScale: 1.03)
+        .asyncButtonStyle(.pulse)
 
         if !isIntelligenceEnabled {
             Text("Enable AI features in settings to use this feature.")

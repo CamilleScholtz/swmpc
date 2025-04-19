@@ -99,8 +99,8 @@ struct AlbumSongsView: View {
                                             .foregroundColor(.white)
                                     }
                                 }
-                                .styledButton(scale: 1.05)
-                                .asyncButtonStyle(.none)
+                                .styledButton(hoverScale: 1.05)
+                                .asyncButtonStyle(.pulse)
                             }
                         #endif
                     }
@@ -163,7 +163,7 @@ struct AlbumSongsView: View {
                             })
                     }
                     .buttonStyle(.plain)
-                    .asyncButtonStyle(.none)
+                    .asyncButtonStyle(.pulse)
 
                     if let songs {
                         let flat = songs.values.flatMap(\.self)

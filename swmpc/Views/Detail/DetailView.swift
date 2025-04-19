@@ -268,7 +268,7 @@ struct DetailView: View {
                     Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
                         .foregroundColor(.primary)
                 }
-                .asyncButtonStyle(.none)
+                .asyncButtonStyle(.pulse)
 
                 AsyncButton {
                     try await ConnectionManager.command().next()
@@ -276,7 +276,7 @@ struct DetailView: View {
                     Image(systemSymbol: .forwardFill)
                         .foregroundColor(.primary)
                 }
-                .asyncButtonStyle(.none)
+                .asyncButtonStyle(.pulse)
             }
         })
         .popupProgress(progress)

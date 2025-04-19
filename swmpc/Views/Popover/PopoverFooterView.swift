@@ -22,7 +22,7 @@ struct PopoverFooterView: View {
 
                 Spacer()
 
-                HStack(spacing: 0) {
+                HStack(spacing: 2) {
                     PreviousView()
                     PauseView()
                     NextView()
@@ -33,6 +33,7 @@ struct PopoverFooterView: View {
                 RandomView()
                     .offset(x: -10)
             }
+            .asyncButtonStyle(.pulse)
             .opacity(0.6)
             .frame(width: 250 - 30)
             .offset(y: -4)
@@ -60,11 +61,28 @@ struct PopoverFooterView: View {
             AsyncButton {
                 try await ConnectionManager.command().pause(mpd.status.isPlaying)
             } label: {
-                Image(systemSymbol: mpd.status.isPlaying ? .pauseCircleFill : .playCircleFill)
-                    .font(.system(size: 35))
+                ZStack {
+                    Circle()
+                        .fill(.primary)
+                        .frame(width: 36, height: 36)
+
+                    ZStack {
+                        Image(systemSymbol: .pauseFill)
+                            .font(.system(size: 19))
+                            .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
+                            .opacity(mpd.status.isPlaying ? 1 : 0.1)
+                            .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
+
+                        Image(systemSymbol: .playFill)
+                            .font(.system(size: 19))
+                            .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
+                            .opacity(mpd.status.isPlaying ? 0.1 : 1)
+                            .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
+                    }
+                    .blendMode(.destinationOut)
+                }
             }
-            .styledButton()
-            .asyncButtonStyle(.none)
+            .styledButton(hoverScale: 1.1)
         }
     }
 
@@ -78,7 +96,6 @@ struct PopoverFooterView: View {
                     .contentShape(Circle())
             }
             .styledButton()
-            .asyncButtonStyle(.none)
         }
     }
 
@@ -92,7 +109,6 @@ struct PopoverFooterView: View {
                     .contentShape(Circle())
             }
             .styledButton()
-            .asyncButtonStyle(.none)
         }
     }
 
@@ -118,7 +134,6 @@ struct PopoverFooterView: View {
                 .contentShape(Circle())
             }
             .styledButton()
-            .asyncButtonStyle(.none)
         }
     }
 
@@ -144,7 +159,6 @@ struct PopoverFooterView: View {
                 .contentShape(Circle())
             }
             .styledButton()
-            .asyncButtonStyle(.none)
         }
     }
 

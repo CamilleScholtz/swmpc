@@ -8,40 +8,134 @@
 import SwiftUI
 
 extension View {
-    /// Adds a hover effect to the view, applying animations when the cursor
-    /// hovers over the view.
+    /// Adds hover (macOS) and press effects to a Button's content view.
+    /// Provides immediate visual feedback on press for both macOS and iOS.
+    /// Includes a minimum visual press duration.
+    ///
     /// - Parameters:
-    ///   - scale: The scale factor to apply when hovered (default: 1.05)
-    ///   - animation: The animation to use (default: .interactiveSpring)
-    /// - Returns: A view with hover effects applied
+    ///   - hoverScale: The scale factor to apply on hover (macOS only, default: 1.2)
+    ///   - pressScale: The scale factor to apply when pressed (default: 0.9)
+    ///   - minimumPressDuration: The minimum time the press effect should visually last (default: 0.1)
+    /// - Returns: A view with hover and press effects applied
     func styledButton(
-        scale: CGFloat = 1.2,
-        animation: Animation = .interactiveSpring()
+        hoverScale: CGFloat = 1.2,
+        pressScale: CGFloat = 0.9,
+        minimumPressDuration: TimeInterval = 0.1
     ) -> some View {
-        modifier(ButtonModifier(scale: scale, animation: animation))
+        #if os(iOS)
+            let pressScale = pressScale - 0.05
+        #endif
+
+        return modifier(StyledButtonModifier(
+            hoverScale: hoverScale,
+            pressScale: pressScale,
+            minimumPressDuration: minimumPressDuration
+        ))
     }
 }
 
 struct PressedButtonStyle: ButtonStyle {
+    let scale: CGFloat
+    let minimumDuration: TimeInterval
+
+    @State private var isVisuallyPressed: Bool = false
+    @State private var pressEndTask: Task<Void, Never>? = nil
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
-            .animation(.interactiveSpring, value: configuration.isPressed)
+            .scaleEffect(isVisuallyPressed ? scale : 1.0)
+            .animation(.interactiveSpring, value: isVisuallyPressed)
+            .onChange(of: configuration.isPressed) { _, isPhysicallyPressed in
+                if isPhysicallyPressed {
+                    pressEndTask?.cancel()
+                    pressEndTask = nil
+
+                    if !isVisuallyPressed {
+                        isVisuallyPressed = true
+                    }
+                } else {
+                    guard isVisuallyPressed else {
+                        return
+                    }
+
+                    pressEndTask = Task {
+                        do {
+                            try await Task.sleep(for: .seconds(minimumDuration))
+                            try Task.checkCancellation()
+
+                            isVisuallyPressed = false
+                        } catch is CancellationError {
+                            // NO-OP
+                        } catch {
+                            isVisuallyPressed = false
+                        }
+
+                        pressEndTask = nil
+                    }
+                }
+            }
+            .onAppear {
+                if configuration.isPressed, !isVisuallyPressed {
+                    isVisuallyPressed = true
+                }
+            }
+            .onDisappear {
+                pressEndTask?.cancel()
+            }
     }
 }
 
-struct ButtonModifier: ViewModifier {
-    let scale: CGFloat
-    let animation: Animation
+private struct StyledButtonModifier: ViewModifier {
+    let hoverScale: CGFloat
+    let pressScale: CGFloat
+    let minimumPressDuration: TimeInterval
 
-    @State private var isHovering = false
+    #if os(iOS)
+        @State private var isVisuallyPressed: Bool = false
+        @State private var pressEndTask: Task<Void, Never>? = nil
+    #elseif os(macOS)
+        @State private var isHovering = false
+    #endif
 
     func body(content: Content) -> some View {
         content
-            .buttonStyle(PressedButtonStyle())
-        #if os(macOS)
-            .scaleEffect(isHovering ? scale : 1.0)
-            .animation(animation, value: isHovering)
+            .buttonStyle(PressedButtonStyle(scale: pressScale, minimumDuration: minimumPressDuration))
+        #if os(iOS)
+            .scaleEffect(isVisuallyPressed ? pressScale : 1.0)
+            .animation(.interactiveSpring, value: isVisuallyPressed)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        if !isVisuallyPressed {
+                            pressEndTask?.cancel()
+                            pressEndTask = nil
+                            isVisuallyPressed = true
+                        }
+                    }
+                    .onEnded { _ in // Touch up
+                        guard isVisuallyPressed else {
+                            return
+                        }
+
+                        pressEndTask = Task {
+                            do {
+                                try await Task.sleep(for: .seconds(minimumPressDuration))
+                                try Task.checkCancellation()
+
+                                isVisuallyPressed = false
+                            } catch {
+                                isVisuallyPressed = false
+                            }
+                            pressEndTask = nil
+                        }
+                    }
+            )
+            .onDisappear {
+                pressEndTask?.cancel()
+            }
+        #elseif os(macOS)
+            .scaleEffect(isHovering ? hoverScale : 1.0)
+            .animation(.interactiveSpring, value: isHovering)
             .onHover { hovering in
                 isHovering = hovering
             }

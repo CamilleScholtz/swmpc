@@ -18,7 +18,7 @@ enum IntelligenceManagerError: Error {
 
 enum IntelligenceModel: String {
     case deepSeek = "deepseek-chat"
-    case openAI = "gpt-4o"
+    case openAI = "gpt-4.1-mini"
 }
 
 actor IntelligenceManager {
