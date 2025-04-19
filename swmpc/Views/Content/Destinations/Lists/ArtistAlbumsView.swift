@@ -29,6 +29,11 @@ struct ArtistAlbumsView: View {
                         .fontWeight(.semibold)
                         .fontDesign(.rounded)
                         .lineLimit(3)
+                        .contextMenu {
+                            Button("Copy Artist Name") {
+                                artist.name.copyToClipboard()
+                            }
+                        }
 
                     Text(artist.albums?.count ?? 0 > 1 ? "\(String(artist.albums!.count)) albums" : "1 album")
                         .font(.subheadline)
