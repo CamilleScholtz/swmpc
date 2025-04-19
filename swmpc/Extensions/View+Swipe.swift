@@ -39,7 +39,7 @@ struct SwipeModifier: ViewModifier {
 
     private let swipeThreshold: CGFloat = 100
     private let predictionFactor: CGFloat = 0.6
-    private let rotationAngleMultiplier: CGFloat = 1 / 40
+    private let rotationAngleMultiplier: CGFloat = 0.02
 
     func body(content: Content) -> some View {
         content

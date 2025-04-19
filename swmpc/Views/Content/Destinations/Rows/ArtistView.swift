@@ -66,5 +66,10 @@ struct ArtistView: View {
         .onTapGesture {
             navigator.navigate(to: ContentDestination.artist(artist))
         }
+        .contextMenu {
+            Button("Copy Artist Name") {
+                artist.name.copyToClipboard()
+            }
+        }
     }
 }

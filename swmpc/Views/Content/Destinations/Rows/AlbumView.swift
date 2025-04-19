@@ -109,6 +109,12 @@ struct AlbumView: View {
             navigator.navigate(to: ContentDestination.album(album))
         }
         .contextMenu {
+            Button("Copy Album Title") {
+                album.title.copyToClipboard()
+            }
+
+            Divider()
+
             AsyncButton("Add Album to Favorites") {
                 try await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
             }

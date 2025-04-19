@@ -1197,6 +1197,15 @@
         }
       }
     },
+    "Copy Album Title" : {
+
+    },
+    "Copy Artist Name" : {
+
+    },
+    "Copy Song Title" : {
+
+    },
     "Could not establish connection to MPD." : {
       "localizations" : {
         "de" : {

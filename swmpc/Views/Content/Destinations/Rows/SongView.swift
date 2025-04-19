@@ -82,6 +82,12 @@ struct SongView: View {
                 }
             })
             .contextMenu {
+                Button("Copy Song Title") {
+                    song.title.copyToClipboard()
+                }
+
+                Divider()
+
                 if mpd.status.playlist?.name != "Favorites" {
                     AsyncButton("Add Song to Favorites") {
                         try await ConnectionManager.command().addToFavorites(songs: [song])

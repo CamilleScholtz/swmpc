@@ -112,6 +112,12 @@ struct AlbumSongsView: View {
                     }
                     #endif
                     .contextMenu {
+                        Button("Copy Album Title") {
+                            album.title.copyToClipboard()
+                        }
+
+                        Divider()
+
                         AsyncButton("Add Album to Favorites") {
                             try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                         }
@@ -140,6 +146,33 @@ struct AlbumSongsView: View {
                         .fontWeight(.semibold)
                         .fontDesign(.rounded)
                         .lineLimit(3)
+                        .contextMenu {
+                            Button("Copy Album Title") {
+                                album.title.copyToClipboard()
+                            }
+
+                            Divider()
+
+                            AsyncButton("Add Album to Favorites") {
+                                try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
+                            }
+
+                            if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
+                                Menu("Add Album to Playlist") {
+                                    ForEach(playlists) { playlist in
+                                        AsyncButton(playlist.name) {
+                                            try await ConnectionManager.command().addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                                        }
+                                    }
+                                }
+
+                                if let playlist = mpd.status.playlist {
+                                    AsyncButton("Remove Album from Playlist") {
+                                        try await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                                    }
+                                }
+                            }
+                        }
 
                     AsyncButton {
                         guard let artist = try? await mpd.queue.get(for: album, using: .artist) as? Artist else {
@@ -164,6 +197,11 @@ struct AlbumSongsView: View {
                     }
                     .buttonStyle(.plain)
                     .asyncButtonStyle(.pulse)
+                    .contextMenu {
+                        Button("Copy Artist Name") {
+                            album.artist.copyToClipboard()
+                        }
+                    }
 
                     if let songs {
                         let flat = songs.values.flatMap(\.self)
