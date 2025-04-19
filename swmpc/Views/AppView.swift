@@ -54,9 +54,6 @@ struct AppView: View {
                                 }
                             }
                         }
-                        .onTapGesture(count: 2) {
-                            print("d")
-                        }
                         .handleQueueChange()
                         .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
                             DetailView(artwork: artwork, isPopupOpen: $isPopupOpen)
