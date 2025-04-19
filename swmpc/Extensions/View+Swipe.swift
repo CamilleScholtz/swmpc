@@ -38,7 +38,6 @@ struct SwipeModifier: ViewModifier {
     @State private var lastTriggeredThreshold: ThresholdSide? = nil
 
     private let swipeThreshold: CGFloat = 100
-    private let predictionFactor: CGFloat = 0.6
     private let rotationAngleMultiplier: CGFloat = 0.02
 
     func body(content: Content) -> some View {
@@ -68,14 +67,11 @@ struct SwipeModifier: ViewModifier {
 
                 dragOffset = value.translation
 
-                let currentDragWidth = value.translation.width
-
-                if currentDragWidth < -swipeThreshold {
+                if value.translation.width < -swipeThreshold {
                     if lastTriggeredThreshold != .left {
-                        print("d")
                         lastTriggeredThreshold = .left
                     }
-                } else if currentDragWidth > swipeThreshold {
+                } else if value.translation.width > swipeThreshold {
                     if lastTriggeredThreshold != .right {
                         lastTriggeredThreshold = .right
                     }
@@ -86,12 +82,9 @@ struct SwipeModifier: ViewModifier {
                 }
             }
             .onEnded { value in
-                let projectedEndWidth = value.translation.width +
-                    value.predictedEndTranslation.width * predictionFactor
-
-                if projectedEndWidth < -swipeThreshold {
+                if value.translation.width < -swipeThreshold {
                     onSwipeLeft()
-                } else if projectedEndWidth > swipeThreshold {
+                } else if value.translation.width > swipeThreshold {
                     onSwipeRight()
                 }
 
