@@ -155,10 +155,9 @@ struct SettingsView: View {
 
     struct IntelligenceView: View {
         @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
-        @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.deepSeek
+        @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
 
-        @State private var deepSeekToken = ""
-        @State private var openAIToken = ""
+        @State private var token = ""
 
         var body: some View {
             Form {
@@ -171,38 +170,34 @@ struct SettingsView: View {
                     .frame(height: 32, alignment: .center)
 
                 Picker("Model:", selection: $intelligenceModel) {
-                    Text("DeepSeek").tag(IntelligenceModel.deepSeek)
-                    Text("OpenAI").tag(IntelligenceModel.openAI)
+                    ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
+                        HStack {
+                            Text(model.name)
+                            Text(model.model)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .tag(model)
+                    }
                 }
                 .pickerStyle(.inline)
                 .disabled(!isIntelligenceEnabled)
 
-                switch intelligenceModel {
-                case .deepSeek:
-                    SecureField("API Token:", text: $deepSeekToken)
-                        .textContentType(.password)
-                        .disabled(!isIntelligenceEnabled)
-                        .onAppear {
-                            @KeychainStorage(Setting.deepSeekToken) var deepSeekTokenSecureStorage: String?
-                            deepSeekToken = deepSeekTokenSecureStorage ?? ""
-                        }
-                        .onChange(of: deepSeekToken) { _, value in
-                            @KeychainStorage(Setting.deepSeekToken) var deepSeekTokenSecureStorage: String?
-                            deepSeekTokenSecureStorage = value.isEmpty ? nil : value
-                        }
-                case .openAI:
-                    SecureField("API Token:", text: $openAIToken)
-                        .textContentType(.password)
-                        .disabled(!isIntelligenceEnabled)
-                        .onAppear {
-                            @KeychainStorage(Setting.openAIToken) var openAITokenSecureStorage: String?
-                            openAIToken = openAITokenSecureStorage ?? ""
-                        }
-                        .onChange(of: openAIToken) { _, value in
-                            @KeychainStorage(Setting.openAIToken) var openAITokenSecureStorage: String?
-                            openAITokenSecureStorage = value.isEmpty ? nil : value
-                        }
-                }
+                SecureField("API Token:", text: $token)
+                    .textContentType(.password)
+                    .disabled(!isIntelligenceEnabled)
+                    .onAppear {
+                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                        token = tokenSecureStorage ?? ""
+                    }
+                    .onChange(of: token) { _, value in
+                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                        tokenSecureStorage = value.isEmpty ? nil : value
+                    }
+                    .onChange(of: intelligenceModel) {
+                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                        token = tokenSecureStorage ?? ""
+                    }
             }
             .padding(32)
             .navigationTitle("Intelligence")

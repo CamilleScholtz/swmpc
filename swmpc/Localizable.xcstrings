@@ -1198,13 +1198,34 @@
       }
     },
     "Copy Album Title" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopieer titel van album"
+          }
+        }
+      }
     },
     "Copy Artist Name" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopieer naam van artiest"
+          }
+        }
+      }
     },
     "Copy Song Title" : {
-
+      "localizations" : {
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopieer titel van nummer"
+          }
+        }
+      }
     },
     "Could not establish connection to MPD." : {
       "localizations" : {

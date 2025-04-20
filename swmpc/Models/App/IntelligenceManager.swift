@@ -13,12 +13,98 @@ enum IntelligenceManagerError: Error {
     case intelligenceDisabled
     case missingToken
     case noResponse
-    case invalideResponse
+    case timeout
 }
 
-enum IntelligenceModel: String {
-    case deepSeek = "deepseek-chat"
-    case openAI = "gpt-4.1-mini"
+enum IntelligenceModel: String, Identifiable, CaseIterable {
+    var id: String { rawValue }
+
+    case openAI
+    case deepSeek
+    case gemini
+    case grok
+
+    var name: String {
+        switch self {
+        case .openAI:
+            "OpenAI"
+        case .deepSeek:
+            "DeepSeek"
+        case .gemini:
+            "Gemini"
+        case .grok:
+            "Grok"
+        }
+    }
+
+    var model: String {
+        switch self {
+        case .openAI:
+            "gpt-4.1-mini"
+        case .deepSeek:
+            "deepseek-chat"
+        case .gemini:
+            "gemini-2.0-flash"
+        case .grok:
+            "grok-3-mini-beta"
+        }
+    }
+
+    var host: String {
+        switch self {
+        case .openAI:
+            "api.openai.com"
+        case .deepSeek:
+            "api.deepseek.com"
+        case .gemini:
+            "generativelanguage.googleapis.com"
+        case .grok:
+            "api.x.ai"
+        }
+    }
+
+    var path: String {
+        switch self {
+        case .gemini:
+            "/v1beta/openai"
+        default:
+            "/v1"
+        }
+    }
+
+    var setting: String {
+        switch self {
+        case .openAI:
+            Setting.openAIToken
+        case .deepSeek:
+            Setting.deepSeekToken
+        case .gemini:
+            Setting.geminiToken
+        case .grok:
+            Setting.grokToken
+        }
+    }
+
+    // NOTE: DeepSeek is currently disabled because it does not support
+    // structured output.
+    var isEnabled: Bool {
+        switch self {
+        case .deepSeek:
+            false
+        default:
+            true
+        }
+    }
+}
+
+struct IntelligenceResponse: StructuredOutput {
+    let playlist: [String]
+
+    static let example: Self = .init(playlist: [
+        "Philip Glass - Koyaanisqatsi",
+        "Philip Glass - Glassworks",
+        "Philip Glass - Einstein on the Beach",
+    ])
 }
 
 actor IntelligenceManager {
@@ -42,29 +128,17 @@ actor IntelligenceManager {
             throw IntelligenceManagerError.intelligenceDisabled
         }
 
-        var token: String
-        var host: String
-
-        switch model {
-        case .deepSeek:
-            @KeychainStorage(Setting.deepSeekToken) var deepSeekToken: String?
-            guard let deepSeekToken, !deepSeekToken.isEmpty else {
-                throw IntelligenceManagerError.missingToken
-            }
-
-            token = deepSeekToken
-            host = "api.deepseek.com"
-        case .openAI:
-            @KeychainStorage(Setting.openAIToken) var openAIToken: String?
-            guard let openAIToken, !openAIToken.isEmpty else {
-                throw IntelligenceManagerError.missingToken
-            }
-
-            token = openAIToken
-            host = "api.openai.com"
+        @KeychainStorage(model.setting) var token: String?
+        guard let token, !token.isEmpty else {
+            throw IntelligenceManagerError.missingToken
         }
 
-        return OpenAI(configuration: .init(token: token, host: host))
+        return OpenAI(configuration: .init(
+            token: token,
+            host: model.host,
+            basePath: model.path,
+            parsingOptions: .fillRequiredFieldIfKeyNotFound
+        ))
     }
 
     /// Creates a playlist using the given prompt.
@@ -76,7 +150,7 @@ actor IntelligenceManager {
     @MainActor
     func fillPlaylist(using playlist: Playlist, prompt: String) async throws {
         @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel
-            .deepSeek
+            .openAI
 
         let client = try await connect(using: model)
 
@@ -86,24 +160,15 @@ actor IntelligenceManager {
         let result = try await client.chats(query: ChatQuery(
             messages: [
                 .init(role: .system, content: """
-                You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering's mood and craft the perfect playlist. Your job is to create a playlist that perfectly fits a shoort description we'll provide. The user will send you albums in the format `artist - title`. Return, in JSON format, those albums, in that exact same `artist - title` format, which match the given description.
+                You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering's mood and craft the perfect playlist. Your job is to create a playlist that fits a short description we'll provide. The user will send you a list of available albums in the format `artist - title`.
 
-                EXAMPLE JSON OUTPUT:
-                {
-                    "playlist": [
-                        "Philip Glass - Koyaanisqatsi",
-                        "Philip Glass - Glassworks",
-                        "Philip Glass - Einstein on the Beach"
-                    ]
-                }
-
-                THE DESCRIPTION: \(prompt)
+                The description for the playlist your should create is: \(prompt)
                 """)!,
                 .init(role: .user, content: albums.map(\.description).joined(
                     separator: "\n"))!,
             ],
-            model: model.rawValue,
-            responseFormat: .jsonObject
+            model: model.model,
+            responseFormat: .jsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
         ))
 
         guard let response = result.choices.first?.message.content else {

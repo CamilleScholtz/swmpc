@@ -16,8 +16,11 @@ enum Setting {
 
     static let isIntelligenceEnabled = "is_intelligence_enabled"
     static let intelligenceModel = "intelligence_model"
-    static let deepSeekToken = "deepseek_token"
+
     static let openAIToken = "openai_token"
+    static let deepSeekToken = "deepseek_token"
+    static let geminiToken = "gemini_token"
+    static let grokToken = "grok_token"
 
     static let artworkGetter = "artwork_getter"
 
