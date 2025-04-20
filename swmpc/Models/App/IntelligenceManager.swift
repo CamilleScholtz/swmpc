@@ -149,53 +149,66 @@ actor IntelligenceManager {
     /// - Throws: An error if the playlist could not be filled
     @MainActor
     func fillPlaylist(using playlist: Playlist, prompt: String) async throws {
-        @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel
-            .openAI
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel
+                .openAI
 
-        let client = try await connect(using: model)
+            let client = try await connect(using: model)
 
-        try await ConnectionManager.command().loadPlaylist()
-        let albums = try await ConnectionManager.command().getAlbums()
+            group.addTask {
+                try await ConnectionManager.command().loadPlaylist()
+                let albums = try await ConnectionManager.command().getAlbums()
 
-        let result = try await client.chats(query: ChatQuery(
-            messages: [
-                .init(role: .system, content: """
-                You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering's mood and craft the perfect playlist. Your job is to create a playlist that fits a short description we'll provide. The user will send you a list of available albums in the format `artist - title`.
+                let result = try await client.chats(query: ChatQuery(
+                    messages: [
+                        .init(role: .system, content: """
+                        You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering's mood and craft the perfect playlist. Your job is to create a playlist that fits a short description we'll provide. The user will send you a list of available albums in the format `artist - title`.
 
-                The description for the playlist your should create is: \(prompt)
-                """)!,
-                .init(role: .user, content: albums.map(\.description).joined(
-                    separator: "\n"))!,
-            ],
-            model: model.model,
-            responseFormat: .jsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
-        ))
+                        The description for the playlist your should create is: \(prompt)
+                        """)!,
+                        .init(role: .user, content: albums.map(\.description).joined(
+                            separator: "\n"))!,
+                    ],
+                    model: model.model,
+                    responseFormat: .jsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
+                ))
 
-        guard let response = result.choices.first?.message.content else {
-            throw IntelligenceManagerError.noResponse
-        }
+                guard let response = result.choices.first?.message.content else {
+                    throw IntelligenceManagerError.noResponse
+                }
 
-        struct Playlist: Decodable {
-            let playlist: [String]
-        }
-        let data = try JSONDecoder().decode(Playlist.self, from: Data(
-            response.utf8))
+                struct Playlist: Decodable {
+                    let playlist: [String]
+                }
+                let data = try JSONDecoder().decode(Playlist.self, from: Data(
+                    response.utf8))
 
-        var songs: [Song] = []
+                var songs: [Song] = []
 
-        for row in data.playlist {
-            guard let album = albums.first(where: {
-                $0.description == row
-            }) else {
-                continue
+                for row in data.playlist {
+                    guard let album = albums.first(where: {
+                        $0.description == row
+                    }) else {
+                        continue
+                    }
+
+                    try await songs.append(contentsOf: ConnectionManager.command()
+                        .getSongs(for: album))
+                }
+
+                try await ConnectionManager.command().addToPlaylist(playlist, songs:
+                    songs)
+                try await ConnectionManager.command().loadPlaylist(playlist)
             }
 
-            try await songs.append(contentsOf: ConnectionManager.command()
-                .getSongs(for: album))
-        }
+            group.addTask {
+                try await Task.sleep(for: .seconds(30))
+                throw IntelligenceManagerError.timeout
+            }
 
-        try await ConnectionManager.command().addToPlaylist(playlist, songs:
-            songs)
-        try await ConnectionManager.command().loadPlaylist(playlist)
+            try await group.next()
+
+            group.cancelAll()
+        }
     }
 }
