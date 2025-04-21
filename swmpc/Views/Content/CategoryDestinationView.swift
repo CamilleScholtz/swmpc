@@ -93,6 +93,15 @@ struct CategoryView: View {
 
     @State private var isSearching = false
 
+    #if os(iOS)
+        @State private var showToolbar = true
+        @State private var showSearchButton = false
+
+        @State private var lastScrollOffset: CGFloat = 0
+
+        @State private var query = ""
+    #endif
+
     private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
     private let startSearchingNotication = NotificationCenter.default
@@ -101,7 +110,16 @@ struct CategoryView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                #if os(macOS)
+                #if os(iOS)
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onChange(of: geometry.frame(in: .named("scroll")).minY) { _, value in
+                                determineScrollDirection(offset: min(0, value))
+                            }
+                    }
+                    .frame(height: 0)
+                    .id("top")
+                #elseif os(macOS)
                     HeaderView(destination: destination, isSearching: $isSearching)
                         .id("top")
                 #endif
@@ -134,13 +152,91 @@ struct CategoryView: View {
             .onReceive(scrollToCurrentNotification) { notification in
                 scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
             }
+            #if os(iOS)
+            .coordinateSpace(name: "scroll")
+            .navigationTitle(destination.label)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarVisibility(showToolbar ? .visible : .hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        isSearching.toggle()
+                    } label: {
+                        Image(systemSymbol: .magnifyingglass)
+                            .padding(5)
+                    }
+                    .opacity(showSearchButton ? 1 : 0)
+                }
+            }
+            .searchable(text: $query, isPresented: $isSearching)
+            .disableAutocorrection(true)
+            .onChange(of: isSearching) { _, value in
+                guard !value else {
+                    return
+                }
+
+                mpd.queue.results = nil
+            }
+            .task(id: query) {
+                guard isSearching else {
+                    return
+                }
+
+                if query.isEmpty {
+                    mpd.queue.results = nil
+                } else {
+                    try? await mpd.queue.search(for: query)
+                }
+            }
+            #elseif os(macOS)
             .onReceive(startSearchingNotication) { _ in
                 scrollToTop(proxy)
 
                 isSearching = true
             }
+            #endif
         }
     }
+
+    #if os(iOS)
+        private func determineScrollDirection(offset: CGFloat) {
+            let difference = offset - lastScrollOffset
+            let threshold: CGFloat = 20
+
+            if difference < -threshold {
+                if showToolbar {
+                    withAnimation(.spring) {
+                        showToolbar = false
+                    }
+                    isSearching = false
+                }
+            } else if difference > threshold {
+                if !showToolbar {
+                    withAnimation(.spring) {
+                        showToolbar = true
+                    }
+                }
+            }
+
+            if offset < -threshold {
+                if !showSearchButton {
+                    withAnimation(.interactiveSpring) {
+                        showSearchButton = true
+                    }
+                }
+            } else {
+                if showSearchButton {
+                    withAnimation(.interactiveSpring) {
+                        showSearchButton = false
+                    }
+                }
+            }
+
+            if abs(difference) > 0.1 {
+                lastScrollOffset = offset
+            }
+        }
+    #endif
 
     private func scrollToCurrent(_ proxy: ScrollViewProxy, animate: Bool = true) {
         guard let media = mpd.status.media else {

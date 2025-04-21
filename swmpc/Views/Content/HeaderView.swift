@@ -22,26 +22,16 @@ struct HeaderView: View {
             if !isSearching {
                 Text(destination.label)
                     .font(.headline)
-                #if os(iOS)
-                    .padding(.leading, 4)
-                #endif
 
                 Spacer()
             } else {
                 TextField("Search", text: $query)
-                #if os(iOS)
-                    .textFieldStyle(.roundedBorder)
-                    .padding(.vertical, 8)
-                #elseif os(macOS)
+
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(Color(.secondarySystemFill))
                     .cornerRadius(4)
-                #endif
                     .disableAutocorrection(true)
-                #if os(iOS)
-                    .autocapitalization(.none)
-                #endif
                     .focused($isFocused)
                     .onAppear {
                         query = ""
@@ -64,21 +54,19 @@ struct HeaderView: View {
             }
             .styledButton()
         }
-        #if os(iOS)
-        .frame(height: 44)
-        #elseif os(macOS)
         .frame(height: 50 - 7.5)
-        #endif
         .padding(.horizontal, 15)
         .padding(.top, 7.5)
         .onChange(of: destination) {
             isSearching = false
         }
         .task(id: isSearching) {
-            if !isSearching {
-                query = ""
-                mpd.queue.results = nil
+            guard !isSearching else {
+                return
             }
+
+            query = ""
+            mpd.queue.results = nil
         }
         .task(id: query) {
             guard isSearching else {

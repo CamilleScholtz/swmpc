@@ -39,6 +39,7 @@
 			);
 			platformFiltersByRelativePath = {
 				Views/Content/Destinations/Lists/PlaylistsView.swift = (ios, );
+				Views/Content/HeaderView.swift = (macos, );
 				Views/Popover/PopoverFooterView.swift = (macos, );
 				Views/Popover/PopoverView.swift = (macos, );
 				Views/Sidebar/SidebarView.swift = (macos, );
