@@ -26,7 +26,6 @@ struct HeaderView: View {
                 Spacer()
             } else {
                 TextField("Search", text: $query)
-
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(Color(.secondarySystemFill))
@@ -60,12 +59,11 @@ struct HeaderView: View {
         .onChange(of: destination) {
             isSearching = false
         }
-        .task(id: isSearching) {
-            guard !isSearching else {
+        .onChange(of: isSearching) { _, value in
+            guard !value else {
                 return
             }
 
-            query = ""
             mpd.queue.results = nil
         }
         .task(id: query) {
@@ -75,10 +73,9 @@ struct HeaderView: View {
 
             if query.isEmpty {
                 mpd.queue.results = nil
-                return
+            } else {
+                try? await mpd.queue.search(for: query)
             }
-
-            try? await mpd.queue.search(for: query)
         }
     }
 }

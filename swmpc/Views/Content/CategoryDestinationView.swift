@@ -96,9 +96,9 @@ struct CategoryView: View {
     #if os(iOS)
         @State private var showToolbar = true
         @State private var showSearchButton = false
-
         @State private var lastScrollOffset: CGFloat = 0
 
+        @State private var isGoingToSearch = false
         @State private var query = ""
     #endif
 
@@ -160,7 +160,11 @@ struct CategoryView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        isSearching.toggle()
+                        if isSearching {
+                            isSearching = false
+                        } else {
+                            isGoingToSearch = true
+                        }
                     } label: {
                         Image(systemSymbol: .magnifyingglass)
                             .padding(5)
@@ -174,8 +178,18 @@ struct CategoryView: View {
                 guard !value else {
                     return
                 }
-
+    
                 mpd.queue.results = nil
+            }
+            .onChange(of: isGoingToSearch) { _, value in
+                guard value else {
+                    return
+                }
+                
+                isSearching = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    isGoingToSearch = false
+                }
             }
             .task(id: query) {
                 guard isSearching else {
@@ -200,9 +214,13 @@ struct CategoryView: View {
 
     #if os(iOS)
         private func determineScrollDirection(offset: CGFloat) {
-            let difference = offset - lastScrollOffset
-            let threshold: CGFloat = 20
+            guard !isGoingToSearch else {
+                return
+            }
 
+            let difference = offset - lastScrollOffset
+            let threshold: CGFloat = 5
+            
             if difference < -threshold {
                 if showToolbar {
                     withAnimation(.spring) {
@@ -218,7 +236,7 @@ struct CategoryView: View {
                 }
             }
 
-            if offset < -threshold {
+            if offset < -20 {
                 if !showSearchButton {
                     withAnimation(.interactiveSpring) {
                         showSearchButton = true
