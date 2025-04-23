@@ -155,7 +155,7 @@ struct CategoryView: View {
             #if os(iOS)
             .coordinateSpace(name: "scroll")
             .navigationTitle(destination.label)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbarVisibility(showToolbar ? .visible : .hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -178,14 +178,14 @@ struct CategoryView: View {
                 guard !value else {
                     return
                 }
-    
+
                 mpd.queue.results = nil
             }
             .onChange(of: isGoingToSearch) { _, value in
                 guard value else {
                     return
                 }
-                
+
                 isSearching = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     isGoingToSearch = false
@@ -219,14 +219,13 @@ struct CategoryView: View {
             }
 
             let difference = offset - lastScrollOffset
-            let threshold: CGFloat = 5
-            
+            let threshold: CGFloat = 10
+
             if difference < -threshold {
                 if showToolbar {
                     withAnimation(.spring) {
                         showToolbar = false
                     }
-                    isSearching = false
                 }
             } else if difference > threshold {
                 if !showToolbar {

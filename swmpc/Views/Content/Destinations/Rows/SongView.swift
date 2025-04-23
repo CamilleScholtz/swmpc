@@ -12,9 +12,11 @@ struct SongView: View {
     @Environment(MPD.self) private var mpd
 
     private let song: Song
+    private let fixedHeight: Bool
 
-    init(for song: Song) {
+    init(for song: Song, fixedHeight: Bool = false) {
         self.song = song
+        self.fixedHeight = fixedHeight
     }
 
     @State private var duration: String?
@@ -70,7 +72,12 @@ struct SongView: View {
             Spacer()
         }
         .id(song.id)
-        .contentShape(Rectangle())
+        #if os(iOS)
+            .frame(height: fixedHeight ? 44 : nil)
+        #elseif os(macOS)
+            .frame(height: fixedHeight ? 32 : nil)
+        #endif
+            .contentShape(Rectangle())
         #if os(macOS)
             .onHover(perform: { value in
                 isHovering = value
