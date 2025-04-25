@@ -264,9 +264,9 @@ struct DetailFooterView: View {
                                 }
                             }
                     )
-                    .onHover(perform: { value in
+                    .onHover { value in
                         isHovering = value
-                    })
+                    }
 
                     HStack(alignment: .center) {
                         Text(mpd.status.elapsed?.timeString ?? "0:00")

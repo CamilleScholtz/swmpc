@@ -190,9 +190,9 @@ struct DetailView: View {
                     .frame(width: 250)
                     .scaleEffect(isHovering ? 1.02 : 1)
                     .animation(.spring, value: isHovering)
-                    .onHover(perform: { value in
+                    .onHover { value in
                         isHovering = value
-                    })
+                    }
                 #endif
                     .swipeActions(
                         onSwipeLeft: {
@@ -214,7 +214,7 @@ struct DetailView: View {
                             }
                         }
                     )
-                    .onTapGesture(perform: {
+                    .onTapGesture {
                         Task(priority: .userInitiated) {
                             guard let song = mpd.status.song else {
                                 return
@@ -226,7 +226,7 @@ struct DetailView: View {
 
                             navigator.navigate(to: ContentDestination.album(album))
                         }
-                    })
+                    }
             }
             .offset(y: -110)
 

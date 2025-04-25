@@ -12,47 +12,45 @@ struct SongView: View {
     @Environment(MPD.self) private var mpd
 
     private let song: Song
-    private let fixedHeight: Bool
 
-    init(for song: Song, fixedHeight: Bool = false) {
+    init(for song: Song) {
         self.song = song
-        self.fixedHeight = fixedHeight
     }
 
-    @State private var duration: String?
     #if os(macOS)
         @State private var isHovering = false
+        @State private var hoverTask: Task<Void, Never>? = nil
     #endif
 
     var body: some View {
         HStack(spacing: 15) {
-            Group {
-                if mpd.status.song != song {
-                    #if os(iOS)
-                        Text(String(song.track))
+            ZStack {
+                Text(String(song.track))
+                    .font(.title3)
+                    .fontWeight(.regular)
+                    .foregroundStyle(.secondary)
+
+                #if os(macOS)
+                    if isHovering {
+                        Rectangle()
+                            .fill(.background)
+                            .frame(width: 30, height: 30)
+
+                        Image(systemSymbol: .playFill)
                             .font(.title3)
-                            .fontWeight(.regular)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 60)
-                    #elseif os(macOS)
-                        if isHovering {
-                            Image(systemSymbol: .playFill)
-                                .font(.title3)
-                                .foregroundColor(.accentColor)
-                                .transition(.opacity)
-                        } else {
-                            Text(String(song.track))
-                                .font(.title3)
-                                .fontWeight(.regular)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20)
-                        }
-                    #endif
-                } else {
+                            .foregroundColor(.accentColor)
+                    }
+                #endif
+
+                if mpd.status.song == song {
+                    Rectangle()
+                        .fill(.background)
+                        .frame(width: 30, height: 30)
+
                     WaveView()
                 }
             }
-            .frame(width: 20)
+            .frame(width: 30, height: 30)
 
             VStack(alignment: .leading) {
                 Text(song.title)
@@ -60,34 +58,44 @@ struct SongView: View {
                     .foregroundColor(mpd.status.song == song ? .accentColor : .primary)
                     .lineLimit(2)
 
-                Text((song.artist) + " • " + (duration ?? "0:00"))
+                Text((song.artist) + " • " + song.duration.timeString)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
-                    .onAppear {
-                        duration = song.duration.timeString
-                    }
             }
 
             Spacer()
         }
-        .id(song.id)
+        .contentShape(Rectangle())
         #if os(iOS)
-            .frame(height: fixedHeight ? 44 : nil)
+            .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 10))
         #elseif os(macOS)
-            .frame(height: fixedHeight ? 32 : nil)
+            .onHover { value in
+                hoverTask?.cancel()
+
+                if value {
+                    hoverTask = Task {
+                        try? await Task.sleep(for: .milliseconds(50))
+                        guard !Task.isCancelled else {
+                            return
+                        }
+
+                        withAnimation(.interactiveSpring) {
+                            isHovering = true
+                        }
+                    }
+                } else {
+                    withAnimation(.interactiveSpring) {
+                        isHovering = false
+                    }
+                }
+            }
         #endif
-            .contentShape(Rectangle())
-        #if os(macOS)
-            .onHover(perform: { value in
-                isHovering = value
-            })
-        #endif
-            .onTapGesture(perform: {
+            .onTapGesture {
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().play(song)
                 }
-            })
+            }
             .contextMenu {
                 Button("Copy Song Title") {
                     song.title.copyToClipboard()

@@ -208,9 +208,9 @@ struct PopoverFooterView: View {
                         }
                     }
             )
-            .onHover(perform: { value in
+            .onHover { value in
                 isHovering = value
-            })
+            }
         }
     }
 }
