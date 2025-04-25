@@ -110,55 +110,43 @@ struct CategoryView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                #if os(iOS)
-                    GeometryReader { geometry in
-                        Color.clear
-                            .onChange(of: geometry.frame(in: .named("scroll")).minY) { _, value in
-                                determineScrollDirection(offset: min(0, value))
-                            }
-                    }
-                    .frame(height: 0)
-                    .id("top")
-                #elseif os(macOS)
+                #if os(macOS)
                     HeaderView(destination: destination, isSearching: $isSearching)
                         .id("top")
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 0, trailing: 0))
                 #endif
 
                 switch destination {
                 case .albums:
                     AlbumsView()
                         .listRowSeparator(.hidden)
-                        .listRowInsets(.init(
-                            top: 7.5,
-                            leading: 7.5,
-                            bottom: 7.5,
-                            trailing: 7.5
-                        ))
+                    #if os(iOS)
+                        .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+                    #elseif os(macOS)
+                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+                    #endif
                 case .artists:
                     ArtistsView()
                         .listRowSeparator(.hidden)
-                        .listRowInsets(.init(
-                            top: 7.5,
-                            leading: 7.5,
-                            bottom: 7.5,
-                            trailing: 7.5
-                        ))
+                    #if os(iOS)
+                        .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+                    #elseif os(macOS)
+                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+                    #endif
                 case .songs, .playlist:
                     SongsView()
                         .listRowSeparator(.hidden)
-                        .listRowInsets(.init(
-                            top: 7.5,
-                            leading: 7.5,
-                            bottom: 7.5,
-                            trailing: 7.5
-                        ))
+                    #if os(iOS)
+                        .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+                    #elseif os(macOS)
+                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+                    #endif
                 #if os(iOS)
                     default:
                         EmptyView()
                 #endif
                 }
-//                .padding(.horizontal, 15)
-//                .padding(.bottom, 15)
             }
             .listStyle(.plain)
             .onAppear {

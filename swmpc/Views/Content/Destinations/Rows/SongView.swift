@@ -22,6 +22,12 @@ struct SongView: View {
         @State private var hoverTask: Task<Void, Never>? = nil
     #endif
 
+    #if os(iOS)
+        let trackSize: CGFloat = 30
+    #elseif os(macOS)
+        let trackSize: CGFloat = 20
+    #endif
+
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
@@ -34,7 +40,7 @@ struct SongView: View {
                     if isHovering {
                         Rectangle()
                             .fill(.background)
-                            .frame(width: 30, height: 30)
+                            .frame(width: trackSize, height: trackSize)
 
                         Image(systemSymbol: .playFill)
                             .font(.title3)
@@ -45,12 +51,12 @@ struct SongView: View {
                 if mpd.status.song == song {
                     Rectangle()
                         .fill(.background)
-                        .frame(width: 30, height: 30)
+                        .frame(width: trackSize, height: trackSize)
 
                     WaveView()
                 }
             }
-            .frame(width: 30, height: 30)
+            .frame(width: trackSize, height: trackSize)
 
             VStack(alignment: .leading) {
                 Text(song.title)

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		9114DB422DB11A8500DD5E6E /* ButtonKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9114DB412DB11A8500DD5E6E /* ButtonKit */; };
+		9114DB572DBBC73F00DD5E6E /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 9114DB562DBBC73F00DD5E6E /* SwiftUIIntrospect */; };
 		91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91489B852D6A6C6C0038092A /* SFSafeSymbols */; };
 		91775F5E2D93729F002589C5 /* Noise in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F5D2D93729F002589C5 /* Noise */; };
 		9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = 9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */; };
@@ -72,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9114DB572DBBC73F00DD5E6E /* SwiftUIIntrospect in Frameworks */,
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
 				9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */,
 				9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */,
@@ -140,6 +142,7 @@
 				9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */,
 				9182FEF32D97757000FED9D4 /* OpenAI */,
 				9114DB412DB11A8500DD5E6E /* ButtonKit */,
+				9114DB562DBBC73F00DD5E6E /* SwiftUIIntrospect */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -180,6 +183,7 @@
 				91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */,
 				91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */,
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
+				9114DB552DBBC73F00DD5E6E /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -454,6 +458,14 @@
 				minimumVersion = 0.6.1;
 			};
 		};
+		9114DB552DBBC73F00DD5E6E /* XCRemoteSwiftPackageReference "swiftui-introspect" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/siteline/swiftui-introspect";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
 		91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
@@ -517,6 +529,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */;
 			productName = ButtonKit;
+		};
+		9114DB562DBBC73F00DD5E6E /* SwiftUIIntrospect */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9114DB552DBBC73F00DD5E6E /* XCRemoteSwiftPackageReference "swiftui-introspect" */;
+			productName = SwiftUIIntrospect;
 		};
 		91489B852D6A6C6C0038092A /* SFSafeSymbols */ = {
 			isa = XCSwiftPackageProductDependency;

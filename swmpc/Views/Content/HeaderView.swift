@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftUIIntrospect
 
 struct HeaderView: View {
     @Environment(MPD.self) private var mpd
@@ -26,6 +27,10 @@ struct HeaderView: View {
                 Spacer()
             } else {
                 TextField("Search", text: $query)
+                    .introspect(.textField, on: .macOS(.v15)) {
+                        $0.drawsBackground = true
+                        $0.backgroundColor = .clear
+                    }
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(Color(.secondarySystemFill))
@@ -54,8 +59,6 @@ struct HeaderView: View {
             .styledButton()
         }
         .frame(height: 50 - 7.5)
-        .padding(.horizontal, 15)
-        .padding(.top, 7.5)
         .onChange(of: destination) {
             isSearching = false
         }
