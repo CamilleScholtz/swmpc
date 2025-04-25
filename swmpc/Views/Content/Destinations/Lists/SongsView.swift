@@ -12,12 +12,8 @@ struct SongsView: View {
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
-    private var songs: [Song] {
-        mpd.queue.media as? [Song] ?? []
-    }
-
     var body: some View {
-        ForEach(songs) { song in
+        ForEach(mpd.queue.media as? [Song] ?? []) { song in
             SongView(for: song)
         }
         .onChange(of: mpd.status.media as? Song) { previous, _ in

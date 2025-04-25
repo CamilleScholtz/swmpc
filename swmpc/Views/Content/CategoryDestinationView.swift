@@ -92,6 +92,7 @@ struct CategoryView: View {
     let destination: CategoryDestination
 
     @State private var isSearching = false
+    @State private var scrollPositionID: AnyHashable?
 
     #if os(iOS)
         @State private var showToolbar = true
