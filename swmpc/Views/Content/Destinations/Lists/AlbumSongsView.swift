@@ -26,15 +26,15 @@ struct AlbumSongsView: View {
     #endif
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
+        Section {
             HStack(spacing: 15) {
                 if artwork != nil {
                     ZStack {
                         ZStack(alignment: .bottom) {
                             ArtworkView(image: artwork)
                                 .frame(width: 80)
-                                .blur(radius: 17)
-                                .offset(y: 7)
+                                .blur(radius: 9.5)
+                                .offset(y: 4)
                                 .saturation(1.5)
                                 .blendMode(colorScheme == .dark ? .softLight : .normal)
                                 .opacity(0.5)
@@ -217,9 +217,6 @@ struct AlbumSongsView: View {
                     }
                 }
             }
-            #if os(iOS)
-            .padding(.top, 5)
-            #endif
             .task {
                 async let artworkDataTask = ArtworkManager.shared.get(for: album, shouldCache: true)
                 async let songsTask = ConnectionManager.command().getSongs(for: album)
@@ -228,11 +225,15 @@ struct AlbumSongsView: View {
                 songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
             }
         }
-        .padding(.bottom, 5)
+        #if os(iOS)
+        .listRowInsets(.init(top: 7.5, leading: 15, bottom: 15 + 7.5, trailing: 15))
+        #elseif os(macOS)
+        .listRowInsets(.init(top: 15, leading: 7.5, bottom: 15 + 7.5, trailing: 7.5))
+        #endif
 
         if let songs {
-            ForEach(songs.keys.sorted(), id: \.self) { disc in
-                VStack(alignment: .leading, spacing: 15) {
+            Section {
+                ForEach(songs.keys.sorted(), id: \.self) { disc in
                     if songs.keys.count > 1 {
                         Text("Disc \(String(disc))")
                             .font(.headline)

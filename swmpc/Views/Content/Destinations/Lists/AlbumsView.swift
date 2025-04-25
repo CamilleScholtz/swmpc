@@ -23,7 +23,6 @@ struct AlbumsView: View {
     var body: some View {
         ForEach(albums) { album in
             AlbumView(for: album)
-
                 .onScrollVisibilityChange { isVisible in
                     guard isVisible else {
                         return
@@ -66,7 +65,6 @@ struct AlbumsView: View {
             let currentLastIndex = lastVisibleIndex
 
             let isScrollingUp = currentLastIndex < currentPreviousIndex
-
             let albumsToPrefetch = {
                 let start = isScrollingUp ? max(0, currentLastIndex - 2) : currentLastIndex + 1
                 let end = isScrollingUp ? currentLastIndex : min(albums.count, currentLastIndex + 3)

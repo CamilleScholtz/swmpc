@@ -32,8 +32,9 @@ struct SongView: View {
         HStack(spacing: 15) {
             ZStack {
                 Text(String(song.track))
-                    .font(.title3)
-                    .fontWeight(.regular)
+                    .font(.headline)
+                    .fontDesign(.rounded)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
 
                 #if os(macOS)

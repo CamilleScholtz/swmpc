@@ -17,7 +17,7 @@ struct ArtistAlbumsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
+        Section {
             HStack(spacing: 15) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(artist.name)
@@ -41,7 +41,11 @@ struct ArtistAlbumsView: View {
                 }
             }
         }
-        .padding(.bottom, 5)
+        #if os(iOS)
+        .listRowInsets(.init(top: 15, leading: 15, bottom: 15 + 7.5, trailing: 15))
+        #elseif os(macOS)
+        .listRowInsets(.init(top: 15, leading: 7.5, bottom: 15 + 7.5, trailing: 7.5))
+        #endif
         .task(priority: .medium) {
             guard let song = mpd.status.song else {
                 return
@@ -50,8 +54,10 @@ struct ArtistAlbumsView: View {
             mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
         }
 
-        ForEach(artist.albums ?? []) { album in
-            AlbumView(for: album)
+        Section {
+            ForEach(artist.albums ?? []) { album in
+                AlbumView(for: album)
+            }
         }
     }
 }

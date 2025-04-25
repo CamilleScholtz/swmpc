@@ -13,27 +13,39 @@ struct ContentDestinationView: View {
     let destination: ContentDestination
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 15) {
-                #if os(macOS)
-                    BackButtonView()
-                        .padding(.top, 12)
-                        .offset(y: 5)
-                #endif
+        List {
+            #if os(macOS)
+                BackButtonView()
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(.init(top: 15, leading: 7.5, bottom: 0, trailing: 7.5))
+            #endif
 
-                switch destination {
-                case let .album(album):
-                    AlbumSongsView(for: album)
-                case let .artist(artist):
-                    ArtistAlbumsView(for: artist)
-                }
+            switch destination {
+            case let .album(album):
+                AlbumSongsView(for: album)
+                    .listRowSeparator(.hidden)
+                #if os(iOS)
+                    .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+                #elseif os(macOS)
+                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+                #endif
+            case let .artist(artist):
+                ArtistAlbumsView(for: artist)
+                    .listRowSeparator(.hidden)
+                #if os(iOS)
+                    .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+                #elseif os(macOS)
+                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+                #endif
             }
-            .id(destination)
-            .padding(.horizontal, 15)
-            .padding(.bottom, 15)
+
+            Spacer()
+                .frame(height: 0)
+                .listRowInsets(.none)
         }
+        .listStyle(.plain)
         #if os(macOS)
-        .ignoresSafeArea()
+            .ignoresSafeArea()
         #endif
     }
 }

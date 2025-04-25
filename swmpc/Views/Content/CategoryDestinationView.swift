@@ -147,6 +147,10 @@ struct CategoryView: View {
                         EmptyView()
                 #endif
                 }
+
+                Spacer()
+                    .frame(height: 0)
+                    .listRowInsets(.none)
             }
             .listStyle(.plain)
             .onAppear {
