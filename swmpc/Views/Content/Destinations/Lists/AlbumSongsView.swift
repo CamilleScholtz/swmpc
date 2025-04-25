@@ -185,7 +185,7 @@ struct AlbumSongsView: View {
                             .font(.system(size: 12))
                             .fontWeight(.semibold)
                             .lineLimit(2)
-                            .onTapGesture(perform: {
+                            .onTapGesture {
                                 Task(priority: .userInitiated) {
                                     guard let artist = try? await mpd.queue.get(for: album, using: .artist) as? Artist else {
                                         return
@@ -193,7 +193,7 @@ struct AlbumSongsView: View {
 
                                     navigator.navigate(to: ContentDestination.artist(artist))
                                 }
-                            })
+                            }
                     }
                     .buttonStyle(.plain)
                     .asyncButtonStyle(.pulse)

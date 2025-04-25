@@ -136,8 +136,8 @@ private struct StyledButtonModifier: ViewModifier {
         #elseif os(macOS)
             .scaleEffect(isHovering ? hoverScale : 1.0)
             .animation(.interactiveSpring, value: isHovering)
-            .onHover { hovering in
-                isHovering = hovering
+            .onHover { value in
+                isHovering = value
             }
         #endif
     }

@@ -109,7 +109,7 @@ struct CategoryView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
+            List {
                 #if os(iOS)
                     GeometryReader { geometry in
                         Color.clear
@@ -124,24 +124,43 @@ struct CategoryView: View {
                         .id("top")
                 #endif
 
-                LazyVStack(alignment: .leading, spacing: 15) {
-                    switch destination {
-                    case .albums:
-                        AlbumsView()
-                    case .artists:
-                        ArtistsView()
-                    case .songs, .playlist:
-                        SongsView()
-                    #if os(iOS)
-                        default:
-                            EmptyView()
-                    #endif
-                    }
+                switch destination {
+                case .albums:
+                    AlbumsView()
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(.init(
+                            top: 7.5,
+                            leading: 7.5,
+                            bottom: 7.5,
+                            trailing: 7.5
+                        ))
+                case .artists:
+                    ArtistsView()
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(.init(
+                            top: 7.5,
+                            leading: 7.5,
+                            bottom: 7.5,
+                            trailing: 7.5
+                        ))
+                case .songs, .playlist:
+                    SongsView()
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(.init(
+                            top: 7.5,
+                            leading: 7.5,
+                            bottom: 7.5,
+                            trailing: 7.5
+                        ))
+                #if os(iOS)
+                    default:
+                        EmptyView()
+                #endif
                 }
-                .id(destination)
-                .padding(.horizontal, 15)
-                .padding(.bottom, 15)
+//                .padding(.horizontal, 15)
+//                .padding(.bottom, 15)
             }
+            .listStyle(.plain)
             .onAppear {
                 guard mpd.status.media != nil else {
                     return

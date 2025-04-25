@@ -25,6 +25,7 @@ struct AlbumView: View {
     #elseif os(macOS)
         @State private var isHovering = false
         @State private var isHoveringArtwork = false
+        @State private var hoverTask: Task<Void, Never>? = nil
     #endif
 
     var body: some View {
@@ -32,7 +33,7 @@ struct AlbumView: View {
             ZStack {
                 ArtworkView(image: artwork)
                     .cornerRadius(5)
-                    .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+                    .shadow(color: .black.opacity(0.2), radius: 5)
                 #if os(iOS)
                     .frame(width: 70)
                 #elseif os(macOS)
@@ -60,11 +61,11 @@ struct AlbumView: View {
                 #endif
             }
             #if os(macOS)
-            .onHover(perform: { value in
+            .onHover { value in
                 withAnimation(.interactiveSpring) {
                     isHoveringArtwork = value
                 }
-            })
+            }
             #endif
             .onTapGesture {
                 Task(priority: .userInitiated) {
@@ -85,7 +86,6 @@ struct AlbumView: View {
 
             Spacer()
         }
-        .id(album.id)
         .contentShape(Rectangle())
         .task(id: album, priority: .medium) {
             guard !Task.isCancelled, artwork == nil else {
@@ -99,11 +99,26 @@ struct AlbumView: View {
             artwork = PlatformImage(data: data)
         }
         #if os(macOS)
-        .onHover(perform: { value in
-            withAnimation(.interactiveSpring) {
-                isHovering = value
+        .onHover { value in
+            hoverTask?.cancel()
+
+            if value {
+                hoverTask = Task {
+                    try? await Task.sleep(for: .milliseconds(50))
+                    guard !Task.isCancelled else {
+                        return
+                    }
+
+                    withAnimation(.interactiveSpring) {
+                        isHovering = true
+                    }
+                }
+            } else {
+                withAnimation(.interactiveSpring) {
+                    isHovering = false
+                }
             }
-        })
+        }
         #endif
         .onTapGesture {
             navigator.navigate(to: ContentDestination.album(album))
