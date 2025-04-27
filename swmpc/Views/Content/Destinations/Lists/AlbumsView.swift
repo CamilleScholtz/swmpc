@@ -46,7 +46,7 @@ struct AlbumsView: View {
                     return
                 }
 
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
+                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
         .task(id: mpd.status.song, priority: .medium) {
@@ -56,30 +56,30 @@ struct AlbumsView: View {
 
             mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
         }
-//        .task(id: lastVisibleIndex, priority: .medium) {
-//            guard !Task.isCancelled else {
-//                return
-//            }
-//
-//            let currentPreviousIndex = previousVisibleIndex
-//            let currentLastIndex = lastVisibleIndex
-//
-//            let isScrollingUp = currentLastIndex < currentPreviousIndex
-//            let albumsToPrefetch = {
-//                let start = isScrollingUp ? max(0, currentLastIndex - 2) : currentLastIndex + 1
-//                let end = isScrollingUp ? currentLastIndex : min(albums.count, currentLastIndex + 3)
-//
-//                return Array(albums[start ..< end])
-//            }()
-//
-//            previousVisibleIndex = currentLastIndex
-//
-//            await ArtworkManager.shared.prefetch(for: albumsToPrefetch)
-//        }
-//        .onDisappear {
-//            Task(priority: .medium) {
-//                await ArtworkManager.shared.cancelPrefetching()
-//            }
-//        }
+        .task(id: lastVisibleIndex, priority: .medium) {
+            guard !Task.isCancelled else {
+                return
+            }
+
+            let currentPreviousIndex = previousVisibleIndex
+            let currentLastIndex = lastVisibleIndex
+
+            let isScrollingUp = currentLastIndex < currentPreviousIndex
+            let albumsToPrefetch = {
+                let start = isScrollingUp ? max(0, currentLastIndex - 2) : currentLastIndex + 1
+                let end = isScrollingUp ? currentLastIndex : min(albums.count, currentLastIndex + 3)
+
+                return Array(albums[start ..< end])
+            }()
+
+            previousVisibleIndex = currentLastIndex
+
+            await ArtworkManager.shared.prefetch(for: albumsToPrefetch)
+        }
+        .onDisappear {
+            Task(priority: .medium) {
+                await ArtworkManager.shared.cancelPrefetching()
+            }
+        }
     }
 }
