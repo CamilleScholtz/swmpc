@@ -91,8 +91,24 @@ struct CategoryView: View {
 
     let destination: CategoryDestination
 
+    #if os(macOS)
+        // NOTE: Kind of hacky. See FB17383923 and https://developer.apple.com/forums/thread/782429
+        private let rowHeight: CGFloat
+
+        init(destination: CategoryDestination) {
+            self.destination = destination
+
+            rowHeight = switch destination {
+            case .albums: 50 + 15
+            case .artists: 50 + 15
+            case .songs, .playlist: 31.5 + 15
+            }
+        }
+    #endif
+
     @State private var isSearching = false
     @State private var scrollPositionID: AnyHashable?
+    @State private var query = ""
 
     #if os(iOS)
         @State private var showToolbar = true
@@ -111,12 +127,12 @@ struct CategoryView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                #if os(macOS)
-                    HeaderView(destination: destination, isSearching: $isSearching)
-                        .id("top")
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 0, trailing: 0))
-                #endif
+//                #if os(macOS)
+//                    HeaderView(destination: destination, isSearching: $isSearching)
+//                        .id("top")
+//                        .listRowSeparator(.hidden)
+//                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 0, trailing: 0))
+//                #endif
 
                 switch destination {
                 case .albums:
@@ -149,9 +165,9 @@ struct CategoryView: View {
                 #endif
                 }
 
-                Spacer()
-                    .frame(height: 0)
-                    .listRowInsets(.none)
+//                Spacer()
+//                    .frame(height: 0)
+//                    .listRowInsets(.none)
             }
             .listStyle(.plain)
             .onAppear {
@@ -215,6 +231,7 @@ struct CategoryView: View {
                 }
             }
             #elseif os(macOS)
+            .environment(\.defaultMinListRowHeight, rowHeight)
             .onReceive(startSearchingNotication) { _ in
                 scrollToTop(proxy)
 

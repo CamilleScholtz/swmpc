@@ -109,9 +109,6 @@ struct AppView: View {
         }
         #if os(macOS)
         .frame(minWidth: 180 + 310 + 650, minHeight: 650)
-        .toolbar {
-            Color.clear
-        }
         #endif
     }
 }

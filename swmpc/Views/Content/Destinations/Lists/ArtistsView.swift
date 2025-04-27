@@ -17,7 +17,7 @@ struct ArtistsView: View {
     }
 
     var body: some View {
-        ForEach(mpd.queue.media as? [Artist] ?? []) { artist in
+        ForEach(artists) { artist in
             ArtistView(for: artist)
         }
         .onAppear {

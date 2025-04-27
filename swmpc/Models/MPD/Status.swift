@@ -8,7 +8,8 @@
 import AsyncAlgorithms
 import SwiftUI
 
-@Observable final class Status {
+@Observable
+final class Status {
     var state: PlayerState?
     var isPlaying: Bool {
         state == .play

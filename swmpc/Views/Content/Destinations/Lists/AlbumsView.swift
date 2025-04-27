@@ -16,26 +16,29 @@ struct AlbumsView: View {
     @State private var previousVisibleIndex = 0
     @State private var lastVisibleIndex = 0
 
+    private var albums: [Album] {
+        mpd.queue.media as? [Album] ?? []
+    }
+
     var body: some View {
-        ForEach(mpd.queue.media as? [Album] ?? []) { album in
+        ForEach(albums) { album in
             AlbumView(for: album)
-//                .onScrollVisibilityChange { isVisible in
-//                    guard isVisible else {
-//                        return
-//                    }
-//
-//                    if let index = albums.firstIndex(of: album) {
-//                        let now = Date()
-//
-//                        if now.timeIntervalSince(lastUpdated) > 0.01 {
-//                            lastVisibleIndex = index
-//                            lastUpdated = now
-//                        }
-//                    }
-//                }
+                .onScrollVisibilityChange { isVisible in
+                    guard isVisible else {
+                        return
+                    }
+
+                    if let index = albums.firstIndex(of: album) {
+                        let now = Date()
+
+                        if now.timeIntervalSince(lastUpdated) > 0.01 {
+                            lastVisibleIndex = index
+                            lastUpdated = now
+                        }
+                    }
+                }
         }
         .onChange(of: mpd.status.media as? Album) { previous, _ in
-
             if scrollToCurrent {
                 NotificationCenter.default.post(name: .scrollToCurrentNotification, object: previous != nil)
             } else {

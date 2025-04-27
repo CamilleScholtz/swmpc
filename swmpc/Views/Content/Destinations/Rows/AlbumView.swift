@@ -32,6 +32,11 @@ struct AlbumView: View {
         HStack(spacing: 15) {
             ZStack {
                 ArtworkView(image: artwork)
+                #if os(iOS)
+                    .frame(width: 70)
+                #elseif os(macOS)
+                    .frame(width: 60)
+                #endif
                     .cornerRadius(5)
                     .shadow(color: .black.opacity(0.2), radius: 5)
 
@@ -55,10 +60,7 @@ struct AlbumView: View {
                     }
                 #endif
             }
-            #if os(iOS)
-            .frame(width: 70)
-            #elseif os(macOS)
-            .frame(width: 60)
+            #if os(macOS)
             .onHover { value in
                 withAnimation(.interactiveSpring) {
                     isHoveringArtwork = value
@@ -76,6 +78,7 @@ struct AlbumView: View {
                     .font(.headline)
                     .foregroundColor(mpd.status.media?.id == album.id ? .accentColor : .primary)
                     .lineLimit(2)
+
                 Text(album.artist)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

@@ -11,11 +11,7 @@ struct ArtworkView: View {
     let image: PlatformImage?
 
     var body: some View {
-        ZStack {
-            Rectangle()
-                .fill(Color(.secondarySystemFill).opacity(0.3))
-                .aspectRatio(1.0, contentMode: .fit)
-
+        Group {
             if let image {
                 #if os(iOS)
                     Image(uiImage: image)
@@ -26,6 +22,10 @@ struct ArtworkView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 #endif
+            } else {
+                Rectangle()
+                    .fill(Color(.secondarySystemFill).opacity(0.3))
+                    .aspectRatio(1.0, contentMode: .fit)
             }
         }
     }

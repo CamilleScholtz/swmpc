@@ -11,7 +11,8 @@ enum QueueError: Error {
     case invalidType
 }
 
-@Observable final class Queue {
+@Observable
+final class Queue {
     /// The media in the queue. This represent the actual MPD queue.
     var internalMedia: [any Mediable] = []
 
