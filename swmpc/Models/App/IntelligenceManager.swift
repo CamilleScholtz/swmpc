@@ -97,7 +97,7 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
     }
 }
 
-struct IntelligenceResponse: StructuredOutput {
+struct IntelligenceResponse: JSONSchemaConvertible {
     let playlist: [String]
 
     static let example: Self = .init(playlist: [
@@ -170,7 +170,7 @@ actor IntelligenceManager {
                             separator: "\n"))!,
                     ],
                     model: model.model,
-                    responseFormat: .jsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
+                    responseFormat: .derivedJsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
                 ))
 
                 guard let response = result.choices.first?.message.content else {
