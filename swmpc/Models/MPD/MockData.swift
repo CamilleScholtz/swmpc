@@ -151,7 +151,7 @@ actor MockData {
     }
 
     private func generateMockPlaylists() -> [Playlist] {
-        return [
+        [
             Playlist(name: "Favorites"),
             Playlist(name: "Nebula Vibes"),
             Playlist(name: "Morning Space Walk"),
