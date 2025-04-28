@@ -19,26 +19,146 @@ actor MockData {
     private var isRepeat = false
     private var elapsed: Double = 0.0
 
-    private var currentPlaylist: Playlist? = Playlist(name: "Rock Classics")
-    private var currentSong: Song? = Song(id: 1, position: 1, url: URL(string: "file:///music/The%20Beatles/Abbey%20Road/01%20Come%20Together.mp3")!, artist: "The Beatles", title: "Come Together", duration: 259.0, disc: 1, track: 1)
+    private var currentPlaylist: Playlist?
+    private var currentSong: Song? = Song(id: 1, position: 1, url: URL(string: "file:///music/Quantum%20Dragons/Nebula%20Dreams/01%20Starlight%20Symphony.mp3")!, artist: "Quantum Dragons", title: "Starlight Symphony", duration: 289.0, disc: 1, track: 1)
 
-    private let mockAlbums: [Album] = [
-        Album(id: 1, position: 1, url: URL(string: "file:///music/The%20Beatles/Abbey%20Road")!, artist: "The Beatles", title: "Abbey Road", date: "1969"),
-        Album(id: 2, position: 2, url: URL(string: "file:///music/Pink%20Floyd/Dark%20Side%20of%20the%20Moon")!, artist: "Pink Floyd", title: "The Dark Side of the Moon", date: "1973"),
-        Album(id: 3, position: 3, url: URL(string: "file:///music/Queen/A%20Night%20at%20the%20Opera")!, artist: "Queen", title: "A Night at the Opera", date: "1975"),
+    // MARK: - Mock Data Generation
+
+    private let mockArtists: [String] = [
+        "Quantum Dragons", "Lunar Wolves", "Photon Symphony", "Digital Nebula",
+        "The Timewalkers", "Hologram Weekend", "Crystal Vortex", "Solar Wind",
+        "Prism + The Echoes", "The Wormhole Travelers", "Astral House", "Dimensional Portals",
+        "Gravity Bears", "Cosmic Foxes", "Stellar Rós", "Hyperspace Stevens",
+        "Quantum Mouse", "Parallel Universe", "The Bots", "Light Speed Taxi",
+        "The Multiverse", "Waveform", "Neon Spoon", "Void Explorers", "Binary Broadcast",
+        "Virtual Father", "Synthia", "Cybernetic Breakfast", "Mech Seat Headrest",
+        "Alien Lizard Wizards", "Robot Bridgers", "Mega Thief",
+        "Neural Milk Hotel", "Morning Starship", "The Meteors", "Anomaly Collective",
+        "The Plasma Lips", "Starcluster M83", "Martian Generation", "Eclipse", "Quantum-J", "Data Stream",
+        "Binary Social Scene", "Hologram Records", "Wolf Station", "Future Planets",
+        "Virtual Estate", "The Astronomers", "Lunar Hunter", "Band of Nebulae",
     ]
 
-    private let mockSongs: [Song] = [
-        Song(id: 1, position: 1, url: URL(string: "file:///music/The%20Beatles/Abbey%20Road/01%20Come%20Together.mp3")!, artist: "The Beatles", title: "Come Together", duration: 259.0, disc: 1, track: 1),
-        Song(id: 2, position: 2, url: URL(string: "file:///music/The%20Beatles/Abbey%20Road/02%20Something.mp3")!, artist: "The Beatles", title: "Something", duration: 183.0, disc: 1, track: 2),
-        Song(id: 3, position: 3, url: URL(string: "file:///music/Pink%20Floyd/Dark%20Side%20of%20the%20Moon/01%20Time.mp3")!, artist: "Pink Floyd", title: "Time", duration: 421.0, disc: 1, track: 1),
-        Song(id: 4, position: 4, url: URL(string: "file:///music/Queen/A%20Night%20at%20the%20Opera/09%20Bohemian%20Rhapsody.mp3")!, artist: "Queen", title: "Bohemian Rhapsody", duration: 354.0, disc: 1, track: 9),
+    private let albumTitles: [String] = [
+        "Singularity", "Quantum Mind", "In Starlight", "Sound of Antimatter", "Black Hole",
+        "Modern Space Vampires", "Gravity Ripples", "For Stella, Forever Ago",
+        "Interstellar Rituals", "Lost in the Void", "Lunar Cherry", "Turn On the Plasma Lights",
+        "Nebula House", "Starship Blues", "Quasars...", "Martian Landscape",
+        "Good News for People Who Love Space Travel", "Alpha Centauri Hotel", "Is This Reality", "Interdimensional",
+        "Binary", "The Hologram", "Ga Ga Ga Ga Galaxy", "I Can Hear the Stars Singing", "Return to Alien Mountain",
+        "I Love You, Cyberspace", "Be the Astronaut", "Solar System", "Teens of Another Dimension",
+        "Infinity Loop", "Time Traveler", "Dragon New Warm Planet I Believe in You",
+        "In the Spaceship Over the Void", "Zero Gravity", "Oh, Inverted Dimension", "Dark Matter Pavilion",
+        "The Soft Supernova", "Hurry Up, We're Dreaming of Mars", "Interstellar Spectacular", "Virtual Worlds", "A Quantum Wave", "What Universe",
+        "You Forgot It in Hyperspace", "Let's Get Out of This Galaxy", "Apologies to the Space Queen", "Binary Singles",
+        "Light Years", "The Void King Is Dead", "Macrocosmos", "Everything All the Universe",
     ]
 
-    private let mockPlaylists: [Playlist] = [
-        Playlist(name: "Favorites"),
-        Playlist(name: "Rock Classics"),
+    private let songTitles: [String] = [
+        "Starlight Symphony", "Do I Wanna Float?", "Lightspeed Step", "Martian Scum", "Quantum Empire",
+        "Hyper-Jump", "Let It Implode", "Cosmic Love", "Shake The Universe", "Nebula Eyes", "Star Song", "Galaxy Obstacle",
+        "Two Wormholes", "Alpha Centauri", "Pulsar", "Earthship", "Float Through Space", "I Am Trying to Break the Space-Time Continuum", "Last Light", "Quantum Registration",
+        "Event Horizon", "Binary Code", "The Star Wanderer", "Cosmic Winter", "Wolf-Like Alien",
+        "Space Station #4", "Android", "Stardust", "Fill in the Dark Matter",
+        "Gamma Ray Knife", "Mars Base", "Reality Swarm",
+        "King of Quantum Particles", "Wordless Cosmos", "New Dimension", "My Stars",
+        "Race for the Planets", "Midnight Galaxy", "Time to Transcend", "Space Genesis", "Gravitational Waves", "Die Star",
+        "Anthems for a Light Year Child", "Lloyd, I'm Ready to Be Teleported", "I'll Believe in Aliens", "Seasons (Waiting on Starlight)",
+        "It's Virtual", "Down by the Black Hole", "Nothing Ever Decayed", "The Supernova",
+        "Life on Jupiter?", "Space Heroes", "Under Zero Gravity", "Space Oddities",
+        "Quantum Leap", "Paranoid Android 2.0", "Cosmic Police", "Fake Holographic Trees",
+        "Sounds Like Space Wind", "Come As You Are Projected", "In Bloom on Mars", "Wormhole-Shaped Box",
+        "Sweet Child Of Mine Galaxy", "Welcome to the Dark Matter", "Paradise Planet", "November Meteor Shower",
+        "Space Walker", "Binary Jean", "Beat The Alien", "Smooth Space Criminal",
+        "Quantum Rhapsody", "We Will Rock The Planets", "Another One Enters The Void", "Don't Stop Me Now I'm In Orbit",
+        "Hey Alien", "Let It Be In Space", "Come Together Under The Stars", "Here Comes the Binary Sun",
     ]
+
+    private let yearRange = 1990 ... 2055
+
+    private lazy var mockAlbums: [Album] = generateMockAlbums()
+    private lazy var mockSongs: [Song] = generateMockSongs()
+    private lazy var mockPlaylists: [Playlist] = generateMockPlaylists()
+
+    private func generateMockAlbums() -> [Album] {
+        var albums: [Album] = []
+
+        for (index, artist) in mockArtists.enumerated() {
+            let numAlbums = (index % 3) + 1
+
+            for albumIndex in 0 ..< numAlbums {
+                let id = UInt32(albums.count + 1)
+                let position = id
+
+                let albumTitle = albumTitles[(index + albumIndex) % albumTitles.count]
+
+                let releaseYear = String(Int.random(in: yearRange))
+
+                let escapedArtist = artist.replacingOccurrences(of: " ", with: "%20")
+                let escapedAlbum = albumTitle.replacingOccurrences(of: " ", with: "%20")
+                let url = URL(string: "file:///music/\(escapedArtist)/\(escapedAlbum)")!
+
+                let album = Album(
+                    id: id,
+                    position: position,
+                    url: url,
+                    artist: artist,
+                    title: albumTitle,
+                    date: releaseYear
+                )
+
+                albums.append(album)
+            }
+        }
+
+        return albums
+    }
+
+    private func generateMockSongs() -> [Song] {
+        var songs: [Song] = []
+
+        for (index, album) in mockAlbums.enumerated() {
+            let numSongs = Int.random(in: 5 ... 12)
+
+            for songIndex in 0 ..< numSongs {
+                let id = UInt32(songs.count + 1)
+                let position = id
+
+                let songTitle = songTitles[(index + songIndex) % songTitles.count]
+
+                let duration = Double.random(in: 120 ... 480)
+
+                let trackNum = String(format: "%02d", songIndex + 1)
+                let escapedSong = songTitle.replacingOccurrences(of: " ", with: "%20")
+                let songUrl = URL(string: "\(album.url.absoluteString)/\(trackNum)%20\(escapedSong).mp3")!
+
+                let song = Song(
+                    id: id,
+                    position: position,
+                    url: songUrl,
+                    artist: album.artist,
+                    title: songTitle,
+                    duration: duration,
+                    disc: 1,
+                    track: songIndex + 1
+                )
+
+                songs.append(song)
+            }
+        }
+
+        return songs
+    }
+
+    private func generateMockPlaylists() -> [Playlist] {
+        return [
+            Playlist(name: "Favorites"),
+            Playlist(name: "Nebula Vibes"),
+            Playlist(name: "Morning Space Walk"),
+            Playlist(name: "Zero-G Workout"),
+            Playlist(name: "Starship Trip"),
+        ]
+    }
 
     // MARK: - Mock Command Functions
 
@@ -71,13 +191,24 @@ actor MockData {
     }
 
     func getSongs(for playlist: Playlist) -> [Song] {
-        if playlist.name == "Favorites" {
-            return [mockSongs[0], mockSongs[3]]
-        } else if playlist.name == "Rock Classics" {
-            return [mockSongs[2], mockSongs[3]]
+        switch playlist.name {
+        case "Favorites":
+            return Array(mockSongs.shuffled().prefix(15))
+        case "Nebula Vibes":
+            let nebulaArtists = ["Astral House", "Solar Wind", "Stellar Rós", "Cosmic Foxes"]
+            let nebulaSongs = mockSongs.filter { nebulaArtists.contains($0.artist) }.shuffled()
+            return Array(nebulaSongs.prefix(12))
+        case "Morning Space Walk":
+            return Array(mockSongs.shuffled().prefix(20))
+        case "Zero-G Workout":
+            let workoutArtists = ["Digital Nebula", "Lunar Wolves", "The Bots"]
+            let workoutSongs = mockSongs.filter { workoutArtists.contains($0.artist) }.shuffled()
+            return Array(workoutSongs.prefix(15))
+        case "Starship Trip":
+            return Array(mockSongs.shuffled().prefix(25))
+        default:
+            return []
         }
-
-        return []
     }
 
     func getPlaylists() -> [Playlist] {
