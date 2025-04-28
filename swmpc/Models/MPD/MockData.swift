@@ -19,7 +19,7 @@ actor MockData {
     private var isRepeat = false
     private var elapsed: Double = 0.0
 
-    private var currentPlaylist: Playlist? = Playlist(name: "Cosmic Favorites")
+    private var currentPlaylist: Playlist?
     private var currentSong: Song? = Song(id: 1, position: 1, url: URL(string: "file:///music/Quantum%20Dragons/Nebula%20Dreams/01%20Starlight%20Symphony.mp3")!, artist: "Quantum Dragons", title: "Starlight Symphony", duration: 289.0, disc: 1, track: 1)
 
     // MARK: - Mock Data Generation
