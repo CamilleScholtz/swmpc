@@ -58,10 +58,20 @@ struct HeaderView: View {
             }
             .styledButton()
         }
-        .frame(height: 50 - 15)
-        .padding(.top, 7.5)
-        .padding(.horizontal, 15)
-        .background(.background)
+        .frame(width: 310 - 15 - 16, height: 50)
+        .padding(.leading, 15)
+        .padding(.bottom, 30)
+        .background(
+            LinearGradient(
+                stops: [
+                    .init(color: Color(.textBackgroundColor), location: isSearching ? 0.6 : 0.5),
+                    .init(color: .clear, location: 1.01),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+        )
         .onChange(of: destination) {
             isSearching = false
         }

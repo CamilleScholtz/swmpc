@@ -13,7 +13,7 @@ struct AlbumsView: View {
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
     @State private var lastUpdated: Date = .now
-    @State private var previousVisibleIndex = 0
+    @State private var previousLastVisibleIndex = 0
     @State private var lastVisibleIndex = 0
 
     private var albums: [Album] {
@@ -21,11 +21,10 @@ struct AlbumsView: View {
     }
 
     var body: some View {
-        ForEach(Array(albums.enumerated()), id: \.offset) { index, album in
+        ForEach(albums) { album in
             AlbumView(for: album)
-                .padding(.top, index == 0 ? 50 - 7.5 : 0)
-                .onScrollVisibilityChange { isVisible in
-                    guard isVisible else {
+                .onScrollVisibilityChange { value in
+                    guard value else {
                         return
                     }
 
@@ -62,7 +61,7 @@ struct AlbumsView: View {
                 return
             }
 
-            let currentPreviousIndex = previousVisibleIndex
+            let currentPreviousIndex = previousLastVisibleIndex
             let currentLastIndex = lastVisibleIndex
 
             let isScrollingUp = currentLastIndex < currentPreviousIndex
@@ -73,12 +72,12 @@ struct AlbumsView: View {
                 return Array(albums[start ..< end])
             }()
 
-            previousVisibleIndex = currentLastIndex
+            previousLastVisibleIndex = currentLastIndex
 
             await ArtworkManager.shared.prefetch(for: albumsToPrefetch)
         }
         .onDisappear {
-            Task(priority: .medium) {
+            Task(priority: .low) {
                 await ArtworkManager.shared.cancelPrefetching()
             }
         }
