@@ -58,7 +58,10 @@ struct HeaderView: View {
             }
             .styledButton()
         }
-        .frame(height: 50 - 7.5)
+        .frame(height: 50 - 15)
+        .padding(.top, 7.5)
+        .padding(.horizontal, 15)
+        .background(.background)
         .onChange(of: destination) {
             isSearching = false
         }

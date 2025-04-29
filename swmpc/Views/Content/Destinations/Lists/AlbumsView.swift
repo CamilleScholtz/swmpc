@@ -21,8 +21,9 @@ struct AlbumsView: View {
     }
 
     var body: some View {
-        ForEach(albums) { album in
+        ForEach(Array(albums.enumerated()), id: \.offset) { index, album in
             AlbumView(for: album)
+                .padding(.top, index == 0 ? 50 - 7.5 : 0)
                 .onScrollVisibilityChange { isVisible in
                     guard isVisible else {
                         return
