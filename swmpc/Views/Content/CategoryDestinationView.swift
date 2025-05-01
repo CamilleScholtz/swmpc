@@ -93,7 +93,7 @@ struct CategoryView: View {
     let destination: CategoryDestination
 
     #if os(macOS)
-        // NOTE: Kind of hacky. See FB17383923 and https://developer.apple.com/forums/thread/782429
+        // NOTE: Kind of hacky. See https://github.com/feedback-assistant/reports/issues/651
         private let rowHeight: CGFloat
 
         init(destination: CategoryDestination) {
@@ -110,10 +110,6 @@ struct CategoryView: View {
     @State private var isSearching = false
     @State private var query = ""
 
-    @State private var offset: CGFloat = 0
-    @State private var lastScrollOffset: CGFloat = 1
-    @State private var showHeader = false
-
     #if os(iOS)
         @State private var showSearchButton = false
         @State private var isGoingToSearch = false
@@ -129,42 +125,39 @@ struct CategoryView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            ZStack(alignment: .topLeading) {
-                List {
-                    Group {
-                        switch destination {
-                        case .albums:
-                            AlbumsView()
-                        case .artists:
-                            ArtistsView()
-                        case .songs, .playlist:
-                            SongsView()
-                        #if os(iOS)
-                            default:
-                                EmptyView()
-                        #endif
-                        }
-                    }
-                    .listRowSeparator(.hidden)
-                    #if os(iOS)
-                        .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-                    #elseif os(macOS)
-                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
-                    #endif
-                }
-                .introspect(.scrollView, on: .macOS(.v15)) { scrollView in
-                    scrollView.additionalSafeAreaInsets = NSEdgeInsets(top: 50 - 7.5, left: 0, bottom: 0, right: 0)
-                    scrollView.scrollerInsets = NSEdgeInsets(top: -50 + 7.5, left: 0, bottom: 0, right: 0)
-                }
-                .listStyle(.plain)
-                .environment(\.defaultMinListRowHeight, rowHeight)
-
+            List {
                 #if os(macOS)
-                    if showHeader {
-                        HeaderView(destination: destination, isSearching: $isSearching)
+                    HeaderView(destination: destination, isSearching: $isSearching)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(.init(top: 0, leading: 7.5, bottom: 0, trailing: 7.5))
+                #endif
+
+                Section {
+                    switch destination {
+                    case .albums:
+                        AlbumsView()
+                    case .artists:
+                        ArtistsView()
+                    case .songs, .playlist:
+                        SongsView()
+                    #if os(iOS)
+                        default:
+                            EmptyView()
+                    #endif
                     }
+                }
+                .listRowSeparator(.hidden)
+                #if os(iOS)
+                    .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+                #elseif os(macOS)
+                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
                 #endif
             }
+            .id(destination)
+            .listStyle(.plain)
+            .safeAreaPadding(.bottom, 7.5)
+            .contentMargins(.bottom, -7.5, for: .scrollIndicators)
+            .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
             .onAppear {
                 guard mpd.status.media != nil else {
                     return
@@ -234,50 +227,52 @@ struct CategoryView: View {
         }
     }
 
-    private func determineScrollDirection(offset: CGFloat) {
-        #if os(iOS)
-            guard !isGoingToSearch else {
-                return
-            }
-        #endif
-
-        let difference = offset - lastScrollOffset
-        let threshold: CGFloat = 10
-
-        if difference < -threshold {
-            if showHeader {
-                withAnimation(.spring) {
-                    showHeader = false
-                }
-            }
-        } else if difference > threshold {
-            if !showHeader {
-                withAnimation(.spring) {
-                    showHeader = true
-                }
-            }
-        }
-
-        #if os(iOS)
-            if offset < -20 {
-                if !showSearchButton {
-                    withAnimation(.interactiveSpring) {
-                        showSearchButton = true
-                    }
-                }
-            } else {
-                if showSearchButton {
-                    withAnimation(.interactiveSpring) {
-                        showSearchButton = false
-                    }
-                }
-            }
-        #endif
-
-        if abs(difference) > 0.1 {
-            lastScrollOffset = offset
-        }
-    }
+//    private func determineScrollDirection(offset: CGFloat) {
+//        #if os(iOS)
+//            guard !isGoingToSearch else {
+//                return
+//            }
+//        #endif
+//
+//        let difference = offset - lastScrollOffset
+//        let threshold: CGFloat = 10
+//
+//        if difference < -threshold {
+//            // Scrolling down
+//            if !showHeader {
+//                withAnimation(.spring) {
+//                    showHeader = true
+//                }
+//            }
+//        } else if difference > threshold {
+//            // Scrolling up
+//            if showHeader {
+//                withAnimation(.spring) {
+//                    showHeader = false
+//                }
+//            }
+//        }
+//
+//        #if os(iOS)
+//            if offset < -20 {
+//                if !showSearchButton {
+//                    withAnimation(.interactiveSpring) {
+//                        showSearchButton = true
+//                    }
+//                }
+//            } else {
+//                if showSearchButton {
+//                    withAnimation(.interactiveSpring) {
+//                        showSearchButton = false
+//                    }
+//                }
+//            }
+//        #endif
+//
+//        if abs(difference) > 0.1 {
+//            lastScrollOffset = offset
+//        }
+//    }
 
     private func scrollToCurrent(_ proxy: ScrollViewProxy, animate: Bool = true) {
         guard let media = mpd.status.media else {

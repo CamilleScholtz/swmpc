@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftUIIntrospect
 
 struct ContentDestinationView: View {
     @Environment(\.dismiss) private var dismiss
@@ -20,30 +21,24 @@ struct ContentDestinationView: View {
                     .listRowInsets(.init(top: 15, leading: 7.5, bottom: 0, trailing: 7.5))
             #endif
 
-            switch destination {
-            case let .album(album):
-                AlbumSongsView(for: album)
-                    .listRowSeparator(.hidden)
-                #if os(iOS)
-                    .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-                #elseif os(macOS)
-                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
-                #endif
-            case let .artist(artist):
-                ArtistAlbumsView(for: artist)
-                    .listRowSeparator(.hidden)
-                #if os(iOS)
-                    .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-                #elseif os(macOS)
-                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
-                #endif
+            Section {
+                switch destination {
+                case let .album(album):
+                    AlbumSongsView(for: album)
+                case let .artist(artist):
+                    ArtistAlbumsView(for: artist)
+                }
             }
-
-            Spacer()
-                .frame(height: 0)
-                .listRowInsets(.none)
+            .listRowSeparator(.hidden)
+            #if os(iOS)
+                .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+            #elseif os(macOS)
+                .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+            #endif
         }
         .listStyle(.plain)
+        .safeAreaPadding(.bottom, 7.5)
+        .contentMargins(.bottom, -7.5, for: .scrollIndicators)
         #if os(macOS)
             .ignoresSafeArea()
         #endif
