@@ -12,10 +12,6 @@ struct AlbumsView: View {
 
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
-    @State private var lastUpdated: Date = .now
-    @State private var previousLastVisibleIndex = 0
-    @State private var lastVisibleIndex = 0
-
     private var albums: [Album] {
         mpd.queue.media as? [Album] ?? []
     }
@@ -23,20 +19,6 @@ struct AlbumsView: View {
     var body: some View {
         ForEach(albums) { album in
             AlbumView(for: album)
-                .onScrollVisibilityChange { value in
-                    guard value else {
-                        return
-                    }
-
-                    if let index = albums.firstIndex(of: album) {
-                        let now = Date()
-
-                        if now.timeIntervalSince(lastUpdated) > 0.01 {
-                            lastVisibleIndex = index
-                            lastUpdated = now
-                        }
-                    }
-                }
         }
         .onChange(of: mpd.status.media as? Album) { previous, _ in
             if scrollToCurrent {
@@ -55,31 +37,6 @@ struct AlbumsView: View {
             }
 
             mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
-        }
-        .task(id: lastVisibleIndex, priority: .medium) {
-            guard !Task.isCancelled else {
-                return
-            }
-
-            let currentPreviousIndex = previousLastVisibleIndex
-            let currentLastIndex = lastVisibleIndex
-
-            let isScrollingUp = currentLastIndex < currentPreviousIndex
-            let albumsToPrefetch = {
-                let start = isScrollingUp ? max(0, currentLastIndex - 2) : currentLastIndex + 1
-                let end = isScrollingUp ? currentLastIndex : min(albums.count, currentLastIndex + 3)
-
-                return Array(albums[start ..< end])
-            }()
-
-            previousLastVisibleIndex = currentLastIndex
-
-            await ArtworkManager.shared.prefetch(for: albumsToPrefetch)
-        }
-        .onDisappear {
-            Task(priority: .low) {
-                await ArtworkManager.shared.cancelPrefetching()
-            }
         }
     }
 }

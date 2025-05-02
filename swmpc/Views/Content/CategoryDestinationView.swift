@@ -130,6 +130,7 @@ struct CategoryView: View {
                     HeaderView(destination: destination, isSearching: $isSearching)
                         .listRowSeparator(.hidden)
                         .listRowInsets(.init(top: 0, leading: 7.5, bottom: 0, trailing: 7.5))
+                        .id("top")
                 #endif
 
                 Section {

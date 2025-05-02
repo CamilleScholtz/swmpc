@@ -14,7 +14,7 @@ actor ArtworkManager {
     @AppStorage(Setting.isDemoMode) private var isDemoMode = false
 
     private let cache = NSCache<NSURL, NSData>()
-    private var tasks: [URL: (task: Task<Data, Error>, isPrefetch: Bool)] = [:]
+    private var tasks: [URL: Task<Data, Error>] = [:]
 
     private init() {
         cache.totalCostLimit = 64 * 1024 * 1024
@@ -34,13 +34,8 @@ actor ArtworkManager {
             return data as Data
         }
 
-        if var existing = tasks[media.url] {
-            if existing.isPrefetch {
-                existing.isPrefetch = false
-                tasks[media.url] = existing
-            }
-
-            return try await existing.task.value
+        if let existingTask = tasks[media.url] {
+            return try await existingTask.value
         }
 
         if isDemoMode {
@@ -49,37 +44,9 @@ actor ArtworkManager {
 
         let task = createFetchTask(for: media.url, priority: .high,
                                    shouldCache: shouldCache)
-        tasks[media.url] = (task: task, isPrefetch: false)
+        tasks[media.url] = task
 
         return try await task.value
-    }
-
-    /// Prefetches artwork for multiple media items.
-    ///
-    /// - Parameter playables: The media items for which to prefetch the
-    ///                         artwork.
-    /// - Throws: An error if the artwork data could not be fetched.
-    func prefetch(for playables: [any Playable]) {
-        cancelPrefetchOutsideRange(playables)
-
-        let itemsToFetch = playables.filter { media in
-            cache.object(forKey: media.url as NSURL) == nil
-                && tasks[media.url] == nil
-        }
-
-        for media in itemsToFetch {
-            let task = createFetchTask(for: media.url, priority: .medium,
-                                       shouldCache: true)
-            tasks[media.url] = (task: task, isPrefetch: true)
-        }
-    }
-
-    /// Cancels all prefetching tasks.
-    func cancelPrefetching() {
-        for (url, info) in tasks where info.isPrefetch {
-            info.task.cancel()
-            tasks.removeValue(forKey: url)
-        }
     }
 
     /// Creates a new Task responsible for fetching artwork data.
@@ -127,21 +94,6 @@ actor ArtworkManager {
                 }
 
                 throw error
-            }
-        }
-    }
-
-    /// Cancels prefetch tasks for media items not in the given prefetch range.
-    ///
-    /// - Parameter playables: The media items that should be in the prefetch
-    ///                        range.
-    private func cancelPrefetchOutsideRange(_ playables: [any Playable]) {
-        let urls = Set(playables.map(\.url))
-
-        for (url, info) in tasks where info.isPrefetch {
-            if !urls.contains(url) {
-                info.task.cancel()
-                tasks.removeValue(forKey: url)
             }
         }
     }
