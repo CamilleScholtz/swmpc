@@ -224,7 +224,16 @@ struct DetailView: View {
                                 return
                             }
 
+                            #if os(iOS)
+                                if navigator.category != .albums {
+                                    navigator.category = .albums
+                                }
+                            #endif
                             navigator.navigate(to: ContentDestination.album(album))
+
+                            #if os(iOS)
+                                isPopupOpen = false
+                            #endif
                         }
                     }
             }
