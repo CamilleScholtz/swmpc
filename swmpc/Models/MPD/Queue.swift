@@ -125,7 +125,7 @@ final class Queue {
             (internalMedia as! [Artist]).filter {
                 $0.name.range(of: query, options: .caseInsensitive) != nil
             }
-        case .song:
+        case .song, .playlist:
             (internalMedia as! [Song]).filter {
                 $0.artist.range(of: query, options: .caseInsensitive) != nil ||
                     $0.title.range(of: query, options: .caseInsensitive) != nil
