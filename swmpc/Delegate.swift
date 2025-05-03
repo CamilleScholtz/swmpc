@@ -22,7 +22,6 @@ import SwiftUI
 struct Delegate: App {
     #if os(macOS)
         @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-        @Environment(\.triggerButton) private var triggerButton
     #endif
 
     #if os(iOS)
@@ -66,6 +65,7 @@ struct Delegate: App {
                 Divider()
 
                 Button("Add Current Song to Favorites") {
+                    @Environment(\.triggerButton) var triggerButton
                     triggerButton(id: ButtonNotification.favorite)
                 }
                 .keyboardShortcut("l", modifiers: [])
@@ -127,6 +127,14 @@ struct Delegate: App {
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
 
+        enum MenuAction: Int {
+            case play = 100
+            case pause = 101
+            case nextSong = 102
+            case previousSong = 103
+            case addToFavorites = 104
+        }
+
         func applicationDidFinishLaunching(_: Notification) {
             AppDelegate.shared = self
 
@@ -153,31 +161,39 @@ struct Delegate: App {
         func applicationDockMenu(_: NSApplication) -> NSMenu? {
             let menu = NSMenu()
 
-            menu.addItem(
-                withTitle: mpd.status.isPlaying == true ? "Pause" : "Play",
+            let playPauseItem = NSMenuItem(
+                title: mpd.status.isPlaying == true ? "Pause" : "Play",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: ""
             )
+            playPauseItem.tag = mpd.status.isPlaying == true ? MenuAction.pause.rawValue : MenuAction.play.rawValue
+            menu.addItem(playPauseItem)
 
-            menu.addItem(
-                withTitle: "Next song",
+            let nextItem = NSMenuItem(
+                title: "Next song",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: ""
             )
+            nextItem.tag = MenuAction.nextSong.rawValue
+            menu.addItem(nextItem)
 
-            menu.addItem(
-                withTitle: "Previous song",
+            let previousItem = NSMenuItem(
+                title: "Previous song",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: ""
             )
+            previousItem.tag = MenuAction.previousSong.rawValue
+            menu.addItem(previousItem)
 
             menu.addItem(NSMenuItem.separator())
 
-            menu.addItem(
-                withTitle: "Add current song to favorites",
+            let favoritesItem = NSMenuItem(
+                title: "Add current song to favorites",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: ""
             )
+            favoritesItem.tag = MenuAction.addToFavorites.rawValue
+            menu.addItem(favoritesItem)
 
             return menu
         }
@@ -302,25 +318,31 @@ struct Delegate: App {
         }
 
         @objc private func handleMenuItemAction(_ sender: NSMenuItem) {
-            switch sender.title {
-            case "Play":
+            guard let action = MenuAction(rawValue: sender.tag) else {
+                return
+            }
+
+            switch action {
+            case .play:
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().pause(false)
                 }
-            case "Pause":
+            case .pause:
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().pause(true)
                 }
-            case "Next song":
+            case .nextSong:
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().next()
                 }
-            case "Previous song":
+            case .previousSong:
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command().previous()
                 }
-            default:
-                break
+            case .addToFavorites:
+                // TODO: This does not work when the window is closed.
+                @Environment(\.triggerButton) var triggerButton
+                triggerButton(id: ButtonNotification.favorite)
             }
         }
 
