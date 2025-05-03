@@ -20,9 +20,6 @@ struct ArtistsView: View {
         ForEach(artists) { artist in
             ArtistView(for: artist)
         }
-        .onAppear {
-            NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
-        }
         .onChange(of: mpd.status.media as? Artist) { previous, _ in
             if scrollToCurrent {
                 NotificationCenter.default.post(name: .scrollToCurrentNotification, object: previous != nil)
