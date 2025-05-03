@@ -208,19 +208,4 @@ actor ArtworkConnectionPool {
             }
         }
     }
-
-    /// Disconnects all idle connections in the pool and cancels any waiting
-    /// tasks.
-    func reset() async {
-        while let connection = pool.popFirst() {
-            await connection.disconnect()
-        }
-        pool.removeAll()
-
-        let currentWaiters = waiters
-        waiters.removeAll()
-        for waiter in currentWaiters {
-            waiter.resume(throwing: CancellationError())
-        }
-    }
 }
