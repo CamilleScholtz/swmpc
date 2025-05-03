@@ -108,9 +108,9 @@ struct CategoryView: View {
     #endif
 
     @State private var isSearching = false
-    @State private var query = ""
 
     #if os(iOS)
+        @State private var showToolbar = false
         @State private var showSearchButton = false
         @State private var isGoingToSearch = false
         @State private var query = ""
@@ -120,8 +120,6 @@ struct CategoryView: View {
         .publisher(for: .scrollToCurrentNotification)
     private let startSearchingNotication = NotificationCenter.default
         .publisher(for: .startSearchingNotication)
-
-    private let coordinateSpaceName = "category_view_coordinate_space"
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -158,7 +156,6 @@ struct CategoryView: View {
             .listStyle(.plain)
             .safeAreaPadding(.bottom, 7.5)
             .contentMargins(.bottom, -7.5, for: .scrollIndicators)
-            .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
             .onAppear {
                 guard mpd.status.media != nil else {
                     return
@@ -170,6 +167,21 @@ struct CategoryView: View {
                 scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
             }
             #if os(iOS)
+//            .onScrollDirectionChanged(threshold: 30) { value in
+//                if value == .up {
+//                    if !showToolbar {
+//                        withAnimation(.spring) {
+//                            showToolbar = true
+//                        }
+//                    }
+//                } else {
+//                    if showToolbar {
+//                        withAnimation(.spring) {
+//                            showToolbar = false
+//                        }
+//                    }
+//                }
+//            }
             .navigationTitle(destination.label)
             .navigationBarTitleDisplayMode(.large)
             .toolbarVisibility(showToolbar ? .visible : .hidden, for: .navigationBar)
@@ -219,6 +231,7 @@ struct CategoryView: View {
                 }
             }
             #elseif os(macOS)
+            .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
             .onReceive(startSearchingNotication) { _ in
                 scrollToTop(proxy)
 
