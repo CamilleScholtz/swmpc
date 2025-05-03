@@ -64,9 +64,18 @@ struct Delegate: App {
 
                 Divider()
 
-                Button("Add Current Song to Favorites") {
-                    @Environment(\.triggerButton) var triggerButton
-                    triggerButton(id: ButtonNotification.favorite)
+                AsyncButton("Add Current Song to Favorites") {
+                    guard let song = appDelegate.mpd.status.song else {
+                        return
+                    }
+
+                    let isFavorited = appDelegate.mpd.queue.favorites.contains { $0.url == song.url }
+
+                    if isFavorited {
+                        try await ConnectionManager.command().removeFromFavorites(songs: [song])
+                    } else {
+                        try await ConnectionManager.command().addToFavorites(songs: [song])
+                    }
                 }
                 .keyboardShortcut("l", modifiers: [])
 
@@ -340,9 +349,19 @@ struct Delegate: App {
                     try? await ConnectionManager.command().previous()
                 }
             case .addToFavorites:
-                // TODO: This does not work when the window is closed.
-                @Environment(\.triggerButton) var triggerButton
-                triggerButton(id: ButtonNotification.favorite)
+                Task(priority: .userInitiated) {
+                    guard let song = mpd.status.song else {
+                        return
+                    }
+
+                    let isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
+
+                    if isFavorited {
+                        try? await ConnectionManager.command().removeFromFavorites(songs: [song])
+                    } else {
+                        try? await ConnectionManager.command().addToFavorites(songs: [song])
+                    }
+                }
             }
         }
 
