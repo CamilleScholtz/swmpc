@@ -3,7 +3,6 @@
 ## Build Commands
 - Build (macOS): `xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Debug build`
 - Clean: `xcodebuild -project swmpc.xcodeproj clean`
-- Formatting: `swiftformat --swiftversion 6 .`
 
 ## Code Style Guidelines
 
