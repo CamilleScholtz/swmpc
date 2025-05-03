@@ -139,13 +139,19 @@ struct SettingsView: View {
                         .frame(height: 32, alignment: .center)
 
                     Toggle("Show in Status Bar", isOn: $showStatusBar)
+                        .onChange(of: showStatusBar) { _, _ in
+                            NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
+                        }
                     Toggle(isOn: $showStatusbarSong) {
                         Text("Show Song in Status Bar")
-                        Text("If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect.")
+                        Text("If this is disabled, only the swmpc icon will be shown.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     .disabled(!showStatusBar)
+                    .onChange(of: showStatusbarSong) { _, _ in
+                        NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
+                    }
                 #endif
             }
             .padding(32)

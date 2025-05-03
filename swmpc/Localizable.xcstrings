@@ -1910,7 +1910,11 @@
         }
       }
     },
+    "If this is disabled, only the swmpc icon will be shown." : {
+
+    },
     "If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

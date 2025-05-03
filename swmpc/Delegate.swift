@@ -137,6 +137,13 @@ struct Delegate: App {
 
             NotificationCenter.default.addObserver(
                 self,
+                selector: #selector(handleStatusBarSettingChanged),
+                name: .statusBarSettingChangedNotification,
+                object: nil
+            )
+
+            NotificationCenter.default.addObserver(
+                self,
                 selector: #selector(handleTerminate),
                 name: NSApplication.willTerminateNotification,
                 object: nil
@@ -231,7 +238,12 @@ struct Delegate: App {
         }
 
         func setStatusItemTitle() {
-            guard showStatusBar, showStatusbarSong else {
+            guard showStatusBar else {
+                return
+            }
+
+            guard showStatusbarSong else {
+                statusItem.button!.title = ""
                 return
             }
 
@@ -309,6 +321,20 @@ struct Delegate: App {
                 }
             default:
                 break
+            }
+        }
+
+        @objc private func handleStatusBarSettingChanged(_: Notification) {
+            if showStatusBar {
+                configureStatusItem()
+                configurePopover()
+                setStatusItemTitle()
+            } else {
+                NSStatusBar.system.removeStatusItem(popoverAnchor)
+                NSStatusBar.system.removeStatusItem(statusItem)
+
+                popoverAnchor = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+                statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
             }
         }
     }
