@@ -15,8 +15,6 @@ import SwiftUI
 
 public extension String {
     /// Copies the current string instance to the system's general pasteboard.
-    ///
-    /// This function works on both iOS (using UIPasteboard) and macOS (using NSPasteboard).
     func copyToClipboard() {
         #if os(iOS)
             Pasteboard.general.string = self
@@ -30,10 +28,9 @@ public extension String {
 
     /// Retrieves a string from the system's general pasteboard, if one exists.
     ///
-    /// - Returns: An optional `String` containing the text content from the pasteboard,
-    ///            or `nil` if the pasteboard is empty or does not contain a string.
-    ///
-    /// This function works on both iOS (using UIPasteboard) and macOS (using NSPasteboard).
+    /// - Returns: An optional `String` containing the text content from the
+    ///            pasteboard, or `nil` if the pasteboard is empty or does not
+    ///            contain a string.
     static func fromClipboard() -> String? {
         #if os(iOS)
             return Pasteboard.general.string

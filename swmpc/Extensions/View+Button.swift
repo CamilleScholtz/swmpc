@@ -13,10 +13,12 @@ extension View {
     /// Includes a minimum visual press duration.
     ///
     /// - Parameters:
-    ///   - hoverScale: The scale factor to apply on hover (macOS only, default: 1.2)
+    ///   - hoverScale: The scale factor to apply on hover (macOS only,
+    ///                 default: 1.2)
     ///   - pressScale: The scale factor to apply when pressed (default: 0.9)
-    ///   - minimumPressDuration: The minimum time the press effect should visually last (default: 0.1)
-    /// - Returns: A view with hover and press effects applied
+    ///   - minimumPressDuration: The minimum time the press effect should
+    ///                           visually last (default: 0.1)
+    /// - Returns: A view with hover and press effects applied.
     func styledButton(
         hoverScale: CGFloat = 1.2,
         pressScale: CGFloat = 0.9,
@@ -99,7 +101,10 @@ private struct StyledButtonModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .buttonStyle(PressedButtonStyle(scale: pressScale, minimumDuration: minimumPressDuration))
+            .buttonStyle(
+                PressedButtonStyle(scale: pressScale,
+                                   minimumDuration: minimumPressDuration)
+            )
         #if os(iOS)
             .scaleEffect(isVisuallyPressed ? pressScale : 1.0)
             .animation(.interactiveSpring, value: isVisuallyPressed)
@@ -112,14 +117,15 @@ private struct StyledButtonModifier: ViewModifier {
                             isVisuallyPressed = true
                         }
                     }
-                    .onEnded { _ in // Touch up
+                    .onEnded { _ in
                         guard isVisuallyPressed else {
                             return
                         }
 
                         pressEndTask = Task {
                             do {
-                                try await Task.sleep(for: .seconds(minimumPressDuration))
+                                try await Task.sleep(for: .seconds(
+                                    minimumPressDuration))
                                 try Task.checkCancellation()
 
                                 isVisuallyPressed = false
