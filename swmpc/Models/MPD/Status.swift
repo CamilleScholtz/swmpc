@@ -25,24 +25,7 @@ final class Status {
     var media: (any Mediable)?
     var playlist: Playlist?
 
-    @ObservationIgnored @MainActor var isAppWindowOpen = false {
-        didSet {
-            updateTracking()
-        }
-    }
-
-    @ObservationIgnored @MainActor var isPopoverOpen = false {
-        didSet {
-            updateTracking()
-        }
-    }
-
-    private var trackingTask: Task<Void, Never>?
-    private var startTime: Date?
-
-    // NOTE: Not sure why this is needed, but without `@ObservationIgnored`
-    // the build fails.
-    @ObservationIgnored @MainActor private var trackElapsed = false {
+    @ObservationIgnored @MainActor private(set) var trackElapsed = false {
         didSet {
             if trackElapsed {
                 state == .play ? startTrackingElapsed() : stopTrackingElapsed()
@@ -50,6 +33,29 @@ final class Status {
                 stopTrackingElapsed()
             }
         }
+    }
+
+    @ObservationIgnored @MainActor private var activeTrackingCount = 0 {
+        didSet {
+            if activeTrackingCount > 0, !trackElapsed {
+                trackElapsed = true
+            } else if activeTrackingCount == 0, trackElapsed {
+                trackElapsed = false
+            }
+        }
+    }
+
+    private var trackingTask: Task<Void, Never>?
+    private var startTime: Date?
+
+    @MainActor
+    func startTracking() {
+        activeTrackingCount += 1
+    }
+
+    @MainActor
+    func stopTracking() {
+        activeTrackingCount = max(0, activeTrackingCount - 1)
     }
 
     @MainActor
@@ -131,11 +137,6 @@ final class Status {
                 }
             }
         }
-    }
-
-    @MainActor
-    private func updateTracking() {
-        trackElapsed = isAppWindowOpen || isPopoverOpen
     }
 
     @MainActor

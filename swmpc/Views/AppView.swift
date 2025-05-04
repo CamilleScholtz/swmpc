@@ -84,10 +84,10 @@ struct AppView: View {
                     #endif
                 }
                 .onAppear {
-                    mpd.status.isAppWindowOpen = true
+                    mpd.status.startTracking()
                 }
                 .onDisappear {
-                    mpd.status.isAppWindowOpen = false
+                    mpd.status.stopTracking()
                 }
                 .task(id: mpd.status.song) {
                     guard let song = mpd.status.song else {
