@@ -122,17 +122,20 @@ struct PopoverView: View {
         .frame(width: 250, height: height)
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
+                mpd.status.isPopoverOpen = true
                 await updateArtwork()
             }
         }
         .onReceive(didCloseNotification) { _ in
             artwork = nil
+            mpd.status.isPopoverOpen = false
         }
         .task(id: mpd.status.song) {
             guard AppDelegate.shared.popover.isShown else {
                 return
             }
 
+            mpd.status.isPopoverOpen = true
             await updateArtwork()
         }
         .onChange(of: artwork) { previous, _ in

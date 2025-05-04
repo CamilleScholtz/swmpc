@@ -83,6 +83,12 @@ struct AppView: View {
                         .background(.background)
                     #endif
                 }
+                .onAppear {
+                    mpd.status.isAppWindowOpen = true
+                }
+                .onDisappear {
+                    mpd.status.isAppWindowOpen = false
+                }
                 .task(id: mpd.status.song) {
                     guard let song = mpd.status.song else {
                         artwork = nil

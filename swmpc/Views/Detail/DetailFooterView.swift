@@ -281,12 +281,6 @@ struct DetailFooterView: View {
                     }
                 }
             }
-            .onAppear {
-                mpd.status.trackElapsed = true
-            }
-            .onDisappear {
-                mpd.status.trackElapsed = false
-            }
         }
     }
 }
