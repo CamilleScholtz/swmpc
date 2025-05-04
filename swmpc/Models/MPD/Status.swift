@@ -49,7 +49,12 @@ final class Status {
     private var startTime: Date?
 
     @MainActor
-    func startTracking() {
+    func startTracking() async throws {
+        if !trackElapsed {
+            let data = try await ConnectionManager.command().getStatusData()
+            _ = elapsed.update(to: data.elapsed ?? 0)
+        }
+
         activeTrackingCount += 1
     }
 
@@ -128,8 +133,8 @@ final class Status {
             let timer = AsyncTimerSequence(interval: .seconds(1), tolerance:
                 .seconds(0.1), clock: .suspending)
             for await _ in timer {
-                guard trackElapsed else {
-                    break
+                guard !Task.isCancelled else {
+                    return
                 }
 
                 if let startTime {

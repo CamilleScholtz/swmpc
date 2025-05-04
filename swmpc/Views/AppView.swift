@@ -84,7 +84,9 @@ struct AppView: View {
                     #endif
                 }
                 .onAppear {
-                    mpd.status.startTracking()
+                    Task {
+                        try? await mpd.status.startTracking()
+                    }
                 }
                 .onDisappear {
                     mpd.status.stopTracking()

@@ -123,8 +123,8 @@ struct PopoverView: View {
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
                 await updateArtwork()
+                try? await mpd.status.startTracking()
             }
-            mpd.status.startTracking()
         }
         .onReceive(didCloseNotification) { _ in
             artwork = nil
