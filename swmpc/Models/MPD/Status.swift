@@ -28,9 +28,9 @@ final class Status {
     @ObservationIgnored @MainActor private(set) var trackElapsed = false {
         didSet {
             if trackElapsed {
-                state == .play ? startTrackingElapsed() : stopTrackingElapsed()
+                state == .play ? startTrackingElapsedTask() : stopTrackingElapsedTask()
             } else {
-                stopTrackingElapsed()
+                stopTrackingElapsedTask()
             }
         }
     }
@@ -49,7 +49,7 @@ final class Status {
     private var startTime: Date?
 
     @MainActor
-    func startTracking() async throws {
+    func startTrackingElapsed() async throws {
         if !trackElapsed {
             let data = try await ConnectionManager.command().getStatusData()
             _ = elapsed.update(to: data.elapsed ?? 0)
@@ -59,7 +59,7 @@ final class Status {
     }
 
     @MainActor
-    func stopTracking() {
+    func stopTrackingElapsed() {
         activeTrackingCount = max(0, activeTrackingCount - 1)
     }
 
@@ -82,7 +82,7 @@ final class Status {
             #endif
 
             if trackElapsed {
-                state == .play ? startTrackingElapsed() : stopTrackingElapsed()
+                state == .play ? startTrackingElapsedTask() : stopTrackingElapsedTask()
             }
         }
 
@@ -103,8 +103,8 @@ final class Status {
         _ = elapsed.update(to: data.elapsed ?? 0)
         if trackElapsed {
             if data.state == .play {
-                stopTrackingElapsed()
-                startTrackingElapsed()
+                stopTrackingElapsedTask()
+                startTrackingElapsedTask()
             }
         }
 
@@ -118,7 +118,7 @@ final class Status {
     }
 
     @MainActor
-    private func startTrackingElapsed() {
+    private func startTrackingElapsedTask() {
         if let trackingTask, !trackingTask.isCancelled {
             stopTrackingElapsed()
         }
@@ -145,7 +145,7 @@ final class Status {
     }
 
     @MainActor
-    private func stopTrackingElapsed() {
+    private func stopTrackingElapsedTask() {
         trackingTask?.cancel()
 
         trackingTask = nil

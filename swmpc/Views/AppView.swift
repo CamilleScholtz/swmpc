@@ -85,11 +85,11 @@ struct AppView: View {
                 }
                 .onAppear {
                     Task {
-                        try? await mpd.status.startTracking()
+                        try? await mpd.status.startTrackingElapsed()
                     }
                 }
                 .onDisappear {
-                    mpd.status.stopTracking()
+                    mpd.status.stopTrackingElapsed()
                 }
                 .task(id: mpd.status.song) {
                     guard let song = mpd.status.song else {

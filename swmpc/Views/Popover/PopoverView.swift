@@ -123,12 +123,12 @@ struct PopoverView: View {
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
                 await updateArtwork()
-                try? await mpd.status.startTracking()
+                try? await mpd.status.startTrackingElapsed()
             }
         }
         .onReceive(didCloseNotification) { _ in
             artwork = nil
-            mpd.status.stopTracking()
+            mpd.status.stopTrackingElapsed()
         }
         .task(id: mpd.status.song) {
             guard AppDelegate.shared.popover.isShown else {
