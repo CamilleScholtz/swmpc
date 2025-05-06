@@ -274,10 +274,26 @@ struct DetailView: View {
                 AsyncButton {
                     try await ConnectionManager.command().pause(mpd.status.isPlaying)
                 } label: {
-                    Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
-                        .foregroundColor(.primary)
+                    ZStack {
+                        Circle()
+                            .fill(.thinMaterial)
+                            .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+
+                        ZStack {
+                            Image(systemSymbol: .pauseFill)
+                                .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
+                                .opacity(mpd.status.isPlaying ? 1 : 0.1)
+                                .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
+
+                            Image(systemSymbol: .playFill)
+                                .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
+                                .opacity(mpd.status.isPlaying ? 0.1 : 1)
+                                .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
+                        }
+                    }
                 }
                 .asyncButtonStyle(.pulse)
+                .styledButton(hoverScale: 1.13)
 
                 AsyncButton {
                     try await ConnectionManager.command().next()
