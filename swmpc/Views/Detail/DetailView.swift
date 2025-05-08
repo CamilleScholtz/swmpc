@@ -10,10 +10,6 @@ import Noise
 import SFSafeSymbols
 import SwiftUI
 
-#if os(iOS)
-    import LNPopupUI
-#endif
-
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
@@ -24,6 +20,8 @@ struct DetailView: View {
 
     #if os(iOS)
         @Binding var isPopupOpen: Bool
+        var isMiniplayer: Bool = false
+        var animationNamespace: Namespace.ID?
     #endif
 
     @State private var isBackgroundArtworkTransitioning = false
@@ -185,7 +183,12 @@ struct DetailView: View {
                     .shadow(color: .black.opacity(0.2), radius: 16)
                 #if os(iOS)
                     .frame(width: 300)
-                    .popupTransitionTarget()
+                    .if(isMiniplayer && animationNamespace != nil) { view in
+                        view.matchedGeometryEffect(
+                            id: PlayerMatchedGeometry.artwork,
+                            in: animationNamespace!
+                        )
+                    }
                 #elseif os(macOS)
                     .frame(width: 250)
                     .scaleEffect(isHovering ? 1.02 : 1)
@@ -201,7 +204,7 @@ struct DetailView: View {
                             }
 
                             Task(priority: .userInitiated) {
-                                try? await ConnectionManager.command().next()
+                                try await ConnectionManager.command().next()
                             }
                         },
                         onSwipeRight: {
@@ -210,7 +213,7 @@ struct DetailView: View {
                             }
 
                             Task(priority: .userInitiated) {
-                                try? await ConnectionManager.command().previous()
+                                try await ConnectionManager.command().previous()
                             }
                         }
                     )
@@ -265,47 +268,6 @@ struct DetailView: View {
                 isArtworkTransitioning = false
             }
         }
-        #if os(iOS)
-        .popupImage((artwork != nil) ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
-        .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
-        // swiftformat:disable:next trailingClosures
-        .popupBarItems({
-            ToolbarItemGroup(placement: .popupBar) {
-                AsyncButton {
-                    try await ConnectionManager.command().pause(mpd.status.isPlaying)
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(.thinMaterial)
-                            .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-
-                        ZStack {
-                            Image(systemSymbol: .pauseFill)
-                                .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
-                                .opacity(mpd.status.isPlaying ? 1 : 0.1)
-                                .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
-
-                            Image(systemSymbol: .playFill)
-                                .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
-                                .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                                .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
-                        }
-                    }
-                }
-                .asyncButtonStyle(.pulse)
-                .styledButton(hoverScale: 1.13)
-
-                AsyncButton {
-                    try await ConnectionManager.command().next()
-                } label: {
-                    Image(systemSymbol: .forwardFill)
-                        .foregroundColor(.primary)
-                }
-                .asyncButtonStyle(.pulse)
-            }
-        })
-        .popupProgress(progress)
-        #endif
     }
 
     struct ArtworkView: View {
@@ -327,6 +289,19 @@ struct DetailView: View {
             }
             .transition(.opacity.animation(.spring))
             .aspectRatio(contentMode: .fit)
+        }
+    }
+}
+
+// MARK: - View Extension for Conditional Modifiers
+
+extension View {
+    @ViewBuilder
+    func `if`(_ condition: Bool, transform: (Self) -> some View) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
         }
     }
 }

@@ -7,10 +7,6 @@
 
 import SwiftUI
 
-#if os(iOS)
-    import LNPopupUI
-#endif
-
 enum ViewError: Error {
     case missingData
 }
@@ -21,11 +17,6 @@ struct AppView: View {
 
     @State private var initialFetch = true
     @State private var artwork: PlatformImage?
-
-    #if os(iOS)
-        @State private var isPopupBarPresented = true
-        @State private var isPopupOpen = false
-    #endif
 
     var body: some View {
         Group {
@@ -55,10 +46,7 @@ struct AppView: View {
                             }
                         }
                         .handleQueueChange()
-                        .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
-                            DetailView(artwork: artwork, isPopupOpen: $isPopupOpen)
-                        }
-                        .popupBarProgressViewStyle(.top)
+                        .withPopover()
                     #elseif os(macOS)
                         NavigationSplitView {
                             SidebarView()
