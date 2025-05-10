@@ -158,6 +158,10 @@ struct CategoryView: View {
                 .onScrollGeometryChange(for: CGFloat.self) { geometry in
                     geometry.contentOffset.y
                 } action: { previous, value in
+                    guard !isSearching else {
+                        return
+                    }
+
                     guard value > 5 else {
                         offset = 0
                         showHeader = true
@@ -224,10 +228,16 @@ struct CategoryView: View {
                 if value {
                     showHeader = true
                 } else {
-                    scrollToCurrent(proxy)
+                    showHeader = false
                 }
             }
+            .onChange(of: mpd.queue.results?.count) { _, value in
+                guard value == nil else {
+                    return
+                }
 
+                scrollToCurrent(proxy, animate: false)
+            }
             #if os(iOS)
             .navigationTitle(destination.label)
             .navigationBarTitleDisplayMode(.large)
