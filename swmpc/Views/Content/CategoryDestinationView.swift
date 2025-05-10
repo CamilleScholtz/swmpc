@@ -116,6 +116,8 @@ struct CategoryView: View {
         @State private var showSearchButton = false
         @State private var isGoingToSearch = false
         @State private var query = ""
+    #elseif os(macOS)
+        @State private var hideHeaderTask: Task<Void, Never>?
     #endif
 
     private let scrollToCurrentNotification = NotificationCenter.default
@@ -157,11 +159,23 @@ struct CategoryView: View {
                     geometry.contentOffset.y
                 } action: { previous, value in
                     guard value > 5 else {
-                        showHeader = true
                         offset = 0
+                        showHeader = true
+
+                        resetHideHeaderTimer()
 
                         return
                     }
+
+                    guard abs(value - offset) > 200 else {
+                        if showHeader {
+                            resetHideHeaderTimer(offset: value)
+                        }
+
+                        return
+                    }
+
+                    offset = value
 
                     if previous < value {
                         if showHeader {
@@ -173,9 +187,7 @@ struct CategoryView: View {
                         }
                     }
 
-                    if abs(value - offset) > 500 {
-                        offset = value
-                    }
+                    resetHideHeaderTimer()
                 }
 
                 #if os(macOS)
@@ -201,6 +213,13 @@ struct CategoryView: View {
             .onReceive(startSearchingNotication) { _ in
                 isSearching = true
             }
+            .onChange(of: showHeader) { _, value in
+                if value {
+                    resetHideHeaderTimer()
+                } else {
+                    hideHeaderTask?.cancel()
+                }
+            }
             .onChange(of: isSearching) { _, value in
                 if value {
                     showHeader = true
@@ -208,18 +227,7 @@ struct CategoryView: View {
                     scrollToCurrent(proxy)
                 }
             }
-            .task(id: offset) {
-                guard !Task.isCancelled, showHeader, !isSearching, offset > 0 else {
-                    return
-                }
 
-                try? await Task.sleep(for: .seconds(3))
-                guard !Task.isCancelled, showHeader, !isSearching, offset > 0 else {
-                    return
-                }
-
-                showHeader = false
-            }
             #if os(iOS)
             .navigationTitle(destination.label)
             .navigationBarTitleDisplayMode(.large)
@@ -273,6 +281,26 @@ struct CategoryView: View {
             .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
             #endif
         }
+    }
+
+    private func resetHideHeaderTimer(offset: CGFloat) {
+        hideHeaderTask?.cancel()
+        guard showHeader, !isSearching, offset > 0 else {
+            return
+        }
+
+        hideHeaderTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, showHeader, !isSearching, offset > 0 else {
+                return
+            }
+
+            showHeader = false
+        }
+    }
+
+    private func resetHideHeaderTimer() {
+        resetHideHeaderTimer(offset: offset)
     }
 
     private func scrollToCurrent(_ proxy: ScrollViewProxy, animate: Bool = true) {
