@@ -58,8 +58,25 @@ struct HeaderView: View {
             }
             .styledButton()
         }
-        .padding(.top, 7.5)
-        .frame(height: 50 - 15)
+        .padding(.leading, 15)
+        .frame(width: 310 - 15 - 1, height: 50 + 7.5)
+        .background(
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(.background)
+                    .frame(height: 50 + 30)
+
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(.textBackgroundColor),
+                        Color.clear,
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 40)
+            }
+        )
         .onChange(of: destination) {
             isSearching = false
         }

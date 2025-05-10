@@ -38,7 +38,7 @@ struct AlbumView: View {
                     .frame(width: 60)
                 #endif
                     .cornerRadius(5)
-                    .shadow(color: .black.opacity(0.2), radius: 5)
+                    .shadow(color: .black.opacity(0.2), radius: 6, y: 1)
 
                 #if os(macOS)
                     if isHovering {

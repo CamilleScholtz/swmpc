@@ -107,10 +107,12 @@ struct CategoryView: View {
         }
     #endif
 
+    @State private var offset: CGFloat = 0
+
+    @State private var showHeader = false
     @State private var isSearching = false
 
     #if os(iOS)
-        @State private var showToolbar = false
         @State private var showSearchButton = false
         @State private var isGoingToSearch = false
         @State private var query = ""
@@ -123,39 +125,69 @@ struct CategoryView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            List {
-                #if os(macOS)
-                    HeaderView(destination: destination, isSearching: $isSearching)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(.init(top: 0, leading: 7.5, bottom: 0, trailing: 7.5))
-                        .id("top")
-                #endif
-
-                Section {
-                    switch destination {
-                    case .albums:
-                        AlbumsView()
-                    case .artists:
-                        ArtistsView()
-                    case .songs, .playlist:
-                        SongsView()
+            ZStack(alignment: .topLeading) {
+                List {
+                    Group {
+                        switch destination {
+                        case .albums:
+                            AlbumsView()
+                        case .artists:
+                            ArtistsView()
+                        case .songs, .playlist:
+                            SongsView()
+                        #if os(iOS)
+                            default:
+                                EmptyView()
+                        #endif
+                        }
+                    }
+                    .listRowSeparator(.hidden)
                     #if os(iOS)
-                        default:
-                            EmptyView()
+                        .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+                    #elseif os(macOS)
+                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
                     #endif
+                }
+                .listStyle(.plain)
+                .safeAreaPadding(.top, 50)
+                .safeAreaPadding(.bottom, 7.5)
+                .contentMargins(.top, -50, for: .scrollIndicators)
+                .contentMargins(.bottom, -7.5, for: .scrollIndicators)
+                .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                    geometry.contentOffset.y
+                } action: { previous, value in
+                    guard value > 5 else {
+                        showHeader = true
+                        offset = 0
+
+                        return
+                    }
+
+                    if previous < value {
+                        if showHeader {
+                            showHeader = false
+                        }
+                    } else {
+                        if !showHeader {
+                            showHeader = true
+                        }
+                    }
+
+                    if abs(value - offset) > 500 {
+                        offset = value
                     }
                 }
-                .listRowSeparator(.hidden)
-                #if os(iOS)
-                    .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-                #elseif os(macOS)
-                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+
+                #if os(macOS)
+                    if showHeader {
+                        HeaderView(destination: destination, isSearching: $isSearching)
+                            .zIndex(99)
+                            .transition(.move(edge: .top))
+                    }
                 #endif
             }
             .id(destination)
-            .listStyle(.plain)
-            .safeAreaPadding(.bottom, 7.5)
-            .contentMargins(.bottom, -7.5, for: .scrollIndicators)
+            .animation(.easeInOut(duration: 0.1), value: showHeader)
             .onAppear {
                 guard mpd.status.media != nil else {
                     return
@@ -166,22 +198,29 @@ struct CategoryView: View {
             .onReceive(scrollToCurrentNotification) { notification in
                 scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
             }
+            .onReceive(startSearchingNotication) { _ in
+                isSearching = true
+            }
+            .onChange(of: isSearching) { _, value in
+                if value {
+                    showHeader = true
+                } else {
+                    scrollToCurrent(proxy)
+                }
+            }
+            .task(id: offset) {
+                guard !Task.isCancelled, showHeader, !isSearching, offset > 0 else {
+                    return
+                }
+
+                try? await Task.sleep(for: .seconds(3))
+                guard !Task.isCancelled, showHeader, !isSearching, offset > 0 else {
+                    return
+                }
+
+                showHeader = false
+            }
             #if os(iOS)
-//            .onScrollDirectionChanged(threshold: 30) { value in
-//                if value == .up {
-//                    if !showToolbar {
-//                        withAnimation(.spring) {
-//                            showToolbar = true
-//                        }
-//                    }
-//                } else {
-//                    if showToolbar {
-//                        withAnimation(.spring) {
-//                            showToolbar = false
-//                        }
-//                    }
-//                }
-//            }
             .navigationTitle(destination.label)
             .navigationBarTitleDisplayMode(.large)
             .toolbarVisibility(showToolbar ? .visible : .hidden, for: .navigationBar)
@@ -232,11 +271,6 @@ struct CategoryView: View {
             }
             #elseif os(macOS)
             .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
-            .onReceive(startSearchingNotication) { _ in
-                scrollToTop(proxy)
-
-                isSearching = true
-            }
             #endif
         }
     }
@@ -299,16 +333,6 @@ struct CategoryView: View {
             }
         } else {
             proxy.scrollTo(media.id, anchor: .center)
-        }
-    }
-
-    private func scrollToTop(_ proxy: ScrollViewProxy, animate: Bool = true) {
-        if animate {
-            withAnimation {
-                proxy.scrollTo("top", anchor: .center)
-            }
-        } else {
-            proxy.scrollTo("top", anchor: .center)
         }
     }
 }
