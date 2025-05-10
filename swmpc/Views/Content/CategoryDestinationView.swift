@@ -275,53 +275,6 @@ struct CategoryView: View {
         }
     }
 
-//    private func determineScrollDirection(offset: CGFloat) {
-//        #if os(iOS)
-//            guard !isGoingToSearch else {
-//                return
-//            }
-//        #endif
-//
-//        let difference = offset - lastScrollOffset
-//        let threshold: CGFloat = 10
-//
-//        if difference < -threshold {
-//            // Scrolling down
-//            if !showHeader {
-//                withAnimation(.spring) {
-//                    showHeader = true
-//                }
-//            }
-//        } else if difference > threshold {
-//            // Scrolling up
-//            if showHeader {
-//                withAnimation(.spring) {
-//                    showHeader = false
-//                }
-//            }
-//        }
-//
-//        #if os(iOS)
-//            if offset < -20 {
-//                if !showSearchButton {
-//                    withAnimation(.interactiveSpring) {
-//                        showSearchButton = true
-//                    }
-//                }
-//            } else {
-//                if showSearchButton {
-//                    withAnimation(.interactiveSpring) {
-//                        showSearchButton = false
-//                    }
-//                }
-//            }
-//        #endif
-//
-//        if abs(difference) > 0.1 {
-//            lastScrollOffset = offset
-//        }
-//    }
-
     private func scrollToCurrent(_ proxy: ScrollViewProxy, animate: Bool = true) {
         guard let media = mpd.status.media else {
             return
