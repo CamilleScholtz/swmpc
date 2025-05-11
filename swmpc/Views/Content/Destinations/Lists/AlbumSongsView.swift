@@ -216,20 +216,31 @@ struct AlbumSongsView: View {
                         .foregroundStyle(.secondary)
                     }
                 }
-            }
-            .task {
-                async let artworkDataTask = ArtworkManager.shared.get(for: album, shouldCache: true)
-                async let songsTask = ConnectionManager.command().getSongs(for: album)
 
-                artwork = await PlatformImage(data: (try? artworkDataTask) ?? Data())
-                songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
+                Spacer()
             }
+            .padding(.bottom, 15 + 7.5)
+            #if os(iOS)
+                .listRowInsets(.init(top: 7.5, leading: 15, bottom: 15 + 7.5, trailing: 15))
+            #elseif os(macOS)
+                .listRowInsets(.init(top: 15, leading: 7.5, bottom: 7.5, trailing: 7.5))
+            #endif
+                .task {
+                    async let artworkDataTask = ArtworkManager.shared.get(for: album, shouldCache: true)
+                    async let songsTask = ConnectionManager.command().getSongs(for: album)
+
+                    artwork = await PlatformImage(data: (try? artworkDataTask) ?? Data())
+                    songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
+                }
         }
-        #if os(iOS)
-        .listRowInsets(.init(top: 7.5, leading: 15, bottom: 15 + 7.5, trailing: 15))
-        #elseif os(macOS)
-        .listRowInsets(.init(top: 15, leading: 7.5, bottom: 15 + 7.5, trailing: 7.5))
-        #endif
+        .frame(width: 310)
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill))
+                .offset(x: -15),
+            alignment: .bottom
+        )
 
         if let songs {
             Section {

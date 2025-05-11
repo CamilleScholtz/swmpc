@@ -151,13 +151,14 @@ struct CategoryView: View {
             }
             .id(destination)
             .listStyle(.plain)
+            // TODO: Replace this safe area stuff with small rows once the rowHeight issue has been fixed.
             .safeAreaPadding(.bottom, 7.5)
             .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-            .safeAreaInset(edge: .top) {
+            .safeAreaInset(edge: .top, spacing: 7.5) {
                 Group {
                     HeaderView(destination: destination, isSearching: $isSearching)
                         .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
-                        .animation(.interactiveSpring, value: showHeader)
+                        .animation(.spring, value: showHeader)
                 }
                 .frame(height: 50 + 7.5 + 1)
             }

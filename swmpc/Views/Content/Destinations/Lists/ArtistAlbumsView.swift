@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ArtistAlbumsView: View {
     @Environment(MPD.self) private var mpd
+    @Environment(\.colorScheme) private var colorScheme
 
     private var artist: Artist
 
@@ -39,20 +40,31 @@ struct ArtistAlbumsView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-            }
-        }
-        #if os(iOS)
-        .listRowInsets(.init(top: 15, leading: 15, bottom: 15 + 7.5, trailing: 15))
-        #elseif os(macOS)
-        .listRowInsets(.init(top: 15, leading: 7.5, bottom: 15 + 7.5, trailing: 7.5))
-        #endif
-        .task(priority: .medium) {
-            guard let song = mpd.status.song else {
-                return
-            }
 
-            mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
+                Spacer()
+            }
+            .padding(.bottom, 15)
+            #if os(iOS)
+                .listRowInsets(.init(top: 7.5, leading: 15, bottom: 15 + 7.5, trailing: 15))
+            #elseif os(macOS)
+                .listRowInsets(.init(top: 15, leading: 7.5, bottom: 7.5, trailing: 7.5))
+            #endif
+                .task(priority: .medium) {
+                    guard let song = mpd.status.song else {
+                        return
+                    }
+
+                    mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
+                }
         }
+        .frame(width: 310)
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill))
+                .offset(x: -15),
+            alignment: .bottom
+        )
 
         Section {
             ForEach(artist.albums ?? []) { album in

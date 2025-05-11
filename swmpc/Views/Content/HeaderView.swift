@@ -63,7 +63,12 @@ struct HeaderView: View {
         .padding(.trailing, 7.5)
         .frame(height: 50 + 7.5)
         .background(.background)
-        .shadow(color: colorScheme == .dark ? .black : Color(.secondarySystemFill), radius: 0, y: 1)
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
+            alignment: .bottom
+        )
         .onChange(of: destination) {
             isSearching = false
         }

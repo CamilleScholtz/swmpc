@@ -19,13 +19,6 @@ struct ArtistView: View {
 
     var body: some View {
         HStack(spacing: 15) {
-            let initials = artist.name.split(separator: " ")
-                .prefix(2)
-                .compactMap(\.first)
-                .map { String($0) }
-                .joined()
-                .uppercased()
-
             Circle()
                 .fill(LinearGradient(
                     gradient: Gradient(stops: [
@@ -41,7 +34,7 @@ struct ArtistView: View {
                 .frame(width: 50, height: 50)
             #endif
                 .overlay(
-                    Text(initials)
+                    Text(artist.name.initials)
                         .font(.system(size: 18))
                         .fontDesign(.rounded)
                         .fontWeight(.semibold)

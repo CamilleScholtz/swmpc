@@ -21,7 +21,7 @@ struct ContentDestinationView: View {
                     .listRowInsets(.init(top: 15, leading: 7.5, bottom: 0, trailing: 7.5))
             #endif
 
-            Section {
+            Group {
                 switch destination {
                 case let .album(album):
                     AlbumSongsView(for: album)
