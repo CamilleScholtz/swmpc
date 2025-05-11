@@ -10,6 +10,7 @@ import SwiftUIIntrospect
 
 struct HeaderView: View {
     @Environment(MPD.self) private var mpd
+    @Environment(\.colorScheme) private var colorScheme
 
     let destination: CategoryDestination
     @Binding var isSearching: Bool
@@ -62,7 +63,7 @@ struct HeaderView: View {
         .padding(.trailing, 7.5)
         .frame(height: 50 + 7.5)
         .background(.background)
-        .shadow(color: Color(.secondarySystemFill), radius: 0, y: 1)
+        .shadow(color: colorScheme == .dark ? .black : Color(.secondarySystemFill), radius: 0, y: 1)
         .onChange(of: destination) {
             isSearching = false
         }

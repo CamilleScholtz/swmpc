@@ -220,11 +220,12 @@ struct CategoryView: View {
                 }
             }
             .onChange(of: isSearching) { _, value in
-                guard value else {
-                    return
+                if value {
+                    showHeader = true
+                    hideHeaderTask?.cancel()
+                } else {
+                    resetHideHeaderTimer()
                 }
-                
-                showHeader = true
             }
             .onChange(of: mpd.queue.results?.count) { _, value in
                 guard value == nil else {
