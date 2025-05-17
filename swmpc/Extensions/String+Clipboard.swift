@@ -25,17 +25,4 @@ public extension String {
             pasteboard.setString(self, forType: .string)
         #endif
     }
-
-    /// Retrieves a string from the system's general pasteboard, if one exists.
-    ///
-    /// - Returns: An optional `String` containing the text content from the
-    ///            pasteboard, or `nil` if the pasteboard is empty or does not
-    ///            contain a string.
-    static func fromClipboard() -> String? {
-        #if os(iOS)
-            return Pasteboard.general.string
-        #elseif os(macOS)
-            return Pasteboard.general.string(forType: .string)
-        #endif
-    }
 }
