@@ -17,7 +17,9 @@ struct SettingsView: View {
     enum SettingCategory: String, CaseIterable, Identifiable {
         case general = "General"
         case behavior = "Behavior"
-        case intelligence = "Intelligence"
+        #if !DISABLE_INTELLIGENCE
+            case intelligence = "Intelligence"
+        #endif
 
         var id: Self { self }
         var title: String { rawValue }
@@ -26,7 +28,9 @@ struct SettingsView: View {
             switch self {
             case .general: .gearshape
             case .behavior: .sliderHorizontal3
-            case .intelligence: .sparkles
+            #if !DISABLE_INTELLIGENCE
+                case .intelligence: .sparkles
+            #endif
             }
         }
 
@@ -36,8 +40,10 @@ struct SettingsView: View {
                 AnyView(GeneralView())
             case .behavior:
                 AnyView(BehaviorView())
-            case .intelligence:
-                AnyView(IntelligenceView())
+            #if !DISABLE_INTELLIGENCE
+                case .intelligence:
+                    AnyView(IntelligenceView())
+            #endif
             }
         }
     }
@@ -159,54 +165,56 @@ struct SettingsView: View {
         }
     }
 
-    struct IntelligenceView: View {
-        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
-        @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
+    #if !DISABLE_INTELLIGENCE
+        struct IntelligenceView: View {
+            @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+            @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
 
-        @State private var token = ""
+            @State private var token = ""
 
-        var body: some View {
-            Form {
-                Toggle(isOn: $isIntelligenceEnabled) {
-                    Text("Enable AI Features")
-                    Text("Currently used for smart playlist generation.")
-                }
+            var body: some View {
+                Form {
+                    Toggle(isOn: $isIntelligenceEnabled) {
+                        Text("Enable AI Features")
+                        Text("Currently used for smart playlist generation.")
+                    }
 
-                Divider()
-                    .frame(height: 32, alignment: .center)
+                    Divider()
+                        .frame(height: 32, alignment: .center)
 
-                Picker("Model:", selection: $intelligenceModel) {
-                    ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
-                        HStack {
-                            Text(model.name)
-                            Text(model.model)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                    Picker("Model:", selection: $intelligenceModel) {
+                        ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
+                            HStack {
+                                Text(model.name)
+                                Text(model.model)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .tag(model)
                         }
-                        .tag(model)
                     }
-                }
-                .pickerStyle(.inline)
-                .disabled(!isIntelligenceEnabled)
-
-                SecureField("API Token:", text: $token)
-                    .textContentType(.password)
+                    .pickerStyle(.inline)
                     .disabled(!isIntelligenceEnabled)
-                    .onAppear {
-                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                        token = tokenSecureStorage ?? ""
-                    }
-                    .onChange(of: token) { _, value in
-                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                        tokenSecureStorage = value.isEmpty ? nil : value
-                    }
-                    .onChange(of: intelligenceModel) {
-                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                        token = tokenSecureStorage ?? ""
-                    }
+
+                    SecureField("API Token:", text: $token)
+                        .textContentType(.password)
+                        .disabled(!isIntelligenceEnabled)
+                        .onAppear {
+                            @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                            token = tokenSecureStorage ?? ""
+                        }
+                        .onChange(of: token) { _, value in
+                            @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                            tokenSecureStorage = value.isEmpty ? nil : value
+                        }
+                        .onChange(of: intelligenceModel) {
+                            @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                            token = tokenSecureStorage ?? ""
+                        }
+                }
+                .padding(32)
+                .navigationTitle("Intelligence")
             }
-            .padding(32)
-            .navigationTitle("Intelligence")
         }
-    }
+    #endif
 }

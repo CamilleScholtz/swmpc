@@ -38,7 +38,9 @@ struct CategoryDestinationView: View {
 }
 
 struct EmptyCategoryView: View {
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+    #if !DISABLE_INTELLIGENCE
+        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+    #endif
 
     let destination: CategoryDestination
 
@@ -46,8 +48,10 @@ struct EmptyCategoryView: View {
     @State private var playlistToEdit: Playlist?
     @State private var intelligencePlaylistPrompt = ""
 
-    private let createIntelligencePlaylistNotification = NotificationCenter.default
-        .publisher(for: .createIntelligencePlaylistNotification)
+    #if !DISABLE_INTELLIGENCE
+        private let createIntelligencePlaylistNotification = NotificationCenter.default
+            .publisher(for: .createIntelligencePlaylistNotification)
+    #endif
 
     var body: some View {
         VStack {
@@ -64,8 +68,10 @@ struct EmptyCategoryView: View {
                 Text("Add songs to your playlist.")
                     .font(.subheadline)
 
-                IntelligenceButtonView(using: playlist)
-                    .offset(y: 20)
+                #if !DISABLE_INTELLIGENCE
+                    IntelligenceButtonView(using: playlist)
+                        .offset(y: 20)
+                #endif
             #if os(iOS)
                 default:
                     EmptyView()
@@ -73,17 +79,19 @@ struct EmptyCategoryView: View {
             }
         }
         .offset(y: -20)
-        .onReceive(createIntelligencePlaylistNotification) { notification in
-            guard let playlist = notification.object as? Playlist else {
-                return
-            }
+        #if !DISABLE_INTELLIGENCE
+            .onReceive(createIntelligencePlaylistNotification) { notification in
+                guard let playlist = notification.object as? Playlist else {
+                    return
+                }
 
-            playlistToEdit = playlist
-            showIntelligencePlaylistSheet = true
-        }
-        .sheet(isPresented: $showIntelligencePlaylistSheet) {
-            IntelligencePlaylistView(showIntelligencePlaylistSheet: $showIntelligencePlaylistSheet, playlistToEdit: $playlistToEdit)
-        }
+                playlistToEdit = playlist
+                showIntelligencePlaylistSheet = true
+            }
+            .sheet(isPresented: $showIntelligencePlaylistSheet) {
+                IntelligencePlaylistView(showIntelligencePlaylistSheet: $showIntelligencePlaylistSheet, playlistToEdit: $playlistToEdit)
+            }
+        #endif
     }
 }
 
