@@ -12,12 +12,10 @@ extension Notification.Name {
         "scroll_to_current")
     static let startSearchingNotication = Notification.Name(
         "start_searching")
+    static let createIntelligencePlaylistNotification = Notification.Name(
+        "create_intelligence_playlist")
     static let statusBarSettingChangedNotification = Notification.Name(
         "status_bar_setting_changed")
-    #if !DISABLE_INTELLIGENCE
-        static let createIntelligencePlaylistNotification = Notification.Name(
-            "create_intelligence_playlist")
-    #endif
 }
 
 enum ButtonNotification: Hashable {

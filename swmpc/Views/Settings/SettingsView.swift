@@ -17,9 +17,7 @@ struct SettingsView: View {
     enum SettingCategory: String, CaseIterable, Identifiable {
         case general = "General"
         case behavior = "Behavior"
-        #if !DISABLE_INTELLIGENCE
-            case intelligence = "Intelligence"
-        #endif
+        case intelligence = "Intelligence"
 
         var id: Self { self }
         var title: String { rawValue }
@@ -28,9 +26,7 @@ struct SettingsView: View {
             switch self {
             case .general: .gearshape
             case .behavior: .sliderHorizontal3
-            #if !DISABLE_INTELLIGENCE
-                case .intelligence: .sparkles
-            #endif
+            case .intelligence: .sparkles
             }
         }
 
@@ -40,10 +36,8 @@ struct SettingsView: View {
                 AnyView(GeneralView())
             case .behavior:
                 AnyView(BehaviorView())
-            #if !DISABLE_INTELLIGENCE
-                case .intelligence:
-                    AnyView(IntelligenceView())
-            #endif
+            case .intelligence:
+                AnyView(IntelligenceView())
             }
         }
     }
@@ -165,56 +159,54 @@ struct SettingsView: View {
         }
     }
 
-    #if !DISABLE_INTELLIGENCE
-        struct IntelligenceView: View {
-            @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
-            @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
+    struct IntelligenceView: View {
+        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+        @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
 
-            @State private var token = ""
+        @State private var token = ""
 
-            var body: some View {
-                Form {
-                    Toggle(isOn: $isIntelligenceEnabled) {
-                        Text("Enable AI Features")
-                        Text("Currently used for smart playlist generation.")
-                    }
-
-                    Divider()
-                        .frame(height: 32, alignment: .center)
-
-                    Picker("Model:", selection: $intelligenceModel) {
-                        ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
-                            HStack {
-                                Text(model.name)
-                                Text(model.model)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .tag(model)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .disabled(!isIntelligenceEnabled)
-
-                    SecureField("API Token:", text: $token)
-                        .textContentType(.password)
-                        .disabled(!isIntelligenceEnabled)
-                        .onAppear {
-                            @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                            token = tokenSecureStorage ?? ""
-                        }
-                        .onChange(of: token) { _, value in
-                            @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                            tokenSecureStorage = value.isEmpty ? nil : value
-                        }
-                        .onChange(of: intelligenceModel) {
-                            @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                            token = tokenSecureStorage ?? ""
-                        }
+        var body: some View {
+            Form {
+                Toggle(isOn: $isIntelligenceEnabled) {
+                    Text("Enable AI Features")
+                    Text("Currently used for smart playlist generation.")
                 }
-                .padding(32)
-                .navigationTitle("Intelligence")
+
+                Divider()
+                    .frame(height: 32, alignment: .center)
+
+                Picker("Model:", selection: $intelligenceModel) {
+                    ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
+                        HStack {
+                            Text(model.name)
+                            Text(model.model)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .tag(model)
+                    }
+                }
+                .pickerStyle(.inline)
+                .disabled(!isIntelligenceEnabled)
+
+                SecureField("API Token:", text: $token)
+                    .textContentType(.password)
+                    .disabled(!isIntelligenceEnabled)
+                    .onAppear {
+                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                        token = tokenSecureStorage ?? ""
+                    }
+                    .onChange(of: token) { _, value in
+                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                        tokenSecureStorage = value.isEmpty ? nil : value
+                    }
+                    .onChange(of: intelligenceModel) {
+                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
+                        token = tokenSecureStorage ?? ""
+                    }
             }
+            .padding(32)
+            .navigationTitle("Intelligence")
         }
-    #endif
+    }
 }
