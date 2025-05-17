@@ -58,6 +58,7 @@ struct HeaderView: View {
                     .contentShape(Circle())
             }
             .styledButton()
+            .keyboardShortcut(.cancelAction)
         }
         .padding(.leading, 15)
         .padding(.trailing, 7.5)
