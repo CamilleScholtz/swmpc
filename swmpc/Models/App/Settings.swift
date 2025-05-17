@@ -21,6 +21,7 @@ enum Setting {
     static let deepSeekToken = "deepseek_token"
     static let geminiToken = "gemini_token"
     static let grokToken = "grok_token"
+    static let claudeToken = "claude_token"
 
     static let artworkGetter = "artwork_getter"
 

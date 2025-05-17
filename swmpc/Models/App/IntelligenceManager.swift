@@ -23,6 +23,7 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
     case deepSeek
     case gemini
     case grok
+    case claude
 
     var name: String {
         switch self {
@@ -34,6 +35,8 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
             "Gemini"
         case .grok:
             "Grok"
+        case .claude:
+            "Claude"
         }
     }
 
@@ -47,6 +50,8 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
             "gemini-2.0-flash"
         case .grok:
             "grok-3-mini-beta"
+        case .claude:
+            "claude-3-5-haiku-latest"
         }
     }
 
@@ -60,6 +65,8 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
             "generativelanguage.googleapis.com"
         case .grok:
             "api.x.ai"
+        case .claude:
+            "api.anthropic.com"
         }
     }
 
@@ -67,6 +74,8 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
         switch self {
         case .gemini:
             "/v1beta/openai"
+        case .claude:
+            "/v1/messages"
         default:
             "/v1"
         }
@@ -82,6 +91,8 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
             Setting.geminiToken
         case .grok:
             Setting.grokToken
+        case .claude:
+            Setting.claudeToken
         }
     }
 
