@@ -51,6 +51,7 @@ struct Delegate: App {
                 AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
                     try await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
                 }
+                .keyboardShortcut(.space)
 
                 AsyncButton("Next Song") {
                     try await ConnectionManager.command().next()
@@ -77,12 +78,12 @@ struct Delegate: App {
                         try await ConnectionManager.command().addToFavorites(songs: [song])
                     }
                 }
-                .keyboardShortcut("l", modifiers: [])
+                .keyboardShortcut("l", modifiers: [.command, .option])
 
                 Button("Go to Current Song") {
                     NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
                 }
-                .keyboardShortcut("c", modifiers: [])
+                .keyboardShortcut("l", modifiers: [.command])
 
                 Button("Search") {
                     NotificationCenter.default.post(name: .startSearchingNotication, object: nil)
@@ -91,10 +92,22 @@ struct Delegate: App {
 
                 Divider()
 
+                AsyncButton("Toggle Repeat") {
+                    try await ConnectionManager.command().repeat(!(appDelegate.mpd.status.isRepeat ?? false))
+                }
+                .keyboardShortcut("r", modifiers: [.command])
+
+                AsyncButton("Toggle Shuffle") {
+                    try await ConnectionManager.command().random(!(appDelegate.mpd.status.isRandom ?? false))
+                }
+                .keyboardShortcut("s", modifiers: [.command])
+
+                Divider()
+
                 AsyncButton("Refresh Library") {
                     try await ConnectionManager.command().update()
                 }
-                .keyboardShortcut("r", modifiers: [.command])
+                .keyboardShortcut("r", modifiers: [.command, .option])
             }
 
             if let playlists = appDelegate.mpd.queue.playlists {
