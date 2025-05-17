@@ -165,6 +165,10 @@ struct CategoryView: View {
                     offset = 0
                     showHeader = true
 
+                    #if os(iOS)
+                        showSearchButton = false
+                    #endif
+
                     resetHideHeaderTimer()
 
                     return
@@ -189,6 +193,12 @@ struct CategoryView: View {
                         showHeader = true
                     }
                 }
+
+                #if os(iOS)
+                    if !showSearchButton {
+                        showSearchButton = true
+                    }
+                #endif
 
                 resetHideHeaderTimer()
             }
@@ -244,6 +254,7 @@ struct CategoryView: View {
                             .padding(5)
                     }
                     .opacity(showSearchButton ? 1 : 0)
+                    .animation(.spring, value: showSearchButton)
                 }
             }
             .searchable(text: $query, isPresented: $isSearching)
