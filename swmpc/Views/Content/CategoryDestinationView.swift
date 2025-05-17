@@ -112,12 +112,12 @@ struct CategoryView: View {
     @State private var showHeader = false
     @State private var isSearching = false
 
+    @State private var hideHeaderTask: Task<Void, Never>?
+
     #if os(iOS)
         @State private var showSearchButton = false
         @State private var isGoingToSearch = false
         @State private var query = ""
-    #elseif os(macOS)
-        @State private var hideHeaderTask: Task<Void, Never>?
     #endif
 
     private let scrollToCurrentNotification = NotificationCenter.default
@@ -154,14 +154,6 @@ struct CategoryView: View {
             // TODO: Replace this safe area stuff with small rows once the rowHeight issue has been fixed.
             .safeAreaPadding(.bottom, 7.5)
             .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-            .safeAreaInset(edge: .top, spacing: 7.5) {
-                Group {
-                    HeaderView(destination: destination, isSearching: $isSearching)
-                        .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
-                        .animation(.spring, value: showHeader)
-                }
-                .frame(height: 50 + 7.5 + 1)
-            }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 geometry.contentOffset.y
             } action: { previous, value in
@@ -238,7 +230,7 @@ struct CategoryView: View {
             #if os(iOS)
             .navigationTitle(destination.label)
             .navigationBarTitleDisplayMode(.large)
-            .toolbarVisibility(showToolbar ? .visible : .hidden, for: .navigationBar)
+            .toolbarVisibility(showHeader ? .visible : .hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -285,8 +277,16 @@ struct CategoryView: View {
                 }
             }
             #elseif os(macOS)
+            .safeAreaInset(edge: .top, spacing: 7.5) {
+                Group {
+                    HeaderView(destination: destination, isSearching: $isSearching)
+                        .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
+                }
+                .frame(height: 50 + 7.5 + 1)
+            }
             .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
             #endif
+            .animation(.spring, value: showHeader)
         }
     }
 
