@@ -650,9 +650,6 @@
         }
       }
     },
-    "Are you sure you want to delete playlist '%@'?" : {
-
-    },
     "Are you sure you want to delete playlist ’%@’?" : {
       "localizations" : {
         "de" : {
@@ -1199,30 +1196,102 @@
     },
     "Copy Album Title" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Albumtitel kopieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar título del álbum"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier le titre de l'album"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kopieer titel van album"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制专辑标题"
           }
         }
       }
     },
     "Copy Artist Name" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Künstlernamen kopieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar nombre del artista"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier le nom de l'artiste"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kopieer naam van artiest"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制艺术家名称"
           }
         }
       }
     },
     "Copy Song Title" : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songtitel kopieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar título de la canción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier le titre du morceau"
+          }
+        },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kopieer titel van nummer"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制歌曲标题"
           }
         }
       }
@@ -1911,39 +1980,35 @@
       }
     },
     "If this is disabled, only the swmpc icon will be shown." : {
-
-    },
-    "If this is disabled, only the swmpc icon will be shown. A restart is required for these changes to take effect." : {
-      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wenn dies deaktiviert ist, wird nur das swmpc-Symbol angezeigt. Ein Neustart ist erforderlich, damit diese Änderungen wirksam werden."
+            "value" : "Wenn dies deaktiviert ist, wird nur das swmpc-Symbol angezeigt."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Si está desactivado, solo se mostrará el icono de swmpc. Se requiere un reinicio para que estos cambios surtan efecto."
+            "value" : "Si esto está desactivado, solo se mostrará el icono de swmpc."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Si désactivé, seule l'icône swmpc sera affichée. Un redémarrage est requis pour que ces changements prennent effet."
+            "value" : "Si cette option est désactivée, seule l'icône swmpc sera affichée."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Als dit uit staat, wordt alleen het swmpc-pictogram getoond. Een herstart is vereist om deze wijzigingen door te voeren."
+            "value" : "Als dit is uitgeschakeld, wordt alleen het swmpc-pictogram weergegeven."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "如果禁用此项，将仅显示 swmpc 图标。需要重新启动才能使更改生效。"
+            "value" : "如果禁用此选项，将只显示swmpc图标。"
           }
         }
       }
@@ -3757,10 +3822,72 @@
       }
     },
     "Toggle Repeat" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wiederholen umschalten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alternar repetición"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer/désactiver la répétition"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herhaling in-/uitschakelen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换重复模式"
+          }
+        }
+      }
     },
     "Toggle Shuffle" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zufallswiedergabe umschalten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alternar reproducción aleatoria"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer/désactiver la lecture aléatoire"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle in-/uitschakelen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换随机播放"
+          }
+        }
+      }
     },
     "Turkish Music" : {
       "localizations" : {

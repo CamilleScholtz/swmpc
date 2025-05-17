@@ -164,7 +164,7 @@ struct PlaylistsView: View {
             }
         } message: {
             if let playlist = playlistToDelete {
-                Text("Are you sure you want to delete playlist '\(playlist.name)'?")
+                Text("Are you sure you want to delete playlist ’\(playlist.name)’?")
             }
         }
     }
