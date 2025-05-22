@@ -1,29 +1,60 @@
-# CLAUDE.md - SWMPC Project Guidelines
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with SwiftUI. It's a universal app that provides a modern interface for controlling MPD servers.
+
+- **Platforms**: macOS 15.0+, iOS 18.0+
+- **Language**: Swift 6.0
+- **UI Framework**: SwiftUI with Observation framework
+- **Build System**: Xcode project (no Package.swift)
 
 ## Build Commands
-- Build (macOS): `xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Debug build`
-- Clean: `xcodebuild -project swmpc.xcodeproj clean`
 
-## Code Style Guidelines
+```bash
+# Build for debug
+xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Debug
 
-### Formatting & Structure
-- 4-space indentation, opening braces on same line, line length < 80 characters
-- Actor-based concurrency model with protocol-oriented design and generics
-- MVVM architecture with environment-based dependency injection
-- One empty line between functions/types for clear separation
+# Build for release
+xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Release
 
-### Naming & Types
-- Types: UpperCamelCase (ConnectionManager, ArtworkManager)
-- Variables/Functions: lowerCamelCase (isPlaying, getStatusData)
-- Boolean variables: use "is/has" prefix (isPlaying, hasConnection)
-- Granular error enums that conform to LocalizedError with context
+# Archive for App Store
+xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Release archive
+```
 
-### Modern Swift Practices
-- Swift 6 with latest language features
-- Swift Concurrency (async/await) for asynchronous operations
-- Property wrappers (@Environment, @AppStorage, @State)
-- Observe model changes with @Environment and observed state macro
-- Type-safe enums for state representation
-- Extensions to organize related functionality
-- Conditional compilation for platform-specific code (#if os(macOS))
-- Defensive programming with guard statements and proper error handling
+**Note**: Most development is done through Xcode IDE. Dependencies are managed through Xcode's Swift Package Manager integration.
+
+## Architecture
+
+The app follows an MVVM-style architecture using SwiftUI and the Observation framework:
+
+- **Models/App/**: App-level managers
+  - `NavigationManager`: Handles navigation state
+  - `IntelligenceManager`: AI integration for smart playlists
+  - `Settings`: User preferences with @AppStorage
+
+- **Models/MPD/**: MPD protocol implementation
+  - `ConnectionManager`: Async/await based TCP connection to MPD
+  - `MPD`: Main MPD client with command methods
+  - `Status`, `Queue`: Observable models for MPD state
+
+- **Platform Differences**: Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code
+  - macOS: Menu bar app with NSStatusItem popover
+  - iOS: Tab-based navigation with LNPopupUI for now playing
+
+## Key Dependencies
+
+External packages (managed in Xcode):
+- `LNPopupUI-Static` (iOS only): Now playing popup
+- `OpenAI`: AI integration
+- `SwiftUIIntrospect`: View introspection
+- `LaunchAtLogin` (macOS only): Startup behavior
+
+## MPD Protocol Notes
+
+- Uses MPD's idle command for real-time updates
+- Requires MPD 0.24+
+- Connection state managed through async streams
+- Commands follow MPD protocol format: `command arg1 arg2\n`
