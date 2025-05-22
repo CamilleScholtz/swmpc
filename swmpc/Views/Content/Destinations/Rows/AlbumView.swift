@@ -25,7 +25,7 @@ struct AlbumView: View {
     #elseif os(macOS)
         @State private var isHovering = false
         @State private var isHoveringArtwork = false
-        @State private var hoverTask: Task<Void, Never>? = nil
+        @State private var hoverHandler = HoverTaskHandler()
     #endif
 
     var body: some View {
@@ -103,24 +103,9 @@ struct AlbumView: View {
             artwork = nil
         }
         #if os(macOS)
-        .onHover { value in
-            hoverTask?.cancel()
-
-            if value {
-                hoverTask = Task {
-                    try? await Task.sleep(for: .milliseconds(50))
-                    guard !Task.isCancelled else {
-                        return
-                    }
-
-                    withAnimation(.interactiveSpring) {
-                        isHovering = true
-                    }
-                }
-            } else {
-                withAnimation(.interactiveSpring) {
-                    isHovering = false
-                }
+        .onHoverWithDebounce(handler: hoverHandler) { hovering in
+            withAnimation(.interactiveSpring) {
+                isHovering = hovering
             }
         }
         #endif

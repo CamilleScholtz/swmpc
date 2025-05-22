@@ -22,6 +22,7 @@ struct PopoverView: View {
 
     @State private var isHovering = false
     @State private var showInfo = false
+    @State private var hoverHandler = HoverTaskHandler()
 
     private let willShowNotification = NotificationCenter.default
         .publisher(for: NSPopover.willShowNotification)
@@ -151,18 +152,13 @@ struct PopoverView: View {
                 isArtworkTransitioning = false
             }
         }
-        .onHover { value in
-            if !value {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    if !isHovering {
-                        showInfo = false || !mpd.status.isPlaying
-                    }
-                }
-            } else {
+        .onHoverWithDebounce(delay: .milliseconds(100), handler: hoverHandler) { hovering in
+            isHovering = hovering
+            if hovering {
                 showInfo = true
+            } else {
+                showInfo = false || !mpd.status.isPlaying
             }
-
-            isHovering = value
         }
     }
 

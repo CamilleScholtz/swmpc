@@ -19,7 +19,7 @@ struct SongView: View {
 
     #if os(macOS)
         @State private var isHovering = false
-        @State private var hoverTask: Task<Void, Never>? = nil
+        @State private var hoverHandler = HoverTaskHandler()
     #endif
 
     #if os(iOS)
@@ -77,24 +77,9 @@ struct SongView: View {
         #if os(iOS)
             .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 10))
         #elseif os(macOS)
-            .onHover { value in
-                hoverTask?.cancel()
-
-                if value {
-                    hoverTask = Task {
-                        try? await Task.sleep(for: .milliseconds(50))
-                        guard !Task.isCancelled else {
-                            return
-                        }
-
-                        withAnimation(.interactiveSpring) {
-                            isHovering = true
-                        }
-                    }
-                } else {
-                    withAnimation(.interactiveSpring) {
-                        isHovering = false
-                    }
+            .onHoverWithDebounce(handler: hoverHandler) { hovering in
+                withAnimation(.interactiveSpring) {
+                    isHovering = hovering
                 }
             }
         #endif
