@@ -14,8 +14,8 @@ struct PopoverView: View {
 
     @State private var height = Double(250)
 
-    @State private var artwork: NSImage?
-    @State private var previousArtwork: NSImage?
+    @State private var currentSong: Song?
+    @State private var previousSong: Song?
 
     @State private var isBackgroundArtworkTransitioning = false
     @State private var isArtworkTransitioning = false
@@ -31,11 +31,12 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ArtworkView(image: artwork)
+            AsyncArtworkView(playable: currentSong, aspectRatioMode: .fill)
+                .frame(width: 250)
                 .overlay(
                     Group {
-                        if let previousArtwork {
-                            ArtworkView(image: previousArtwork)
+                        if let previousSong {
+                            AsyncArtworkView(playable: previousSong)
                                 .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
                                 .transition(.opacity)
                         }
@@ -43,11 +44,12 @@ struct PopoverView: View {
                 )
                 .opacity(0.3)
 
-            ArtworkView(image: artwork)
+            AsyncArtworkView(playable: currentSong, aspectRatioMode: .fill)
+                .frame(width: 250)
                 .overlay(
                     Group {
-                        if let previousArtwork {
-                            ArtworkView(image: previousArtwork)
+                        if let previousSong {
+                            AsyncArtworkView(playable: previousSong)
                                 .opacity(isArtworkTransitioning ? 1 : 0)
                                 .transition(.opacity)
                         }
@@ -128,7 +130,7 @@ struct PopoverView: View {
             }
         }
         .onReceive(didCloseNotification) { _ in
-            artwork = nil
+            currentSong = nil
             mpd.status.stopTrackingElapsed()
         }
         .task(id: mpd.status.song) {
@@ -138,10 +140,10 @@ struct PopoverView: View {
 
             await updateArtwork()
         }
-        .onChange(of: artwork) { previous, _ in
+        .onChange(of: currentSong) { previous, _ in
             updateHeight()
 
-            previousArtwork = previous
+            previousSong = previous
 
             isBackgroundArtworkTransitioning = true
             withAnimation(.spring(duration: 0.5)) {
@@ -163,44 +165,12 @@ struct PopoverView: View {
     }
 
     private func updateArtwork() async {
-        guard let song = mpd.status.song else {
-            artwork = nil
-            return
-        }
-
-        guard let data = try? await ArtworkManager.shared.get(for: song, shouldCache: false) else {
-            artwork = nil
-            return
-        }
-
-        artwork = NSImage(data: data)
+        currentSong = mpd.status.song
     }
 
     private func updateHeight() {
-        guard let artwork else {
-            height = 250
-            return
-        }
-
-        height = (Double(artwork.size.height) / Double(artwork.size.width) * 250).rounded(.down)
-    }
-
-    struct ArtworkView: View {
-        let image: NSImage?
-
-        var body: some View {
-            if let image {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 250)
-            } else {
-                Image(systemSymbol: .photo)
-                    .font(.system(size: 25))
-                    .blendMode(.overlay)
-                    .frame(width: 250, height: 250)
-                    .background(.background.opacity(0.3))
-            }
-        }
+        // For now, we'll use a fixed aspect ratio
+        // TODO: Consider getting actual image dimensions from AsyncImage
+        height = 250
     }
 }

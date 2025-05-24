@@ -19,8 +19,7 @@ struct DetailView: View {
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
-    let artwork: PlatformImage?
-    @State private var previousArtwork: PlatformImage?
+    @State private var previousSong: Song?
 
     #if os(iOS)
         @Binding var isPopupOpen: Bool
@@ -51,11 +50,11 @@ struct DetailView: View {
             ZStack {
                 ZStack {
                     ZStack {
-                        ArtworkView(image: artwork)
+                        AsyncArtworkView(playable: mpd.status.song)
                             .overlay(
                                 Group {
-                                    if let previousArtwork {
-                                        ArtworkView(image: previousArtwork)
+                                    if let previousSong {
+                                        AsyncArtworkView(playable: previousSong)
                                             .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
                                             .transition(.opacity)
                                     }
@@ -92,11 +91,11 @@ struct DetailView: View {
                         .opacity(0.6)
 
                     ZStack {
-                        ArtworkView(image: artwork)
+                        AsyncArtworkView(playable: mpd.status.song)
                             .overlay(
                                 Group {
-                                    if let previousArtwork {
-                                        ArtworkView(image: previousArtwork)
+                                    if let previousSong {
+                                        AsyncArtworkView(playable: previousSong)
                                             .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
                                             .transition(.opacity)
                                     }
@@ -146,11 +145,11 @@ struct DetailView: View {
                     .blendMode(colorScheme == .dark ? .darken : .softLight)
                     .opacity(0.3)
 
-                ArtworkView(image: artwork)
+                AsyncArtworkView(playable: mpd.status.song)
                     .overlay(
                         Group {
-                            if let previousArtwork {
-                                ArtworkView(image: previousArtwork)
+                            if let previousSong {
+                                AsyncArtworkView(playable: previousSong)
                                     .opacity(isArtworkTransitioning ? 1 : 0)
                                     .transition(.opacity)
                             }
@@ -253,8 +252,8 @@ struct DetailView: View {
         #if os(macOS)
         .ignoresSafeArea()
         #endif
-        .onChange(of: artwork) { previous, _ in
-            previousArtwork = previous
+        .onChange(of: mpd.status.song) { previous, _ in
+            previousSong = previous
 
             isBackgroundArtworkTransitioning = true
             withAnimation(.spring(duration: 0.5)) {
@@ -266,7 +265,7 @@ struct DetailView: View {
             }
         }
         #if os(iOS)
-        .popupImage((artwork != nil) ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
+        .popupImage(Image(systemSymbol: .musicNote))
         .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
         // swiftformat:disable:next trailingClosures
         .popupBarItems({

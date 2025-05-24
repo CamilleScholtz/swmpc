@@ -19,9 +19,6 @@ struct AppView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    @State private var initialFetch = true
-    @State private var artwork: PlatformImage?
-
     #if os(iOS)
         @State private var isPopupBarPresented = true
         @State private var isPopupOpen = false
@@ -56,7 +53,7 @@ struct AppView: View {
                         }
                         .handleQueueChange()
                         .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
-                            DetailView(artwork: artwork, isPopupOpen: $isPopupOpen)
+                            DetailView(isPopupOpen: $isPopupOpen)
                         }
                         .popupBarProgressViewStyle(.top)
                     #elseif os(macOS)
@@ -77,7 +74,7 @@ struct AppView: View {
                                 LoadingView()
                             )
                         } detail: {
-                            DetailView(artwork: artwork)
+                            DetailView()
                                 .padding(60)
                         }
                         .background(.background)
@@ -90,28 +87,6 @@ struct AppView: View {
                 }
                 .onDisappear {
                     mpd.status.stopTrackingElapsed()
-                }
-                .task(id: mpd.status.song) {
-                    guard let song = mpd.status.song else {
-                        artwork = nil
-                        return
-                    }
-
-                    // NOTE: Hack, without this getting the initial artwork
-                    // fails when not on localhost connections. I suspect
-                    // because the artwork connection pool has not properly
-                    // initialized yet.
-                    if initialFetch {
-                        initialFetch = false
-                        try? await Task.sleep(for: .milliseconds(200))
-                    }
-
-                    guard let data = try? await ArtworkManager.shared.get(for: song, shouldCache: false) else {
-                        artwork = nil
-                        return
-                    }
-
-                    artwork = PlatformImage(data: data)
                 }
             }
         }

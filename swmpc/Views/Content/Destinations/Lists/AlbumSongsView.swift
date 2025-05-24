@@ -18,7 +18,6 @@ struct AlbumSongsView: View {
     }
 
     @State private var album: Album
-    @State private var artwork: PlatformImage?
     @State private var songs: [Int: [Song]]?
 
     #if os(macOS)
@@ -28,113 +27,111 @@ struct AlbumSongsView: View {
     var body: some View {
         Section {
             HStack(spacing: 15) {
-                if artwork != nil {
-                    ZStack {
-                        ZStack(alignment: .bottom) {
-                            ArtworkView(image: artwork)
-                                .frame(width: 80)
-                                .blur(radius: 9.5)
-                                .offset(y: 4)
-                                .saturation(1.5)
-                                .blendMode(colorScheme == .dark ? .softLight : .normal)
-                                .opacity(0.5)
+                ZStack {
+                    ZStack(alignment: .bottom) {
+                        AsyncArtworkView(playable: album)
+                            .frame(width: 80)
+                            .blur(radius: 9.5)
+                            .offset(y: 4)
+                            .saturation(1.5)
+                            .blendMode(colorScheme == .dark ? .softLight : .normal)
+                            .opacity(0.5)
 
-                            ArtworkView(image: artwork)
-                                .cornerRadius(10)
-                                .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
-                                .frame(width: 100)
-                                .overlay(
-                                    ZStack(alignment: .bottomLeading) {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(.ultraThinMaterial)
-                                            .frame(width: 100)
-                                            .mask(
-                                                LinearGradient(
-                                                    gradient: Gradient(stops: [
-                                                        .init(color: .black, location: 0.3),
-                                                        .init(color: .black.opacity(0), location: 1.0),
-                                                    ]),
-                                                    startPoint: .bottom,
-                                                    endPoint: .top
-                                                )
+                        AsyncArtworkView(playable: album)
+                            .cornerRadius(10)
+                            .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+                            .frame(width: 100)
+                            .overlay(
+                                ZStack(alignment: .bottomLeading) {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(.ultraThinMaterial)
+                                        .frame(width: 100)
+                                        .mask(
+                                            LinearGradient(
+                                                gradient: Gradient(stops: [
+                                                    .init(color: .black, location: 0.3),
+                                                    .init(color: .black.opacity(0), location: 1.0),
+                                                ]),
+                                                startPoint: .bottom,
+                                                endPoint: .top
                                             )
+                                        )
 
-                                        HStack(spacing: 5) {
-                                            Image(systemSymbol: .playFill)
-                                            Text("Playing")
-                                        }
-                                        .font(.caption2)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.black)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 4)
-                                        .background(.white)
-                                        .cornerRadius(100)
-                                        .padding(10)
-                                    }
-                                    .opacity(mpd.status.media?.id == album.id ? 1 : 0)
-                                    .animation(.interactiveSpring, value: mpd.status.media?.id == album.id)
-                                )
-                        }
-
-                        #if os(macOS)
-                            if isHovering, mpd.status.media?.id != album.id {
-                                AsyncButton {
-                                    guard mpd.status.media?.id != album.id else {
-                                        return
-                                    }
-
-                                    try await ConnectionManager.command().play(album)
-                                } label: {
-                                    ZStack {
-                                        Circle()
-                                            .fill(.accent)
-                                            .frame(width: 60, height: 60)
-                                        Circle()
-                                            .fill(.ultraThinMaterial)
-                                            .frame(width: 60, height: 60)
-
+                                    HStack(spacing: 5) {
                                         Image(systemSymbol: .playFill)
-                                            .font(.title)
-                                            .foregroundColor(.white)
+                                        Text("Playing")
                                     }
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(.white)
+                                    .cornerRadius(100)
+                                    .padding(10)
                                 }
-                                .styledButton(hoverScale: 1.05)
-                                .asyncButtonStyle(.pulse)
-                            }
-                        #endif
+                                .opacity(mpd.status.media?.id == album.id ? 1 : 0)
+                                .animation(.interactiveSpring, value: mpd.status.media?.id == album.id)
+                            )
                     }
+
                     #if os(macOS)
-                    .onHover { value in
-                        withAnimation(.interactiveSpring) {
-                            isHovering = value
-                        }
-                    }
-                    #endif
-                    .contextMenu {
-                        Button("Copy Album Title") {
-                            album.title.copyToClipboard()
-                        }
+                        if isHovering, mpd.status.media?.id != album.id {
+                            AsyncButton {
+                                guard mpd.status.media?.id != album.id else {
+                                    return
+                                }
 
-                        Divider()
+                                try await ConnectionManager.command().play(album)
+                            } label: {
+                                ZStack {
+                                    Circle()
+                                        .fill(.accent)
+                                        .frame(width: 60, height: 60)
+                                    Circle()
+                                        .fill(.ultraThinMaterial)
+                                        .frame(width: 60, height: 60)
 
-                        AsyncButton("Add Album to Favorites") {
-                            try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
-                        }
-
-                        if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
-                            Menu("Add Album to Playlist") {
-                                ForEach(playlists) { playlist in
-                                    AsyncButton(playlist.name) {
-                                        try await ConnectionManager.command().addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
-                                    }
+                                    Image(systemSymbol: .playFill)
+                                        .font(.title)
+                                        .foregroundColor(.white)
                                 }
                             }
+                            .styledButton(hoverScale: 1.05)
+                            .asyncButtonStyle(.pulse)
+                        }
+                    #endif
+                }
+                #if os(macOS)
+                .onHover { value in
+                    withAnimation(.interactiveSpring) {
+                        isHovering = value
+                    }
+                }
+                #endif
+                .contextMenu {
+                    Button("Copy Album Title") {
+                        album.title.copyToClipboard()
+                    }
 
-                            if let playlist = mpd.status.playlist {
-                                AsyncButton("Remove Album from Playlist") {
-                                    try await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
+                    Divider()
+
+                    AsyncButton("Add Album to Favorites") {
+                        try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
+                    }
+
+                    if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
+                        Menu("Add Album to Playlist") {
+                            ForEach(playlists) { playlist in
+                                AsyncButton(playlist.name) {
+                                    try await ConnectionManager.command().addToPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                                 }
+                            }
+                        }
+
+                        if let playlist = mpd.status.playlist {
+                            AsyncButton("Remove Album from Playlist") {
+                                try await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                             }
                         }
                     }
@@ -226,11 +223,7 @@ struct AlbumSongsView: View {
                 .listRowInsets(.init(top: 15, leading: 7.5, bottom: 7.5, trailing: 7.5))
             #endif
                 .task {
-                    async let artworkDataTask = ArtworkManager.shared.get(for: album, shouldCache: true)
-                    async let songsTask = ConnectionManager.command().getSongs(for: album)
-
-                    artwork = await PlatformImage(data: (try? artworkDataTask) ?? Data())
-                    songs = await Dictionary(grouping: (try? songsTask) ?? [], by: { $0.disc })
+                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(for: album)) ?? [], by: { $0.disc })
                 }
         }
         .frame(width: 310)

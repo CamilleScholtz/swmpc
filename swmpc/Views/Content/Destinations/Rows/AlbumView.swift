@@ -18,8 +18,6 @@ struct AlbumView: View {
         self.album = album
     }
 
-    @State private var artwork: PlatformImage?
-
     #if os(iOS)
         @State private var isShowingContextMenu = false
     #elseif os(macOS)
@@ -31,7 +29,7 @@ struct AlbumView: View {
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
-                ArtworkView(image: artwork)
+                AsyncArtworkView(playable: album)
                 #if os(iOS)
                     .frame(width: 70)
                 #elseif os(macOS)
@@ -88,50 +86,36 @@ struct AlbumView: View {
             Spacer()
         }
         .contentShape(Rectangle())
-        .task(id: album, priority: .medium) {
-            guard !Task.isCancelled, artwork == nil else {
-                return
-            }
-
-            guard let data = try? await ArtworkManager.shared.get(for: album), !Task.isCancelled else {
-                return
-            }
-
-            artwork = PlatformImage(data: data)
-        }
-        .onDisappear {
-            artwork = nil
-        }
         #if os(macOS)
-        .onHoverWithDebounce(handler: hoverHandler) { hovering in
-            withAnimation(.interactiveSpring) {
-                isHovering = hovering
+            .onHoverWithDebounce(handler: hoverHandler) { hovering in
+                withAnimation(.interactiveSpring) {
+                    isHovering = hovering
+                }
             }
-        }
         #endif
-        .onTapGesture {
-            navigator.navigate(to: ContentDestination.album(album))
-        }
-        .contextMenu {
-            Button("Copy Album Title") {
-                album.title.copyToClipboard()
+            .onTapGesture {
+                navigator.navigate(to: ContentDestination.album(album))
             }
+            .contextMenu {
+                Button("Copy Album Title") {
+                    album.title.copyToClipboard()
+                }
 
-            Divider()
+                Divider()
 
-            AsyncButton("Add Album to Favorites") {
-                try await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
-            }
+                AsyncButton("Add Album to Favorites") {
+                    try await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
+                }
 
-            if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
-                Menu("Add Album to Playlist") {
-                    ForEach(playlists) { playlist in
-                        AsyncButton(playlist.name) {
-                            try await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
+                if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
+                    Menu("Add Album to Playlist") {
+                        ForEach(playlists) { playlist in
+                            AsyncButton(playlist.name) {
+                                try await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
+                            }
                         }
                     }
                 }
             }
-        }
     }
 }
