@@ -14,12 +14,6 @@ struct PopoverView: View {
 
     @State private var height = Double(250)
 
-    @State private var currentSong: Song?
-    @State private var previousSong: Song?
-
-    @State private var isBackgroundArtworkTransitioning = false
-    @State private var isArtworkTransitioning = false
-
     @State private var isHovering = false
     @State private var showInfo = false
     @State private var hoverHandler = HoverTaskHandler()
@@ -31,30 +25,12 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ArtworkView(playable: currentSong, aspectRatioMode: .fill)
+            ArtworkView(playable: mpd.status.song, aspectRatioMode: .fill)
                 .frame(width: 250)
-                .overlay(
-                    Group {
-                        if let previousSong {
-                            ArtworkView(playable: previousSong)
-                                .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
-                                .transition(.opacity)
-                        }
-                    }
-                )
                 .opacity(0.3)
 
-            ArtworkView(playable: currentSong, aspectRatioMode: .fill)
+            ArtworkView(playable: mpd.status.song, aspectRatioMode: .fill)
                 .frame(width: 250)
-                .overlay(
-                    Group {
-                        if let previousSong {
-                            ArtworkView(playable: previousSong)
-                                .opacity(isArtworkTransitioning ? 1 : 0)
-                                .transition(.opacity)
-                        }
-                    }
-                )
                 .overlay(
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
@@ -125,12 +101,10 @@ struct PopoverView: View {
         .frame(width: 250, height: height)
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
-                await updateArtwork()
                 try? await mpd.status.startTrackingElapsed()
             }
         }
         .onReceive(didCloseNotification) { _ in
-            currentSong = nil
             mpd.status.stopTrackingElapsed()
         }
         .task(id: mpd.status.song) {
@@ -138,21 +112,18 @@ struct PopoverView: View {
                 return
             }
 
-            await updateArtwork()
-        }
-        .onChange(of: currentSong) { previous, _ in
-            updateHeight()
-
-            previousSong = previous
-
-            isBackgroundArtworkTransitioning = true
-            withAnimation(.spring(duration: 0.5)) {
-                isBackgroundArtworkTransitioning = false
+            guard let song = mpd.status.song else {
+                height = 250
+                return
             }
-            isArtworkTransitioning = true
-            withAnimation(.interactiveSpring) {
-                isArtworkTransitioning = false
+
+            let artwork = try? await song.artwork()
+            guard let artwork else {
+                height = 250
+                return
             }
+
+            height = (Double(artwork.size.height) / Double(artwork.size.width) * 250).rounded(.down)
         }
         .onHoverWithDebounce(delay: .milliseconds(100), handler: hoverHandler) { hovering in
             isHovering = hovering
@@ -162,15 +133,5 @@ struct PopoverView: View {
                 showInfo = false || !mpd.status.isPlaying
             }
         }
-    }
-
-    private func updateArtwork() async {
-        currentSong = mpd.status.song
-    }
-
-    private func updateHeight() {
-        // For now, we'll use a fixed aspect ratio
-        // TODO: Consider getting actual image dimensions from AsyncImage
-        height = 250
     }
 }

@@ -44,15 +44,9 @@ struct DetailView: View {
         ZStack {
             ZStack {
                 ZStack {
-                    ZStack {
-                        ArtworkView(playable: mpd.status.song)
-
-                        Rectangle()
-                            .opacity(0)
-                            .background(.ultraThinMaterial)
-                    }
-                    .scaledToFit()
-                    .drawingGroup()
+                    ArtworkView(playable: mpd.status.song)
+                        .scaledToFit()
+                        .drawingGroup()
                     #if os(iOS)
                         .mask(
                             RadialGradient(
