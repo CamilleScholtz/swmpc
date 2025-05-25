@@ -9,7 +9,9 @@ import SwiftUI
 
 struct ArtistAlbumsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.colorScheme) private var colorScheme
+    #if os(macOS)
+        @Environment(\.colorScheme) private var colorScheme
+    #endif
 
     private var artist: Artist
 
@@ -57,12 +59,18 @@ struct ArtistAlbumsView: View {
                     mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
                 }
         }
+        #if os(macOS)
         .frame(width: 310)
+        #endif
         .overlay(
             Rectangle()
-                .frame(height: 1)
+            #if os(iOS)
+                .foregroundColor(Color(.secondarySystemFill))
+            #elseif os(macOS)
                 .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill))
-                .offset(x: -15),
+                .offset(x: -15)
+            #endif
+                .frame(height: 1),
             alignment: .bottom
         )
 
