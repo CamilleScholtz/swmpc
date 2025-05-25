@@ -27,6 +27,8 @@ struct DetailView: View {
         @State private var isHovering = false
     #endif
 
+    @State private var artwork: PlatformImage?
+
     #if os(iOS)
         private var progress: Float {
             guard let elapsed = mpd.status.elapsed,
@@ -44,7 +46,7 @@ struct DetailView: View {
         ZStack {
             ZStack {
                 ZStack {
-                    ArtworkView(playable: mpd.status.song)
+                    ArtworkView(image: artwork, animationDuration: 0.6)
                         .scaledToFit()
                         .drawingGroup()
                     #if os(iOS)
@@ -71,7 +73,7 @@ struct DetailView: View {
                         .opacity(0.6)
 
                     ZStack {
-                        ArtworkView(playable: mpd.status.song)
+                        ArtworkView(image: artwork, animationDuration: 0.6)
 
                         Rectangle()
                             .opacity(0)
@@ -116,7 +118,7 @@ struct DetailView: View {
                     .blendMode(colorScheme == .dark ? .darken : .softLight)
                     .opacity(0.3)
 
-                ArtworkView(playable: mpd.status.song)
+                ArtworkView(image: artwork)
                     .overlay(
                         ZStack {
                             RoundedRectangle(cornerRadius: 20)
@@ -214,7 +216,7 @@ struct DetailView: View {
         #if os(macOS)
         .ignoresSafeArea()
         #elseif os(iOS)
-        .popupImage(Image(systemSymbol: .musicNote))
+        .popupImage(artwork ?? Image(systemSymbol: .musicNote))
         .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
         // swiftformat:disable:next trailingClosures
         .popupBarItems({
@@ -254,5 +256,13 @@ struct DetailView: View {
         })
         .popupProgress(progress)
         #endif
+        .task(id: mpd.status.song) {
+            guard let song = mpd.status.song else {
+                artwork = nil
+                return
+            }
+
+            artwork = try? await song.artwork()
+        }
     }
 }

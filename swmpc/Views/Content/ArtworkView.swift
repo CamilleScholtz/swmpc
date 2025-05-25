@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct ArtworkView: View {
-    let playable: (any Playable)?
-    var aspectRatioMode: ContentMode = .fit
+    let image: PlatformImage?
 
-    @State private var image: PlatformImage?
+    var animationDuration: Double = 0.2
+    var aspectRatioMode: ContentMode = .fit
 
     var body: some View {
         Group {
@@ -31,14 +31,6 @@ struct ArtworkView: View {
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: image)
-        .task(id: playable?.id) {
-            guard let playable else {
-                image = nil
-                return
-            }
-
-            image = try? await playable.artwork()
-        }
+        .animation(.easeInOut(duration: animationDuration), value: image)
     }
 }

@@ -18,6 +18,8 @@ struct AlbumView: View {
         self.album = album
     }
 
+    @State private var artwork: PlatformImage?
+
     #if os(iOS)
         @State private var isShowingContextMenu = false
     #elseif os(macOS)
@@ -29,7 +31,7 @@ struct AlbumView: View {
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
-                ArtworkView(playable: album)
+                ArtworkView(image: artwork)
                 #if os(iOS)
                     .frame(width: 70)
                 #elseif os(macOS)
@@ -116,6 +118,9 @@ struct AlbumView: View {
                         }
                     }
                 }
+            }
+            .task {
+                artwork = try? await album.artwork()
             }
     }
 }

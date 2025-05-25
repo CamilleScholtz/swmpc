@@ -17,6 +17,7 @@ struct PopoverView: View {
     @State private var isHovering = false
     @State private var showInfo = false
     @State private var hoverHandler = HoverTaskHandler()
+    @State private var artworkImage: PlatformImage?
 
     private let willShowNotification = NotificationCenter.default
         .publisher(for: NSPopover.willShowNotification)
@@ -25,11 +26,11 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ArtworkView(playable: mpd.status.song, aspectRatioMode: .fill)
+            ArtworkView(image: artworkImage, aspectRatioMode: .fill)
                 .frame(width: 250)
                 .opacity(0.3)
 
-            ArtworkView(playable: mpd.status.song, aspectRatioMode: .fill)
+            ArtworkView(image: artworkImage, aspectRatioMode: .fill)
                 .frame(width: 250)
                 .overlay(
                     ZStack {
@@ -132,6 +133,14 @@ struct PopoverView: View {
             } else {
                 showInfo = false || !mpd.status.isPlaying
             }
+        }
+        .task(id: mpd.status.song?.id) {
+            guard let song = mpd.status.song else {
+                artworkImage = nil
+                return
+            }
+
+            artworkImage = try? await song.artwork()
         }
     }
 }
