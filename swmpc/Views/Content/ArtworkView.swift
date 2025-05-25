@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AsyncArtworkView: View {
+struct ArtworkView: View {
     let playable: (any Playable)?
     var aspectRatioMode: ContentMode = .fit
 
@@ -31,8 +31,10 @@ struct AsyncArtworkView: View {
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: image)
         .task(id: playable?.id) {
             guard let playable else {
+                image = nil
                 return
             }
 

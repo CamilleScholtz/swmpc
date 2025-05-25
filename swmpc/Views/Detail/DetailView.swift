@@ -19,14 +19,9 @@ struct DetailView: View {
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var previousSong: Song?
-
     #if os(iOS)
         @Binding var isPopupOpen: Bool
     #endif
-
-    @State private var isBackgroundArtworkTransitioning = false
-    @State private var isArtworkTransitioning = false
 
     #if os(macOS)
         @State private var isHovering = false
@@ -50,16 +45,7 @@ struct DetailView: View {
             ZStack {
                 ZStack {
                     ZStack {
-                        AsyncArtworkView(playable: mpd.status.song)
-                            .overlay(
-                                Group {
-                                    if let previousSong {
-                                        AsyncArtworkView(playable: previousSong)
-                                            .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
-                                            .transition(.opacity)
-                                    }
-                                }
-                            )
+                        ArtworkView(playable: mpd.status.song)
 
                         Rectangle()
                             .opacity(0)
@@ -91,16 +77,7 @@ struct DetailView: View {
                         .opacity(0.6)
 
                     ZStack {
-                        AsyncArtworkView(playable: mpd.status.song)
-                            .overlay(
-                                Group {
-                                    if let previousSong {
-                                        AsyncArtworkView(playable: previousSong)
-                                            .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
-                                            .transition(.opacity)
-                                    }
-                                }
-                            )
+                        ArtworkView(playable: mpd.status.song)
 
                         Rectangle()
                             .opacity(0)
@@ -145,16 +122,7 @@ struct DetailView: View {
                     .blendMode(colorScheme == .dark ? .darken : .softLight)
                     .opacity(0.3)
 
-                AsyncArtworkView(playable: mpd.status.song)
-                    .overlay(
-                        Group {
-                            if let previousSong {
-                                AsyncArtworkView(playable: previousSong)
-                                    .opacity(isArtworkTransitioning ? 1 : 0)
-                                    .transition(.opacity)
-                            }
-                        }
-                    )
+                ArtworkView(playable: mpd.status.song)
                     .overlay(
                         ZStack {
                             RoundedRectangle(cornerRadius: 20)
@@ -251,20 +219,7 @@ struct DetailView: View {
         }
         #if os(macOS)
         .ignoresSafeArea()
-        #endif
-        .onChange(of: mpd.status.song) { previous, _ in
-            previousSong = previous
-
-            isBackgroundArtworkTransitioning = true
-            withAnimation(.spring(duration: 0.5)) {
-                isBackgroundArtworkTransitioning = false
-            }
-            isArtworkTransitioning = true
-            withAnimation(.interactiveSpring) {
-                isArtworkTransitioning = false
-            }
-        }
-        #if os(iOS)
+        #elseif os(iOS)
         .popupImage(Image(systemSymbol: .musicNote))
         .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
         // swiftformat:disable:next trailingClosures
@@ -305,27 +260,5 @@ struct DetailView: View {
         })
         .popupProgress(progress)
         #endif
-    }
-
-    struct ArtworkView: View {
-        let image: PlatformImage?
-
-        var body: some View {
-            ZStack {
-                if let image {
-                    #if os(iOS)
-                        Image(uiImage: image)
-                            .resizable()
-                    #elseif os(macOS)
-                        Image(nsImage: image)
-                            .resizable()
-                    #endif
-                } else {
-                    Color(.secondarySystemFill)
-                }
-            }
-            .transition(.opacity.animation(.spring))
-            .aspectRatio(contentMode: .fit)
-        }
     }
 }

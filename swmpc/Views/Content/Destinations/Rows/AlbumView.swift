@@ -29,7 +29,7 @@ struct AlbumView: View {
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
-                AsyncArtworkView(playable: album)
+                ArtworkView(playable: album)
                 #if os(iOS)
                     .frame(width: 70)
                 #elseif os(macOS)

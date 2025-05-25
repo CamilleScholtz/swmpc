@@ -31,12 +31,12 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            AsyncArtworkView(playable: currentSong, aspectRatioMode: .fill)
+            ArtworkView(playable: currentSong, aspectRatioMode: .fill)
                 .frame(width: 250)
                 .overlay(
                     Group {
                         if let previousSong {
-                            AsyncArtworkView(playable: previousSong)
+                            ArtworkView(playable: previousSong)
                                 .opacity(isBackgroundArtworkTransitioning ? 1 : 0)
                                 .transition(.opacity)
                         }
@@ -44,12 +44,12 @@ struct PopoverView: View {
                 )
                 .opacity(0.3)
 
-            AsyncArtworkView(playable: currentSong, aspectRatioMode: .fill)
+            ArtworkView(playable: currentSong, aspectRatioMode: .fill)
                 .frame(width: 250)
                 .overlay(
                     Group {
                         if let previousSong {
-                            AsyncArtworkView(playable: previousSong)
+                            ArtworkView(playable: previousSong)
                                 .opacity(isArtworkTransitioning ? 1 : 0)
                                 .transition(.opacity)
                         }

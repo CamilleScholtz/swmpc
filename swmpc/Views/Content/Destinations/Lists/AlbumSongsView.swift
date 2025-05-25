@@ -29,7 +29,7 @@ struct AlbumSongsView: View {
             HStack(spacing: 15) {
                 ZStack {
                     ZStack(alignment: .bottom) {
-                        AsyncArtworkView(playable: album)
+                        ArtworkView(playable: album)
                             .frame(width: 80)
                             .blur(radius: 9.5)
                             .offset(y: 4)
@@ -37,7 +37,7 @@ struct AlbumSongsView: View {
                             .blendMode(colorScheme == .dark ? .softLight : .normal)
                             .opacity(0.5)
 
-                        AsyncArtworkView(playable: album)
+                        ArtworkView(playable: album)
                             .cornerRadius(10)
                             .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                             .frame(width: 100)
