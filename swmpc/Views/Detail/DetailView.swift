@@ -216,7 +216,7 @@ struct DetailView: View {
         #if os(macOS)
         .ignoresSafeArea()
         #elseif os(iOS)
-        .popupImage(artwork ?? Image(systemSymbol: .musicNote))
+        .popupImage(artwork != nil ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
         .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
         // swiftformat:disable:next trailingClosures
         .popupBarItems({

@@ -27,25 +27,32 @@ struct LoadingView: View {
         .onChange(of: navigator.category) {
             isLoading = true
         }
+        .task(id: navigator.category) {
+            await checkAndHideLoading()
+        }
         .task(id: mpd.queue.lastUpdated) {
-            guard isLoading else {
-                return
-            }
+            await checkAndHideLoading()
+        }
+    }
 
-            #if os(iOS)
-                guard navigator.category != .playlists else {
+    private func checkAndHideLoading() async {
+        guard isLoading else {
+            return
+        }
+
+        #if os(iOS)
+            if navigator.category == .playlists {
+                if mpd.queue.playlists != nil {
+                    try? await Task.sleep(for: .milliseconds(200))
                     withAnimation(.interactiveSpring) {
                         isLoading = false
                     }
-
-                    return
                 }
+                return
+            }
+        #endif
 
-                guard mpd.queue.lastUpdated > Date.now.addingTimeInterval(-0.4) else {
-                    return
-                }
-            #endif
-
+        if mpd.queue.type == navigator.category.type, !mpd.queue.media.isEmpty {
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else {
                 return
