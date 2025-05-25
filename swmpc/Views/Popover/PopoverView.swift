@@ -12,12 +12,12 @@ struct PopoverView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
+    @State private var artwork: PlatformImage?
     @State private var height = Double(250)
 
     @State private var isHovering = false
     @State private var showInfo = false
     @State private var hoverHandler = HoverTaskHandler()
-    @State private var artworkImage: PlatformImage?
 
     private let willShowNotification = NotificationCenter.default
         .publisher(for: NSPopover.willShowNotification)
@@ -26,11 +26,11 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ArtworkView(image: artworkImage, aspectRatioMode: .fill)
+            ArtworkView(image: artwork, animationDuration: 0.6, aspectRatioMode: .fill)
                 .frame(width: 250)
                 .opacity(0.3)
 
-            ArtworkView(image: artworkImage, aspectRatioMode: .fill)
+            ArtworkView(image: artwork, aspectRatioMode: .fill)
                 .frame(width: 250)
                 .overlay(
                     ZStack {
@@ -114,11 +114,12 @@ struct PopoverView: View {
             }
 
             guard let song = mpd.status.song else {
+                artwork = nil
                 height = 250
                 return
             }
 
-            let artwork = try? await song.artwork()
+            artwork = try? await song.artwork()
             guard let artwork else {
                 height = 250
                 return
@@ -133,14 +134,6 @@ struct PopoverView: View {
             } else {
                 showInfo = false || !mpd.status.isPlaying
             }
-        }
-        .task(id: mpd.status.song?.id) {
-            guard let song = mpd.status.song else {
-                artworkImage = nil
-                return
-            }
-
-            artworkImage = try? await song.artwork()
         }
     }
 }
