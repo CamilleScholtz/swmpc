@@ -28,7 +28,7 @@ protocol Playable: Mediable {
 
 extension Playable {
     @MainActor
-    func loadArtwork() async throws -> PlatformImage? {
+    func artwork() async throws -> PlatformImage? {
         let data = try await ArtworkManager.shared.get(for: self)
         return PlatformImage(data: data)
     }

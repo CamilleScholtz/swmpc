@@ -140,6 +140,8 @@ actor ArtworkConnectionPool {
     ///           connection fails.
     func acquireConnection() async throws -> ConnectionManager<ArtworkMode> {
         while true {
+            try Task.checkCancellation()
+            
             if let connection = pool.popFirst() {
                 do {
                     try await connection.ping()

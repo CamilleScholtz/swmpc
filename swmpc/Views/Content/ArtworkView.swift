@@ -1,5 +1,5 @@
 //
-//  AsyncArtworkView.swift
+//  ArtworkView.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 18/03/2025.
@@ -12,7 +12,6 @@ struct AsyncArtworkView: View {
     var aspectRatioMode: ContentMode = .fit
 
     @State private var image: PlatformImage?
-    @State private var isLoading = false
 
     var body: some View {
         Group {
@@ -33,14 +32,11 @@ struct AsyncArtworkView: View {
             }
         }
         .task(id: playable?.id) {
-            guard let playable, !isLoading else {
+            guard let playable else {
                 return
             }
 
-            isLoading = true
-            defer { isLoading = false }
-
-            image = try? await playable.loadArtwork()
+            image = try? await playable.artwork()
         }
     }
 }
