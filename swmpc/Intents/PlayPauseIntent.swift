@@ -17,7 +17,7 @@ struct PlayPauseIntent: AppIntent {
             #if os(iOS)
                 Delegate.mpd.status.isPlaying
             #elseif os(macOS)
-                AppDelegate.shared?.mpd.status.isPlaying
+                AppDelegate.shared?.mpd.status.isPlaying ?? false
             #endif
         }
 
