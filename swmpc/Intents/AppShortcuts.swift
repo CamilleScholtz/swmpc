@@ -19,7 +19,7 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Pause music with \(.applicationName)",
                 "Play \(.applicationName)",
                 "Pause \(.applicationName)",
-                "Resume playback in \(.applicationName)"
+                "Resume playback in \(.applicationName)",
             ],
             shortTitle: "Play/Pause",
             systemImageName: "playpause"

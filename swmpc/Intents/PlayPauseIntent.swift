@@ -20,7 +20,6 @@ struct PlayPauseIntent: AppIntent {
                 AppDelegate.shared?.mpd.status.isPlaying
             #endif
         }
-        print(isPlaying)
 
         try await ConnectionManager.command().pause(isPlaying)
 
