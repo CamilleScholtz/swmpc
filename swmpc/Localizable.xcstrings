@@ -446,6 +446,9 @@
         }
       }
     },
+    "Album" : {
+
+    },
     "Albums" : {
       "localizations" : {
         "de" : {
@@ -2535,6 +2538,12 @@
         }
       }
     },
+    "No albums found matching '%@'" : {
+
+    },
+    "No songs found matching '%@'" : {
+
+    },
     "No songs in playlist." : {
       "localizations" : {
         "de" : {
@@ -2571,6 +2580,16 @@
     },
     "Nothing is currently playing" : {
 
+    },
+    "Now playing: %@ by %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Now playing: %1$@ by %2$@"
+          }
+        }
+      }
     },
     "OpenAI" : {
       "shouldTranslate" : false
@@ -2680,7 +2699,25 @@
         }
       }
     },
+    "Play a specific album by searching for it" : {
+
+    },
+    "Play a specific song by searching for it" : {
+
+    },
+    "Play Album" : {
+
+    },
+    "Play album ${albumName}" : {
+
+    },
     "Play or Pause" : {
+
+    },
+    "Play Song" : {
+
+    },
+    "Play song ${songName}" : {
 
     },
     "Play/Pause" : {
@@ -2720,7 +2757,10 @@
         }
       }
     },
-    "Playing " : {
+    "Playing next song" : {
+
+    },
+    "Playing previous song" : {
 
     },
     "Playlists" : {
@@ -3622,10 +3662,10 @@
         }
       }
     },
-    "Skip Song" : {
+    "Skip to the next song in the queue" : {
 
     },
-    "Skip to the next song in the queue" : {
+    "Song" : {
 
     },
     "Songs" : {
@@ -3834,6 +3874,12 @@
           }
         }
       }
+    },
+    "The name of the album to play" : {
+
+    },
+    "The name of the song to play" : {
+
     },
     "This will overwrite the current queue." : {
       "localizations" : {
@@ -4075,6 +4121,12 @@
           }
         }
       }
+    },
+    "What album would you like to play?" : {
+
+    },
+    "What song would you like to play?" : {
+
     },
     "What's Playing" : {
 

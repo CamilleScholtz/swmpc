@@ -12,18 +12,11 @@ struct ToggleShuffleIntent: AppIntent {
     static let title: LocalizedStringResource = "Toggle Shuffle"
     static let description = IntentDescription("Enable or disable shuffle mode")
 
+    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let isRandom = await MainActor.run {
-            #if os(iOS)
-                Delegate.mpd.status.isRandom
-            #elseif os(macOS)
-                AppDelegate.shared?.mpd.status.isRandom
-            #endif
-        }
+        try await ConnectionManager.command().repeat(!(mpd.status.isRandom ?? false))
 
-        try await ConnectionManager.command().random(!(isRandom ?? false))
-
-        return .result(dialog: IntentDialog(!(isRandom ?? false) ? "Shuffle enabled" : "Shuffle disabled"))
+        return .result(dialog: IntentDialog(!(mpd.status.isRepeat ?? false) ? "Shuffle enabled" : "Shuffle disabled"))
     }
 
     static let openAppWhenRun: Bool = false

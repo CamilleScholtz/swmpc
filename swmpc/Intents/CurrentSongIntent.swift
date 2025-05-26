@@ -12,16 +12,9 @@ struct CurrentSongIntent: AppIntent {
     static let title: LocalizedStringResource = "What's Playing"
     static let description = IntentDescription("Get information about the currently playing song")
 
+    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let song = await MainActor.run {
-            #if os(iOS)
-                Delegate.mpd.status.song
-            #elseif os(macOS)
-                AppDelegate.shared?.mpd.status.song
-            #endif
-        }
-
-        guard let song else {
+        guard let song = mpd.status.song else {
             return .result(dialog: IntentDialog("Nothing is currently playing"))
         }
 
