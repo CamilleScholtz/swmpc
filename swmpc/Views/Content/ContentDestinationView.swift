@@ -39,25 +39,39 @@ struct ContentDestinationView: View {
         .listStyle(.plain)
         .safeAreaPadding(.bottom, 7.5)
         .contentMargins(.bottom, -7.5, for: .scrollIndicators)
-        #if os(macOS)
+        #if os(iOS)
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    BackButtonView()
+                }
+            }
+        #elseif os(macOS)
             .ignoresSafeArea()
         #endif
     }
 }
 
-#if os(macOS)
-    struct BackButtonView: View {
-        @Environment(NavigationManager.self) private var navigator
+struct BackButtonView: View {
+    @Environment(NavigationManager.self) private var navigator
 
-        var body: some View {
-            Button(action: {
-                navigator.goBack()
-            }) {
+    var body: some View {
+        Button(action: {
+            navigator.goBack()
+        }) {
+            #if os(iOS)
+                HStack(spacing: 5) {
+                    Image(systemName: "chevron.left")
+                    Text(navigator.category.label)
+                }
+            #elseif os(macOS)
                 Image(systemSymbol: .chevronBackward)
                     .frame(width: 22, height: 22)
                     .contentShape(Circle())
-            }
-            .styledButton()
+            #endif
         }
+        #if os(macOS)
+        .styledButton()
+        #endif
     }
-#endif
+}
