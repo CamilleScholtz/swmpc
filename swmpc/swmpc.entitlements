@@ -10,5 +10,7 @@
 	<array>
 		<string>$(AppIdentifierPrefix)com.camille.swmpc</string>
 	</array>
+	<key>com.apple.developer.siri</key>
+	<true/>
 </dict>
 </plist>

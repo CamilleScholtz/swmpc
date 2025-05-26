@@ -6,5 +6,20 @@
 	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSSiriUsageDescription</key>
+	<string>Use Siri to control music playback and get information about currently playing songs.</string>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>mpd</string>
+			<key>INAlternativeAppNamePronunciationHint</key>
+			<string>em pee dee</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>music player daemon</string>
+		</dict>
+	</array>
 </dict>
 </plist>

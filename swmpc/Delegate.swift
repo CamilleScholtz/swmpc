@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import AppIntents
 import ButtonKit
 import SwiftUI
 
@@ -25,16 +26,20 @@ struct Delegate: App {
     #endif
 
     #if os(iOS)
-        let mpd = MPD()
+        static let mpd = MPD()
     #endif
     let navigator = NavigationManager()
+
+    init() {
+        AppShortcuts.updateAppShortcutParameters()
+    }
 
     var body: some Scene {
         WindowGroup {
             AppView()
                 .environment(navigator)
             #if os(iOS)
-                .environment(mpd)
+                .environment(Delegate.mpd)
             #elseif os(macOS)
                 .environment(appDelegate.mpd)
                 .onAppear {

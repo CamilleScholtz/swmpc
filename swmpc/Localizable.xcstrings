@@ -1741,6 +1741,12 @@
         }
       }
     },
+    "Enable or disable repeat mode" : {
+
+    },
+    "Enable or disable shuffle mode" : {
+
+    },
     "Favorites" : {
       "localizations" : {
         "de" : {
@@ -1843,6 +1849,9 @@
         }
       }
     },
+    "Get information about the currently playing song" : {
+
+    },
     "Gnome Music" : {
       "localizations" : {
         "de" : {
@@ -1876,6 +1885,9 @@
           }
         }
       }
+    },
+    "Go back to the previous song" : {
+
     },
     "Go to Current Song" : {
       "localizations" : {
@@ -2557,6 +2569,9 @@
         }
       }
     },
+    "Nothing is currently playing" : {
+
+    },
     "OpenAI" : {
       "shouldTranslate" : false
     },
@@ -2628,6 +2643,9 @@
         }
       }
     },
+    "Paused playback" : {
+
+    },
     "Play" : {
       "localizations" : {
         "de" : {
@@ -2662,6 +2680,12 @@
         }
       }
     },
+    "Play or Pause" : {
+
+    },
+    "Play/Pause" : {
+
+    },
     "Playing" : {
       "localizations" : {
         "de" : {
@@ -2695,6 +2719,9 @@
           }
         }
       }
+    },
+    "Playing " : {
+
     },
     "Playlists" : {
       "localizations" : {
@@ -3206,6 +3233,15 @@
         }
       }
     },
+    "Repeat disabled" : {
+
+    },
+    "Repeat enabled" : {
+
+    },
+    "Resumed playback" : {
+
+    },
     "Russian Music" : {
       "localizations" : {
         "de" : {
@@ -3546,6 +3582,12 @@
         }
       }
     },
+    "Shuffle disabled" : {
+
+    },
+    "Shuffle enabled" : {
+
+    },
     "Shuffling songs…" : {
       "localizations" : {
         "de" : {
@@ -3579,6 +3621,12 @@
           }
         }
       }
+    },
+    "Skip Song" : {
+
+    },
+    "Skip to the next song in the queue" : {
+
     },
     "Songs" : {
       "localizations" : {
@@ -3821,6 +3869,9 @@
         }
       }
     },
+    "Toggle playback of the current song" : {
+
+    },
     "Toggle Repeat" : {
       "localizations" : {
         "de" : {
@@ -4024,6 +4075,9 @@
           }
         }
       }
+    },
+    "What's Playing" : {
+
     },
     "When enabled, uses mock data instead of connecting to MPD." : {
       "localizations" : {
