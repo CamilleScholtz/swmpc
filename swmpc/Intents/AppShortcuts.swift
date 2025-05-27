@@ -20,6 +20,8 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Play \(.applicationName)",
                 "Pause \(.applicationName)",
                 "Resume playback in \(.applicationName)",
+                "Start music in \(.applicationName)",
+                "Stop music in \(.applicationName)",
             ],
             shortTitle: "Play/Pause",
             systemImageName: "playpause"
@@ -31,6 +33,8 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Skip song in \(.applicationName)",
                 "Next song in \(.applicationName)",
                 "Play next in \(.applicationName)",
+                "Skip track in \(.applicationName)",
+                "Next track in \(.applicationName)",
             ],
             shortTitle: "Next Song",
             systemImageName: "forward.fill"
@@ -42,6 +46,8 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Previous song in \(.applicationName)",
                 "Go back in \(.applicationName)",
                 "Play previous in \(.applicationName)",
+                "Previous track in \(.applicationName)",
+                "Last song in \(.applicationName)",
             ],
             shortTitle: "Previous Song",
             systemImageName: "backward.fill"
@@ -54,6 +60,14 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Shuffle music in \(.applicationName)",
                 "Turn on shuffle in \(.applicationName)",
                 "Turn off shuffle in \(.applicationName)",
+                "Enable shuffle in \(.applicationName)",
+                "Disable shuffle in \(.applicationName)",
+                "Toggle random in \(.applicationName)",
+                "Shuffle random in \(.applicationName)",
+                "Turn on random in \(.applicationName)",
+                "Turn off random in \(.applicationName)",
+                "Enable random in \(.applicationName)",
+                "Disable random in \(.applicationName)",
             ],
             shortTitle: "Toggle Shuffle",
             systemImageName: "shuffle"
@@ -66,6 +80,9 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Repeat music in \(.applicationName)",
                 "Turn on repeat in \(.applicationName)",
                 "Turn off repeat in \(.applicationName)",
+                "Enable repeat in \(.applicationName)",
+                "Disable repeat in \(.applicationName)",
+                "Loop music in \(.applicationName)",
             ],
             shortTitle: "Toggle Repeat",
             systemImageName: "repeat"
@@ -78,6 +95,9 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Current song in \(.applicationName)",
                 "Now playing in \(.applicationName)",
                 "What song is this in \(.applicationName)",
+                "What's this song in \(.applicationName)",
+                "Song info in \(.applicationName)",
+                "Tell me what's playing in \(.applicationName)",
             ],
             shortTitle: "What's Playing",
             systemImageName: "music.note"
