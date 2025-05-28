@@ -6,9 +6,9 @@
 	<p align="center">
 		An MPD client for macOS & iOS.
 		<br />
-		<a href="https://github.com/CamilleScholtz/swmpc/issues">Report Bug</a>
+		<a href="https://github.com/CamilleScholtz/swmpc/issues/new?template=bug_report.md">Report Bug</a>
 		·
-		<a href="https://github.com/CamilleScholtz/swmpc/issues">Request Feature</a>
+		<a href="https://github.com/CamilleScholtz/swmpc/issues/new?template=feature_request.md">Request Feature</a>
 	</p>
 	<a href="https://apps.apple.com/app/swmpc/id6743818735" target="_blank">
 		<img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/Download.svg" alt="Download">
