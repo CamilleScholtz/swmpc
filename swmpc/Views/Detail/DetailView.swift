@@ -47,7 +47,6 @@ struct DetailView: View {
                 ZStack {
                     ArtworkView(image: artwork, animationDuration: 0.6)
                         .scaledToFit()
-                        .drawingGroup()
                     #if os(iOS)
                         .mask(
                             RadialGradient(
@@ -70,6 +69,7 @@ struct DetailView: View {
                         .offset(y: 20)
                         .blur(radius: 20)
                         .opacity(0.6)
+                        .drawingGroup()
 
                     ZStack {
                         ArtworkView(image: artwork, animationDuration: 0.6)
