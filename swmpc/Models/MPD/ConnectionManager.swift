@@ -1369,28 +1369,27 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Throws: An error if the underlying command execution fails.
     func play(_ media: any Mediable) async throws {
         guard let id = media.identifier else {
-            if let song = media as? Song {
-                let songs = try await getSongs(using: .queue)
+            let songs = try await getSongs(using: .queue)
 
-                if let match = songs.first(where: { $0.url == song.url }) {
-                    guard let id = match.identifier else {
-                        return
-                    }
-
-                    _ = try await run(["playid \(id)"])
-                } else {
-                    try await addToQueue(songs: [song])
-                    let songs = try await getSongs(using: .queue)
-
-                    if let match = songs.first(where: { $0.url == song.url }) {
-                        guard let id = match.identifier else {
-                            return
-                        }
-
-                        _ = try await run(["playid \(id)"])
-                    }
+            if let match = songs.first(where: { $0.url == media.url }) {
+                guard let id = match.identifier else {
+                    return
                 }
+
+                _ = try await run(["playid \(id)"])
+            } else {
+//                try await addToQueue(songs: [song])
+//                let songs = try await getSongs(using: .queue)
+//
+//                if let match = songs.first(where: { $0.url == media.url }) {
+//                    guard let id = match.identifier else {
+//                        return
+//                    }
+//
+//                    _ = try await run(["playid \(id)"])
+//                }
             }
+            
             return
         }
 
