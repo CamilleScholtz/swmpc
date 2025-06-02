@@ -894,13 +894,36 @@ extension ConnectionManager {
         return (state, isRandom, isRepeat, elapsed, playlist, song)
     }
 
+    /// Retrieves all songs from the database.
+    ///
+    /// - Returns: An array of `Song` objects representing all songs in the
+    ///            database.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getSongsFromDatabase() async throws -> [Song] {
+        guard !isDemoMode else {
+            return await MockData.shared.getSongs()
+        }
+
+        let lines = try await run(["find \"(base '')\""])
+
+        let chunks = chunkLines(lines, startingWith: "file")
+
+        var index: UInt32 = 0
+        return try chunks.map { chunk in
+            let song = try parseMediaResponse(chunk, using: .song, index: index) as! Song
+            index += 1
+            return song
+        }
+    }
+    
     /// Retrieves all songs from the queue.
     ///
     /// - Returns: An array of `Song` objects representing all songs in the
     ///            queue.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs() async throws -> [Song] {
+    func getSongsFromQueue() async throws -> [Song] {
         guard !isDemoMode else {
             return await MockData.shared.getSongs()
         }
@@ -913,6 +936,30 @@ extension ConnectionManager {
             try parseMediaResponse(chunk, using: .song) as! Song
         }
     }
+    
+    /// Retrieves songs from the database that match a specific artist name.
+    ///
+    /// - Parameter artist: The `Artist` object for which the songs should be
+    ///                     retrieved.
+    /// - Returns: An array of `Song` objects corresponding to the specified
+    ///            artist.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getSongsFromDatabase(for artist: Artist) async throws -> [Song] {
+        guard !isDemoMode else {
+            return await MockData.shared.getSongs(for: artist)
+        }
+
+        let lines = try await run(["find \(filter(key: "albumartist", value: artist.name))"])
+        let chunks = chunkLines(lines, startingWith: "file")
+
+        var index: UInt32 = 0
+        return try chunks.map { chunk in
+            let song = try parseMediaResponse(chunk, using: .song, index: index) as! Song
+            index += 1
+            return song
+        }
+    }
 
     /// Retrieves songs from the queue that match a specific artist name.
     ///
@@ -923,7 +970,7 @@ extension ConnectionManager {
     ///            album.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(for artist: Artist) async throws -> [Song] {
+    func getSongsFromQueue(for artist: Artist) async throws -> [Song] {
         guard !isDemoMode else {
             return await MockData.shared.getSongs(for: artist)
         }
@@ -935,6 +982,31 @@ extension ConnectionManager {
             try parseMediaResponse(chunk, using: .song) as! Song
         }
     }
+    
+    
+    /// Retrieves songs from the database that match a specific album.
+    ///
+    /// - Parameter album: The `Album` object for which the songs should be
+    ///                    retrieved.
+    /// - Returns: An array of `Song` objects corresponding to the specified
+    ///            album.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getSongsFromDatabase(for album: Album) async throws -> [Song] {
+        guard !isDemoMode else {
+            return await MockData.shared.getSongs(for: album)
+        }
+
+        let lines = try await run(["find \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""])
+        let chunks = chunkLines(lines, startingWith: "file")
+
+        var index: UInt32 = 0
+        return try chunks.map { chunk in
+            let song = try parseMediaResponse(chunk, using: .song, index: index) as! Song
+            index += 1
+            return song
+        }
+    }
 
     /// Retrieves songs from the queue that match a specific album title.
     ///
@@ -944,7 +1016,7 @@ extension ConnectionManager {
     ///            album.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(for album: Album) async throws -> [Song] {
+    func getSongsFromQueue(for album: Album) async throws -> [Song] {
         guard !isDemoMode else {
             return await MockData.shared.getSongs(for: album)
         }
@@ -988,13 +1060,64 @@ extension ConnectionManager {
         }
     }
 
+    /// Retrieves all albums from the database.
+    ///
+    /// - Returns: An array of `Album` objects representing all albums in the
+    ///            database.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getAlbumsFromDatabase() async throws -> [Album] {
+        guard !isDemoMode else {
+            return await MockData.shared.getAlbums()
+        }
+
+        // Get unique albums from database
+        let lines = try await run(["list album group albumartist"])
+        dump(lines)
+        var albums: [Album] = []
+        var currentAlbum: String?
+        var currentArtist: String?
+        var index: UInt32 = 0
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let (key, value) = try parseLine(line)
+
+            switch key {
+            case "albumartist":
+                currentArtist = value
+            case "album":
+                currentAlbum = value
+                if let album = currentAlbum, let artist = currentArtist {
+                    // We need to fetch one song from this album to get additional info
+                    let songLines = try await run(["find \"(\(filter(key: "album", value: album, quote: false)) AND \(filter(key: "albumartist", value: artist, quote: false)) AND \(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
+                    let chunks = chunkLines(songLines, startingWith: "file")
+
+                    if let chunk = chunks.first,
+                       let album = try parseMediaResponse(chunk, using: .album, index: index) as? Album
+                    {
+                        albums.append(album)
+                        index += 1
+                    }
+                }
+            default:
+                break
+            }
+        }
+
+        return albums
+    }
+    
     /// Retrieves all albums from the queue.
     ///
     /// - Returns: An array of `Song` objects representing all songs in the
     ///            queue.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getAlbums() async throws -> [Album] {
+    func getAlbumsFromQueue() async throws -> [Album] {
         guard !isDemoMode else {
             return await MockData.shared.getAlbums()
         }
@@ -1006,6 +1129,31 @@ extension ConnectionManager {
             try parseMediaResponse(chunk, using: .album) as! Album
         }
     }
+    
+    /// Retrieves all album artists from the database.
+    ///
+    /// - Returns: An array of `Artist` objects representing all album artists
+    ///            in the database.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getArtistsFromDatabase() async throws -> [Artist] {
+        guard !isDemoMode else {
+            return await MockData.shared.getArtists()
+        }
+
+        let albums = try await getAlbumsFromDatabase()
+        let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
+
+        return albumsByArtist.map { artist, albums in
+            Artist(
+                id: albums.first!.id,
+                position: albums.first!.position,
+                name: artist,
+                albums: albums
+            )
+        }
+        .sorted { $0.name < $1.name }
+    }
 
     /// Retrieves all album artists from the queue.
     ///
@@ -1016,12 +1164,12 @@ extension ConnectionManager {
     ///            in the queue.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getArtists() async throws -> [Artist] {
+    func getArtistsFromQueue() async throws -> [Artist] {
         guard !isDemoMode else {
             return await MockData.shared.getArtists()
         }
 
-        let albums = try await getAlbums()
+        let albums = try await getAlbumsFromQueue()
         let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
 
         return albumsByArtist.map { artist, albums in
@@ -1196,6 +1344,13 @@ extension ConnectionManager where Mode == CommandMode {
         }
     }
 
+    /// Clears the current queue.
+    ///
+    /// - Throws: An error if the underlying command execution fails.
+    func clearQueue() async throws {
+        _ = try await run(["clear"])
+    }
+
     /// Creates a new playlist with the specified name.
     ///
     /// - Parameter name: The name of the new playlist to create.
@@ -1316,6 +1471,63 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Throws: An error if the underlying command execution fails.
     func play(_ media: any Playable) async throws {
         _ = try await run(["playid \(media.id)"])
+    }
+
+    /// Adds songs to the queue.
+    ///
+    /// - Parameter songs: An array of `Song` objects to add to the queue.
+    /// - Throws: An error if the underlying command execution fails.
+    func addToQueue(songs: [Song]) async throws {
+        let commands = songs.map { "add \(escape($0.url.path))" }
+        _ = try await run(commands)
+    }
+
+    /// Adds an album to the queue.
+    ///
+    /// - Parameter album: The `Album` object to add to the queue.
+    /// - Throws: An error if the underlying command execution fails.
+    func addToQueue(album: Album) async throws {
+        let songs = try await getSongsFromDatabase(for: album)
+        try await addToQueue(songs: songs)
+    }
+
+    /// Adds all songs by an artist to the queue.
+    ///
+    /// - Parameter artist: The `Artist` object whose songs to add to the queue.
+    /// - Throws: An error if the underlying command execution fails.
+    func addToQueue(artist: Artist) async throws {
+        let songs = try await getSongsFromDatabase(for: artist)
+        try await addToQueue(songs: songs)
+    }
+
+    /// Plays a song from the database by adding it to the queue if needed.
+    ///
+    /// - Parameters:
+    ///   - song: The `Song` object to play.
+    ///   - useDatabase: Whether to check if the song needs to be added to the queue first.
+    /// - Throws: An error if the underlying command execution fails.
+    func playFromDatabase(_ song: Song, useDatabase: Bool) async throws {
+        if useDatabase {
+            // Check if song is in queue
+            let queueSongs = try await getSongsFromQueue()
+            if !queueSongs.contains(where: { $0.url == song.url }) {
+                // Add to queue first
+                try await addToQueue(songs: [song])
+                // Find the song in the queue to get its ID
+                let updatedQueue = try await getSongsFromQueue()
+                if let queuedSong = updatedQueue.first(where: { $0.url == song.url }) {
+                    _ = try await run(["playid \(queuedSong.id)"])
+                }
+            } else {
+                // Song is already in queue, find it and play
+                if let queuedSong = queueSongs.first(where: { $0.url == song.url }) {
+                    _ = try await run(["playid \(queuedSong.id)"])
+                }
+            }
+        } else {
+            // Original behavior - assumes song is already in queue
+            _ = try await run(["playid \(song.id)"])
+        }
     }
 
     /// Toggle playback.

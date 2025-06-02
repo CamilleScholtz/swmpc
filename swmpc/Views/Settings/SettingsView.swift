@@ -126,9 +126,20 @@ struct SettingsView: View {
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
         @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
+        @AppStorage(Setting.simpleMode) var simpleMode = false
 
         var body: some View {
             Form {
+                Toggle(isOn: $simpleMode) {
+                    Text("Simple Mode")
+                    Text("When enabled, loads all songs into the queue. When disabled, uses MPD's database and queue separately.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Divider()
+                    .frame(height: 32, alignment: .center)
+
                 Toggle(isOn: $scrollToCurrent) {
                     Text("Scroll to Current Song")
                     Text("Scroll to the current song when the song changes.")

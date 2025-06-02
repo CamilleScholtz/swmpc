@@ -85,7 +85,8 @@ struct SongView: View {
         #endif
             .onTapGesture {
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().play(song)
+                    @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+                    try? await ConnectionManager.command().playFromDatabase(song, useDatabase: !loadEntireDatabase)
                 }
             }
             .contextMenu {
@@ -94,6 +95,16 @@ struct SongView: View {
                 }
 
                 Divider()
+
+                @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+
+                if !loadEntireDatabase {
+                    AsyncButton("Add to Queue") {
+                        try await ConnectionManager.command().addToQueue(songs: [song])
+                    }
+
+                    Divider()
+                }
 
                 if mpd.status.playlist?.name != "Favorites" {
                     AsyncButton("Add Song to Favorites") {

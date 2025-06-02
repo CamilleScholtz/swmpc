@@ -105,15 +105,25 @@ struct AlbumView: View {
 
                 Divider()
 
+                @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+
+                if !loadEntireDatabase {
+                    AsyncButton("Add to Queue") {
+                        try await ConnectionManager.command().addToQueue(album: album)
+                    }
+
+                    Divider()
+                }
+
                 AsyncButton("Add Album to Favorites") {
-                    try await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(for: album))
+                    try await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongsFromQueue(for: album))
                 }
 
                 if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
                     Menu("Add Album to Playlist") {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
-                                try await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(for: album))
+                                try await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongsFromQueue(for: album))
                             }
                         }
                     }

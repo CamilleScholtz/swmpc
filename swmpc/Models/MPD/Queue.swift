@@ -64,19 +64,25 @@ final class Queue {
 
         defer { self.type = current }
 
+        @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+
+        // When loadEntireDatabase is false, we use the database commands
+        // For nil playlist (which represents the database view)
+        let useDatabase = !loadEntireDatabase
+
         media = switch type {
         case .album:
             try await idle
-                ? ConnectionManager.idle.getAlbums()
-                : ConnectionManager.command().getAlbums()
+                ? (useDatabase ? ConnectionManager.idle.getAlbumsFromDatabase() : ConnectionManager.idle.getAlbumsFromQueue())
+                : (useDatabase ? ConnectionManager.command().getAlbumsFromDatabase() : ConnectionManager.command().getAlbumsFromQueue())
         case .artist:
             try await idle
-                ? ConnectionManager.idle.getArtists()
-                : ConnectionManager.command().getArtists()
+                ? (useDatabase ? ConnectionManager.idle.getArtistsFromDatabase() : ConnectionManager.idle.getArtistsFromQueue())
+                : (useDatabase ? ConnectionManager.command().getArtistsFromDatabase() : ConnectionManager.command().getArtistsFromQueue())
         case .song, .playlist:
             try await idle
-                ? ConnectionManager.idle.getSongs()
-                : ConnectionManager.command().getSongs()
+                ? (useDatabase ? ConnectionManager.idle.getSongsFromDatabase() : ConnectionManager.idle.getSongsFromQueue())
+                : (useDatabase ? ConnectionManager.command().getSongsFromDatabase() : ConnectionManager.command().getSongsFromQueue())
         default:
             throw QueueError.invalidType
         }
@@ -155,16 +161,25 @@ final class Queue {
             return media
         }
 
+        @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+        let useDatabase = !loadEntireDatabase
+
         let queue: [any Mediable] = if current == self.type {
             internalMedia
         } else {
             switch type {
             case .album:
-                try await ConnectionManager.command().getAlbums()
+                try await useDatabase
+                    ? ConnectionManager.command().getAlbumsFromDatabase()
+                    : ConnectionManager.command().getAlbumsFromQueue()
             case .artist:
-                try await ConnectionManager.command().getArtists()
+                try await useDatabase
+                    ? ConnectionManager.command().getArtistsFromDatabase()
+                    : ConnectionManager.command().getArtistsFromQueue()
             case .song, .playlist:
-                try await ConnectionManager.command().getSongs()
+                try await useDatabase
+                    ? ConnectionManager.command().getSongsFromDatabase()
+                    : ConnectionManager.command().getSongsFromQueue()
             default:
                 throw QueueError.invalidType
             }

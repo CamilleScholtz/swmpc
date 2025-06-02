@@ -276,6 +276,9 @@
         }
       }
     },
+    "Add All by Artist to Queue" : {
+
+    },
     "Add Current Song to Favorites" : {
       "localizations" : {
         "de" : {
@@ -378,6 +381,9 @@
         }
       }
     },
+    "Add songs from the library to play them" : {
+
+    },
     "Add songs to your library." : {
       "localizations" : {
         "de" : {
@@ -445,6 +451,9 @@
           }
         }
       }
+    },
+    "Add to Queue" : {
+
     },
     "Albums" : {
       "localizations" : {
@@ -1091,6 +1100,9 @@
           }
         }
       }
+    },
+    "Clear Queue" : {
+
     },
     "Cloud-sourcing songs…" : {
       "localizations" : {
@@ -3246,6 +3258,9 @@
         }
       }
     },
+    "Queue is empty" : {
+
+    },
     "Queue Library" : {
       "localizations" : {
         "de" : {
@@ -4130,6 +4145,9 @@
         }
       }
     },
+    "Simple Mode" : {
+
+    },
     "Skip to the next song in the queue" : {
       "localizations" : {
         "de" : {
@@ -4405,6 +4423,9 @@
         }
       }
     },
+    "This will remove all songs from the queue." : {
+
+    },
     "Toggle playback of the current song" : {
       "localizations" : {
         "de" : {
@@ -4676,6 +4697,9 @@
           }
         }
       }
+    },
+    "When enabled, loads all songs into the queue. When disabled, uses MPD's database and queue separately." : {
+
     },
     "When enabled, uses mock data instead of connecting to MPD." : {
       "localizations" : {

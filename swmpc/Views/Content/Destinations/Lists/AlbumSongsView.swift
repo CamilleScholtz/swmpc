@@ -117,6 +117,16 @@ struct AlbumSongsView: View {
 
                     Divider()
 
+                    @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+
+                    if !loadEntireDatabase {
+                        AsyncButton("Add to Queue") {
+                            try await ConnectionManager.command().addToQueue(album: album)
+                        }
+
+                        Divider()
+                    }
+
                     AsyncButton("Add Album to Favorites") {
                         try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                     }
@@ -225,7 +235,11 @@ struct AlbumSongsView: View {
             #endif
                 .task {
                     artwork = try? await album.artwork()
-                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(for: album)) ?? [], by: { $0.disc })
+                    @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+                    let fetchedSongs = try? await (loadEntireDatabase
+                        ? ConnectionManager.command().getSongsFromQueue(for: album)
+                        : ConnectionManager.command().getSongsFromDatabase(for: album))
+                    songs = Dictionary(grouping: fetchedSongs ?? [], by: { $0.disc })
                 }
         }
         #if os(macOS)

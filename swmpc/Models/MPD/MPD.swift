@@ -47,6 +47,17 @@ import SwiftUI
     private func updateLoop() async {
         await connect()
 
+        @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+
+        if loadEntireDatabase {
+            // Load entire database into queue on startup (current behavior)
+            do {
+                try await ConnectionManager.command().loadPlaylist(nil)
+            } catch {
+                // If loading fails, continue anyway
+            }
+        }
+
         try? await queue.set(using: .album, idle: true)
         try? await status.set()
         try? await queue.setPlaylists()
@@ -73,8 +84,28 @@ import SwiftUI
         switch change {
         case .playlists:
             try await queue.setPlaylists()
-        case .database, .queue:
-            try await queue.set()
+        case .database:
+            @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+            if !loadEntireDatabase {
+                // In database mode, database changes don't affect our view
+                // unless we're viewing the queue
+                if status.playlist == nil {
+                    try await queue.set(force: true)
+                }
+            } else {
+                // In load entire database mode, reload everything
+                try await queue.set()
+            }
+            try await status.set()
+        case .queue:
+            @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+            if !loadEntireDatabase {
+                // Queue changed, notify queue view
+                NotificationCenter.default.post(name: .queueChangedNotification, object: nil)
+            } else {
+                // In load entire database mode, queue is our view
+                try await queue.set()
+            }
             try await status.set()
         case .player:
             try await status.set()

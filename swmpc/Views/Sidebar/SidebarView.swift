@@ -25,9 +25,9 @@ struct SidebarView: View {
 
     private var playlists: [Playlist] {
         if let existing = mpd.queue.playlists, !existing.isEmpty {
-            return [Playlist(name: "Favorites")] + existing
+            [Playlist(name: "Favorites")] + existing
         } else {
-            return [Playlist(name: "Favorites")]
+            [Playlist(name: "Favorites")]
         }
     }
 

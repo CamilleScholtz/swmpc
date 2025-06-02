@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
 
 struct ArtistView: View {
@@ -61,6 +62,16 @@ struct ArtistView: View {
         .contextMenu {
             Button("Copy Artist Name") {
                 artist.name.copyToClipboard()
+            }
+
+            @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
+
+            if !loadEntireDatabase {
+                Divider()
+
+                AsyncButton("Add All by Artist to Queue") {
+                    try await ConnectionManager.command().addToQueue(artist: artist)
+                }
             }
         }
     }

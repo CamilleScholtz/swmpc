@@ -16,6 +16,8 @@ extension Notification.Name {
         "create_intelligence_playlist")
     static let statusBarSettingChangedNotification = Notification.Name(
         "status_bar_setting_changed")
+    static let queueChangedNotification = Notification.Name(
+        "queue_changed")
 }
 
 enum ButtonNotification: Hashable {
