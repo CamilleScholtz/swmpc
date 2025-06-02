@@ -24,7 +24,7 @@ struct SidebarView: View {
     @FocusState private var isFocused: Bool
 
     private var playlists: [Playlist] {
-        if let existing = mpd.queue.playlists, !existing.isEmpty {
+        if let existing = mpd.database.playlists, !existing.isEmpty {
             [Playlist(name: "Favorites")] + existing
         } else {
             [Playlist(name: "Favorites")]

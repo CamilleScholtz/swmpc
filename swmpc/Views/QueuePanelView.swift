@@ -57,9 +57,10 @@ struct QueuePanelView: View {
             .contentMargins(.vertical, -7.5, for: .scrollIndicators)
             .environment(\.defaultMinListRowHeight, min(31.5 + 15, 50))
             .onAppear {
-                if let currentSong = mpd.status.media as? Song {
-                    proxy.scrollTo(currentSong.id, anchor: .center)
-                }
+//                if let currentSong = mpd.status.media as? Song,
+//                   let songId = currentSong.id {
+//                    proxy.scrollTo(songId, anchor: .center)
+//                }
             }
             .onChange(of: mpd.status.media?.id) { _, newId in
                 if let newId {
@@ -94,7 +95,7 @@ struct QueuePanelView: View {
     private func loadQueue() async {
         do {
             // Always get songs from actual queue, not database
-            songs = try await ConnectionManager.command().getSongsFromQueue()
+            songs = try await ConnectionManager.command().getSongs(using: .queue)
         } catch {
             songs = []
         }

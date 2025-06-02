@@ -30,7 +30,7 @@ struct LoadingView: View {
         .task(id: navigator.category) {
             await checkAndHideLoading()
         }
-        .task(id: mpd.queue.lastUpdated) {
+        .task(id: mpd.database.lastUpdated) {
             await checkAndHideLoading()
         }
     }
@@ -42,7 +42,7 @@ struct LoadingView: View {
 
         #if os(iOS)
             if navigator.category == .playlists {
-                if mpd.queue.playlists != nil {
+                if mpd.database.playlists != nil {
                     try? await Task.sleep(for: .milliseconds(200))
                     withAnimation(.interactiveSpring) {
                         isLoading = false
@@ -52,7 +52,7 @@ struct LoadingView: View {
             }
         #endif
 
-        if mpd.queue.type == navigator.category.type, !mpd.queue.media.isEmpty {
+        if mpd.database.type == navigator.category.type, !mpd.database.media.isEmpty {
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else {
                 return

@@ -168,7 +168,7 @@ actor IntelligenceManager {
 
             group.addTask {
                 try await ConnectionManager.command().loadPlaylist()
-                let albums = try await ConnectionManager.command().getAlbumsFromQueue()
+                let albums = try await ConnectionManager.command().getAlbums(using: .database)
 
                 let result = try await client.chats(query: ChatQuery(
                     messages: [
@@ -204,7 +204,7 @@ actor IntelligenceManager {
                     }
 
                     try await songs.append(contentsOf: ConnectionManager.command()
-                        .getSongsFromQueue(for: album))
+                        .getSongs(using: .database, for: album))
                 }
 
                 try await ConnectionManager.command().addToPlaylist(playlist, songs:

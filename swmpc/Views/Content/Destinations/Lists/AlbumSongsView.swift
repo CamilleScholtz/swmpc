@@ -111,27 +111,26 @@ struct AlbumSongsView: View {
                 }
                 #endif
                 .contextMenu {
-                    Button("Copy Album Title") {
-                        album.title.copyToClipboard()
-                    }
-
-                    Divider()
-
-                    @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-
-                    if !loadEntireDatabase {
+                    @AppStorage(Setting.simpleMode) var simpleMode = false
+                    if !simpleMode {
                         AsyncButton("Add to Queue") {
                             try await ConnectionManager.command().addToQueue(album: album)
                         }
 
                         Divider()
                     }
+                    
+                    Button("Copy Album Title") {
+                        album.title.copyToClipboard()
+                    }
+
+                    Divider()
 
                     AsyncButton("Add Album to Favorites") {
                         try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                     }
 
-                    if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
+                    if let playlists = (mpd.status.playlist != nil) ? mpd.database.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.database.playlists {
                         Menu("Add Album to Playlist") {
                             ForEach(playlists) { playlist in
                                 AsyncButton(playlist.name) {
@@ -165,7 +164,7 @@ struct AlbumSongsView: View {
                                 try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                             }
 
-                            if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
+                            if let playlists = (mpd.status.playlist != nil) ? mpd.database.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.database.playlists {
                                 Menu("Add Album to Playlist") {
                                     ForEach(playlists) { playlist in
                                         AsyncButton(playlist.name) {
@@ -183,7 +182,7 @@ struct AlbumSongsView: View {
                         }
 
                     AsyncButton {
-                        guard let artist = try? await mpd.queue.get(for: album, using: .artist) as? Artist else {
+                        guard let artist = try? await mpd.database.get(for: album, using: .artist) as? Artist else {
                             throw ViewError.missingData
                         }
 
@@ -195,7 +194,7 @@ struct AlbumSongsView: View {
                             .lineLimit(2)
                             .onTapGesture {
                                 Task(priority: .userInitiated) {
-                                    guard let artist = try? await mpd.queue.get(for: album, using: .artist) as? Artist else {
+                                    guard let artist = try? await mpd.database.get(for: album, using: .artist) as? Artist else {
                                         return
                                     }
 
@@ -235,11 +234,7 @@ struct AlbumSongsView: View {
             #endif
                 .task {
                     artwork = try? await album.artwork()
-                    @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-                    let fetchedSongs = try? await (loadEntireDatabase
-                        ? ConnectionManager.command().getSongsFromQueue(for: album)
-                        : ConnectionManager.command().getSongsFromDatabase(for: album))
-                    songs = Dictionary(grouping: fetchedSongs ?? [], by: { $0.disc })
+                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(using: .database, for: album)) ?? [], by: { $0.disc })
                 }
         }
         #if os(macOS)

@@ -27,7 +27,7 @@ actor ArtworkManager {
     ///     - shouldCache: Whether or not to cache the fetched data.
     /// - Returns: The artwork data.
     /// - Throws: An error if the artwork data could not be fetched.
-    func get(for media: any Playable, shouldCache: Bool = true) async throws ->
+    func get(for media: any Mediable, shouldCache: Bool = true) async throws ->
         Data
     {
         if shouldCache, let data = cache.object(forKey: media.url as NSURL) {

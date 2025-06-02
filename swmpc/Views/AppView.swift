@@ -20,7 +20,7 @@ struct AppView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    @AppStorage(Setting.simpleMode) private var loadDatabase = false
+    @AppStorage(Setting.simpleMode) private var simpleMode = false
 
     #if os(iOS)
         @State private var isPopupBarPresented = true
@@ -86,8 +86,7 @@ struct AppView: View {
                             }
                             .background(.background)
 
-                            // Queue panel overlay
-                            if !loadDatabase {
+                            if !simpleMode {
                                 GeometryReader { _ in
                                     HStack(spacing: 0) {
                                         Color.clear
@@ -104,11 +103,11 @@ struct AppView: View {
                             }
                         }
                         .toolbar {
-                            if !loadDatabase {
-                                ToolbarItem {
-                                    Spacer()
-                                }
+                            ToolbarItem {
+                                Spacer()
+                            }
 
+                            if !simpleMode {
                                 if showQueuePanel {
                                     ToolbarItem(placement: .primaryAction) {
                                         Button {

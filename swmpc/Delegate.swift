@@ -75,7 +75,7 @@ struct Delegate: App {
                         return
                     }
 
-                    let isFavorited = appDelegate.mpd.queue.favorites.contains { $0.url == song.url }
+                    let isFavorited = appDelegate.mpd.database.favorites.contains { $0.url == song.url }
 
                     if isFavorited {
                         try await ConnectionManager.command().removeFromFavorites(songs: [song])
@@ -111,12 +111,12 @@ struct Delegate: App {
 
                 AsyncButton("Refresh Library") {
                     try await ConnectionManager.command().update()
-                    try await appDelegate.mpd.queue.set(force: true)
+                    try await appDelegate.mpd.database.set(force: true)
                 }
                 .keyboardShortcut("r", modifiers: [.command, .option])
             }
 
-            if let playlists = appDelegate.mpd.queue.playlists {
+            if let playlists = appDelegate.mpd.database.playlists {
                 CommandMenu("Playlists") {
                     Menu("Load Playlist") {
                         ForEach(playlists) { playlist in
@@ -373,7 +373,7 @@ struct Delegate: App {
                         return
                     }
 
-                    let isFavorited = mpd.queue.favorites.contains { $0.url == song.url }
+                    let isFavorited = mpd.database.favorites.contains { $0.url == song.url }
 
                     if isFavorited {
                         try? await ConnectionManager.command().removeFromFavorites(songs: [song])

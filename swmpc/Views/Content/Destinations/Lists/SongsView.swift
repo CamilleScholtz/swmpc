@@ -13,7 +13,7 @@ struct SongsView: View {
     @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
 
     private var songs: [Song] {
-        mpd.queue.media as? [Song] ?? []
+        mpd.database.media as? [Song] ?? []
     }
 
     var body: some View {
@@ -36,7 +36,7 @@ struct SongsView: View {
                 return
             }
 
-            mpd.status.media = try? await mpd.queue.get(for: song, using: .song)
+            mpd.status.media = try? await mpd.database.get(for: song, using: .song)
         }
     }
 }

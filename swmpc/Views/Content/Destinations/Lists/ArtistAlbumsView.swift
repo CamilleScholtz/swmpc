@@ -56,7 +56,7 @@ struct ArtistAlbumsView: View {
                         return
                     }
 
-                    mpd.status.media = try? await mpd.queue.get(for: song, using: .album)
+                    mpd.status.media = try? await mpd.database.get(for: song, using: .album)
                 }
         }
         #if os(macOS)

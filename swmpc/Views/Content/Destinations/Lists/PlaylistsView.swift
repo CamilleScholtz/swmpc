@@ -24,7 +24,7 @@ struct PlaylistsView: View {
     @FocusState private var isFocused: Bool
 
     private var playlists: [Playlist] {
-        [Playlist(name: "Favorites")] + (mpd.queue.playlists ?? [])
+        [Playlist(name: "Favorites")] + (mpd.database.playlists ?? [])
     }
 
     var body: some View {

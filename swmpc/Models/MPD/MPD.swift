@@ -9,7 +9,7 @@ import SwiftUI
 
 @Observable final class MPD {
     let status = Status()
-    let queue = Queue()
+    let database = Database()
 
     var error: Error?
 
@@ -47,20 +47,14 @@ import SwiftUI
     private func updateLoop() async {
         await connect()
 
-        @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-
-        if loadEntireDatabase {
-            // Load entire database into queue on startup (current behavior)
-            do {
-                try await ConnectionManager.command().loadPlaylist(nil)
-            } catch {
-                // If loading fails, continue anyway
-            }
+        @AppStorage(Setting.simpleMode) var simpleMode = false
+        if simpleMode {
+            try? await ConnectionManager.command().loadPlaylist(nil)
         }
 
-        try? await queue.set(using: .album, idle: true)
+        try? await database.set(using: .album, idle: true)
         try? await status.set()
-        try? await queue.setPlaylists()
+        try? await database.setPlaylists()
 
         while !Task.isCancelled {
             await connect()
@@ -83,30 +77,9 @@ import SwiftUI
     private func performUpdates(for change: IdleEvent) async throws {
         switch change {
         case .playlists:
-            try await queue.setPlaylists()
-        case .database:
-            @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-            if !loadEntireDatabase {
-                // In database mode, database changes don't affect our view
-                // unless we're viewing the queue
-                if status.playlist == nil {
-                    try await queue.set(force: true)
-                }
-            } else {
-                // In load entire database mode, reload everything
-                try await queue.set()
-            }
-            try await status.set()
-        case .queue:
-            @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-            if !loadEntireDatabase {
-                // Queue changed, notify queue view
-                NotificationCenter.default.post(name: .queueChangedNotification, object: nil)
-            } else {
-                // In load entire database mode, queue is our view
-                try await queue.set()
-            }
-            try await status.set()
+            try await database.setPlaylists()
+        case .database, .queue:
+            try await database.set()
         case .player:
             try await status.set()
         case .options:

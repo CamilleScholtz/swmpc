@@ -1,5 +1,5 @@
 //
-//  Queue.swift
+//  Database.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 08/11/2024.
@@ -12,12 +12,12 @@ enum QueueError: Error {
 }
 
 @Observable
-final class Queue {
-    /// The media in the queue. This represent the actual MPD queue.
+final class Database {
+    /// The media in the queue. This represent the actual MPD database.
     var internalMedia: [any Mediable] = []
 
-    /// The media in the queue. This can be the actual MPD queue or the search
-    /// results.
+    /// The media in the database. This can be the actual MPD database or the
+    /// search results.
     var media: [any Mediable] {
         get {
             results ?? internalMedia
@@ -30,8 +30,8 @@ final class Queue {
     /// The search results. If this is not `nil`, `media` will return this.
     var results: [any Mediable]?
 
-    /// The type of media in the queue. This can be `album`, `artist`, `song`,
-    /// or `playlist`.
+    /// The type of media in the database. This can be `album`, `artist`,
+    /// `song`, or `playlist`.
     var type: MediaType?
 
     /// The playlists available on the server.
@@ -40,15 +40,15 @@ final class Queue {
     /// The songs in the `Favorites` playlist.
     var favorites: [Song] = []
 
-    /// The date at which the queue was last updated.
+    /// The date at which the database was last updated.
     var lastUpdated: Date = .now
 
-    /// This asynchronous function sets the media in the queue.
+    /// This asynchronous function sets the media in the database.
     ///
     /// - Parameters:
     ///     - type: The type of media to set.
     ///     - idle: Whether to use the idle connection.
-    ///     - force: Whether to force the update, this will update the queue
+    ///     - force: Whether to force the update, this will update the database
     ///              even if the type is the same as the current one.
     /// - Throws: An error if the media could not be set.
     @MainActor
@@ -64,25 +64,19 @@ final class Queue {
 
         defer { self.type = current }
 
-        @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-
-        // When loadEntireDatabase is false, we use the database commands
-        // For nil playlist (which represents the database view)
-        let useDatabase = !loadEntireDatabase
-
         media = switch type {
         case .album:
             try await idle
-                ? (useDatabase ? ConnectionManager.idle.getAlbumsFromDatabase() : ConnectionManager.idle.getAlbumsFromQueue())
-                : (useDatabase ? ConnectionManager.command().getAlbumsFromDatabase() : ConnectionManager.command().getAlbumsFromQueue())
+                ? ConnectionManager.idle.getAlbums(using: .database)
+                : ConnectionManager.command().getAlbums(using: .database)
         case .artist:
             try await idle
-                ? (useDatabase ? ConnectionManager.idle.getArtistsFromDatabase() : ConnectionManager.idle.getArtistsFromQueue())
-                : (useDatabase ? ConnectionManager.command().getArtistsFromDatabase() : ConnectionManager.command().getArtistsFromQueue())
+                ? ConnectionManager.idle.getArtists(using: .database)
+                : ConnectionManager.command().getArtists(using: .database)
         case .song, .playlist:
             try await idle
-                ? (useDatabase ? ConnectionManager.idle.getSongsFromDatabase() : ConnectionManager.idle.getSongsFromQueue())
-                : (useDatabase ? ConnectionManager.command().getSongsFromDatabase() : ConnectionManager.command().getSongsFromQueue())
+                ? ConnectionManager.idle.getSongs(using: .database)
+                : ConnectionManager.command().getSongs(using: .database)
         default:
             throw QueueError.invalidType
         }
@@ -110,7 +104,7 @@ final class Queue {
             favoritePlaylist)
     }
 
-    /// This asynchronous function searches for media in the queue.
+    /// This asynchronous function searches for media in the database.
     ///
     /// - Parameters:
     ///     - query: The query to search for.
@@ -145,7 +139,7 @@ final class Queue {
     /// media in the queue of a given type.
     ///
     /// For example, if the current given media is `Song`, and the given type
-    /// is `Album`, this will return the album of the given song.
+    /// is `Album`, this will return the `Album` that contains of the given `Song`.
     ///
     /// - Parameters:
     ///     - media: The media to get the corresponding media for.
@@ -161,34 +155,26 @@ final class Queue {
             return media
         }
 
-        @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-        let useDatabase = !loadEntireDatabase
+        try await set(using: current)
 
-        let queue: [any Mediable] = if current == self.type {
-            internalMedia
-        } else {
-            switch type {
-            case .album:
-                try await useDatabase
-                    ? ConnectionManager.command().getAlbumsFromDatabase()
-                    : ConnectionManager.command().getAlbumsFromQueue()
-            case .artist:
-                try await useDatabase
-                    ? ConnectionManager.command().getArtistsFromDatabase()
-                    : ConnectionManager.command().getArtistsFromQueue()
-            case .song, .playlist:
-                try await useDatabase
-                    ? ConnectionManager.command().getSongsFromDatabase()
-                    : ConnectionManager.command().getSongsFromQueue()
-            default:
-                throw QueueError.invalidType
+        switch (media, current) {
+        case let (song as Song, .album):
+            return (internalMedia as? [Album])?.first { album in
+                album.artist == song.artist &&
+                    album.url.deletingLastPathComponent() == song.url.deletingLastPathComponent()
             }
+        case let (song as Song, .artist):
+            return (internalMedia as? [Artist])?.first { artist in
+                artist.name == song.artist
+            }
+        case let (album as Album, .artist):
+            return (internalMedia as? [Artist])?.first { artist in
+                artist.name == album.artist
+            }
+        case let (artist as Artist, .album):
+            return artist.albums?.first
+        default:
+            throw QueueError.invalidType
         }
-
-        if let index = queue.firstIndex(where: { $0.id > media.id }), index > 0 {
-            return queue[index - 1]
-        }
-
-        return nil
     }
 }

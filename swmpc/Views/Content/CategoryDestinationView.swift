@@ -21,14 +21,14 @@ struct CategoryDestinationView: View {
             case .settings:
                 SettingsView()
             default:
-                if mpd.queue.internalMedia.isEmpty {
+                if mpd.database.internalMedia.isEmpty {
                     EmptyCategoryView(destination: destination)
                 } else {
                     CategoryView(destination: destination)
                 }
             }
         #elseif os(macOS)
-            if mpd.queue.internalMedia.isEmpty {
+            if mpd.database.internalMedia.isEmpty {
                 EmptyCategoryView(destination: destination)
             } else {
                 CategoryView(destination: destination)
@@ -230,7 +230,7 @@ struct CategoryView: View {
                     resetHideHeaderTimer()
                 }
             }
-            .onChange(of: mpd.queue.results?.count) { _, value in
+            .onChange(of: mpd.database.results?.count) { _, value in
                 guard value == nil else {
                     return
                 }
@@ -264,7 +264,7 @@ struct CategoryView: View {
                     return
                 }
 
-                mpd.queue.results = nil
+                mpd.database.results = nil
             }
             .onChange(of: isGoingToSearch) { _, value in
                 guard value else {
@@ -282,9 +282,9 @@ struct CategoryView: View {
                 }
 
                 if query.isEmpty {
-                    mpd.queue.results = nil
+                    mpd.database.results = nil
                 } else {
-                    try? await mpd.queue.search(for: query)
+                    try? await mpd.database.search(for: query)
                 }
             }
             #elseif os(macOS)

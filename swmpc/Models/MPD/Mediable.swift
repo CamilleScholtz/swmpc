@@ -8,25 +8,22 @@
 import SwiftUI
 
 protocol Mediable: Identifiable, Equatable, Hashable, Codable, Sendable {
-    var id: UInt32 { get }
-    var position: UInt32 { get }
-}
-
-extension Mediable {
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.id == rhs.id
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-}
-
-protocol Playable: Mediable {
+    var identifier: UInt32? { get }
+    var position: UInt32? { get }
     var url: URL { get }
 }
 
-extension Playable {
+extension Mediable {
+    var id: URL { url }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.url == rhs.url
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(url)
+    }
+
     @MainActor
     func artwork() async throws -> PlatformImage? {
         let data = try await ArtworkManager.shared.get(for: self, shouldCache: !(self is Song))
@@ -35,8 +32,9 @@ extension Playable {
 }
 
 struct Artist: Mediable {
-    let id: UInt32
-    let position: UInt32
+    let identifier: UInt32?
+    let position: UInt32?
+    let url: URL
 
     let name: String
 
@@ -46,9 +44,9 @@ struct Artist: Mediable {
     var albums: [Album]?
 }
 
-struct Album: Playable {
-    let id: UInt32
-    let position: UInt32
+struct Album: Mediable {
+    let identifier: UInt32?
+    let position: UInt32?
     let url: URL
 
     let artist: String
@@ -60,9 +58,9 @@ struct Album: Playable {
     }
 }
 
-struct Song: Playable {
-    let id: UInt32
-    let position: UInt32
+struct Song: Mediable {
+    let identifier: UInt32?
+    let position: UInt32?
     let url: URL
 
     let artist: String

@@ -60,18 +60,17 @@ struct ArtistView: View {
             navigator.navigate(to: ContentDestination.artist(artist))
         }
         .contextMenu {
-            Button("Copy Artist Name") {
-                artist.name.copyToClipboard()
-            }
-
-            @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-
-            if !loadEntireDatabase {
-                Divider()
-
+            @AppStorage(Setting.simpleMode) var simpleMode = false
+            if !simpleMode {
                 AsyncButton("Add All by Artist to Queue") {
                     try await ConnectionManager.command().addToQueue(artist: artist)
                 }
+                
+                Divider()
+            }
+
+            Button("Copy Artist Name") {
+                artist.name.copyToClipboard()
             }
         }
     }

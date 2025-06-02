@@ -78,7 +78,7 @@ struct HeaderView: View {
                 return
             }
 
-            mpd.queue.results = nil
+            mpd.database.results = nil
         }
         .task(id: query) {
             guard isSearching else {
@@ -86,9 +86,9 @@ struct HeaderView: View {
             }
 
             if query.isEmpty {
-                mpd.queue.results = nil
+                mpd.database.results = nil
             } else {
-                try? await mpd.queue.search(for: query)
+                try? await mpd.database.search(for: query)
             }
         }
     }

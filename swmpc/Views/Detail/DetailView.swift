@@ -182,7 +182,7 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let album = try? await mpd.queue.get(for: song, using: .album) as? Album else {
+                            guard let album = try? await mpd.database.get(for: song, using: .album) as? Album else {
                                 return
                             }
 

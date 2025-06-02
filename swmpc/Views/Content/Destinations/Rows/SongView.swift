@@ -85,26 +85,24 @@ struct SongView: View {
         #endif
             .onTapGesture {
                 Task(priority: .userInitiated) {
-                    @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-                    try? await ConnectionManager.command().playFromDatabase(song, useDatabase: !loadEntireDatabase)
+                    try? await ConnectionManager.command().play(song)
                 }
             }
             .contextMenu {
-                Button("Copy Song Title") {
-                    song.title.copyToClipboard()
-                }
-
-                Divider()
-
-                @AppStorage(Setting.simpleMode) var loadEntireDatabase = false
-
-                if !loadEntireDatabase {
+                @AppStorage(Setting.simpleMode) var simpleMode = false
+                if !simpleMode {
                     AsyncButton("Add to Queue") {
                         try await ConnectionManager.command().addToQueue(songs: [song])
                     }
 
                     Divider()
                 }
+                
+                Button("Copy Song Title") {
+                    song.title.copyToClipboard()
+                }
+
+                Divider()
 
                 if mpd.status.playlist?.name != "Favorites" {
                     AsyncButton("Add Song to Favorites") {
@@ -112,7 +110,7 @@ struct SongView: View {
                     }
                 }
 
-                if let playlists = (mpd.status.playlist != nil) ? mpd.queue.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.queue.playlists {
+                if let playlists = (mpd.status.playlist != nil) ? mpd.database.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.database.playlists {
                     Menu("Add Song to Playlist") {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
