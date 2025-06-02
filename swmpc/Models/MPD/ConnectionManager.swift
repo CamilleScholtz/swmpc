@@ -1299,9 +1299,15 @@ extension ConnectionManager where Mode == CommandMode {
     /// causes it to rescan the music directory and update its internal
     /// database.
     ///
+    /// - Parameter force: A Boolean value indicating whether to force a rescan
+    ///                   (`true`) or perform a standard update (`false`).
     /// - Throws: An error if the underlying command execution fails
-    func update() async throws {
-        _ = try await run(["update"])
+    func update(force: Bool = false) async throws {
+        if force {
+            _ = try await run(["rescan"])
+        } else {
+            _ = try await run(["update"])
+        }
     }
 
     /// Plays a `Playable` object, this is either a `Song` or an `Album`.

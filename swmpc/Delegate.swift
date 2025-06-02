@@ -111,6 +111,7 @@ struct Delegate: App {
 
                 AsyncButton("Refresh Library") {
                     try await ConnectionManager.command().update()
+                    try await appDelegate.mpd.queue.set(force: true)
                 }
                 .keyboardShortcut("r", modifiers: [.command, .option])
             }
