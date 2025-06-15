@@ -67,7 +67,11 @@ struct ChangeQueueModifier: ViewModifier {
                 }
 
                 AsyncButton("Queue") {
-                    try await ConnectionManager.command().loadPlaylist(playlistToQueue)
+                    if let playlist = playlistToQueue {
+                        try await mpd.queue.loadPlaylist(playlist)
+                    } else {
+                        try await mpd.queue.clear()
+                    }
                     try await mpd.database.set(using: navigator.category.type, force: true)
                 }
             } message: {

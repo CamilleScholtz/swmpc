@@ -11,9 +11,6 @@ struct QueuePanelView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
-    @Binding var isShowing: Bool
-
-    @State private var songs: [Song] = []
 
     private let queueChangedNotification = NotificationCenter.default
         .publisher(for: .queueChangedNotification)
@@ -47,7 +44,7 @@ struct QueuePanelView: View {
 
     private var queueListView: some View {
         ScrollViewReader { proxy in
-            List(songs) { song in
+            List(mpd.queue.songs) { song in
                 SongView(for: song)
                     .listRowSeparator(.hidden)
                     .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
@@ -76,28 +73,19 @@ struct QueuePanelView: View {
         VStack(spacing: 0) {
             queueHeader
 
-            if songs.isEmpty {
+            if mpd.queue.songs.isEmpty {
                 emptyQueueView
             } else {
                 queueListView
             }
         }
         .task {
-            await loadQueue()
+            await mpd.queue.load()
         }
         .onReceive(queueChangedNotification) { _ in
             Task {
-                await loadQueue()
+                await mpd.queue.reload()
             }
-        }
-    }
-
-    private func loadQueue() async {
-        do {
-            // Always get songs from actual queue, not database
-            songs = try await ConnectionManager.command().getSongs(using: .queue)
-        } catch {
-            songs = []
         }
     }
 }

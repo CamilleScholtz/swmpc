@@ -63,7 +63,7 @@ struct ArtistView: View {
             @AppStorage(Setting.simpleMode) var simpleMode = false
             if !simpleMode {
                 AsyncButton("Add All by Artist to Queue") {
-                    try await ConnectionManager.command().addToQueue(artist: artist)
+                    try await mpd.queue.add(artist: artist)
                 }
                 
                 Divider()

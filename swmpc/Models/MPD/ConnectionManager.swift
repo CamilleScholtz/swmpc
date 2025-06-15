@@ -10,7 +10,7 @@ import KeychainStorageKit
 import Network
 import SwiftUI
 
-protocol ConnectionMode {
+protocol ConnectionMode: Sendable {
     static var label: String { get }
     static var enableKeepalive: Bool { get }
     static var bufferSize: Int { get }

@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/LeoNatan/LNPopupUI",
       "state" : {
-        "revision" : "6d0cfc898421390c1c32211304a18b1d6f0ec4e4",
-        "version" : "2.0.1"
+        "revision" : "aa9c813f2b47d055b648628b738e1b115c5e9fad",
+        "version" : "2.0.2"
       }
     },
     {

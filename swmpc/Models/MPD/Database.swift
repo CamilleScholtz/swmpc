@@ -7,13 +7,9 @@
 
 import SwiftUI
 
-enum QueueError: Error {
-    case invalidType
-}
-
 @Observable
 final class Database {
-    /// The media in the queue. This represent the actual MPD database.
+    /// The media in the database. This represents the actual MPD database.
     var internalMedia: [any Mediable] = []
 
     /// The media in the database. This can be the actual MPD database or the
@@ -78,7 +74,7 @@ final class Database {
                 ? ConnectionManager.idle.getSongs(using: .database)
                 : ConnectionManager.command().getSongs(using: .database)
         default:
-            throw QueueError.invalidType
+            throw DatabaseError.invalidType
         }
     }
 
@@ -131,7 +127,7 @@ final class Database {
                     $0.title.range(of: query, options: .caseInsensitive) != nil
             }
         default:
-            throw QueueError.invalidType
+            throw DatabaseError.invalidType
         }
     }
 
@@ -174,7 +170,11 @@ final class Database {
         case let (artist as Artist, .album):
             return artist.albums?.first
         default:
-            throw QueueError.invalidType
+            throw DatabaseError.invalidType
         }
     }
+}
+
+enum DatabaseError: Error {
+    case invalidType
 }

@@ -10,6 +10,7 @@ import SwiftUI
 @Observable final class MPD {
     let status = Status()
     let database = Database()
+    let queue = Queue()
 
     var error: Error?
 
@@ -55,6 +56,7 @@ import SwiftUI
         try? await database.set(using: .album, idle: true)
         try? await status.set()
         try? await database.setPlaylists()
+        await queue.load()
 
         while !Task.isCancelled {
             await connect()
@@ -78,8 +80,11 @@ import SwiftUI
         switch change {
         case .playlists:
             try await database.setPlaylists()
-        case .database, .queue:
+        case .database:
             try await database.set()
+        case .queue:
+            await queue.reload()
+            NotificationCenter.default.post(name: .queueChangedNotification, object: nil)
         case .player:
             try await status.set()
         case .options:

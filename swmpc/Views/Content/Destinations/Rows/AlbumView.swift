@@ -19,6 +19,7 @@ struct AlbumView: View {
     }
 
     @State private var artwork: PlatformImage?
+    @State private var artworkTask: Task<Void, Never>?
 
     #if os(iOS)
         @State private var isShowingContextMenu = false
@@ -102,12 +103,12 @@ struct AlbumView: View {
                 @AppStorage(Setting.simpleMode) var simpleMode = false
                 if !simpleMode {
                     AsyncButton("Add to Queue") {
-                        try await ConnectionManager.command().addToQueue(album: album)
+                        try await mpd.queue.add(album: album)
                     }
 
                     Divider()
                 }
-                
+
                 Button("Copy Album Title") {
                     album.title.copyToClipboard()
                 }
@@ -128,7 +129,11 @@ struct AlbumView: View {
                     }
                 }
             }
-            .task {
+            .task(id: album, priority: .high) {
+                guard artwork == nil else {
+                    return
+                }
+
                 artwork = try? await album.artwork()
             }
     }

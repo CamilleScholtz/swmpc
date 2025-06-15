@@ -63,43 +63,35 @@ struct AppView: View {
                         }
                         .popupBarProgressViewStyle(.top)
                     #elseif os(macOS)
-                        ZStack {
-                            NavigationSplitView {
-                                SidebarView()
-                                    .navigationSplitViewColumnWidth(min: 180, ideal: 180, max: .infinity)
-                            } content: {
-                                NavigationStack(path: $boundNavigator.path) {
-                                    CategoryDestinationView(destination: navigator.category)
-                                        .navigationDestination(for: ContentDestination.self) { destination in
-                                            ContentDestinationView(destination: destination)
-                                        }
-                                }
-                                .navigationSplitViewColumnWidth(310)
-                                .navigationBarBackButtonHidden(true)
-                                .ignoresSafeArea()
-                                .overlay(
-                                    LoadingView()
-                                )
-                            } detail: {
-                                DetailView()
-                                    .padding(60)
-                            }
-                            .background(.background)
-
-                            if !simpleMode {
-                                GeometryReader { _ in
-                                    HStack(spacing: 0) {
-                                        Color.clear
-
-                                        QueuePanelView(isShowing: $showQueuePanel)
-                                            .frame(width: 350)
-                                            .background(.regularMaterial)
-                                            // .shadow(radius: 10)
-                                            .offset(x: showQueuePanel ? 0 : 350)
-                                            .animation(.spring, value: showQueuePanel)
+                        NavigationSplitView {
+                            SidebarView()
+                                .navigationSplitViewColumnWidth(min: 180, ideal: 180, max: .infinity)
+                        } content: {
+                            NavigationStack(path: $boundNavigator.path) {
+                                CategoryDestinationView(destination: navigator.category)
+                                    .navigationDestination(for: ContentDestination.self) { destination in
+                                        ContentDestinationView(destination: destination)
                                     }
-                                }
-                                .ignoresSafeArea()
+                            }
+                            .navigationSplitViewColumnWidth(310)
+                            .navigationBarBackButtonHidden(true)
+                            .ignoresSafeArea()
+                            .overlay(
+                                LoadingView()
+                            )
+                        } detail: {
+                            DetailView()
+                                .padding(60)
+                        }
+                        .background(.background)
+                        .overlay(alignment: .trailing) {
+                            if !simpleMode && showQueuePanel {
+                                QueuePanelView()
+                                    .frame(width: 350)
+                                    .background(.regularMaterial)
+                                    .shadow(radius: 10)
+                                    .transition(.move(edge: .trailing))
+                                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showQueuePanel)
                             }
                         }
                         .toolbar {
@@ -130,8 +122,7 @@ struct AppView: View {
                         .alert("Clear Queue", isPresented: $showClearQueueAlert) {
                             Button("Cancel", role: .cancel) {}
                             AsyncButton("Clear Queue", role: .destructive) {
-                                try await ConnectionManager.command().clearQueue()
-                                NotificationCenter.default.post(name: .queueChangedNotification, object: nil)
+                                try await mpd.queue.clear()
                             }
                         } message: {
                             Text("This will remove all songs from the queue.")

@@ -121,7 +121,7 @@ struct Delegate: App {
                     Menu("Load Playlist") {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
-                                try await ConnectionManager.command().loadPlaylist(playlist)
+                                try await appDelegate.mpd.queue.loadPlaylist(playlist)
                             }
                         }
                     }
