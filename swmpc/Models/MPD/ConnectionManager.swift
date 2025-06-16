@@ -98,7 +98,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         label: "com.camille.swmpc.connection.\(Mode.label)",
         qos: Mode.qos,
         attributes: Mode.queueAttributes,
-        target: .global(qos: Mode.qos.qosClass)
+        target: .global(qos: Mode.qos.qosClass),
     )
 
     private var buffer = Deque<UInt8>()
@@ -152,7 +152,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         connection = NWConnection(
             host: NWEndpoint.Host(host),
             port: port,
-            using: NWParameters(tls: nil, tcp: options)
+            using: NWParameters(tls: nil, tcp: options),
         )
         guard let connection else {
             throw ConnectionManagerError.connectionSetupFailed
@@ -782,7 +782,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 url: url,
                 artist: albumArtist ?? "Unknown Artist",
                 title: album ?? "Unknown Title",
-                date: date ?? "1970"
+                date: date ?? "1970",
             )
         default:
             return Song(
@@ -793,7 +793,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 title: title ?? "Unknown Title",
                 duration: duration,
                 disc: disc ?? 1,
-                track: track ?? 1
+                track: track ?? 1,
             )
         }
     }
@@ -1038,7 +1038,7 @@ extension ConnectionManager {
                 position: albums.first!.position,
                 url: albums.first!.url,
                 name: artist,
-                albums: albums
+                albums: albums,
             )
         }
         .sorted {
@@ -1389,7 +1389,7 @@ extension ConnectionManager where Mode == CommandMode {
 //                    _ = try await run(["playid \(id)"])
 //                }
             }
-            
+
             return
         }
 

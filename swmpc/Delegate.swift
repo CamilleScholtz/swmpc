@@ -42,11 +42,11 @@ struct Delegate: App {
                 .environment(Delegate.mpd)
             #elseif os(macOS)
                 .environment(appDelegate.mpd)
-                .onAppear {
-                    for window in NSApplication.shared.windows {
-                        window.tabbingMode = .disallowed
-                    }
-                }
+//                .onAppear {
+//                    for window in NSApplication.shared.windows {
+//                        window.tabbingMode = .disallowed
+//                    }
+//                }
             #endif
         }
         #if os(macOS)
@@ -175,14 +175,14 @@ struct Delegate: App {
                 self,
                 selector: #selector(handleStatusBarSettingChanged),
                 name: .statusBarSettingChangedNotification,
-                object: nil
+                object: nil,
             )
 
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(handleTerminate),
                 name: NSApplication.willTerminateNotification,
-                object: nil
+                object: nil,
             )
         }
 
@@ -192,7 +192,7 @@ struct Delegate: App {
             let playPauseItem = NSMenuItem(
                 title: mpd.status.isPlaying == true ? "Pause" : "Play",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
-                keyEquivalent: ""
+                keyEquivalent: "",
             )
             playPauseItem.tag = mpd.status.isPlaying == true ? MenuAction.pause.rawValue : MenuAction.play.rawValue
             menu.addItem(playPauseItem)
@@ -200,7 +200,7 @@ struct Delegate: App {
             let nextItem = NSMenuItem(
                 title: "Next song",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
-                keyEquivalent: ""
+                keyEquivalent: "",
             )
             nextItem.tag = MenuAction.nextSong.rawValue
             menu.addItem(nextItem)
@@ -208,7 +208,7 @@ struct Delegate: App {
             let previousItem = NSMenuItem(
                 title: "Previous song",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
-                keyEquivalent: ""
+                keyEquivalent: "",
             )
             previousItem.tag = MenuAction.previousSong.rawValue
             menu.addItem(previousItem)
@@ -218,7 +218,7 @@ struct Delegate: App {
             let favoritesItem = NSMenuItem(
                 title: "Add current song to favorites",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
-                keyEquivalent: ""
+                keyEquivalent: "",
             )
             favoritesItem.tag = MenuAction.addToFavorites.rawValue
             menu.addItem(favoritesItem)
@@ -243,7 +243,7 @@ struct Delegate: App {
             popover.contentViewController = NSViewController()
             popover.contentViewController!.view = NSHostingView(
                 rootView: PopoverView()
-                    .environment(mpd)
+                    .environment(mpd),
             )
         }
 
@@ -321,7 +321,7 @@ struct Delegate: App {
             popover.show(
                 relativeTo: popoverAnchor.button!.bounds,
                 of: popoverAnchor.button!,
-                preferredEdge: .maxY
+                preferredEdge: .maxY,
             )
         }
 

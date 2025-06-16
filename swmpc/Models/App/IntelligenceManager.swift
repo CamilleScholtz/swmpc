@@ -148,7 +148,7 @@ actor IntelligenceManager {
             token: token,
             host: model.host,
             basePath: model.path,
-            parsingOptions: .fillRequiredFieldIfKeyNotFound
+            parsingOptions: .fillRequiredFieldIfKeyNotFound,
         ))
     }
 
@@ -181,7 +181,7 @@ actor IntelligenceManager {
                             separator: "\n"))!,
                     ],
                     model: model.model,
-                    responseFormat: .derivedJsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
+                    responseFormat: .derivedJsonSchema(name: "intelligence_response", type: IntelligenceResponse.self),
                 ))
 
                 guard let response = result.choices.first?.message.content else {

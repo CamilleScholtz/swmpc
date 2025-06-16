@@ -7,48 +7,47 @@ final class Queue: Sendable {
     @MainActor private(set) var currentSong: Song?
     @MainActor private(set) var isLoading = false
     @MainActor private(set) var error: QueueError?
-    
+
     enum QueueError: LocalizedError {
         case loadFailed
         case addFailed
         case clearFailed
-        
+
         var errorDescription: String? {
             switch self {
             case .loadFailed:
-                return "Failed to load queue"
+                "Failed to load queue"
             case .addFailed:
-                return "Failed to add to queue"
+                "Failed to add to queue"
             case .clearFailed:
-                return "Failed to clear queue"
+                "Failed to clear queue"
             }
         }
     }
-    
-    init() {
-    }
-    
+
+    init() {}
+
     @MainActor
     func load() async {
         isLoading = true
         error = nil
-        
+
         do {
             let songs = try await ConnectionManager.command().getSongs(using: .queue)
             self.songs = songs
         } catch {
             self.error = .loadFailed
-            self.songs = []
+            songs = []
         }
-        
+
         isLoading = false
     }
-    
+
     @MainActor
     func reload() async {
         await load()
     }
-    
+
     @MainActor
     func clear() async throws {
         do {
@@ -60,7 +59,7 @@ final class Queue: Sendable {
             throw error
         }
     }
-    
+
     @MainActor
     func add(songs: [Song]) async throws {
         do {
@@ -71,7 +70,7 @@ final class Queue: Sendable {
             throw error
         }
     }
-    
+
     @MainActor
     func add(album: Album) async throws {
         do {
@@ -82,7 +81,7 @@ final class Queue: Sendable {
             throw error
         }
     }
-    
+
     @MainActor
     func add(artist: Artist) async throws {
         do {
@@ -93,7 +92,7 @@ final class Queue: Sendable {
             throw error
         }
     }
-    
+
     @MainActor
     func loadPlaylist(_ playlist: Playlist) async throws {
         do {
@@ -104,12 +103,12 @@ final class Queue: Sendable {
             throw error
         }
     }
-    
+
     @MainActor
     func updateCurrentSong(_ song: Song?) {
         currentSong = song
     }
-    
+
     @MainActor
     func reset() {
         songs = []

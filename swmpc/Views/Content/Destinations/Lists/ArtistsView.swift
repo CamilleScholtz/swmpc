@@ -19,6 +19,7 @@ struct ArtistsView: View {
     var body: some View {
         ForEach(artists) { artist in
             ArtistView(for: artist)
+                .id(artist.id)
         }
         .onChange(of: mpd.status.media as? Artist) { previous, _ in
             if scrollToCurrent {

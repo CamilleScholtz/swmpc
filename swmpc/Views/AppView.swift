@@ -74,51 +74,41 @@ struct AppView: View {
                                     }
                             }
                             .navigationSplitViewColumnWidth(310)
-                            .navigationBarBackButtonHidden(true)
-                            .ignoresSafeArea()
                             .overlay(
-                                LoadingView()
+                                LoadingView(),
                             )
                         } detail: {
                             DetailView()
                                 .padding(60)
                         }
-                        .background(.background)
-                        .overlay(alignment: .trailing) {
-                            if !simpleMode && showQueuePanel {
-                                QueuePanelView()
-                                    .frame(width: 350)
-                                    .background(.regularMaterial)
-                                    .shadow(radius: 10)
-                                    .transition(.move(edge: .trailing))
-                                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showQueuePanel)
-                            }
+                        .sheet(isPresented: $showQueuePanel) {
+                            QueuePanelView()
                         }
-                        .toolbar {
-                            ToolbarItem {
-                                Spacer()
-                            }
-
-                            if !simpleMode {
-                                if showQueuePanel {
-                                    ToolbarItem(placement: .primaryAction) {
-                                        Button {
-                                            showClearQueueAlert = true
-                                        } label: {
-                                            Image(systemSymbol: .trash)
-                                        }
-                                    }
-                                }
-
-                                ToolbarItem(placement: .primaryAction) {
-                                    Button {
-                                        showQueuePanel.toggle()
-                                    } label: {
-                                        Image(systemSymbol: showQueuePanel ? .xmarkCircleFill : .musicNoteList)
-                                    }
-                                }
-                            }
-                        }
+//                        .toolbar {
+//                            ToolbarItem {
+//                                Spacer()
+//                            }
+//
+//                            if !simpleMode {
+//                                if showQueuePanel {
+//                                    ToolbarItem(placement: .primaryAction) {
+//                                        Button {
+//                                            showClearQueueAlert = true
+//                                        } label: {
+//                                            Image(systemSymbol: .trash)
+//                                        }
+//                                    }
+//                                }
+//
+//                                ToolbarItem(placement: .primaryAction) {
+//                                    Button {
+//                                        showQueuePanel.toggle()
+//                                    } label: {
+//                                        Image(systemSymbol: showQueuePanel ? .xmarkCircleFill : .musicNoteList)
+//                                    }
+//                                }
+//                            }
+//                        }
                         .alert("Clear Queue", isPresented: $showClearQueueAlert) {
                             Button("Cancel", role: .cancel) {}
                             AsyncButton("Clear Queue", role: .destructive) {

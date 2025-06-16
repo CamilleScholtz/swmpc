@@ -27,7 +27,7 @@ struct ArtistView: View {
                         .init(color: Color(.secondarySystemFill).opacity(0.7), location: 1.0),
                     ]),
                     startPoint: .top,
-                    endPoint: .bottom
+                    endPoint: .bottom,
                 ))
             #if os(iOS)
                 .frame(width: 60, height: 60)
@@ -39,7 +39,7 @@ struct ArtistView: View {
                         .font(.system(size: 18))
                         .fontDesign(.rounded)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.secondary),
                 )
 
             VStack(alignment: .leading) {
@@ -65,7 +65,7 @@ struct ArtistView: View {
                 AsyncButton("Add All by Artist to Queue") {
                     try await mpd.queue.add(artist: artist)
                 }
-                
+
                 Divider()
             }
 

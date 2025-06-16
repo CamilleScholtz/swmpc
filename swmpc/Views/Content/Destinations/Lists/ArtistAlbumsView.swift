@@ -71,7 +71,7 @@ struct ArtistAlbumsView: View {
                 .offset(x: -15)
             #endif
                 .frame(height: 1),
-            alignment: .bottom
+            alignment: .bottom,
         )
 
         Section {

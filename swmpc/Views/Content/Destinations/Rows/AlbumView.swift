@@ -33,32 +33,18 @@ struct AlbumView: View {
         HStack(spacing: 15) {
             ZStack {
                 ArtworkView(image: artwork)
-                #if os(iOS)
-                    .frame(width: 70)
-                #elseif os(macOS)
-                    .frame(width: 60)
-                #endif
-                    .cornerRadius(5)
-                    .shadow(color: .black.opacity(0.2), radius: 6)
+                    .frame(width: 65)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
                 #if os(macOS)
-                    if isHovering {
-                        ZStack {
-                            if isHoveringArtwork {
-                                Circle()
-                                    .fill(.accent)
-                                    .frame(width: 40, height: 40)
-                            }
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .frame(width: 40, height: 40)
-
-                            Image(systemSymbol: .playFill)
-                                .font(.title2)
-                                .foregroundColor(.white)
-                        }
-                        .transition(.opacity)
-                    }
+                    Image(systemSymbol: .playFill)
+                        .font(.title2)
+                        .padding(10)
+                        .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
+                        .opacity(isHovering ? 1 : 0)
+                        .animation(.interactiveSpring, value: isHovering)
+                        .animation(.interactiveSpring, value: isHoveringArtwork)
                 #endif
             }
             #if os(macOS)

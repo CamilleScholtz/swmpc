@@ -104,7 +104,7 @@ actor MockData {
                     url: url,
                     artist: artist,
                     title: albumTitle,
-                    date: releaseYear
+                    date: releaseYear,
                 )
 
                 albums.append(album)
@@ -140,7 +140,7 @@ actor MockData {
                     title: songTitle,
                     duration: duration,
                     disc: 1,
-                    track: songIndex + 1
+                    track: songIndex + 1,
                 )
 
                 songs.append(song)
@@ -178,7 +178,7 @@ actor MockData {
                     position: albums.first!.position,
                     url: albums.first!.url,
                     name: artist,
-                    albums: albums
+                    albums: albums,
                 )
             }
             .sorted { ($0.position ?? 0) < ($1.position ?? 0) }

@@ -53,8 +53,8 @@ struct DetailView: View {
                                 gradient: Gradient(colors: [.white, .clear]),
                                 center: .center,
                                 startRadius: -15,
-                                endRadius: 275
-                            )
+                                endRadius: 275,
+                            ),
                         )
                     #elseif os(macOS)
                         .mask(
@@ -62,8 +62,8 @@ struct DetailView: View {
                                 gradient: Gradient(colors: [.white, .clear]),
                                 center: .center,
                                 startRadius: -15,
-                                endRadius: 225
-                            )
+                                endRadius: 225,
+                            ),
                         )
                     #endif
                         .offset(y: 20)
@@ -86,8 +86,8 @@ struct DetailView: View {
                                 gradient: Gradient(colors: [.white, .clear]),
                                 center: .center,
                                 startRadius: -25,
-                                endRadius: 200
-                            )
+                                endRadius: 200,
+                            ),
                         )
                         .scaleEffect(1.3)
                     #elseif os(macOS)
@@ -96,8 +96,8 @@ struct DetailView: View {
                                 gradient: Gradient(colors: [.white, .clear]),
                                 center: .center,
                                 startRadius: -25,
-                                endRadius: 225
-                            )
+                                endRadius: 225,
+                            ),
                         )
                     #endif
                         .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
@@ -119,31 +119,21 @@ struct DetailView: View {
 
                 ArtworkView(image: artwork)
                     .overlay(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 0.5
-                                )
-                                .blendMode(.screen)
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(.clear)
+                            .glassEffect(.regular.tint(.clear.opacity(0)).interactive(), in: .rect(cornerRadius: 30))
+                            .mask(
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 30)
 
-                            RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 0.5
-                                )
-                                .blendMode(.multiply)
-                        }
+                                    RoundedRectangle(cornerRadius: 30)
+                                        .scale(0.9)
+                                        .blur(radius: 8)
+                                        .blendMode(.destinationOut)
+                                },
+                            ),
                     )
-                    .cornerRadius(20)
+                    .cornerRadius(30)
                     .shadow(color: .black.opacity(0.2), radius: 16)
                 #if os(iOS)
                     .frame(width: 300)
@@ -174,7 +164,7 @@ struct DetailView: View {
                             Task(priority: .userInitiated) {
                                 try? await ConnectionManager.command().previous()
                             }
-                        }
+                        },
                     )
                     .onTapGesture {
                         Task(priority: .userInitiated) {
@@ -212,9 +202,7 @@ struct DetailView: View {
                 #endif
             }
         }
-        #if os(macOS)
-        .ignoresSafeArea()
-        #elseif os(iOS)
+        #if os(iOS)
         .popupImage(artwork != nil ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
         .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
         // swiftformat:disable:next trailingClosures

@@ -39,9 +39,9 @@ struct PopoverView: View {
                                 LinearGradient(
                                     colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
                                     startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                                    endPoint: .bottomTrailing,
                                 ),
-                                lineWidth: 0.5
+                                lineWidth: 0.5,
                             )
                             .blendMode(.screen)
 
@@ -50,12 +50,12 @@ struct PopoverView: View {
                                 LinearGradient(
                                     colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
                                     startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
+                                    endPoint: .bottomTrailing,
                                 ),
-                                lineWidth: 0.5
+                                lineWidth: 0.5,
                             )
                             .blendMode(.multiply)
-                    }
+                    },
                 )
                 .cornerRadius(10)
                 .scaleEffect(showInfo ? 0.7 : 1)
@@ -80,7 +80,7 @@ struct PopoverView: View {
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command().previous()
                         }
-                    }
+                    },
                 )
                 .background(.ultraThinMaterial)
 
@@ -94,10 +94,10 @@ struct PopoverView: View {
                 gradient: Gradient(colors: [.clear, .white]),
                 center: .top,
                 startRadius: 5,
-                endRadius: 55
+                endRadius: 55,
             )
             .offset(x: 23)
-            .scaleEffect(x: 1.5)
+            .scaleEffect(x: 1.5),
         )
         .frame(width: 250, height: height)
         .onReceive(willShowNotification) { _ in

@@ -12,54 +12,60 @@ struct DetailFooterView: View {
     @Environment(MPD.self) private var mpd
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(alignment: .center) {
-                Text(mpd.status.song?.title ?? "No song playing")
-                #if os(iOS)
-                    .font(.system(size: 22))
-                #elseif os(macOS)
-                    .font(.system(size: 18))
-                #endif
-                    .fontWeight(.semibold)
-                    .fontDesign(.rounded)
+        GlassEffectContainer {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .center) {
+                    Text(mpd.status.song?.title ?? "No song playing")
+                    #if os(iOS)
+                        .font(.system(size: 22))
+                    #elseif os(macOS)
+                        .font(.system(size: 18))
+                    #endif
+                        .fontWeight(.semibold)
+                        .fontDesign(.rounded)
 
-                Spacer()
+                    Spacer()
 
-                FavoriteView()
-                    .offset(x: 4, y: 1)
+                    FavoriteView()
+                        .offset(x: 4, y: 1)
+                }
+
+                PlayerProgressView()
             }
 
-            PlayerProgressView()
-        }
+            VStack {
+                #if os(iOS)
+                    HStack(alignment: .center, spacing: 20) {
+                        RepeatView()
 
-        VStack {
-            #if os(iOS)
-                HStack(alignment: .center, spacing: 20) {
-                    RepeatView()
+                        HStack(spacing: 15) {
+                            PreviousView()
+                            PauseView()
+                            NextView()
+                        }
 
-                    HStack(spacing: 15) {
-                        PreviousView()
-                        PauseView()
-                        NextView()
+                        RandomView()
                     }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .asyncButtonStyle(.pulse)
+                #elseif os(macOS)
+                    HStack(alignment: .center, spacing: 40) {
+                        RepeatView()
 
-                    RandomView()
-                }
-                .asyncButtonStyle(.pulse)
-            #elseif os(macOS)
-                HStack(alignment: .center, spacing: 40) {
-                    RepeatView()
+                        HStack(spacing: 20) {
+                            PreviousView()
+                            PauseView()
+                            NextView()
+                        }
 
-                    HStack(spacing: 20) {
-                        PreviousView()
-                        PauseView()
-                        NextView()
+                        RandomView()
                     }
-
-                    RandomView()
-                }
-                .asyncButtonStyle(.pulse)
-            #endif
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .asyncButtonStyle(.pulse)
+                #endif
+            }
         }
     }
 
@@ -71,26 +77,20 @@ struct DetailFooterView: View {
                 try await ConnectionManager.command().pause(mpd.status.isPlaying)
             } label: {
                 ZStack {
-                    Circle()
-                        .fill(.thinMaterial)
-                        .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+                    Image(systemSymbol: .pauseFill)
+                        .font(.system(size: 30))
+                        .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
+                        .opacity(mpd.status.isPlaying ? 1 : 0.1)
+                        .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
 
-                    ZStack {
-                        Image(systemSymbol: .pauseFill)
-                            .font(.system(size: 30))
-                            .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
-                            .opacity(mpd.status.isPlaying ? 1 : 0.1)
-                            .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
-
-                        Image(systemSymbol: .playFill)
-                            .font(.system(size: 30))
-                            .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
-                            .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                            .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
-                    }
+                    Image(systemSymbol: .playFill)
+                        .font(.system(size: 30))
+                        .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
+                        .opacity(mpd.status.isPlaying ? 0.1 : 1)
+                        .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
                 }
+                .padding(20)
             }
-            .styledButton(hoverScale: 1.13)
         }
     }
 
@@ -102,9 +102,7 @@ struct DetailFooterView: View {
                 Image(systemSymbol: .backwardFill)
                     .font(.system(size: 18))
                     .padding(12)
-                    .contentShape(Circle())
             }
-            .styledButton()
         }
     }
 
@@ -116,9 +114,7 @@ struct DetailFooterView: View {
                 Image(systemSymbol: .forwardFill)
                     .font(.system(size: 18))
                     .padding(12)
-                    .contentShape(Circle())
             }
-            .styledButton()
         }
     }
 
@@ -126,23 +122,21 @@ struct DetailFooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            AsyncButton {
-                try await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
-            } label: {
-                ZStack {
+            ZStack {
+                AsyncButton {
+                    try await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
+                } label: {
                     Image(systemSymbol: .shuffle)
                         .padding(10)
-
-                    if mpd.status.isRandom ?? false {
-                        Circle()
-                            .fill(Color(.accent))
-                            .frame(width: 3.5, height: 3.5)
-                            .offset(y: 12)
-                    }
                 }
-                .contentShape(Circle())
+
+                if mpd.status.isRandom ?? false {
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 3.5, height: 3.5)
+                        .offset(y: 25)
+                }
             }
-            .styledButton()
         }
     }
 
@@ -150,23 +144,21 @@ struct DetailFooterView: View {
         @Environment(MPD.self) private var mpd
 
         var body: some View {
-            AsyncButton {
-                try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
-            } label: {
-                ZStack {
+            ZStack {
+                AsyncButton {
+                    try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
+                } label: {
                     Image(systemSymbol: .repeat)
                         .padding(10)
-
-                    if mpd.status.isRepeat ?? false {
-                        Circle()
-                            .fill(Color(.accent))
-                            .frame(width: 3.5, height: 3.5)
-                            .offset(y: 12)
-                    }
                 }
-                .contentShape(Circle())
+
+                if mpd.status.isRepeat ?? false {
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 8, height: 8)
+                        .offset(y: 12)
+                }
             }
-            .styledButton()
         }
     }
 
@@ -262,7 +254,7 @@ struct DetailFooterView: View {
                                 Task(priority: .userInitiated) {
                                     try? await ConnectionManager.command().seek(min(max(value.location.x / geometry.size.width, 0), 1) * (mpd.status.song?.duration ?? 100))
                                 }
-                            }
+                            },
                     )
                     .onHover { value in
                         isHovering = value

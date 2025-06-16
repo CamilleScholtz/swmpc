@@ -20,7 +20,7 @@ extension View {
     /// - Returns: A view modified with the interactive swipe gesture.
     func swipeActions(
         onSwipeLeft: @escaping () -> Void,
-        onSwipeRight: @escaping () -> Void
+        onSwipeRight: @escaping () -> Void,
     ) -> some View {
         modifier(SwipeModifier(onSwipeLeft: onSwipeLeft,
                                onSwipeRight: onSwipeRight))
@@ -49,7 +49,7 @@ struct SwipeModifier: ViewModifier {
                 isDragging
                     ? .interactiveSpring(response: 0.2, dampingFraction: 0.8)
                     : .spring(response: 0.4, dampingFraction: 0.7),
-                value: dragOffset
+                value: dragOffset,
             )
             .sensoryFeedback(.success, trigger: lastTriggeredThreshold)
             .onDisappear {

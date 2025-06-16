@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftUIIntrospect
 
 struct ContentDestinationView: View {
     @Environment(\.dismiss) private var dismiss
@@ -46,8 +45,6 @@ struct ContentDestinationView: View {
                     BackButtonView()
                 }
             }
-        #elseif os(macOS)
-            .ignoresSafeArea()
         #endif
     }
 }

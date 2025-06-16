@@ -91,7 +91,7 @@ struct PlaylistsView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.clear)
-                                .contentShape(Rectangle())
+                                .contentShape(Rectangle()),
                         )
                     }
                 }
@@ -135,7 +135,7 @@ struct PlaylistsView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color(.secondarySystemBackground))
-                                .opacity(0.5)
+                                .opacity(0.5),
                         )
                 }
                 .buttonStyle(.plain)

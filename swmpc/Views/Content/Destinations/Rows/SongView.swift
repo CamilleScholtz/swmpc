@@ -97,7 +97,7 @@ struct SongView: View {
 
                     Divider()
                 }
-                
+
                 Button("Copy Song Title") {
                     song.title.copyToClipboard()
                 }

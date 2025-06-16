@@ -19,6 +19,7 @@ struct AlbumsView: View {
     var body: some View {
         ForEach(albums) { album in
             AlbumView(for: album)
+                .id(album.id)
         }
         .onChange(of: mpd.status.media as? Album) { previous, _ in
             if scrollToCurrent {

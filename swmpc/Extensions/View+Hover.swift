@@ -36,7 +36,7 @@ extension View {
     func onHoverWithDebounce(
         delay: Duration = .milliseconds(50),
         handler: HoverTaskHandler,
-        onHover: @escaping @MainActor (Bool) -> Void
+        onHover: @escaping @MainActor (Bool) -> Void,
     ) -> some View {
         self.onHover { isHovering in
             if isHovering {

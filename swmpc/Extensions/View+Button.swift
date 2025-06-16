@@ -22,7 +22,7 @@ extension View {
     func styledButton(
         hoverScale: CGFloat = 1.2,
         pressScale: CGFloat = 0.9,
-        minimumPressDuration: TimeInterval = 0.1
+        minimumPressDuration: TimeInterval = 0.1,
     ) -> some View {
         #if os(iOS)
             let pressScale = pressScale - 0.05
@@ -31,7 +31,7 @@ extension View {
         return modifier(StyledButtonModifier(
             hoverScale: hoverScale,
             pressScale: pressScale,
-            minimumPressDuration: minimumPressDuration
+            minimumPressDuration: minimumPressDuration,
         ))
     }
 }
@@ -103,7 +103,7 @@ private struct StyledButtonModifier: ViewModifier {
         content
             .buttonStyle(
                 PressedButtonStyle(scale: pressScale,
-                                   minimumDuration: minimumPressDuration)
+                                   minimumDuration: minimumPressDuration),
             )
         #if os(iOS)
             .scaleEffect(isVisuallyPressed ? pressScale : 1.0)
@@ -134,7 +134,7 @@ private struct StyledButtonModifier: ViewModifier {
                             }
                             pressEndTask = nil
                         }
-                    }
+                    },
             )
             .onDisappear {
                 pressEndTask?.cancel()

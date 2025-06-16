@@ -11,7 +11,6 @@ struct QueuePanelView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
-
     private let queueChangedNotification = NotificationCenter.default
         .publisher(for: .queueChangedNotification)
 
@@ -27,7 +26,7 @@ struct QueuePanelView: View {
             Rectangle()
                 .frame(height: 1)
                 .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-            alignment: .bottom
+            alignment: .bottom,
         )
     }
 
