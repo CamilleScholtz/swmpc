@@ -133,12 +133,11 @@ struct DetailFooterView: View {
                     Image(systemSymbol: .shuffle)
                         .padding(10)
 
-                    if mpd.status.isRandom ?? false {
-                        Circle()
-                            .fill(Color(.accent))
-                            .frame(width: 3.5, height: 3.5)
-                            .offset(y: 12)
-                    }
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 3.5, height: 3.5)
+                        .offset(y: 12)
+                        .opacity(mpd.status.isRandom ?? false ? 1 : 0)
                 }
                 .contentShape(Circle())
             }
@@ -157,12 +156,11 @@ struct DetailFooterView: View {
                     Image(systemSymbol: .repeat)
                         .padding(10)
 
-                    if mpd.status.isRepeat ?? false {
-                        Circle()
-                            .fill(Color(.accent))
-                            .frame(width: 3.5, height: 3.5)
-                            .offset(y: 12)
-                    }
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 3.5, height: 3.5)
+                        .offset(y: 12)
+                        .opacity(mpd.status.isRepeat ?? false ? 1 : 0)
                 }
                 .contentShape(Circle())
             }
@@ -242,12 +240,12 @@ struct DetailFooterView: View {
                             .frame(width: geometry.size.width, height: 3)
 
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color(.accent))
+                            .fill(.accent)
                             .frame(width: progress * geometry.size.width, height: 3)
                             .animation(.spring, value: progress)
 
                         Circle()
-                            .fill(Color(.accent))
+                            .fill(.accent)
                             .frame(width: 8, height: 8)
                             .scaleEffect(isHovering ? 1.5 : 1)
                             .animation(.spring, value: isHovering)

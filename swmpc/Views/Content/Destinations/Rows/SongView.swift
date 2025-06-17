@@ -12,9 +12,11 @@ struct SongView: View {
     @Environment(MPD.self) private var mpd
 
     private let song: Song
+    private let isQueued: Bool
 
-    init(for song: Song) {
+    init(for song: Song, isQueued: Bool = false) {
         self.song = song
+        self.isQueued = isQueued
     }
 
     #if os(macOS)
@@ -38,24 +40,24 @@ struct SongView: View {
                     .foregroundStyle(.secondary)
 
                 #if os(macOS)
-                    if isHovering {
+                    Image(systemSymbol: .playFill)
+                        .font(.title3)
+                        .foregroundColor(.accentColor)
+                        .background(
+                            Rectangle()
+                                .fill(.background)
+                                .frame(width: trackSize, height: trackSize)
+                        )
+                        .opacity(isHovering ? 1 : 0)
+                #endif
+
+                WaveView()
+                    .background(
                         Rectangle()
                             .fill(.background)
                             .frame(width: trackSize, height: trackSize)
-
-                        Image(systemSymbol: .playFill)
-                            .font(.title3)
-                            .foregroundColor(.accentColor)
-                    }
-                #endif
-
-                if mpd.status.song == song {
-                    Rectangle()
-                        .fill(.background)
-                        .frame(width: trackSize, height: trackSize)
-
-                    WaveView()
-                }
+                    )
+                    .opacity(mpd.status.song == song ? 1 : 0)
             }
             .frame(width: trackSize, height: trackSize)
 
@@ -90,14 +92,14 @@ struct SongView: View {
             }
             .contextMenu {
                 @AppStorage(Setting.simpleMode) var simpleMode = false
-                if !simpleMode {
+                if !simpleMode, !isQueued {
                     AsyncButton("Add to Queue") {
                         try await mpd.queue.add(songs: [song])
                     }
 
                     Divider()
                 }
-                
+
                 Button("Copy Song Title") {
                     song.title.copyToClipboard()
                 }

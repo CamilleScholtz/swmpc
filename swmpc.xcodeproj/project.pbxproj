@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -71,7 +71,6 @@
 /* Begin PBXFrameworksBuildPhase section */
 		91A141DD2CDE3988000A74BC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				9114DB572DBBC73F00DD5E6E /* SwiftUIIntrospect in Frameworks */,
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
@@ -83,7 +82,6 @@
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
 				9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -125,8 +123,6 @@
 				91A141DE2CDE3988000A74BC /* Resources */,
 			);
 			buildRules = (
-			);
-			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
 				9183AF022D4BB8DF00CDC987 /* Assets */,
@@ -185,7 +181,7 @@
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
 				9114DB552DBBC73F00DD5E6E /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
 			);
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -198,25 +194,21 @@
 /* Begin PBXResourcesBuildPhase section */
 		91A141DE2CDE3988000A74BC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		91A141DC2CDE3988000A74BC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		91A141ED2CDE398A000A74BC /* Debug */ = {
+		91A141ED2CDE398A000A74BC /* Debug configuration for PBXProject "swmpc" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -282,7 +274,7 @@
 			};
 			name = Debug;
 		};
-		91A141EE2CDE398A000A74BC /* Release */ = {
+		91A141EE2CDE398A000A74BC /* Release configuration for PBXProject "swmpc" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -340,7 +332,7 @@
 			};
 			name = Release;
 		};
-		91A141F02CDE398A000A74BC /* Debug */ = {
+		91A141F02CDE398A000A74BC /* Debug configuration for PBXNativeTarget "swmpc" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -383,7 +375,7 @@
 			};
 			name = Debug;
 		};
-		91A141F12CDE398A000A74BC /* Release */ = {
+		91A141F12CDE398A000A74BC /* Release configuration for PBXNativeTarget "swmpc" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -432,19 +424,17 @@
 		91A141DB2CDE3987000A74BC /* Build configuration list for PBXProject "swmpc" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				91A141ED2CDE398A000A74BC /* Debug */,
-				91A141EE2CDE398A000A74BC /* Release */,
+				91A141ED2CDE398A000A74BC /* Debug configuration for PBXProject "swmpc" */,
+				91A141EE2CDE398A000A74BC /* Release configuration for PBXProject "swmpc" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		91A141EF2CDE398A000A74BC /* Build configuration list for PBXNativeTarget "swmpc" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				91A141F02CDE398A000A74BC /* Debug */,
-				91A141F12CDE398A000A74BC /* Release */,
+				91A141F02CDE398A000A74BC /* Debug configuration for PBXNativeTarget "swmpc" */,
+				91A141F12CDE398A000A74BC /* Release configuration for PBXNativeTarget "swmpc" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

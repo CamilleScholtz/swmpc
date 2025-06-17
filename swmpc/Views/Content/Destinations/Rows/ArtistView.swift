@@ -65,7 +65,7 @@ struct ArtistView: View {
                 AsyncButton("Add All by Artist to Queue") {
                     try await mpd.queue.add(artist: artist)
                 }
-                
+
                 Divider()
             }
 

@@ -1389,7 +1389,7 @@ extension ConnectionManager where Mode == CommandMode {
 //                    _ = try await run(["playid \(id)"])
 //                }
             }
-            
+
             return
         }
 

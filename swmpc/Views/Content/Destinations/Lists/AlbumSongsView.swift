@@ -119,7 +119,7 @@ struct AlbumSongsView: View {
 
                         Divider()
                     }
-                    
+
                     Button("Copy Album Title") {
                         album.title.copyToClipboard()
                     }
