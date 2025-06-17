@@ -7,13 +7,25 @@
 
 import SwiftUI
 
+/// The main MPD client class that manages the connection and state
+/// synchronization.
+///
+/// This class orchestrates the connection to the MPD server and maintains the
+/// current state through its child objects: Status, Database, and Queue. It
+/// uses the idle command to listen for changes and automatically updates the
+/// relevant state when changes occur.
 @Observable final class MPD {
+    /// The MPD status manager, tracking playback state and current song.
     let status = Status()
-    let database = Database()
-    let queue = Queue()
 
+    /// The MPD database manager, handling music library queries.
+    let database = Database()
+
+    /// The most recent connection or communication error, if any.
     var error: Error?
 
+    /// The background task that maintains the connection and listens for
+    /// changes.
     private var updateLoopTask: Task<Void, Never>?
 
     @MainActor
@@ -27,6 +39,11 @@ import SwiftUI
         updateLoopTask?.cancel()
     }
 
+    /// Establishes a connection to the MPD server.
+    ///
+    /// This method attempts to connect to the MPD server repeatedly until
+    /// successful or the task is cancelled. On failure, it waits 2 seconds
+    /// before retrying.
     @MainActor
     private func connect() async {
         while !Task.isCancelled {
@@ -44,6 +61,11 @@ import SwiftUI
         }
     }
 
+    /// The main update loop that maintains the MPD connection and state.
+    ///
+    /// This method establishes the initial connection, loads the initial state,
+    /// and then continuously listens for changes using the idle command. When
+    /// changes are detected, it updates the appropriate subsystems.
     @MainActor
     private func updateLoop() async {
         await connect()
@@ -56,7 +78,6 @@ import SwiftUI
         try? await database.set(using: .album, idle: true)
         try? await status.set()
         try? await database.setPlaylists()
-        await queue.load()
 
         while !Task.isCancelled {
             await connect()
@@ -75,6 +96,18 @@ import SwiftUI
         }
     }
 
+    /// Performs updates based on MPD idle events.
+    ///
+    /// This method updates the appropriate subsystem based on the type of
+    /// change:
+    /// - `.playlists`: Updates the playlist list
+    /// - `.database`: Updates the music database
+    /// - `.queue`: Reloads the queue and posts a notification
+    /// - `.player`: Updates the player status
+    /// - `.options`: Updates the player status (includes random/repeat state)
+    ///
+    /// - Parameter change: The type of change reported by the idle command.
+    /// - Throws: An error if any update operation fails.
     @MainActor
     private func performUpdates(for change: IdleEvent) async throws {
         switch change {
@@ -83,8 +116,8 @@ import SwiftUI
         case .database:
             try await database.set()
         case .queue:
-            await queue.reload()
-            NotificationCenter.default.post(name: .queueChangedNotification, object: nil)
+            NotificationCenter.default.post(name: .queueChangedNotification,
+                                            object: nil)
         case .player:
             try await status.set()
         case .options:

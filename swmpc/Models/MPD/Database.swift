@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+enum DatabaseError: Error {
+    case invalidType
+}
+
+/// Manages the MPD database, handling media storage, search functionality, and
+/// playlist management.
 @Observable
 final class Database {
     /// The media in the database. This represents the actual MPD database.
@@ -173,8 +179,4 @@ final class Database {
             throw DatabaseError.invalidType
         }
     }
-}
-
-enum DatabaseError: Error {
-    case invalidType
 }

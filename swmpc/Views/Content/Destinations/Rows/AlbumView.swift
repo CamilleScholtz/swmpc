@@ -103,7 +103,7 @@ struct AlbumView: View {
                 @AppStorage(Setting.simpleMode) var simpleMode = false
                 if !simpleMode {
                     AsyncButton("Add to Queue") {
-                        try await mpd.queue.add(album: album)
+                        try await ConnectionManager.command().addToQueue(album: album)
                     }
 
                     Divider()

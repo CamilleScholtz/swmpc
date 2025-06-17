@@ -68,11 +68,11 @@ struct ChangeQueueModifier: ViewModifier {
 
                 AsyncButton("Queue") {
                     if let playlist = playlistToQueue {
-                        try await mpd.queue.loadPlaylist(playlist)
+                        try await ConnectionManager.command().loadPlaylist(playlist)
                     } else {
-                        try await mpd.queue.clear()
+                        try await ConnectionManager.command().clearQueue()
                     }
-                    try await mpd.database.set(using: navigator.category.type, force: true)
+                    // try await mpd.database.set(using: navigator.category.type, force: true)
                 }
             } message: {
                 Text("This will overwrite the current queue.")

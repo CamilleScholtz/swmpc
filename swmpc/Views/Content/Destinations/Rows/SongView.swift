@@ -94,7 +94,7 @@ struct SongView: View {
                 @AppStorage(Setting.simpleMode) var simpleMode = false
                 if !simpleMode, !isQueued {
                     AsyncButton("Add to Queue") {
-                        try await mpd.queue.add(songs: [song])
+                        try await ConnectionManager.command().addToQueue(songs: [song])
                     }
 
                     Divider()
