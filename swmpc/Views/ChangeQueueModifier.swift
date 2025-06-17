@@ -82,10 +82,9 @@ struct ChangeQueueModifier: ViewModifier {
                         try await ConnectionManager.command().loadPlaylist(nil)
                     }
 
-                    let playlist: Playlist? = if case let .playlist(p) = navigator.category {
-                        p
-                    } else {
-                        nil
+                    let playlist: Playlist? = switch navigator.category {
+                    case let .playlist(playlist): playlist
+                    default: nil
                     }
                     try await mpd.database.set(using: navigator.category.type, playlist: playlist, force: true)
                 }
