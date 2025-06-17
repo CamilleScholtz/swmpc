@@ -143,7 +143,7 @@ struct IntelligencePlaylistView: View {
                         isLoading = true
 
                         try await IntelligenceManager.shared.fillPlaylist(using: playlistToEdit!, prompt: prompt)
-                        try await mpd.database.set(using: .playlist, force: true)
+                        try await mpd.database.set(using: .playlist, playlist: playlistToEdit, force: true)
 
                         isLoading = false
                         playlistToEdit = nil

@@ -109,13 +109,15 @@ import SwiftUI
     /// - Parameter change: The type of change reported by the idle command.
     /// - Throws: An error if any update operation fails.
     @MainActor
-    private func performUpdates(for change: IdleEvent) async throws {
-        switch change {
+    private func performUpdates(for event: IdleEvent) async throws {
+        switch event {
         case .playlists:
             try await database.setPlaylists()
         case .database:
             try await database.set()
         case .queue:
+            try await status.set()
+
             NotificationCenter.default.post(name: .queueChangedNotification,
                                             object: nil)
         case .player:

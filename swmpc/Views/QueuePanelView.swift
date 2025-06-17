@@ -22,7 +22,10 @@ struct QueuePanelView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if songs == nil || songs!.isEmpty {
+            if songs == nil {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if songs!.isEmpty {
                 EmptyQueueView()
             } else {
                 QueueView(songs: songs!)

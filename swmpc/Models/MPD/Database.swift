@@ -49,12 +49,13 @@ final class Database {
     ///
     /// - Parameters:
     ///     - type: The type of media to set.
+    ///     - playlist: The playlist to display content for (when type is .playlist).
     ///     - idle: Whether to use the idle connection.
     ///     - force: Whether to force the update, this will update the database
     ///              even if the type is the same as the current one.
     /// - Throws: An error if the media could not be set.
     @MainActor
-    func set(using type: MediaType? = nil, idle: Bool = false, force: Bool =
+    func set(using type: MediaType? = nil, playlist: Playlist? = nil, idle: Bool = false, force: Bool =
         false) async throws
     {
         defer { lastUpdated = Date() }
@@ -64,21 +65,31 @@ final class Database {
             return
         }
 
-        defer { self.type = current }
+        defer {
+            self.type = current
+        }
 
-        media = switch type {
+        switch type {
         case .album:
-            try await idle
+            media = try await idle
                 ? ConnectionManager.idle.getAlbums(using: .database)
                 : ConnectionManager.command().getAlbums(using: .database)
         case .artist:
-            try await idle
+            media = try await idle
                 ? ConnectionManager.idle.getArtists(using: .database)
                 : ConnectionManager.command().getArtists(using: .database)
-        case .song, .playlist:
-            try await idle
+        case .song:
+            media = try await idle
                 ? ConnectionManager.idle.getSongs(using: .database)
                 : ConnectionManager.command().getSongs(using: .database)
+        case .playlist:
+            guard let playlist else {
+                throw DatabaseError.invalidType
+            }
+
+            media = try await idle
+                ? ConnectionManager.idle.getSongs(for: playlist)
+                : ConnectionManager.command().getSongs(for: playlist)
         default:
             throw DatabaseError.invalidType
         }
@@ -111,11 +122,12 @@ final class Database {
     /// - Parameters:
     ///     - query: The query to search for.
     ///     - type: The type of media to search for and set.
+    ///     - playlist: The playlist to search within (when type is .playlist).
     /// - Throws: An error if the search could not be performed.
     @MainActor
-    func search(for query: String, using type: MediaType? = nil) async throws {
+    func search(for query: String, using type: MediaType? = nil, playlist: Playlist? = nil) async throws {
         let current = type ?? self.type
-        try await set(using: current)
+        try await set(using: current, playlist: playlist)
 
         results = switch current {
         case .album:
@@ -146,10 +158,11 @@ final class Database {
     /// - Parameters:
     ///     - media: The media to get the corresponding media for.
     ///     - type: The type of media to get.
+    ///     - playlist: The playlist context (typically not needed for relationship queries).
     /// - Returns: The corresponding media in the queue.
     /// - Throws: An error if the media could not be fetched.
     @MainActor
-    func get(for media: any Mediable, using type: MediaType? = nil) async throws
+    func get(for media: any Mediable, using type: MediaType? = nil, playlist: Playlist? = nil) async throws
         -> (any Mediable)?
     {
         let current = type ?? self.type
@@ -157,7 +170,7 @@ final class Database {
             return media
         }
 
-        try await set(using: current)
+        try await set(using: current, playlist: playlist)
 
         switch (media, current) {
         case let (song as Song, .album):

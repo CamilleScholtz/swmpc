@@ -8,7 +8,6 @@
 import AppIntents
 import ButtonKit
 import SwiftUI
-
 #if os(macOS)
     import SFSafeSymbols
 #endif
