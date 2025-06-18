@@ -929,7 +929,7 @@ extension ConnectionManager {
 
         let lines = switch source {
         case .database:
-            try await run(["find \"(base '')\""])
+            try await run(["listallinfo"])
         case .queue:
             try await run(["playlistinfo"])
         }
@@ -1396,32 +1396,109 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Parameter media: The `Mediable` object to play.
     /// - Throws: An error if the underlying command execution fails.
     func play(_ media: any Mediable) async throws {
-        guard let id = media.identifier else {
-            let songs = try await getSongs(using: .queue)
-
-            if let match = songs.first(where: { $0.url == media.url }) {
-                guard let id = match.identifier else {
-                    return
-                }
-
-                _ = try await run(["playid \(id)"])
-            } else {
-//                try await addToQueue(songs: [song])
-//                let songs = try await getSongs(using: .queue)
-//
-//                if let match = songs.first(where: { $0.url == media.url }) {
-//                    guard let id = match.identifier else {
-//                        return
-//                    }
-//
-//                    _ = try await run(["playid \(id)"])
-//                }
-            }
-
+        if let id = media.identifier {
+            print("early return")
+            _ = try await run(["playid \(id)"])
             return
         }
 
-        _ = try await run(["playid \(id)"])
+        let queueSongs = try await getSongs(using: .queue)
+        
+        switch media {
+        case let album as Album:
+            let albumSongs = try await getSongs(using: .database, for: album)
+            guard !albumSongs.isEmpty else {
+                throw ConnectionManagerError.malformedResponse(
+                    "No songs found for album \(album.title)")
+            }
+            
+            // Check if any songs from this album are already in queue
+            let songsInQueue = queueSongs.filter { queueSong in
+                albumSongs.contains { $0.url == queueSong.url }
+            }
+            
+            if let firstInQueue = songsInQueue.first,
+               let id = firstInQueue.identifier {
+                // Album already in queue, just play the first song
+                _ = try await run(["playid \(id)"])
+            } else {
+                // Add all album songs to queue
+                let response = try await run(["addid \(escape(albumSongs[0].url.path))"])
+                
+                if let idLine = response.first(where: { $0.hasPrefix("Id: ") }),
+                   let idString = idLine.split(separator: " ").last,
+                   let id = UInt32(idString) {
+                    
+                    // Add remaining songs if any
+                    if albumSongs.count > 1 {
+                        let remainingCommands = albumSongs.dropFirst().map { "add \(escape($0.url.path))" }
+                        _ = try await run(remainingCommands)
+                    }
+                    
+                    // Play the first song
+                    _ = try await run(["playid \(id)"])
+                }
+            }
+
+        case let song as Song:
+            // Check if song is already in queue
+            if let match = queueSongs.first(where: { $0.url == song.url }),
+               let id = match.identifier {
+                // Song already in queue, just play it
+                _ = try await run(["playid \(id)"])
+            } else {
+                // Add song and play it
+                let response = try await run(["addid \(escape(song.url.path))"])
+                
+                if let idLine = response.first(where: { $0.hasPrefix("Id: ") }),
+                   let idString = idLine.split(separator: " ").last,
+                   let id = UInt32(idString) {
+                    _ = try await run(["playid \(id)"])
+                }
+            }
+
+        case let artist as Artist:
+            let artistSongs = try await getSongs(using: .database, for: artist)
+            guard !artistSongs.isEmpty else {
+                throw ConnectionManagerError.malformedResponse(
+                    "No songs found for artist \(artist.name)")
+            }
+            
+            // Check if any songs from this artist are already in queue
+            let songsInQueue = queueSongs.filter { queueSong in
+                artistSongs.contains { $0.url == queueSong.url }
+            }
+            
+            if let firstInQueue = songsInQueue.first,
+               let id = firstInQueue.identifier {
+                // Artist songs already in queue, play the first one
+                _ = try await run(["playid \(id)"])
+            } else {
+                // Add all artist songs to queue
+                let response = try await run(["addid \(escape(artistSongs[0].url.path))"])
+                
+                if let idLine = response.first(where: { $0.hasPrefix("Id: ") }),
+                   let idString = idLine.split(separator: " ").last,
+                   let id = UInt32(idString) {
+                    
+                    // Add remaining songs
+                    if artistSongs.count > 1 {
+                        let remainingCommands = artistSongs.dropFirst().map { "add \(escape($0.url.path))" }
+                        _ = try await run(remainingCommands)
+                    }
+                    
+                    // Play the first song
+                    _ = try await run(["playid \(id)"])
+                }
+            }
+
+        default:
+            // Fallback: check if media exists in queue already
+            if let match = queueSongs.first(where: { $0.url == media.url }),
+               let id = match.identifier {
+                _ = try await run(["playid \(id)"])
+            }
+        }
     }
 
     /// Toggle playback.

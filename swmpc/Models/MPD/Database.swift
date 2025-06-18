@@ -69,19 +69,22 @@ final class Database {
             self.type = current
         }
 
+        @AppStorage(Setting.simpleMode) var simpleMode = false
+        let source: Source = simpleMode ? .queue : .database
+        
         switch type {
         case .album:
             media = try await idle
-                ? ConnectionManager.idle.getAlbums(using: .database)
-                : ConnectionManager.command().getAlbums(using: .database)
+                ? ConnectionManager.idle.getAlbums(using: source)
+                : ConnectionManager.command().getAlbums(using: source)
         case .artist:
             media = try await idle
-                ? ConnectionManager.idle.getArtists(using: .database)
-                : ConnectionManager.command().getArtists(using: .database)
+                ? ConnectionManager.idle.getArtists(using: source)
+                : ConnectionManager.command().getArtists(using: source)
         case .song:
             media = try await idle
-                ? ConnectionManager.idle.getSongs(using: .database)
-                : ConnectionManager.command().getSongs(using: .database)
+                ? ConnectionManager.idle.getSongs(using: source)
+                : ConnectionManager.command().getSongs(using: source)
         case .playlist:
             guard let playlist else {
                 throw DatabaseError.invalidType

@@ -234,7 +234,11 @@ struct AlbumSongsView: View {
             #endif
                 .task {
                     artwork = try? await album.artwork()
-                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(using: .database, for: album)) ?? [], by: { $0.disc })
+                    
+                    @AppStorage(Setting.simpleMode) var simpleMode = false
+                    let source: Source = simpleMode ? .queue : .database
+                
+                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(using: source, for: album)) ?? [], by: { $0.disc })
                 }
         }
         #if os(macOS)
