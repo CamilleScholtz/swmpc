@@ -19,6 +19,7 @@ enum ViewError: Error {
 struct AppView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
+    @Environment(\.colorScheme) private var colorScheme
 
     @AppStorage(Setting.simpleMode) private var simpleMode = false
 
@@ -27,7 +28,6 @@ struct AppView: View {
         @State private var isPopupOpen = false
     #elseif os(macOS)
         @State private var showQueuePanel = false
-        @State private var showClearQueueAlert = false
     #endif
 
     var body: some View {
@@ -80,43 +80,40 @@ struct AppView: View {
                         } detail: {
                             DetailView()
                                 .padding(60)
+                                .overlay(alignment: .topTrailing) {
+                                    if !simpleMode {
+                                        Button {
+                                            withAnimation(.spring) {
+                                                showQueuePanel.toggle()
+                                            }
+                                        } label: {
+                                            Image(systemSymbol: .musicNoteList)
+                                        }
+                                        .styledButton()
+                                        .offset(x: -15, y: 20)
+                                        .ignoresSafeArea()
+                                    }
+                                }
                         }
                         .overlay(alignment: .trailing) {
-                            if showQueuePanel {
-                                QueuePanelView()
+                            if !simpleMode, showQueuePanel {
+                                QueuePanelView(showQueuePanel: $showQueuePanel)
                                     .frame(width: 310)
                                     .glassEffect(in: .rect())
-                                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                                    .overlay(
+                                        Rectangle()
+                                            .frame(width: 1)
+                                            .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
+                                        alignment: .leading
+                                    )
+                                    .ignoresSafeArea(.container, edges: .top)
+                                    .transition(.move(edge: .trailing))
                             }
                         }
                         .toolbar {
-                            if !simpleMode {
-                                if showQueuePanel {
-                                    ToolbarItem(placement: .primaryAction) {
-                                        Button {
-                                            showClearQueueAlert = true
-                                        } label: {
-                                            Image(systemSymbol: .trash)
-                                        }
-                                    }
-                                }
-
-                                ToolbarItem(placement: .primaryAction) {
-                                    Button {
-                                        showQueuePanel.toggle()
-                                    } label: {
-                                        Image(systemSymbol: showQueuePanel ? .xmarkCircleFill : .musicNoteList)
-                                    }
-                                }
+                            ToolbarItem {
+                                Spacer()
                             }
-                        }
-                        .alert("Clear Queue", isPresented: $showClearQueueAlert) {
-                            Button("Cancel", role: .cancel) {}
-                            AsyncButton("Clear Queue", role: .destructive) {
-                                try await mpd.queue.clear()
-                            }
-                        } message: {
-                            Text("This will remove all songs from the queue.")
                         }
                     #endif
                 }

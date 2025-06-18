@@ -183,12 +183,12 @@ struct PopoverFooterView: View {
                     .frame(width: 190, height: 3)
 
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(.accent))
+                    .fill(.accent)
                     .frame(width: progress * 190, height: 3)
                     .animation(.spring, value: progress)
 
                 Circle()
-                    .fill(Color(.accent))
+                    .fill(.accent)
                     .frame(width: 8, height: 8)
                     .scaleEffect(isHovering ? 1.5 : 1)
                     .animation(.spring, value: isHovering)

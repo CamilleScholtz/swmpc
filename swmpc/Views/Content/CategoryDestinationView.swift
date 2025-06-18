@@ -210,9 +210,15 @@ struct CategoryView: View {
                 return
             }
 
-            isSearching = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                isGoingToSearch = false
+                if query.isEmpty {
+                    mpd.database.results = nil
+                } else {
+                    let playlist: Playlist? = switch navigator.category {
+                    case let .playlist(playlist): playlist
+                    default: nil
+                    }
+                    try? await mpd.database.search(for: query, playlist: playlist)
+                }
             }
         }
         .task(id: query) {

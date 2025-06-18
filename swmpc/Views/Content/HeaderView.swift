@@ -83,7 +83,11 @@ struct HeaderView: View {
             if query.isEmpty {
                 mpd.database.results = nil
             } else {
-                try? await mpd.database.search(for: query)
+                let playlist: Playlist? = switch destination {
+                case let .playlist(playlist): playlist
+                default: nil
+                }
+                try? await mpd.database.search(for: query, playlist: playlist)
             }
         }
     }

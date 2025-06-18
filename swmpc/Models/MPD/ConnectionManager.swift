@@ -10,15 +10,24 @@ import KeychainStorageKit
 import Network
 import SwiftUI
 
+/// Protocol defining the configuration for different connection modes to the
+/// MPD server. Each mode can have different performance characteristics and
+/// buffer sizes.
 protocol ConnectionMode: Sendable {
+    /// A label identifying the connection mode.
     static var label: String { get }
+    /// Whether to enable TCP keepalive for this connection.
     static var enableKeepalive: Bool { get }
+    /// The buffer size to use for reading data.
     static var bufferSize: Int { get }
+    /// The dispatch queue attributes for this connection mode.
     static var queueAttributes: DispatchQueue.Attributes { get }
+    /// The quality of service level for operations.
     static var qos: DispatchQoS { get }
 }
 
-/// Represents the connection configuration for idle operations.
+/// Connection mode for idle operations that listen for MPD server events.
+/// Uses keepalive to maintain long-lived connections.
 enum IdleMode: ConnectionMode {
     static let label = "idle"
     static let enableKeepalive = true
@@ -27,7 +36,8 @@ enum IdleMode: ConnectionMode {
     static let qos: DispatchQoS = .userInteractive
 }
 
-/// Represents the connection configuration for artwork retrieval.
+/// Connection mode for artwork retrieval operations.
+/// Uses larger buffers and concurrent queue for efficient image data transfer.
 enum ArtworkMode: ConnectionMode {
     static let label = "artwork"
     static let enableKeepalive = false
@@ -36,7 +46,8 @@ enum ArtworkMode: ConnectionMode {
     static let qos: DispatchQoS = .utility
 }
 
-/// Represents the connection configuration for executing commands.
+/// Connection mode for executing MPD commands.
+/// Optimized for quick command execution with higher priority.
 enum CommandMode: ConnectionMode {
     static let label = "command"
     static let enableKeepalive = false
@@ -45,11 +56,15 @@ enum CommandMode: ConnectionMode {
     static let qos: DispatchQoS = .userInitiated
 }
 
+/// Specifies the source of media items.
 enum Source {
+    /// Media items from the MPD database.
     case database
+    /// Media items from the current queue.
     case queue
 }
 
+/// Errors that can occur during MPD connection management.
 enum ConnectionManagerError: LocalizedError {
     case invalidPort
     case unsupportedServerVersion
@@ -85,6 +100,18 @@ enum ConnectionManagerError: LocalizedError {
     }
 }
 
+/// Manages TCP connections to the MPD server with support for different
+/// connection modes.
+///
+/// The connection manager is generic over a `ConnectionMode` which determines
+/// the connection characteristics such as buffer size, quality of service, and
+/// whether keepalive is enabled.
+///
+/// Features:
+/// - Automatic connection management and reconnection
+/// - Command batching for efficient communication
+/// - Response parsing for various MPD data types
+/// - Thread-safe operation using Swift actors
 actor ConnectionManager<Mode: ConnectionMode> {
     @AppStorage(Setting.host) private var host = "localhost"
     @AppStorage(Setting.port) private var port = 6600
@@ -914,7 +941,8 @@ extension ConnectionManager {
         }
     }
 
-    /// Retrieves songs from the database or queue that match a specific artist name.
+    /// Retrieves songs from the database or queue that match a specific artist
+    /// name.
     ///
     /// - Parameter artist: The `Artist` object for which the songs should be
     ///                     retrieved.

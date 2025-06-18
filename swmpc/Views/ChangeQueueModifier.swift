@@ -18,6 +18,8 @@ struct ChangeQueueModifier: ViewModifier {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
+    @AppStorage(Setting.simpleMode) var simpleMode = false
+
     @State private var showAlert = false
     @State private var playlistToQueue: Playlist?
     @State private var previousDestination: CategoryDestination?
@@ -41,17 +43,25 @@ struct ChangeQueueModifier: ViewModifier {
                         return
                     }
 
-                    playlistToQueue = nil
+                    if simpleMode {
+                        playlistToQueue = nil
+                        showAlert = true
+                    } else {
+                        Task(priority: .userInitiated) {
+                            try? await mpd.database.set(using: navigator.category.type, force: true)
+                        }
+                    }
                 case let .playlist(playlist):
                     guard playlist != mpd.status.playlist else {
                         Task(priority: .userInitiated) {
-                            try? await mpd.database.set(using: value.type)
+                            try? await mpd.database.set(using: value.type, playlist: playlist)
                         }
 
                         return
                     }
 
                     playlistToQueue = playlist
+                    showAlert = true
                 #if os(iOS)
                     default:
                         return
@@ -59,7 +69,6 @@ struct ChangeQueueModifier: ViewModifier {
                 }
 
                 navigator.reset()
-                showAlert = true
             }
             .alert(playlistToQueue == nil ? "Queue Library" : "Queue Playlist \(playlistToQueue!.name)", isPresented: $showAlert) {
                 Button("Cancel", role: .cancel) {
@@ -68,11 +77,16 @@ struct ChangeQueueModifier: ViewModifier {
 
                 AsyncButton("Queue") {
                     if let playlist = playlistToQueue {
-                        try await mpd.queue.loadPlaylist(playlist)
+                        try await ConnectionManager.command().loadPlaylist(playlist)
                     } else {
-                        try await mpd.queue.clear()
+                        try await ConnectionManager.command().loadPlaylist(nil)
                     }
-                    try await mpd.database.set(using: navigator.category.type, force: true)
+
+                    let playlist: Playlist? = switch navigator.category {
+                    case let .playlist(playlist): playlist
+                    default: nil
+                    }
+                    try await mpd.database.set(using: navigator.category.type, playlist: playlist, force: true)
                 }
             } message: {
                 Text("This will overwrite the current queue.")
