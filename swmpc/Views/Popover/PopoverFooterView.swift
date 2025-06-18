@@ -124,12 +124,11 @@ struct PopoverFooterView: View {
                         .foregroundColor(Color(.textColor))
                         .padding(10)
 
-                    if mpd.status.isRandom ?? false {
-                        Circle()
-                            .fill(Color(.accent))
-                            .frame(width: 3.5, height: 3.5)
-                            .offset(y: 12)
-                    }
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 3.5, height: 3.5)
+                        .offset(y: 12)
+                        .opacity(mpd.status.isRandom ?? false ? 1 : 0)
                 }
                 .contentShape(Circle())
             }
@@ -149,12 +148,11 @@ struct PopoverFooterView: View {
                         .foregroundColor(Color(.textColor))
                         .padding(10)
 
-                    if mpd.status.isRepeat ?? false {
-                        Circle()
-                            .fill(Color(.accent))
-                            .frame(width: 3.5, height: 3.5)
-                            .offset(y: 12)
-                    }
+                    Circle()
+                        .fill(Color(.accent))
+                        .frame(width: 3.5, height: 3.5)
+                        .offset(y: 12)
+                        .opacity(mpd.status.isRepeat ?? false ? 1 : 0)
                 }
                 .contentShape(Circle())
             }

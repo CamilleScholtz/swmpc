@@ -130,12 +130,11 @@ struct DetailFooterView: View {
                         .padding(10)
                 }
 
-                if mpd.status.isRandom ?? false {
-                    Circle()
-                        .fill(Color(.accent))
-                        .frame(width: 3.5, height: 3.5)
-                        .offset(y: 25)
-                }
+                Circle()
+                    .fill(Color(.accent))
+                    .frame(width: 3.5, height: 3.5)
+                    .offset(y: 25)
+                    .opacity((mpd.status.isRandom ?? false) ? 1 : 0)
             }
         }
     }
@@ -152,12 +151,11 @@ struct DetailFooterView: View {
                         .padding(10)
                 }
 
-                if mpd.status.isRepeat ?? false {
-                    Circle()
-                        .fill(Color(.accent))
-                        .frame(width: 8, height: 8)
-                        .offset(y: 12)
-                }
+                Circle()
+                    .fill(Color(.accent))
+                    .frame(width: 8, height: 8)
+                    .offset(y: 12)
+                    .opacity((mpd.status.isRepeat ?? false) ? 1 : 0)
             }
         }
     }
@@ -213,6 +211,7 @@ struct DetailFooterView: View {
         @Environment(MPD.self) private var mpd
 
         @State private var isHovering = false
+        @State private var isDragging = false
 
         private var progress: CGFloat {
             guard let elapsed = mpd.status.elapsed,
@@ -234,26 +233,33 @@ struct DetailFooterView: View {
                             .frame(width: geometry.size.width, height: 3)
 
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color(.accent))
+                            .fill(.accent)
                             .frame(width: progress * geometry.size.width, height: 3)
                             .animation(.spring, value: progress)
 
                         Circle()
-                            .fill(Color(.accent))
+                            .fill(isDragging ? .clear : .accent)
                             .frame(width: 8, height: 8)
-                            .scaleEffect(isHovering ? 1.5 : 1)
+                            .scaleEffect(isHovering ? (isDragging ? 2 : 1.5) : 1)
                             .animation(.spring, value: isHovering)
+                            .glassEffect(.regular.interactive(), isEnabled: isDragging)
                             .offset(x: (progress * geometry.size.width) - 4)
                             .animation(.spring, value: progress)
+                            .animation(.spring, value: isDragging)
                     }
                     .padding(.vertical, 3)
                     .contentShape(Rectangle())
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
+                                isDragging = true
+
                                 Task(priority: .userInitiated) {
                                     try? await ConnectionManager.command().seek(min(max(value.location.x / geometry.size.width, 0), 1) * (mpd.status.song?.duration ?? 100))
                                 }
+                            }
+                            .onEnded { _ in
+                                isDragging = false
                             },
                     )
                     .onHover { value in

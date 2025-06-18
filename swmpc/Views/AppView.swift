@@ -81,34 +81,35 @@ struct AppView: View {
                             DetailView()
                                 .padding(60)
                         }
-                        .sheet(isPresented: $showQueuePanel) {
-                            QueuePanelView()
+                        .overlay(alignment: .trailing) {
+                            if showQueuePanel {
+                                QueuePanelView()
+                                    .frame(width: 310)
+                                    .glassEffect(in: .rect())
+                                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                            }
                         }
-//                        .toolbar {
-//                            ToolbarItem {
-//                                Spacer()
-//                            }
-//
-//                            if !simpleMode {
-//                                if showQueuePanel {
-//                                    ToolbarItem(placement: .primaryAction) {
-//                                        Button {
-//                                            showClearQueueAlert = true
-//                                        } label: {
-//                                            Image(systemSymbol: .trash)
-//                                        }
-//                                    }
-//                                }
-//
-//                                ToolbarItem(placement: .primaryAction) {
-//                                    Button {
-//                                        showQueuePanel.toggle()
-//                                    } label: {
-//                                        Image(systemSymbol: showQueuePanel ? .xmarkCircleFill : .musicNoteList)
-//                                    }
-//                                }
-//                            }
-//                        }
+                        .toolbar {
+                            if !simpleMode {
+                                if showQueuePanel {
+                                    ToolbarItem(placement: .primaryAction) {
+                                        Button {
+                                            showClearQueueAlert = true
+                                        } label: {
+                                            Image(systemSymbol: .trash)
+                                        }
+                                    }
+                                }
+
+                                ToolbarItem(placement: .primaryAction) {
+                                    Button {
+                                        showQueuePanel.toggle()
+                                    } label: {
+                                        Image(systemSymbol: showQueuePanel ? .xmarkCircleFill : .musicNoteList)
+                                    }
+                                }
+                            }
+                        }
                         .alert("Clear Queue", isPresented: $showClearQueueAlert) {
                             Button("Cancel", role: .cancel) {}
                             AsyncButton("Clear Queue", role: .destructive) {

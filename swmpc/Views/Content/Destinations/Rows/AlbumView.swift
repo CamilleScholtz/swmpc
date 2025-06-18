@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import SFSafeSymbols
 import SwiftUI
 
 struct AlbumView: View {
@@ -88,20 +89,20 @@ struct AlbumView: View {
             .contextMenu {
                 @AppStorage(Setting.simpleMode) var simpleMode = false
                 if !simpleMode {
-                    AsyncButton("Add to Queue") {
+                    AsyncButton("Add to Queue", systemImage: SFSymbol.textBadgePlus.rawValue) {
                         try await mpd.queue.add(album: album)
                     }
 
                     Divider()
                 }
 
-                Button("Copy Album Title") {
+                Button("Copy Album Title", systemSymbol: .documentOnDocument) {
                     album.title.copyToClipboard()
                 }
 
                 Divider()
 
-                AsyncButton("Add Album to Favorites") {
+                AsyncButton("Add Album to Favorites", systemImage: SFSymbol.heart.rawValue) {
                     try await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(using: .queue, for: album))
                 }
 

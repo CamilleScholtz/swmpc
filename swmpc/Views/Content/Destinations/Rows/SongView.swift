@@ -38,24 +38,24 @@ struct SongView: View {
                     .foregroundStyle(.secondary)
 
                 #if os(macOS)
-                    if isHovering {
-                        Rectangle()
-                            .fill(.background)
-                            .frame(width: trackSize, height: trackSize)
-
-                        Image(systemSymbol: .playFill)
-                            .font(.title3)
-                            .foregroundColor(.accentColor)
-                    }
-                #endif
-
-                if mpd.status.song == song {
                     Rectangle()
                         .fill(.background)
                         .frame(width: trackSize, height: trackSize)
+                        .opacity(isHovering ? 1 : 0)
 
-                    WaveView()
-                }
+                    Image(systemSymbol: .playFill)
+                        .font(.title3)
+                        .foregroundColor(.accentColor)
+                        .opacity(isHovering ? 1 : 0)
+                #endif
+
+                Rectangle()
+                    .fill(.background)
+                    .frame(width: trackSize, height: trackSize)
+                    .opacity((mpd.status.song == song) ? 1 : 0)
+
+                WaveView()
+                    .opacity((mpd.status.song == song) ? 1 : 0)
             }
             .frame(width: trackSize, height: trackSize)
 

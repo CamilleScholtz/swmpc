@@ -1,5 +1,5 @@
 {
-  "originHash" : "b0900cee357d10a8fd61a34a9856ff3f6d033b22c5b3eda4ac9d9f57bb3a6d50",
+  "originHash" : "a2d24ee6d7f474d76924ed16fbbe893d9712ba5a8771327342a20d74030898bd",
   "pins" : [
     {
       "identity" : "buttonkit",
@@ -116,6 +116,15 @@
       "state" : {
         "revision" : "8f33cc5dfe81169fb167da73584b9c72c3e8bc23",
         "version" : "1.8.2"
+      }
+    },
+    {
+      "identity" : "swiftui-introspect",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/siteline/swiftui-introspect",
+      "state" : {
+        "revision" : "6ecd8d9f452603d1595585397089cdaa20d4d689",
+        "version" : "1.4.0-beta.1"
       }
     }
   ],

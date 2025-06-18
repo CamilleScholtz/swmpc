@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import SFSafeSymbols
 import SwiftUI
 
 struct AlbumSongsView: View {
@@ -113,20 +114,20 @@ struct AlbumSongsView: View {
                 .contextMenu {
                     @AppStorage(Setting.simpleMode) var simpleMode = false
                     if !simpleMode {
-                        AsyncButton("Add to Queue") {
+                        AsyncButton("Add to Queue", systemImage: SFSymbol.textBadgePlus.rawValue) {
                             try await ConnectionManager.command().addToQueue(album: album)
                         }
 
                         Divider()
                     }
 
-                    Button("Copy Album Title") {
+                    Button("Copy Album Title", systemSymbol: .documentOnDocument) {
                         album.title.copyToClipboard()
                     }
 
                     Divider()
 
-                    AsyncButton("Add Album to Favorites") {
+                    AsyncButton("Add Album to Favorites", systemImage: SFSymbol.heart.rawValue) {
                         try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                     }
 
@@ -140,7 +141,7 @@ struct AlbumSongsView: View {
                         }
 
                         if let playlist = mpd.status.playlist {
-                            AsyncButton("Remove Album from Playlist") {
+                            AsyncButton("Remove Album from Playlist", systemImage: SFSymbol.textBadgeMinus.rawValue) {
                                 try await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                             }
                         }
@@ -154,13 +155,13 @@ struct AlbumSongsView: View {
                         .fontDesign(.rounded)
                         .lineLimit(3)
                         .contextMenu {
-                            Button("Copy Album Title") {
+                            Button("Copy Album Title", systemSymbol: .documentOnDocument) {
                                 album.title.copyToClipboard()
                             }
 
                             Divider()
 
-                            AsyncButton("Add Album to Favorites") {
+                            AsyncButton("Add Album to Favorites", systemImage: SFSymbol.heart.rawValue) {
                                 try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                             }
 
@@ -174,7 +175,7 @@ struct AlbumSongsView: View {
                                 }
 
                                 if let playlist = mpd.status.playlist {
-                                    AsyncButton("Remove Album from Playlist") {
+                                    AsyncButton("Remove Album from Playlist", systemImage: SFSymbol.textBadgeMinus.rawValue) {
                                         try await ConnectionManager.command().removeFromPlaylist(playlist, songs: songs?.values.flatMap(\.self) ?? [])
                                     }
                                 }
@@ -205,7 +206,7 @@ struct AlbumSongsView: View {
                     .buttonStyle(.plain)
                     .asyncButtonStyle(.pulse)
                     .contextMenu {
-                        Button("Copy Artist Name") {
+                        Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
                             album.artist.copyToClipboard()
                         }
                     }

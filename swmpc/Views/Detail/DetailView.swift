@@ -121,7 +121,7 @@ struct DetailView: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 30)
                             .fill(.clear)
-                            .glassEffect(.regular.tint(.clear.opacity(0)).interactive(), in: .rect(cornerRadius: 30))
+                            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 30))
                             .mask(
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 30)
