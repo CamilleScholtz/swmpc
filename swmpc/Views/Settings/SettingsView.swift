@@ -96,9 +96,10 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.inline)
                 .disabled(isDemoMode)
-                Text("Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself.")
+                Text("Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself. Using embedded is not recommended as it is generally much slower.")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 #if os(macOS)
                     Divider()
@@ -132,9 +133,10 @@ struct SettingsView: View {
             Form {
                 Toggle(isOn: $simpleMode) {
                     Text("Simple Mode")
-                    Text("When enabled, loads all songs into the queue. When disabled, uses MPD's database and queue separately.")
+                    Text("When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used.")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Divider()

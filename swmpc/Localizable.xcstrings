@@ -2264,6 +2264,7 @@
       }
     },
     "Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2296,6 +2297,9 @@
           }
         }
       }
+    },
+    "Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself. Using embedded is not recommended as it is generally much slower." : {
+
     },
     "Load Playlist" : {
       "localizations" : {
@@ -4698,7 +4702,7 @@
         }
       }
     },
-    "When enabled, loads all songs into the queue. When disabled, uses MPD's database and queue separately." : {
+    "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used." : {
 
     },
     "When enabled, uses mock data instead of connecting to MPD." : {
