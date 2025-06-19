@@ -49,9 +49,10 @@ struct QueuePanelView: View {
                             .contentShape(Circle())
                     }
                     .styledButton()
+                    .keyboardShortcut(.delete)
                     .opacity(songs == nil || songs!.isEmpty ? 0 : 1)
 
-                    Button(action: {
+                    Button(role: .cancel, action: {
                         withAnimation(.spring) {
                             showQueuePanel = false
                         }
@@ -63,6 +64,7 @@ struct QueuePanelView: View {
                             .contentShape(Circle())
                     }
                     .styledButton()
+                    .keyboardShortcut(.cancelAction)
                 }
             }
             .padding(.leading, 15)
@@ -79,6 +81,7 @@ struct QueuePanelView: View {
         }
         .alert("Clear Queue", isPresented: $showClearQueueAlert) {
             Button("Cancel", role: .cancel) {}
+
             AsyncButton("Clear Queue", role: .destructive) {
                 try await ConnectionManager.command().clearQueue()
             }

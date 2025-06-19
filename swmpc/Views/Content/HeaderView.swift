@@ -47,8 +47,8 @@ struct HeaderView: View {
                         isFocused = false
                     }
             }
-
-            Button(action: {
+            
+            Button(role: .cancel, action: {
                 isSearching.toggle()
             }) {
                 Image(systemSymbol: isSearching ? .xmarkCircleFill : .magnifyingglass)
@@ -58,7 +58,7 @@ struct HeaderView: View {
                     .contentShape(Circle())
             }
             .styledButton()
-            .keyboardShortcut(.cancelAction)
+            .keyboardShortcut(isSearching ? .cancelAction : .none)
         }
         .padding(.leading, 15)
         .padding(.trailing, 7.5)
