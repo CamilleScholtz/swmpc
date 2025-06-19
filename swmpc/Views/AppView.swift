@@ -104,7 +104,7 @@ struct AppView: View {
                                         Rectangle()
                                             .frame(width: 1)
                                             .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-                                        alignment: .leading
+                                        alignment: .leading,
                                     )
                                     .ignoresSafeArea(.container, edges: .top)
                                     .transition(.move(edge: .trailing))
@@ -121,7 +121,7 @@ struct AppView: View {
                     if let playlist = mpd.status.playlist {
                         navigator.category = .playlist(playlist)
                     }
-                    
+
                     Task {
                         try? await mpd.status.startTrackingElapsed()
                     }

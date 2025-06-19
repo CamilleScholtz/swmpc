@@ -73,7 +73,7 @@ struct QueuePanelView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-                alignment: .bottom
+                alignment: .bottom,
             )
             .frame(height: 50 + 7.5 + 1)
         }

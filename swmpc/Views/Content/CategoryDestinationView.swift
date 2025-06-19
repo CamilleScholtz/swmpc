@@ -213,7 +213,7 @@ struct CategoryView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 isGoingToSearch = false
             }
-            
+
 //            if query.isEmpty {
 //                mpd.database.results = nil
 //            } else {

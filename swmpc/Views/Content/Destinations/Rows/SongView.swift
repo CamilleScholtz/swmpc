@@ -46,7 +46,7 @@ struct SongView: View {
                         .background(
                             Rectangle()
                                 .fill(.background)
-                                .frame(width: trackSize, height: trackSize)
+                                .frame(width: trackSize, height: trackSize),
                         )
                         .opacity(isHovering ? 1 : 0)
                 #endif
@@ -55,7 +55,7 @@ struct SongView: View {
                     .background(
                         Rectangle()
                             .fill(.background)
-                            .frame(width: trackSize, height: trackSize)
+                            .frame(width: trackSize, height: trackSize),
                     )
                     .opacity(mpd.status.song == song ? 1 : 0)
             }

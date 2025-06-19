@@ -71,7 +71,7 @@ final class Database {
 
         @AppStorage(Setting.simpleMode) var simpleMode = false
         let source: Source = simpleMode ? .queue : .database
-        
+
         switch type {
         case .album:
             media = try await idle
