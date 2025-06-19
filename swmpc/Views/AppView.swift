@@ -121,6 +121,10 @@ struct AppView: View {
                     #endif
                 }
                 .onAppear {
+                    if let playlist = mpd.status.playlist {
+                        navigator.category = .playlist(playlist)
+                    }
+                    
                     Task {
                         try? await mpd.status.startTrackingElapsed()
                     }
