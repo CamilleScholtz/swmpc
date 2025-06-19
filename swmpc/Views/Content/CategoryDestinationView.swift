@@ -137,7 +137,6 @@ struct CategoryView: View {
             }
 
             scrollPosition = media.id
-            print(scrollPosition)
         }
         .onReceive(scrollToCurrentNotification) { notification in
             guard let media = mpd.status.media else {

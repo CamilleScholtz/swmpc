@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with SwiftUI. It's a universal app that provides a modern interface for controlling MPD servers.
 
-- **Platforms**: macOS 15.0+, iOS 18.0+
-- **Language**: Swift 6.0
+- **Platforms**: macOS 26, iOS 26
+- **Language**: Swift 6.2
 - **UI Framework**: SwiftUI with Observation framework
 - **Build System**: Xcode project (no Package.swift)
 
@@ -16,12 +16,6 @@ swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with
 ```bash
 # Build for debug
 xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Debug
-
-# Build for release
-xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Release
-
-# Archive for App Store
-xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Release archive
 ```
 
 **Note**: Most development is done through Xcode IDE. Dependencies are managed through Xcode's Swift Package Manager integration.
@@ -34,11 +28,12 @@ The app follows an MVVM-style architecture using SwiftUI and the Observation fra
   - `NavigationManager`: Handles navigation state
   - `IntelligenceManager`: AI integration for smart playlists
   - `Settings`: User preferences with @AppStorage
+    - `simpleMode`: When enabled, loads all songs into the queue and uses the queue as the primary source. When disabled, uses MPD's database and queue separately (traditional MPD behavior)
 
 - **Models/MPD/**: MPD protocol implementation
-  - `ConnectionManager`: Async/await based TCP connection to MPD
+  - `ConnectionManager`: Lower level TCP connection to MPD
   - `MPD`: Main MPD client with command methods
-  - `Status`, `Queue`: Observable models for MPD state
+  - `Status`, `Database`: Observable models for MPD state
 
 - **Platform Differences**: Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code
   - macOS: Menu bar app with NSStatusItem popover
@@ -47,10 +42,10 @@ The app follows an MVVM-style architecture using SwiftUI and the Observation fra
 ## Key Dependencies
 
 External packages (managed in Xcode):
-- `LNPopupUI-Static` (iOS only): Now playing popup
 - `OpenAI`: AI integration
 - `SwiftUIIntrospect`: View introspection
 - `LaunchAtLogin` (macOS only): Startup behavior
+- `ButtonKit`: Async button handling
 
 ## MPD Protocol Notes
 
