@@ -70,11 +70,6 @@ import SwiftUI
     private func updateLoop() async {
         await connect()
 
-        @AppStorage(Setting.simpleMode) var simpleMode = false
-        if simpleMode {
-            try? await ConnectionManager.command().loadPlaylist(nil)
-        }
-
         try? await database.set(using: .album, idle: true)
         try? await status.set()
         try? await database.setPlaylists()
