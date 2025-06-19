@@ -94,6 +94,7 @@ struct AppView: View {
                                         .styledButton()
                                         .offset(x: -15, y: 20)
                                         .ignoresSafeArea()
+                                        .keyboardShortcut("q", modifiers: [.command])
                                     }
                                 }
                         }
