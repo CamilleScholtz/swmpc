@@ -129,6 +129,9 @@ struct SettingsView: View {
         @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
         @AppStorage(Setting.simpleMode) var simpleMode = false
 
+        @State private var restartAlertShown = false
+        @State private var isRestarting = false
+
         var body: some View {
             Form {
                 Toggle(isOn: $simpleMode) {
@@ -137,6 +140,14 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                }
+                .onChange(of: simpleMode) { _, _ in
+                    guard !isRestarting else {
+                        return
+                    }
+
+                    isRestarting = true
+                    restartAlertShown = true
                 }
 
                 Divider()
@@ -169,6 +180,21 @@ struct SettingsView: View {
             }
             .padding(32)
             .navigationTitle("Behavior")
+            .alert("Restart Required", isPresented: $restartAlertShown) {
+                Button("Cancel", role: .cancel) {
+                    simpleMode = !simpleMode
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isRestarting = false
+                    }
+                }
+
+                Button("Restart", role: .destructive) {
+                    NSApp.terminate(nil)
+                }
+            } message: {
+                Text("You need to restart the app for this change to take effect.")
+            }
         }
     }
 

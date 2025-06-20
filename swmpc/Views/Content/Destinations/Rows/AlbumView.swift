@@ -119,7 +119,7 @@ struct AlbumView: View {
                     try await ConnectionManager.command().addToFavorites(songs: ConnectionManager.command().getSongs(using: .queue, for: album))
                 }
 
-                if let playlists = (mpd.status.playlist != nil) ? mpd.database.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.database.playlists {
+                if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
                     Menu("Add Album to Playlist") {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {

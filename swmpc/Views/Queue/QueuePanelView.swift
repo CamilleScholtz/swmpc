@@ -15,20 +15,13 @@ struct QueuePanelView: View {
     @Binding var showQueuePanel: Bool
 
     @State private var showClearQueueAlert = false
-    @State private var songs: [Song]?
-
-    private let queueChangedNotification = NotificationCenter.default
-        .publisher(for: .queueChangedNotification)
 
     var body: some View {
         VStack(spacing: 0) {
-            if songs == nil {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if songs!.isEmpty {
+            if mpd.queue.internalMedia.isEmpty {
                 EmptyQueueView()
             } else {
-                QueueView(songs: songs!)
+                QueueView()
             }
         }
         .safeAreaInset(edge: .top, spacing: 7.5) {
@@ -50,7 +43,7 @@ struct QueuePanelView: View {
                     }
                     .styledButton()
                     .keyboardShortcut(.delete)
-                    .opacity(songs == nil || songs!.isEmpty ? 0 : 1)
+                    .opacity(mpd.queue.internalMedia.isEmpty ? 0 : 1)
 
                     Button(role: .cancel, action: {
                         withAnimation(.spring) {
@@ -88,14 +81,6 @@ struct QueuePanelView: View {
         } message: {
             Text("This will remove all songs from the queue.")
         }
-        .task {
-            songs = try? await ConnectionManager.command().getSongs(using: .queue)
-        }
-        .onReceive(queueChangedNotification) { _ in
-            Task {
-                songs = try? await ConnectionManager.command().getSongs(using: .queue)
-            }
-        }
     }
 
     struct EmptyQueueView: View {
@@ -114,7 +99,9 @@ struct QueuePanelView: View {
         @Environment(MPD.self) private var mpd
         @Environment(\.colorScheme) private var colorScheme
 
-        let songs: [Song]
+        private var songs: [Song] {
+            mpd.queue.internalMedia as? [Song] ?? []
+        }
 
         var body: some View {
             ScrollViewReader { _ in

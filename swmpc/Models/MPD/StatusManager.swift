@@ -1,5 +1,5 @@
 //
-//  Status.swift
+//  StatusManager.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 08/11/2024.
@@ -16,7 +16,7 @@ import SwiftUI
 /// the MPD server and updates platform-specific UI elements like the macOS
 /// status bar.
 @Observable
-final class Status {
+final class StatusManager {
     /// The current player state (play, pause, stop).
     var state: PlayerState?
 

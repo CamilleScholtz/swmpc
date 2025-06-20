@@ -1,5 +1,5 @@
 //
-//  Database.swift
+//  LibraryManager.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 08/11/2024.
@@ -7,20 +7,32 @@
 
 import SwiftUI
 
-enum DatabaseError: Error {
+enum LibraryManagerError: Error {
     case invalidType
 }
 
-/// Manages the MPD database, handling media storage, search functionality, and
-/// playlist management.
+/// Manages the MPD library (a database or queue), handling media storage and
+/// search functionality.
 @Observable
-final class Database {
-    /// The media in the database. This represents the actual MPD database.
-    var internalMedia: [any Mediable] = []
+final class LibraryManager {
+    /// The source `LibraryManager` is managing. This can be either `.database`
+    /// or `.queue`.
+    var source: Source
 
-    /// The media in the database. This can be the actual MPD database or the
-    /// search results.
-    var media: [any Mediable] {
+    /// Initializes a new `LibraryManager` with the specified source.
+    ///
+    /// - Parameter source: The source to manage, either `.database` or
+    ///                     `.queue`.
+    init(using source: Source) {
+        self.source = source
+    }
+
+    /// The media in the library. This represents the actual contents.
+    private(set) var internalMedia: [any Mediable] = []
+
+    /// The media in the library. This can be the actual contents (see
+    /// `internalMedia`) or the filtered search results.
+    private(set) var media: [any Mediable] {
         get {
             results ?? internalMedia
         }
@@ -29,33 +41,27 @@ final class Database {
         }
     }
 
-    /// The search results. If this is not `nil`, `media` will return this.
-    var results: [any Mediable]?
+    /// The search results. If this value is not `nil`, `media` will return
+    /// this.
+    private(set) var results: [any Mediable]?
 
-    /// The type of media in the database. This can be `album`, `artist`,
-    /// `song`, or `playlist`.
-    var type: MediaType?
+    /// The type of media in the library. This can be `album`, `artist` or
+    /// `song`.
+    private(set) var type: MediaType?
 
-    /// The playlists available on the server.
-    var playlists: [Playlist]?
+    /// The date at which the library was last updated.
+    private(set) var lastUpdated: Date = .now
 
-    /// The songs in the `Favorites` playlist.
-    var favorites: [Song] = []
-
-    /// The date at which the database was last updated.
-    var lastUpdated: Date = .now
-
-    /// This asynchronous function sets the media in the database.
+    /// This asynchronous function sets the media in library.
     ///
     /// - Parameters:
     ///     - type: The type of media to set.
-    ///     - playlist: The playlist to display content for (when type is .playlist).
     ///     - idle: Whether to use the idle connection.
     ///     - force: Whether to force the update, this will update the database
     ///              even if the type is the same as the current one.
     /// - Throws: An error if the media could not be set.
     @MainActor
-    func set(using type: MediaType? = nil, playlist: Playlist? = nil, idle: Bool = false, force: Bool =
+    func set(using type: MediaType? = nil, idle: Bool = false, force: Bool =
         false) async throws
     {
         defer { lastUpdated = Date() }
@@ -69,10 +75,7 @@ final class Database {
             self.type = current
         }
 
-        @AppStorage(Setting.simpleMode) var simpleMode = false
-        let source: Source = simpleMode ? .queue : .database
-        
-        switch type {
+        switch current {
         case .album:
             media = try await idle
                 ? ConnectionManager.idle.getAlbums(using: source)
@@ -85,52 +88,21 @@ final class Database {
             media = try await idle
                 ? ConnectionManager.idle.getSongs(using: source)
                 : ConnectionManager.command().getSongs(using: source)
-        case .playlist:
-            guard let playlist else {
-                throw DatabaseError.invalidType
-            }
-
-            media = try await idle
-                ? ConnectionManager.idle.getSongs(for: playlist)
-                : ConnectionManager.command().getSongs(for: playlist)
         default:
-            throw DatabaseError.invalidType
+            throw LibraryManagerError.invalidType
         }
     }
 
-    /// This asynchronous function sets the playlists available on the server.
-    /// It also sets the songs in the `Favorites` playlist.
-    ///
-    /// - Note: The `Favorites` playlist is filtered out of the playlists.
-    ///
-    /// - Throws: An error if the playlists could not be set.
-    @MainActor
-    func setPlaylists() async throws {
-        let allPlaylists = try await ConnectionManager.idle.getPlaylists()
-
-        playlists = allPlaylists.filter { $0.name != "Favorites" }
-
-        guard let favoritePlaylist = allPlaylists.first(where: {
-            $0.name == "Favorites"
-        }) else {
-            return
-        }
-
-        favorites = try await ConnectionManager.idle.getSongs(for:
-            favoritePlaylist)
-    }
-
-    /// This asynchronous function searches for media in the database.
+    /// This asynchronous function searches for media in the library.
     ///
     /// - Parameters:
     ///     - query: The query to search for.
     ///     - type: The type of media to search for and set.
-    ///     - playlist: The playlist to search within (when type is .playlist).
     /// - Throws: An error if the search could not be performed.
     @MainActor
-    func search(for query: String, using type: MediaType? = nil, playlist: Playlist? = nil) async throws {
+    func search(for query: String, using type: MediaType? = nil) async throws {
         let current = type ?? self.type
-        try await set(using: current, playlist: playlist)
+        try await set(using: current)
 
         results = switch current {
         case .album:
@@ -142,30 +114,35 @@ final class Database {
             (internalMedia as! [Artist]).filter {
                 $0.name.range(of: query, options: .caseInsensitive) != nil
             }
-        case .song, .playlist:
+        case .song:
             (internalMedia as! [Song]).filter {
                 $0.artist.range(of: query, options: .caseInsensitive) != nil ||
                     $0.title.range(of: query, options: .caseInsensitive) != nil
             }
         default:
-            throw DatabaseError.invalidType
+            throw LibraryManagerError.invalidType
         }
     }
 
+    /// Clears the search results, resetting the media to the internal media.
+    func clearResults() {
+        results = nil
+    }
+
     /// This asynchronous function gets for a given media the corresponding
-    /// media in the queue of a given type.
+    /// media in the library of a given type.
     ///
     /// For example, if the current given media is `Song`, and the given type
-    /// is `Album`, this will return the `Album` that contains of the given `Song`.
+    /// is `.album`, this will return the `Album` that contains of the given
+    /// `Song`.
     ///
     /// - Parameters:
     ///     - media: The media to get the corresponding media for.
     ///     - type: The type of media to get.
-    ///     - playlist: The playlist context (typically not needed for relationship queries).
     /// - Returns: The corresponding media in the queue.
     /// - Throws: An error if the media could not be fetched.
     @MainActor
-    func get(for media: any Mediable, using type: MediaType? = nil, playlist: Playlist? = nil) async throws
+    func get(for media: any Mediable, using type: MediaType? = nil) async throws
         -> (any Mediable)?
     {
         let current = type ?? self.type
@@ -173,7 +150,7 @@ final class Database {
             return media
         }
 
-        try await set(using: current, playlist: playlist)
+        try await set(using: current)
 
         switch (media, current) {
         case let (song as Song, .album):
@@ -192,7 +169,7 @@ final class Database {
         case let (artist as Artist, .album):
             return artist.albums?.first
         default:
-            throw DatabaseError.invalidType
+            throw LibraryManagerError.invalidType
         }
     }
 }

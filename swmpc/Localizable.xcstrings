@@ -3673,6 +3673,12 @@
         }
       }
     },
+    "Restart" : {
+
+    },
+    "Restart Required" : {
+
+    },
     "Resumed playback" : {
       "localizations" : {
         "de" : {
@@ -4772,6 +4778,9 @@
           }
         }
       }
+    },
+    "You need to restart the app for this change to take effect." : {
+
     }
   },
   "version" : "1.0"

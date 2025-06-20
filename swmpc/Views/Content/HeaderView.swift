@@ -47,7 +47,7 @@ struct HeaderView: View {
                         isFocused = false
                     }
             }
-            
+
             Button(role: .cancel, action: {
                 isSearching.toggle()
             }) {
@@ -78,7 +78,7 @@ struct HeaderView: View {
                 return
             }
 
-            mpd.database.results = nil
+            mpd.database.clearResults()
         }
         .task(id: query) {
             guard isSearching else {
@@ -86,13 +86,13 @@ struct HeaderView: View {
             }
 
             if query.isEmpty {
-                mpd.database.results = nil
+                mpd.database.clearResults()
             } else {
                 let playlist: Playlist? = switch destination {
                 case let .playlist(playlist): playlist
                 default: nil
                 }
-                try? await mpd.database.search(for: query, playlist: playlist)
+                // try? await mpd.database.search(for: query, playlist: playlist)
             }
         }
     }

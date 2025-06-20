@@ -16,12 +16,6 @@ swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with
 ```bash
 # Build for debug
 xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Debug
-
-# Build for release
-xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Release
-
-# Archive for App Store
-xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Release archive
 ```
 
 **Note**: Most development is done through Xcode IDE. Dependencies are managed through Xcode's Swift Package Manager integration.
@@ -34,11 +28,13 @@ The app follows an MVVM-style architecture using SwiftUI and the Observation fra
   - `NavigationManager`: Handles navigation state
   - `IntelligenceManager`: AI integration for smart playlists
   - `Settings`: User preferences with @AppStorage
+    - `simpleMode`: When enabled, loads all songs into the queue and uses the queue as the primary source. When disabled, uses MPD's database and queue separately (traditional MPD behavior)
 
 - **Models/MPD/**: MPD protocol implementation
-  - `ConnectionManager`: Async/await based TCP connection to MPD
-  - `MPD`: Main MPD client with command methods
-  - `Status`, `Queue`: Observable models for MPD state
+  - `ConnectionManager`: Lower level TCP connection to MPD
+  - `StatusManager`: Manages MPD status updates
+  - `LibraryManager`: Manages the media in MPD's database when `source` is set to `.database` , and the queue when `source` is set to `.queue`
+  - `MPD`: Main MPD client interface. This class initalizes `ConnectionManager`, `StatusManager`, and `LibraryManager` for both the database and queue sources. When `simpleMode` is enabled, `database` is routed to the queue, and the queue is used as the primary source.
 
 - **Platform Differences**: Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code
   - macOS: Menu bar app with NSStatusItem popover
@@ -51,6 +47,7 @@ External packages (managed in Xcode):
 - `OpenAI`: AI integration
 - `SwiftUIIntrospect`: View introspection
 - `LaunchAtLogin` (macOS only): Startup behavior
+- `ButtonKit`: Async button handling
 
 ## MPD Protocol Notes
 

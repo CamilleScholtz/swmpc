@@ -203,9 +203,9 @@ struct DetailFooterView: View {
                     return
                 }
 
-                isFavorited = mpd.database.favorites.contains { $0.url == song.url }
+                isFavorited = mpd.playlists.favorites.contains { $0.url == song.url }
             }
-            .onChange(of: mpd.database.favorites) { _, value in
+            .onChange(of: mpd.playlists.favorites) { _, value in
                 guard let song = mpd.status.song else {
                     return
                 }

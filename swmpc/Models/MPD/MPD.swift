@@ -16,10 +16,18 @@ import SwiftUI
 /// relevant state when changes occur.
 @Observable final class MPD {
     /// The MPD status manager, tracking playback state and current song.
-    let status = Status()
+    let status = StatusManager()
 
-    /// The MPD database manager, handling music library queries.
-    let database = Database()
+    /// The MPD database manager, handling music library queries. This value
+    /// will route to the `queue` `LLibraryManager` when in simple mode,
+    /// otherwise it will route to the actual MPD database.
+    var database: LibraryManager
+
+    /// The MPD queue manager, handling music library queries.
+    let queue = LibraryManager(using: .queue)
+
+    /// The playlist manager, handling playlist operations.
+    let playlists = PlaylistManager()
 
     /// The most recent connection or communication error, if any.
     var error: Error?
@@ -30,6 +38,9 @@ import SwiftUI
 
     @MainActor
     init() {
+        @AppStorage(Setting.simpleMode) var simpleMode = false
+        database = simpleMode ? queue : LibraryManager(using: .database)
+
         updateLoopTask = Task { [weak self] in
             await self?.updateLoop()
         }
@@ -71,8 +82,11 @@ import SwiftUI
         await connect()
 
         try? await database.set(using: .album, idle: true)
+        if database.source == .database {
+            try? await queue.set(using: .song, idle: true)
+        }
+        try? await playlists.set()
         try? await status.set()
-        try? await database.setPlaylists()
 
         while !Task.isCancelled {
             await connect()
@@ -105,16 +119,15 @@ import SwiftUI
     /// - Throws: An error if any update operation fails.
     @MainActor
     private func performUpdates(for event: IdleEvent) async throws {
+        print(event)
         switch event {
         case .playlists:
-            try await database.setPlaylists()
+            try await playlists.set()
         case .database:
-            try await database.set()
+            try await database.set(idle: true, force: true)
         case .queue:
+            try await queue.set(idle: true, force: true)
             try await status.set()
-
-            NotificationCenter.default.post(name: .queueChangedNotification,
-                                            object: nil)
         case .player:
             try await status.set()
         case .options:

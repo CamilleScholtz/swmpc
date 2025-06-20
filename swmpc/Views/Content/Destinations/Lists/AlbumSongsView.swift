@@ -130,7 +130,7 @@ struct AlbumSongsView: View {
                         try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                     }
 
-                    if let playlists = (mpd.status.playlist != nil) ? mpd.database.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.database.playlists {
+                    if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
                         Menu("Add Album to Playlist") {
                             ForEach(playlists) { playlist in
                                 AsyncButton(playlist.name) {
@@ -164,7 +164,7 @@ struct AlbumSongsView: View {
                                 try await ConnectionManager.command().addToFavorites(songs: songs?.values.flatMap(\.self) ?? [])
                             }
 
-                            if let playlists = (mpd.status.playlist != nil) ? mpd.database.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.database.playlists {
+                            if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
                                 Menu("Add Album to Playlist") {
                                     ForEach(playlists) { playlist in
                                         AsyncButton(playlist.name) {
@@ -234,10 +234,10 @@ struct AlbumSongsView: View {
             #endif
                 .task {
                     artwork = try? await album.artwork()
-                    
+
                     @AppStorage(Setting.simpleMode) var simpleMode = false
                     let source: Source = simpleMode ? .queue : .database
-                
+
                     songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(using: source, for: album)) ?? [], by: { $0.disc })
                 }
         }

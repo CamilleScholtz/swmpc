@@ -54,7 +54,7 @@ struct ChangeQueueModifier: ViewModifier {
                 case let .playlist(playlist):
                     guard playlist != mpd.status.playlist else {
                         Task(priority: .userInitiated) {
-                            try? await mpd.database.set(using: value.type, playlist: playlist)
+                            try? await mpd.database.set(using: value.type)
                         }
 
                         return
@@ -82,11 +82,7 @@ struct ChangeQueueModifier: ViewModifier {
                         try await ConnectionManager.command().loadPlaylist(nil)
                     }
 
-                    let playlist: Playlist? = switch navigator.category {
-                    case let .playlist(playlist): playlist
-                    default: nil
-                    }
-                    try await mpd.database.set(using: navigator.category.type, playlist: playlist, force: true)
+                    try await mpd.database.set(using: navigator.category.type, force: true)
                 }
             } message: {
                 Text("This will overwrite the current queue.")

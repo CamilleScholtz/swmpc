@@ -27,9 +27,9 @@ struct LoadingView: View {
         .onChange(of: navigator.category) {
             isLoading = true
         }
-        .task(id: navigator.category) {
-            await checkAndHideLoading()
-        }
+//        .task(id: navigator.category) {
+//            await checkAndHideLoading()
+//        }
         .task(id: mpd.database.lastUpdated) {
             await checkAndHideLoading()
         }
@@ -52,7 +52,7 @@ struct LoadingView: View {
             }
         #endif
 
-        if mpd.database.type == navigator.category.type, !mpd.database.media.isEmpty {
+        if mpd.database.type == navigator.category.type, !mpd.database.internalMedia.isEmpty {
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else {
                 return
