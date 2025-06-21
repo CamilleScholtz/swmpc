@@ -52,18 +52,8 @@ struct ChangeQueueModifier: ViewModifier {
                             try? await mpd.database.set(using: navigator.category.type, force: true)
                         }
                     }
-                case let .playlist(playlist):
-                    guard playlist != mpd.status.playlist else {
-                        Task(priority: .userInitiated) {
-                            try? await mpd.database.set(using: .song)
-                        }
-
-                        return
-                    }
-                #if os(iOS)
-                    default:
-                        return
-                    #endif
+                default:
+                    return
                 }
 
                 navigator.reset()
@@ -71,6 +61,7 @@ struct ChangeQueueModifier: ViewModifier {
             .alert(playlistToQueue == nil ? "Queue Library" : "Queue Playlist \(playlistToQueue!.name)", isPresented: $showAlert) {
                 Button("Cancel", role: .cancel) {
                     navigator.category = previousDestination ?? .albums
+                    showAlert = false
                 }
 
                 AsyncButton("Queue") {

@@ -75,17 +75,19 @@ struct HeaderView: View {
                     }
             }
 
-            Button(role: .cancel, action: {
-                isSearching.toggle()
-            }) {
-                Image(systemSymbol: isSearching ? .xmarkCircleFill : .magnifyingglass)
-                    .frame(width: 22, height: 22)
-                    .foregroundColor(.primary)
-                    .padding(4)
-                    .contentShape(Circle())
+            if destination.type != .playlist {
+                Button(role: .cancel, action: {
+                    isSearching.toggle()
+                }) {
+                    Image(systemSymbol: isSearching ? .xmarkCircleFill : .magnifyingglass)
+                        .frame(width: 22, height: 22)
+                        .foregroundColor(.primary)
+                        .padding(4)
+                        .contentShape(Circle())
+                }
+                .styledButton()
+                .keyboardShortcut(isSearching ? .cancelAction : .none)
             }
-            .styledButton()
-            .keyboardShortcut(isSearching ? .cancelAction : .none)
         }
         .padding(.leading, 15)
         .padding(.trailing, 7.5)
