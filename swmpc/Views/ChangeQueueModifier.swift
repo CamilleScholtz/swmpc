@@ -54,14 +54,20 @@ struct ChangeQueueModifier: ViewModifier {
                 case let .playlist(playlist):
                     guard playlist != mpd.status.playlist else {
                         Task(priority: .userInitiated) {
-                            try? await mpd.database.set(using: value.type)
+                            try? await mpd.database.set(using: .song)
                         }
 
                         return
                     }
 
-                    playlistToQueue = playlist
-                    showAlert = true
+                    if simpleMode {
+                        playlistToQueue = playlist
+                        showAlert = true
+                    } else {
+                        Task(priority: .userInitiated) {
+                            try? await mpd.database.set(using: .song)
+                        }
+                    }
                 #if os(iOS)
                     default:
                         return

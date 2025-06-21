@@ -14,26 +14,22 @@ struct CategoryDestinationView: View {
     let destination: CategoryDestination
 
     var body: some View {
+        switch destination {
         #if os(iOS)
-            switch destination {
             case .playlists:
                 PlaylistsView()
             case .settings:
                 SettingsView()
-            default:
-                if mpd.database.internalMedia.isEmpty {
-                    EmptyCategoryView(destination: destination)
-                } else {
-                    CategoryView(destination: destination)
-                }
-            }
-        #elseif os(macOS)
+        #endif
+        case .playlist:
+            CategoryView(destination: destination)
+        default:
             if mpd.database.internalMedia.isEmpty {
                 EmptyCategoryView(destination: destination)
             } else {
                 CategoryView(destination: destination)
             }
-        #endif
+        }
     }
 }
 
@@ -134,8 +130,10 @@ struct CategoryView: View {
                         AlbumsView()
                     case .artists:
                         ArtistsView()
-                    case .songs, .playlist:
+                    case .songs:
                         SongsView()
+                    case let .playlist(playlist):
+                        PlaylistView(for: playlist)
                     #if os(iOS)
                         default:
                             EmptyView()

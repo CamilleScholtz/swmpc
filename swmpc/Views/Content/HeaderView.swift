@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 18/03/2025.
 //
 
+import ButtonKit
 import SwiftUI
 import SwiftUIIntrospect
 
@@ -17,6 +18,9 @@ struct HeaderView: View {
 
     @State private var query = ""
 
+    @State private var showAlert = false
+    @State private var playlistToQueue: Playlist?
+
     @FocusState private var isFocused: Bool
 
     var body: some View {
@@ -26,6 +30,29 @@ struct HeaderView: View {
                     .font(.headline)
 
                 Spacer()
+
+                if case let .playlist(playlist) = destination {
+                    Button(action: {
+                        showAlert = true
+                    }) {
+                        Image(systemSymbol: .squareAndArrowDownOnSquare)
+                            .frame(width: 22, height: 22)
+                            .foregroundColor(.primary)
+                            .padding(4)
+                            .contentShape(Circle())
+                            .offset(y: -1)
+                    }
+                    .styledButton()
+                    .alert("Queue Playlist", isPresented: $showAlert) {
+                        Button("Cancel", role: .cancel) {}
+
+                        AsyncButton("Queue") {
+                            try await ConnectionManager.command().loadPlaylist(playlist)
+                        }
+                    } message: {
+                        Text("This will overwrite the current queue.")
+                    }
+                }
             } else {
                 TextField("Search", text: $query)
                     .introspect(.textField, on: .macOS(.v15)) {
@@ -88,11 +115,7 @@ struct HeaderView: View {
             if query.isEmpty {
                 mpd.database.clearResults()
             } else {
-                let playlist: Playlist? = switch destination {
-                case let .playlist(playlist): playlist
-                default: nil
-                }
-                // try? await mpd.database.search(for: query, playlist: playlist)
+                try? await mpd.database.search(for: query)
             }
         }
     }
