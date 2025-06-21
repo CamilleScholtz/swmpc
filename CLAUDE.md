@@ -33,7 +33,9 @@ The app follows an MVVM-style architecture using SwiftUI and the Observation fra
 - **Models/MPD/**: MPD protocol implementation
   - `ConnectionManager`: Lower level TCP connection to MPD
   - `MPD`: Main MPD client with command methods
-  - `Status`, `Database`: Observable models for MPD state
+  - `StatusManager`: Manages MPD status updates
+  - `LibraryManager`: Manages the media in MPD's database when `source` is set to `.database` , and the queue when `source` is set to `.queue`
+  - `MPD`: Main MPD client interface. This class initalizes `ConnectionManager`, `StatusManager`, and `LibraryManager` for both the database and queue sources. When `simpleMode` is enabled, `database` is routed to the queue, and the queue is used as the primary source.
 
 - **Platform Differences**: Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code
   - macOS: Menu bar app with NSStatusItem popover

@@ -52,7 +52,7 @@ struct LoadingView: View {
             }
         #endif
 
-        if mpd.database.type == navigator.category.type, !mpd.database.media.isEmpty {
+        if navigator.category.type == .playlist || (navigator.category.type == mpd.database.type && !mpd.database.internalMedia.isEmpty) {
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else {
                 return

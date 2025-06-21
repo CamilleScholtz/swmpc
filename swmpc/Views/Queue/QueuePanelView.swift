@@ -15,20 +15,13 @@ struct QueuePanelView: View {
     @Binding var showQueuePanel: Bool
 
     @State private var showClearQueueAlert = false
-    @State private var songs: [Song]?
-
-    private let queueChangedNotification = NotificationCenter.default
-        .publisher(for: .queueChangedNotification)
 
     var body: some View {
         VStack(spacing: 0) {
-            if songs == nil {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if songs!.isEmpty {
+            if mpd.queue.internalMedia.isEmpty {
                 EmptyQueueView()
             } else {
-                QueueView(songs: songs!)
+                QueueView()
             }
         }
         .safeAreaInset(edge: .top, spacing: 7.5) {
@@ -49,9 +42,10 @@ struct QueuePanelView: View {
                             .contentShape(Circle())
                     }
                     .styledButton()
-                    .opacity(songs == nil || songs!.isEmpty ? 0 : 1)
+                    .keyboardShortcut(.delete)
+                    .opacity(mpd.queue.internalMedia.isEmpty ? 0 : 1)
 
-                    Button(action: {
+                    Button(role: .cancel, action: {
                         withAnimation(.spring) {
                             showQueuePanel = false
                         }
@@ -63,6 +57,7 @@ struct QueuePanelView: View {
                             .contentShape(Circle())
                     }
                     .styledButton()
+                    .keyboardShortcut(.cancelAction)
                 }
             }
             .padding(.leading, 15)
@@ -79,19 +74,12 @@ struct QueuePanelView: View {
         }
         .alert("Clear Queue", isPresented: $showClearQueueAlert) {
             Button("Cancel", role: .cancel) {}
+
             AsyncButton("Clear Queue", role: .destructive) {
                 try await ConnectionManager.command().clearQueue()
             }
         } message: {
             Text("This will remove all songs from the queue.")
-        }
-        .task {
-            songs = try? await ConnectionManager.command().getSongs(using: .queue)
-        }
-        .onReceive(queueChangedNotification) { _ in
-            Task {
-                songs = try? await ConnectionManager.command().getSongs(using: .queue)
-            }
         }
     }
 
@@ -111,7 +99,9 @@ struct QueuePanelView: View {
         @Environment(MPD.self) private var mpd
         @Environment(\.colorScheme) private var colorScheme
 
-        let songs: [Song]
+        private var songs: [Song] {
+            mpd.queue.internalMedia as? [Song] ?? []
+        }
 
         var body: some View {
             ScrollViewReader { _ in

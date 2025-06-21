@@ -28,6 +28,7 @@ struct ChangeQueueModifier: ViewModifier {
         content
             .onChange(of: navigator.category) { previous, value in
                 guard previous != value else {
+                    print("previous")
                     return
                 }
 
@@ -51,21 +52,8 @@ struct ChangeQueueModifier: ViewModifier {
                             try? await mpd.database.set(using: navigator.category.type, force: true)
                         }
                     }
-                case let .playlist(playlist):
-                    guard playlist != mpd.status.playlist else {
-                        Task(priority: .userInitiated) {
-                            try? await mpd.database.set(using: value.type, playlist: playlist)
-                        }
-
-                        return
-                    }
-
-                    playlistToQueue = playlist
-                    showAlert = true
-                #if os(iOS)
-                    default:
-                        return
-                    #endif
+                default:
+                    return
                 }
 
                 navigator.reset()
@@ -73,6 +61,7 @@ struct ChangeQueueModifier: ViewModifier {
             .alert(playlistToQueue == nil ? "Queue Library" : "Queue Playlist \(playlistToQueue!.name)", isPresented: $showAlert) {
                 Button("Cancel", role: .cancel) {
                     navigator.category = previousDestination ?? .albums
+                    showAlert = false
                 }
 
                 AsyncButton("Queue") {
@@ -82,11 +71,7 @@ struct ChangeQueueModifier: ViewModifier {
                         try await ConnectionManager.command().loadPlaylist(nil)
                     }
 
-                    let playlist: Playlist? = switch navigator.category {
-                    case let .playlist(playlist): playlist
-                    default: nil
-                    }
-                    try await mpd.database.set(using: navigator.category.type, playlist: playlist, force: true)
+                    try await mpd.database.set(using: navigator.category.type, force: true)
                 }
             } message: {
                 Text("This will overwrite the current queue.")
