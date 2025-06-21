@@ -127,13 +127,13 @@ struct CategoryView: View {
                 Group {
                     switch destination {
                     case .albums:
-                        AlbumsView()
+                        MediaListView(using: mpd.database, type: .album)
                     case .artists:
-                        ArtistsView()
+                        MediaListView(using: mpd.database, type: .artist)
                     case .songs:
-                        SongsView()
+                        MediaListView(using: mpd.database, type: .song)
                     case let .playlist(playlist):
-                        PlaylistView(for: playlist)
+                        MediaListView(for: playlist)
                     #if os(iOS)
                         default:
                             EmptyView()
@@ -263,6 +263,10 @@ struct CategoryView: View {
                 }
 
                 mpd.database.results = nil
+                // For playlists, notify to clear search results
+                if case .playlist = navigator.category {
+                    NotificationCenter.default.post(name: .startSearchingNotication, object: "")
+                }
             }
             .onChange(of: isGoingToSearch) { _, value in
                 guard value else {
@@ -281,12 +285,17 @@ struct CategoryView: View {
 
                 if query.isEmpty {
                     mpd.database.results = nil
-                } else {
-                    let playlist: Playlist? = switch navigator.category {
-                    case let .playlist(playlist): playlist
-                    default: nil
+                    // For playlists, notify to clear search results
+                    if case .playlist = navigator.category {
+                        NotificationCenter.default.post(name: .startSearchingNotication, object: "")
                     }
-                    try? await mpd.database.search(for: query, playlist: playlist)
+                } else {
+                    // For playlists, search is handled by MediaListView internally
+                    if case .playlist = navigator.category {
+                        NotificationCenter.default.post(name: .startSearchingNotication, object: query)
+                    } else {
+                        try? await mpd.database.search(for: query)
+                    }
                 }
             }
             #elseif os(macOS)

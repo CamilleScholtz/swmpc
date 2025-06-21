@@ -28,6 +28,7 @@ struct ChangeQueueModifier: ViewModifier {
         content
             .onChange(of: navigator.category) { previous, value in
                 guard previous != value else {
+                    print("previous")
                     return
                 }
 
@@ -58,15 +59,6 @@ struct ChangeQueueModifier: ViewModifier {
                         }
 
                         return
-                    }
-
-                    if simpleMode {
-                        playlistToQueue = playlist
-                        showAlert = true
-                    } else {
-                        Task(priority: .userInitiated) {
-                            try? await mpd.database.set(using: .song)
-                        }
                     }
                 #if os(iOS)
                     default:

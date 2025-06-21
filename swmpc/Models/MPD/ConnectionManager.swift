@@ -57,11 +57,13 @@ enum CommandMode: ConnectionMode {
 }
 
 /// Specifies the source of media items.
-enum Source {
+enum Source: Equatable, Hashable {
     /// Media items from the MPD database.
     case database
     /// Media items from the current queue.
     case queue
+    /// Media items from a specific playlist.
+    case playlist(Playlist)
 }
 
 /// Errors that can occur during MPD connection management.
@@ -77,6 +79,7 @@ enum ConnectionManagerError: LocalizedError {
 
     case protocolViolation(String)
     case malformedResponse(String)
+    case unsupportedOperation(String)
 
     var errorDescription: String? {
         switch self {
@@ -96,6 +99,8 @@ enum ConnectionManagerError: LocalizedError {
             "MPD protocol violation: \(details)"
         case let .malformedResponse(details):
             "Received malformed or unexpected response format from server: \(details)"
+        case let .unsupportedOperation(details):
+            "Unsupported operation attempted: \(details)"
         }
     }
 }
@@ -932,6 +937,8 @@ extension ConnectionManager {
             try await run(["listallinfo"])
         case .queue:
             try await run(["playlistinfo"])
+        case let .playlist(playlist):
+            try await run(["listplaylistinfo \(playlist.name)"])
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -960,6 +967,9 @@ extension ConnectionManager {
             try await run(["find \(filter(key: "albumartist", value: artist.name))"])
         case .queue:
             try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))"])
+        case .playlist:
+            throw ConnectionManagerError.unsupportedOperation(
+                "Retrieving songs by artist from a playlist is not supported")
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -987,6 +997,9 @@ extension ConnectionManager {
             try await run(["find \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""])
         case .queue:
             try await run(["playlistfind \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""])
+        case .playlist:
+            throw ConnectionManagerError.unsupportedOperation(
+                "Retrieving songs by album from a playlist is not supported")
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -1037,6 +1050,9 @@ extension ConnectionManager {
             try await run(["find \"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
         case .queue:
             try await run(["playlistfind \"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
+        case .playlist:
+            throw ConnectionManagerError.unsupportedOperation(
+                "Retrieving albums from a playlist is not supported")
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -1060,7 +1076,7 @@ extension ConnectionManager {
         let albums = try await getAlbums(using: source)
         let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
 
-        return albumsByArtist.map { artist, albums in
+        return try albumsByArtist.map { artist, albums in
             Artist(
                 identifier: albums.first!.identifier,
                 position: albums.first!.position,
@@ -1075,6 +1091,9 @@ extension ConnectionManager {
                 $0.name < $1.name
             case .queue:
                 $0.position! < $1.position!
+            case .playlist:
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Retrieving artists from a playlist is not supported")
             }
         }
     }
@@ -1398,6 +1417,7 @@ extension ConnectionManager where Mode == CommandMode {
     func play(_ media: any Mediable) async throws {
         if let id = media.identifier {
             _ = try await run(["playid \(id)"])
+            print("id")
             return
         }
 
@@ -1485,7 +1505,7 @@ extension ConnectionManager where Mode == CommandMode {
             }
 
         default:
-            throw ConnectionManagerError.malformedResponse(
+            throw ConnectionManagerError.unsupportedOperation(
                 "Unsupported media type: \(type(of: media))")
         }
     }

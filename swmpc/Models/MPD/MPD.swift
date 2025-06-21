@@ -119,7 +119,6 @@ import SwiftUI
     /// - Throws: An error if any update operation fails.
     @MainActor
     private func performUpdates(for event: IdleEvent) async throws {
-        print(event)
         switch event {
         case .playlists:
             try await playlists.set()
