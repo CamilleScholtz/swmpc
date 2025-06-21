@@ -1425,12 +1425,14 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Parameter album: The `Album` object to remove from the queue.
     /// - Throws: An error if the underlying command execution fails.
     func removeFromQueue(album: Album) async throws {
-        let albumSongs = try await getSongs(using: .database, for: album)
-        let queueSongs = try await getSongs(using: .queue)
-        let songsToRemove = queueSongs.filter { queueSong in
-            albumSongs.contains { $0.url == queueSong.url }
+        let filterClause = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""
+        let lines = try await run(["playlistfind \(filterClause)"])
+        
+        let chunks = chunkLines(lines, startingWith: "file")
+        let songsToRemove = try chunks.compactMap { chunk in
+            try parseMediaResponse(chunk, using: .song) as? Song
         }
-
+        
         try await removeFromQueue(songs: songsToRemove)
     }
 
@@ -1449,10 +1451,12 @@ extension ConnectionManager where Mode == CommandMode {
     ///                     queue.
     /// - Throws: An error if the underlying command execution fails.
     func removeFromQueue(artist: Artist) async throws {
-        let artistSongs = try await getSongs(using: .database, for: artist)
-        let queueSongs = try await getSongs(using: .queue)
-        let songsToRemove = queueSongs.filter { queueSong in
-            artistSongs.contains { $0.url == queueSong.url }
+        let filterClause = filter(key: "albumartist", value: artist.name)
+        let lines = try await run(["playlistfind \(filterClause)"])
+
+        let chunks = chunkLines(lines, startingWith: "file")
+        let songsToRemove = try chunks.compactMap { chunk in
+            try parseMediaResponse(chunk, using: .song) as? Song
         }
 
         try await removeFromQueue(songs: songsToRemove)
