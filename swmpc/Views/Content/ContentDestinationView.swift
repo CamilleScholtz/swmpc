@@ -13,14 +13,14 @@ struct ContentDestinationView: View {
     let destination: ContentDestination
 
     var body: some View {
-        List {
-            #if os(macOS)
-                BackButtonView()
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(.init(top: 15, leading: 7.5, bottom: 0, trailing: 7.5))
-            #endif
+        ScrollView {
+//            #if os(macOS)
+//                BackButtonView()
+//                    .listRowSeparator(.hidden)
+//                    .listRowInsets(.init(top: 15, leading: 7.5, bottom: 0, trailing: 7.5))
+//            #endif
 
-            Group {
+            LazyVStack {
                 switch destination {
                 case let .album(album):
                     AlbumSongsView(for: album)
@@ -28,16 +28,9 @@ struct ContentDestinationView: View {
                     ArtistAlbumsView(for: artist)
                 }
             }
-            .listRowSeparator(.hidden)
-            #if os(iOS)
-                .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-            #elseif os(macOS)
-                .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
-            #endif
         }
-        .listStyle(.plain)
-        .safeAreaPadding(.bottom, 7.5)
-        .contentMargins(.bottom, -7.5, for: .scrollIndicators)
+        .contentMargins(.all, 15, for: .scrollContent)
+        .scrollEdgeEffectStyle(.soft, for: .top)
         #if os(iOS)
             .navigationBarBackButtonHidden(true)
             .toolbar {
