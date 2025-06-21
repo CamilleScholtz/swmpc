@@ -102,10 +102,7 @@ struct AlbumView: View {
             .contextMenu {
                 @AppStorage(Setting.simpleMode) var simpleMode = false
                 if !simpleMode {
-                    AsyncButton("Add to Queue") {
-                        try await ConnectionManager.command().addToQueue(album: album)
-                    }
-
+                    AlbumQueueToggleButton(album: album)
                     Divider()
                 }
 
@@ -136,5 +133,35 @@ struct AlbumView: View {
 
                 artwork = try? await album.artwork()
             }
+    }
+}
+
+struct AlbumQueueToggleButton: View {
+    @Environment(MPD.self) private var mpd
+
+    let album: Album
+
+    @State private var songs: [Song]?
+
+    private var actuallyInQueue: Bool {
+        guard let songs else {
+            return false
+        }
+        
+        let urls = Set(mpd.queue.internalMedia.map { $0.url })
+        return songs.contains { urls.contains($0.url) }
+    }
+    
+    var body: some View {
+        AsyncButton(actuallyInQueue ? "Remove Album from Queue" : "Add Album to Queue") {
+            if actuallyInQueue {
+                try await ConnectionManager.command().removeFromQueue(album: album)
+            } else {
+                try await ConnectionManager.command().addToQueue(album: album)
+            }
+        }
+        .task(id: album) {
+            songs = try? await ConnectionManager.command().getSongs(using: .database, for: album)
+        }
     }
 }

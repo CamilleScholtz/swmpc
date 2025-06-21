@@ -92,11 +92,8 @@ struct SongView: View {
             }
             .contextMenu {
                 @AppStorage(Setting.simpleMode) var simpleMode = false
-                if !simpleMode, !isQueued {
-                    AsyncButton("Add to Queue") {
-                        try await ConnectionManager.command().addToQueue(songs: [song])
-                    }
-
+                if !simpleMode {
+                    QueueToggleButton(song: song, isQueued: isQueued)
                     Divider()
                 }
 
@@ -174,5 +171,31 @@ struct WaveView: View {
         RoundedRectangle(cornerRadius: 2)
             .fill(.secondary)
             .frame(width: 2, height: (isAnimating ? high : low) * 12)
+    }
+}
+
+struct QueueToggleButton: View {
+    @Environment(MPD.self) private var mpd
+
+    let song: Song
+    let isQueued: Bool
+
+    private var actuallyInQueue: Bool {
+        isQueued || mpd.queue.internalMedia.contains {
+            $0.url == song.url
+        }
+    }
+    
+    var body: some View {
+        AsyncButton(actuallyInQueue ? "Remove Song from Queue" : "Add Song to Queue") {
+            if actuallyInQueue {
+                let queueSongs = mpd.queue.internalMedia as? [Song]
+                if let queuedSong = queueSongs?.first(where: { $0.url == song.url }) {
+                    try await ConnectionManager.command().removeFromQueue(songs: [queuedSong])
+                }
+            } else {
+                try await ConnectionManager.command().addToQueue(songs: [song])
+            }
+        }
     }
 }

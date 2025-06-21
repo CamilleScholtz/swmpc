@@ -62,16 +62,43 @@ struct ArtistView: View {
         .contextMenu {
             @AppStorage(Setting.simpleMode) var simpleMode = false
             if !simpleMode {
-                AsyncButton("Add All by Artist to Queue") {
-                    try await ConnectionManager.command().addToQueue(artist: artist)
-                }
-
+                ArtistQueueToggleButton(artist: artist)
                 Divider()
             }
 
             Button("Copy Artist Name") {
                 artist.name.copyToClipboard()
             }
+        }
+    }
+}
+
+struct ArtistQueueToggleButton: View {
+    @Environment(MPD.self) private var mpd
+    
+    let artist: Artist
+    
+    @State private var songs: [Song]?
+    
+    private var actuallyInQueue: Bool {
+        guard let songs else {
+            return false
+        }
+        
+        let urls = Set(mpd.queue.internalMedia.map { $0.url })
+        return songs.contains { urls.contains($0.url) }
+    }
+    
+    var body: some View {
+        AsyncButton(actuallyInQueue ? "Remove All by Artist from Queue" : "Add All by Artist to Queue") {
+            if actuallyInQueue {
+                try await ConnectionManager.command().removeFromQueue(artist: artist)
+            } else {
+                try await ConnectionManager.command().addToQueue(artist: artist)
+            }
+        }
+        .task(id: artist) {
+            songs = try? await ConnectionManager.command().getSongs(using: .database, for: artist)
         }
     }
 }

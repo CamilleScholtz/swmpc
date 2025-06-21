@@ -276,6 +276,9 @@
         }
       }
     },
+    "Add Album to Queue" : {
+
+    },
     "Add All by Artist to Queue" : {
 
     },
@@ -381,6 +384,9 @@
         }
       }
     },
+    "Add Song to Queue" : {
+
+    },
     "Add songs from the library to play them" : {
 
     },
@@ -451,9 +457,6 @@
           }
         }
       }
-    },
-    "Add to Queue" : {
-
     },
     "Albums" : {
       "localizations" : {
@@ -3506,6 +3509,12 @@
         }
       }
     },
+    "Remove Album from Queue" : {
+
+    },
+    "Remove All by Artist from Queue" : {
+
+    },
     "Remove Song from Favorites" : {
       "localizations" : {
         "de" : {
@@ -3573,6 +3582,9 @@
           }
         }
       }
+    },
+    "Remove Song from Queue" : {
+
     },
     "Rename Playlist" : {
       "localizations" : {

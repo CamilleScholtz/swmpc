@@ -1392,6 +1392,25 @@ extension ConnectionManager where Mode == CommandMode {
         _ = try await run(commands)
     }
 
+    /// Remove songs from the queue.
+    ///
+    /// - Parameter songs: An array of `Song` objects to remove from the queue.
+    /// - Throws: An error if the underlying command execution fails.
+    func removeFromQueue(songs: [Song]) async throws {
+        let commands: [String] = songs.compactMap { song in
+            guard let id = song.identifier else {
+                return nil
+            }
+    
+            return "deleteid \(id)"
+        }
+        guard !commands.isEmpty else {
+            return
+        }
+
+        _ = try await run(commands)
+    }
+
     /// Adds an album to the queue.
     ///
     /// - Parameter album: The `Album` object to add to the queue.
@@ -1401,6 +1420,20 @@ extension ConnectionManager where Mode == CommandMode {
         try await addToQueue(songs: songs)
     }
 
+    /// Removes an album to the queue.
+    ///
+    /// - Parameter album: The `Album` object to remove from the queue.
+    /// - Throws: An error if the underlying command execution fails.
+    func removeFromQueue(album: Album) async throws {
+        let albumSongs = try await getSongs(using: .database, for: album)
+        let queueSongs = try await getSongs(using: .queue)
+        let songsToRemove = queueSongs.filter { queueSong in
+            albumSongs.contains { $0.url == queueSong.url }
+        }
+
+        try await removeFromQueue(songs: songsToRemove)
+    }
+
     /// Adds all songs by an artist to the queue.
     ///
     /// - Parameter artist: The `Artist` object whose songs to add to the queue.
@@ -1408,6 +1441,21 @@ extension ConnectionManager where Mode == CommandMode {
     func addToQueue(artist: Artist) async throws {
         let songs = try await getSongs(using: .database, for: artist)
         try await addToQueue(songs: songs)
+    }
+
+    /// Removes all songs by an artist to the queue.
+    ///
+    /// - Parameter artist: The `Artist` object whose songs to remove from the
+    ///                     queue.
+    /// - Throws: An error if the underlying command execution fails.
+    func removeFromQueue(artist: Artist) async throws {
+        let artistSongs = try await getSongs(using: .database, for: artist)
+        let queueSongs = try await getSongs(using: .queue)
+        let songsToRemove = queueSongs.filter { queueSong in
+            artistSongs.contains { $0.url == queueSong.url }
+        }
+
+        try await removeFromQueue(songs: songsToRemove)
     }
 
     /// Plays a `Mediable` object.
