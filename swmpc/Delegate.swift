@@ -89,7 +89,7 @@ struct Delegate: App {
                 }
                 .keyboardShortcut("l", modifiers: [.command])
 
-                Button("Search") {
+                Button("Search Library") {
                     NotificationCenter.default.post(name: .startSearchingNotication, object: nil)
                 }
                 .keyboardShortcut("f", modifiers: [.command])
@@ -108,7 +108,12 @@ struct Delegate: App {
 
                 Divider()
 
-                AsyncButton("Refresh Library") {
+                AsyncButton("Reload Library") {
+                    @AppStorage(Setting.simpleMode) var simpleMode = false
+                    if simpleMode {                        
+                        try await ConnectionManager.command().loadPlaylist(appDelegate.mpd.status.playlist)
+                    }
+                    
                     try await ConnectionManager.command().update()
                     try await appDelegate.mpd.database.set(force: true)
                 }

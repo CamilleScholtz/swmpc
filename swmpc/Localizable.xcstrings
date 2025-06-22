@@ -3655,6 +3655,7 @@
       }
     },
     "Refresh Library" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3721,6 +3722,9 @@
           }
         }
       }
+    },
+    "Reload Library" : {
+
     },
     "Remove Album from Playlist" : {
       "localizations" : {
@@ -4299,6 +4303,9 @@
           }
         }
       }
+    },
+    "Search Library" : {
+
     },
     "Selecting ideal tracks…" : {
       "localizations" : {
