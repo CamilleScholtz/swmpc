@@ -277,10 +277,72 @@
       }
     },
     "Add Album to Queue" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album zur Warteschlange hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir álbum a la cola"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter l'album à la file d'attente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album aan wachtrij toevoegen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将专辑添加到队列"
+          }
+        }
+      }
     },
     "Add All by Artist to Queue" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle vom Künstler zur Warteschlange hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir todo del artista a la cola"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter tout de l'artiste à la file d'attente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles van artiest aan wachtrij toevoegen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将该艺术家的所有歌曲添加到队列"
+          }
+        }
+      }
     },
     "Add Current Song to Favorites" : {
       "localizations" : {
@@ -385,10 +447,72 @@
       }
     },
     "Add Song to Queue" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lied zur Warteschlange hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir canción a la cola"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter la chanson à la file d'attente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nummer aan wachtrij toevoegen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将歌曲添加到队列"
+          }
+        }
+      }
     },
     "Add songs from the library to play them" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lieder aus der Bibliothek hinzufügen, um sie abzuspielen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade canciones de la biblioteca para reproducirlas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez des chansons de la bibliothèque pour les lire"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg nummers uit de bibliotheek toe om ze af te spelen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从音乐库添加歌曲以播放"
+          }
+        }
+      }
     },
     "Add songs to your library." : {
       "localizations" : {
@@ -1105,7 +1229,38 @@
       }
     },
     "Clear Queue" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warteschlange leeren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpiar cola"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vider la file d'attente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtrij wissen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空队列"
+          }
+        }
+      }
     },
     "Cloud-sourcing songs…" : {
       "localizations" : {
@@ -2266,43 +2421,39 @@
         }
       }
     },
-    "Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself." : {
-      "extractionState" : "stale",
+    "Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself. Using embedded is not recommended as it is generally much slower." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Bibliothek sucht nach Albumcovern (cover.png, cover.jpg oder cover.webp) im Verzeichnis der Datei. „Eingebettet“ ruft das Cover direkt aus der Datei ab."
+            "value" : "Bibliothek sucht nach Artwork im Verzeichnis der Datei nach einer Datei namens cover.png, cover.jpg oder cover.webp. Eingebettet ruft das Artwork aus der Datei selbst ab. Die Verwendung von Eingebettet wird nicht empfohlen, da sie im Allgemeinen viel langsamer ist."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La biblioteca buscará la carátula (cover.png, cover.jpg o cover.webp) en el directorio del archivo. «Incrustado» obtendrá la carátula directamente del archivo."
+            "value" : "La biblioteca buscará arte buscando en el directorio donde reside el archivo un archivo llamado cover.png, cover.jpg o cover.webp. Incrustado obtendrá el arte del archivo mismo. No se recomienda usar incrustado ya que generalmente es mucho más lento."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La bibliothèque récupérera la pochette (cover.png, cover.jpg ou cover.webp) dans le répertoire du fichier. L'option « Intégré » récupérera la pochette directement depuis le fichier."
+            "value" : "La bibliothèque récupérera l'illustration en recherchant dans le répertoire où réside le fichier un fichier appelé cover.png, cover.jpg ou cover.webp. Intégré récupérera l'illustration du fichier lui-même. L'utilisation d'intégré n'est pas recommandée car c'est généralement beaucoup plus lent."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collectie zoekt naar albumhoezen (cover.png, cover.jpg of cover.webp) in de map van het bestand. „Ingebed” haalt de hoes uit het bestand zelf."
+            "value" : "Bibliotheek haalt artwork op door in de map waar het bestand zich bevindt te zoeken naar een bestand genaamd cover.png, cover.jpg of cover.webp. Ingebed haalt de artwork uit het bestand zelf. Het gebruik van ingebed wordt niet aanbevolen omdat het over het algemeen veel langzamer is."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "媒体库将通过在文件所在目录中搜索名为 cover.png、cover.jpg 或 cover.webp 的文件来获取封面。嵌入式将直接从文件本身获取封面。"
+            "value" : "音乐库将通过在文件所在目录中搜索名为 cover.png、cover.jpg 或 cover.webp 的文件来获取封面。嵌入式将从文件本身获取封面。不建议使用嵌入式，因为它通常要慢得多。"
           }
         }
       }
-    },
-    "Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself. Using embedded is not recommended as it is generally much slower." : {
-
     },
     "Load Playlist" : {
       "localizations" : {
@@ -3266,7 +3417,38 @@
       }
     },
     "Queue is empty" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warteschlange ist leer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La cola está vacía"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La file d'attente est vide"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtrij is leeg"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "队列为空"
+          }
+        }
+      }
     },
     "Queue Library" : {
       "localizations" : {
@@ -3303,7 +3485,38 @@
       }
     },
     "Queue Playlist" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist zur Warteschlange hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir lista de reproducción a la cola"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter la playlist à la file d'attente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afspeellijst aan wachtrij toevoegen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将播放列表添加到队列"
+          }
+        }
+      }
     },
     "Queue Playlist %@" : {
       "localizations" : {
@@ -3335,6 +3548,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "将播放列表 %@ 加入队列"
+          }
+        }
+      }
+    },
+    "Quit swmpc" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "swmpc beenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salir de swmpc"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitter swmpc"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "swmpc afsluiten"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出 swmpc"
           }
         }
       }
@@ -3510,10 +3757,72 @@
       }
     },
     "Remove Album from Queue" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album aus Warteschlange entfernen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar álbum de la cola"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer l'album de la file d'attente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album uit wachtrij verwijderen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从队列中移除专辑"
+          }
+        }
+      }
     },
     "Remove All by Artist from Queue" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle vom Künstler aus Warteschlange entfernen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todo del artista de la cola"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer tout de l'artiste de la file d'attente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles van artiest uit wachtrij verwijderen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从队列中移除该艺术家的所有歌曲"
+          }
+        }
+      }
     },
     "Remove Song from Favorites" : {
       "localizations" : {
@@ -3584,7 +3893,38 @@
       }
     },
     "Remove Song from Queue" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lied aus Warteschlange entfernen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar canción de la cola"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer la chanson de la file d'attente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nummer uit wachtrij verwijderen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从队列中移除歌曲"
+          }
+        }
+      }
     },
     "Rename Playlist" : {
       "localizations" : {
@@ -3688,11 +4028,39 @@
         }
       }
     },
-    "Restart" : {
-
-    },
     "Restart Required" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neustart erforderlich"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reinicio requerido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redémarrage requis"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herstart vereist"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要重启"
+          }
+        }
+      }
     },
     "Resumed playback" : {
       "localizations" : {
@@ -4171,7 +4539,38 @@
       }
     },
     "Simple Mode" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einfacher Modus"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo simple"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode simple"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eenvoudige modus"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "简单模式"
+          }
+        }
+      }
     },
     "Skip to the next song in the queue" : {
       "localizations" : {
@@ -4449,7 +4848,38 @@
       }
     },
     "This will remove all songs from the queue." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dies entfernt alle Lieder aus der Warteschlange."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto eliminará todas las canciones de la cola."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela supprimera toutes les chansons de la file d'attente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit verwijdert alle nummers uit de wachtrij."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这将移除队列中的所有歌曲。"
+          }
+        }
+      }
     },
     "Toggle playback of the current song" : {
       "localizations" : {
@@ -4724,7 +5154,38 @@
       }
     },
     "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn aktiviert, werden alle Lieder in die Warteschlange geladen, wodurch die Warteschlangenverwaltung effektiv deaktiviert wird. Wenn deaktiviert, wird die traditionellere MPD-Warteschlangenverwaltung verwendet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando está habilitado, carga todas las canciones en la cola, esto desactiva efectivamente la gestión de la cola. Cuando está deshabilitado, se utiliza la gestión de cola MPD más tradicional."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lorsqu'activé, charge toutes les chansons dans la file d'attente, ce qui désactive efficacement la gestion de la file d'attente. Lorsque désactivé, la gestion de file d'attente MPD plus traditionnelle est utilisée."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wanneer ingeschakeld, laadt alle nummers in de wachtrij, dit schakelt effectief wachtrijbeheer uit. Wanneer uitgeschakeld, wordt het meer traditionele MPD-wachtrijbeheer gebruikt."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用后，将所有歌曲加载到队列中，这实际上禁用了队列管理。禁用后，将使用更传统的 MPD 队列管理。"
+          }
+        }
+      }
     },
     "When enabled, uses mock data instead of connecting to MPD." : {
       "localizations" : {
@@ -4795,7 +5256,38 @@
       }
     },
     "You need to restart the app for this change to take effect." : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sie müssen die App neu starten, damit diese Änderung wirksam wird."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesitas reiniciar la aplicación para que este cambio surta efecto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous devez redémarrer l'application pour que ce changement prenne effet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je moet de app opnieuw opstarten om deze wijziging door te voeren."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您需要重启应用程序才能使此更改生效。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
