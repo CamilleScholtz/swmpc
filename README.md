@@ -24,7 +24,7 @@ Key Features:
 - Intuitive music library browsing: quickly search by artist, album, or track
 - Seamless playback controls directly accessible from your menu bar
 - Efficient playlist management, enabling you to easily create and organize playlists
-- Smart playlists generated with cutting-edge AI (powered by OpenAI, Gemini, DeepSeek or Grok)
+- Smart playlists generated with cutting-edge AI (powered by OpenAI, Claude, Gemini or Grok)
 
 
 ## Screenshots
