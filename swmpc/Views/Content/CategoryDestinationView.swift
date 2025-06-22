@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftUIIntrospect
 
 struct CategoryDestinationView: View {
     @Environment(MPD.self) private var mpd

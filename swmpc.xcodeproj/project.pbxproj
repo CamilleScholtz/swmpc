@@ -14,7 +14,6 @@
 		9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 9182FEF32D97757000FED9D4 /* OpenAI */; };
 		9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
-		91F2AD292E009DEA00ADB0AF /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 91F2AD282E009DEA00ADB0AF /* SwiftUIIntrospect */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
@@ -72,7 +71,6 @@
 		91A141DD2CDE3988000A74BC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
-				91F2AD292E009DEA00ADB0AF /* SwiftUIIntrospect in Frameworks */,
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
 				9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */,
 				9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */,
@@ -138,7 +136,6 @@
 				9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */,
 				9182FEF32D97757000FED9D4 /* OpenAI */,
 				9114DB412DB11A8500DD5E6E /* ButtonKit */,
-				91F2AD282E009DEA00ADB0AF /* SwiftUIIntrospect */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -179,7 +176,6 @@
 				91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */,
 				91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */,
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
-				91F2AD272E009DEA00ADB0AF /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -504,14 +500,6 @@
 				minimumVersion = 1.1.0;
 			};
 		};
-		91F2AD272E009DEA00ADB0AF /* XCRemoteSwiftPackageReference "swiftui-introspect" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/siteline/swiftui-introspect";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = "1.4.0-beta.1";
-			};
-		};
 		91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
@@ -557,11 +545,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
 			productName = LaunchAtLogin;
-		};
-		91F2AD282E009DEA00ADB0AF /* SwiftUIIntrospect */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91F2AD272E009DEA00ADB0AF /* XCRemoteSwiftPackageReference "swiftui-introspect" */;
-			productName = SwiftUIIntrospect;
 		};
 		91F55B392CFE5D300027BBFE /* AsyncAlgorithms */ = {
 			isa = XCSwiftPackageProductDependency;
