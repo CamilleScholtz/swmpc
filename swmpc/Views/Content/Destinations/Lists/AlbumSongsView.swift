@@ -114,10 +114,7 @@ struct AlbumSongsView: View {
                 .contextMenu {
                     @AppStorage(Setting.simpleMode) var simpleMode = false
                     if !simpleMode {
-                        AsyncButton("Add to Queue", systemImage: SFSymbol.textBadgePlus.rawValue) {
-                            try await ConnectionManager.command().addToQueue(album: album)
-                        }
-
+                        AlbumQueueToggleButton(album: album)
                         Divider()
                     }
 
