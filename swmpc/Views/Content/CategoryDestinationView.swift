@@ -13,6 +13,9 @@ struct CategoryDestinationView: View {
 
     let destination: CategoryDestination
 
+    @State private var isLoadingPlaylist = true
+    @State private var playlistSongs: [Song]?
+
     var body: some View {
         switch destination {
         #if os(iOS)
@@ -21,8 +24,34 @@ struct CategoryDestinationView: View {
             case .settings:
                 SettingsView()
         #endif
-        case .playlist:
-            CategoryView(destination: destination)
+        case let .playlist(playlist):
+            Group {
+                if isLoadingPlaylist {
+                    ZStack {
+                        Rectangle()
+                            .fill(.background)
+                            .ignoresSafeArea()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        ProgressView()
+                    }
+                } else if playlistSongs == nil || playlistSongs!.isEmpty {
+                    EmptyCategoryView(destination: destination)
+                } else {
+                    CategoryView(destination: destination)
+                }
+            }
+            .task(id: playlist) {
+                isLoadingPlaylist = true
+                playlistSongs = try? await ConnectionManager.command().getSongs(for: playlist)
+
+                try? await Task.sleep(for: .milliseconds(200))
+                guard !Task.isCancelled else {
+                    return
+                }
+
+                isLoadingPlaylist = false
+            }
         default:
             if mpd.database.internalMedia.isEmpty {
                 EmptyCategoryView(destination: destination)

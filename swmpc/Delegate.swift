@@ -110,10 +110,10 @@ struct Delegate: App {
 
                 AsyncButton("Reload Library") {
                     @AppStorage(Setting.simpleMode) var simpleMode = false
-                    if simpleMode {                        
+                    if simpleMode {
                         try await ConnectionManager.command().loadPlaylist(appDelegate.mpd.status.playlist)
                     }
-                    
+
                     try await ConnectionManager.command().update()
                     try await appDelegate.mpd.database.set(force: true)
                 }

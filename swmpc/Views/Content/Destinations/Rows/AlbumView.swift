@@ -147,11 +147,11 @@ struct AlbumQueueToggleButton: View {
         guard let songs else {
             return false
         }
-        
-        let urls = Set(mpd.queue.internalMedia.map { $0.url })
+
+        let urls = Set(mpd.queue.internalMedia.map(\.url))
         return songs.contains { urls.contains($0.url) }
     }
-    
+
     var body: some View {
         AsyncButton(actuallyInQueue ? "Remove Album from Queue" : "Add Album to Queue") {
             if actuallyInQueue {
