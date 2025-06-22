@@ -87,21 +87,6 @@ struct CategoryView: View {
 
     let destination: CategoryDestination
 
-    #if os(macOS)
-        // NOTE: Kind of hacky. See https://github.com/feedback-assistant/reports/issues/651
-        private let rowHeight: CGFloat
-
-        init(destination: CategoryDestination) {
-            self.destination = destination
-
-            rowHeight = switch destination {
-            case .albums: 50 + 15
-            case .artists: 50 + 15
-            case .songs, .playlist: 31.5 + 15
-            }
-        }
-    #endif
-
     @State private var offset: CGFloat = 0
 
     @State private var showHeader = false
@@ -109,11 +94,11 @@ struct CategoryView: View {
 
     @State private var hideHeaderTask: Task<Void, Never>?
 
-    #if os(iOS)
-        @State private var showSearchButton = false
-        @State private var isGoingToSearch = false
-        @State private var query = ""
-    #endif
+    @State private var scrollPosition: URL?
+
+    @State private var showSearchButton = false
+    @State private var isGoingToSearch = false
+    @State private var query = ""
 
     private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
@@ -121,121 +106,130 @@ struct CategoryView: View {
         .publisher(for: .startSearchingNotication)
 
     var body: some View {
-        ScrollViewReader { proxy in
-            List {
-                Group {
-                    switch destination {
-                    case .albums:
-                        MediaListView(using: mpd.database, type: .album)
-                    case .artists:
-                        MediaListView(using: mpd.database, type: .artist)
-                    case .songs:
-                        MediaListView(using: mpd.database, type: .song)
-                    case let .playlist(playlist):
-                        MediaListView(for: playlist)
-                    #if os(iOS)
-                        default:
-                            EmptyView()
-                    #endif
-                    }
-                }
-                .listRowSeparator(.hidden)
+        ScrollView {
+            LazyVStack(spacing: 15) {
+                switch destination {
+                case .albums:
+                    MediaListView(using: mpd.database, type: .album)
+                case .artists:
+                    MediaListView(using: mpd.database, type: .artist)
+                case .songs:
+                    MediaListView(using: mpd.database, type: .song)
+                case let .playlist(playlist):
+                    MediaListView(for: playlist)
                 #if os(iOS)
-                    .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-                #elseif os(macOS)
-                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+                    default:
+                        EmptyView()
                 #endif
+                }
             }
-            .id(destination)
-            .listStyle(.plain)
-            // TODO: Replace this safe area stuff with small rows once the rowHeight issue has been fixed.
-            .safeAreaPadding(.bottom, 7.5)
-            .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                geometry.contentOffset.y
-            } action: { previous, value in
-                guard !isSearching else {
-                    return
+            .scrollTargetLayout()
+        }
+        .id(destination)
+        .contentMargins(.all, 15, for: .scrollContent)
+        .scrollEdgeEffectStyle(.soft, for: .all)
+        .safeAreaBar(edge: .top) {
+            Divider()
+        }
+        .scrollPosition(id: $scrollPosition, anchor: .center)
+        //        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+        //            geometry.contentOffset.y
+        //        } action: { previous, value in
+        //            guard !isSearching else {
+        //                return
+        //            }
+        //
+        //            guard value > 50 else {
+        //                offset = 0
+        //                showHeader = true
+        //
+        //                #if os(iOS)
+        //                    showSearchButton = false
+        //                #endif
+        //
+        //                resetHideHeaderTimer()
+        //
+        //                return
+        //            }
+        //
+        //            guard abs(value - offset) > 200 else {
+        //                if showHeader {
+        //                    resetHideHeaderTimer(offset: value)
+        //                }
+        //
+        //                return
+        //            }
+        //
+        //            offset = value
+        //
+        //            if previous < value {
+        //                if showHeader {
+        //                    showHeader = false
+        //                }
+        //            } else {
+        //                if !showHeader {
+        //                    showHeader = true
+        //                }
+        //            }
+        //
+        //            #if os(iOS)
+        //                if !showSearchButton {
+        //                    showSearchButton = true
+        //                }
+        //            #endif
+        //
+        //            resetHideHeaderTimer()
+        //        }
+        .onAppear {
+            guard let media = mpd.status.media else {
+                return
+            }
+
+            scrollPosition = media.id
+        }
+        .onReceive(scrollToCurrentNotification) { notification in
+            guard let media = mpd.status.media else {
+                return
+            }
+
+            let animate = notification.object as? Bool ?? true
+            if animate {
+                withAnimation(.spring) {
+                    scrollPosition = media.id
                 }
-
-                guard value > 50 else {
-                    offset = 0
-                    showHeader = true
-
-                    #if os(iOS)
-                        showSearchButton = false
-                    #endif
-
-                    resetHideHeaderTimer()
-
-                    return
-                }
-
-                guard abs(value - offset) > 200 else {
-                    if showHeader {
-                        resetHideHeaderTimer(offset: value)
-                    }
-
-                    return
-                }
-
-                offset = value
-
-                if previous < value {
-                    if showHeader {
-                        showHeader = false
-                    }
-                } else {
-                    if !showHeader {
-                        showHeader = true
-                    }
-                }
-
-                #if os(iOS)
-                    if !showSearchButton {
-                        showSearchButton = true
-                    }
-                #endif
-
+            } else {
+                scrollPosition = media.id
+            }
+        }
+        .onReceive(startSearchingNotication) { _ in
+            isSearching = true
+        }
+        .onChange(of: showHeader) { _, value in
+            if value {
+                resetHideHeaderTimer()
+            } else {
+                hideHeaderTask?.cancel()
+            }
+        }
+        .onChange(of: isSearching) { _, value in
+            if value {
+                showHeader = true
+                hideHeaderTask?.cancel()
+            } else {
                 resetHideHeaderTimer()
             }
-            .onAppear {
-                guard mpd.status.media != nil else {
-                    return
-                }
+        }
+        .onChange(of: mpd.database.results?.count) { _, value in
+            guard value == nil, let media = mpd.status.media else {
+                return
+            }
 
-                scrollToCurrent(proxy, animate: false)
-            }
-            .onReceive(scrollToCurrentNotification) { notification in
-                scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
-            }
-            .onReceive(startSearchingNotication) { _ in
-                isSearching = true
-            }
-            .onChange(of: showHeader) { _, value in
-                if value {
-                    resetHideHeaderTimer()
-                } else {
-                    hideHeaderTask?.cancel()
-                }
-            }
-            .onChange(of: isSearching) { _, value in
-                if value {
-                    showHeader = true
-                    hideHeaderTask?.cancel()
-                } else {
-                    resetHideHeaderTimer()
-                }
-            }
-            .onChange(of: mpd.database.results?.count) { _, value in
-                guard value == nil else {
-                    return
-                }
+            scrollPosition = media.id
+        }
+        .navigationTitle(destination.label)
+        .searchable(text: $query, isPresented: $isSearching)
 
-                scrollToCurrent(proxy, animate: false)
-            }
-            #if os(iOS)
-            .navigationTitle(destination.label)
+        #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             .toolbarVisibility(showHeader ? .visible : .hidden, for: .navigationBar)
             .toolbar {
@@ -297,18 +291,15 @@ struct CategoryView: View {
                     }
                 }
             }
-            #elseif os(macOS)
-            .safeAreaInset(edge: .top, spacing: 7.5) {
-                Group {
-                    HeaderView(destination: destination, isSearching: $isSearching)
-                        .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
-                }
-                .frame(height: 50 + 7.5 + 1)
-            }
-            .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
-            #endif
+        #endif
+            //        .safeAreaInset(edge: .top, spacing: 7.5) {
+            //            Group {
+            //                HeaderView(destination: destination, isSearching: $isSearching)
+            //                    .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
+            //            }
+            //            .frame(height: 50 + 7.5 + 1)
+            //        }
             .animation(.spring, value: showHeader)
-        }
     }
 
     private func resetHideHeaderTimer(offset: CGFloat) {

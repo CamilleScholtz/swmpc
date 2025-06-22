@@ -185,7 +185,7 @@ struct QueueToggleButton: View {
             $0.url == song.url
         }
     }
-    
+
     var body: some View {
         AsyncButton(actuallyInQueue ? "Remove Song from Queue" : "Add Song to Queue") {
             if actuallyInQueue {

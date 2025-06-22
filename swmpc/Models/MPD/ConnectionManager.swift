@@ -1401,7 +1401,7 @@ extension ConnectionManager where Mode == CommandMode {
             guard let id = song.identifier else {
                 return nil
             }
-    
+
             return "deleteid \(id)"
         }
         guard !commands.isEmpty else {
@@ -1427,12 +1427,12 @@ extension ConnectionManager where Mode == CommandMode {
     func removeFromQueue(album: Album) async throws {
         let filterClause = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""
         let lines = try await run(["playlistfind \(filterClause)"])
-        
+
         let chunks = chunkLines(lines, startingWith: "file")
         let songsToRemove = try chunks.compactMap { chunk in
             try parseMediaResponse(chunk, using: .song) as? Song
         }
-        
+
         try await removeFromQueue(songs: songsToRemove)
     }
 
