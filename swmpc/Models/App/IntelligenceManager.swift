@@ -233,12 +233,12 @@ actor IntelligenceManager {
             group.addTask {
                 try await operation()
             }
-            
+
             group.addTask {
                 try await Task.sleep(for: .seconds(seconds))
                 throw IntelligenceManagerError.timeout
             }
-            
+
             let result = try await group.next()!
             group.cancelAll()
 
