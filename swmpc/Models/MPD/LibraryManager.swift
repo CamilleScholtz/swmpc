@@ -66,16 +66,16 @@ final class LibraryManager {
     {
         defer { lastUpdated = Date() }
 
-        let current = type ?? self.type
-        guard force || current != self.type else {
+        let targetType = type ?? self.type
+        guard force || targetType != self.type else {
             return
         }
 
         defer {
-            self.type = current
+            self.type = targetType
         }
 
-        switch current {
+        switch targetType {
         case .album:
             media = try await idle
                 ? ConnectionManager.idle.getAlbums(using: source)
@@ -101,10 +101,10 @@ final class LibraryManager {
     /// - Throws: An error if the search could not be performed.
     @MainActor
     func search(for query: String, using type: MediaType? = nil) async throws {
-        let current = type ?? self.type
-        try await set(using: current)
+        let targetType = type ?? self.type
+        try await set(using: targetType)
 
-        results = switch current {
+        results = switch targetType {
         case .album:
             (internalMedia as! [Album]).filter {
                 $0.artist.range(of: query, options: .caseInsensitive) != nil ||
@@ -139,37 +139,53 @@ final class LibraryManager {
     /// - Parameters:
     ///     - media: The media to get the corresponding media for.
     ///     - type: The type of media to get.
-    /// - Returns: The corresponding media in the queue.
+    /// - Returns: The corresponding media in the library.
     /// - Throws: An error if the media could not be fetched.
     @MainActor
     func get(for media: any Mediable, using type: MediaType? = nil) async throws
         -> (any Mediable)?
     {
-        let current = type ?? self.type
-        guard current != .song else {
-            return media
+        let targetType = type ?? self.type
+
+        switch (media, targetType) {
+        case (_, .song):
+            return media is Song ? media : nil
+        case let (album as Album, .album):
+            return album
+        case let (artist as Artist, .artist):
+            return artist
+        default:
+            break
         }
 
-        try await set(using: current)
+        try await set(using: targetType)
 
-        switch (media, current) {
+        @inline(__always)
+        func isRelated(_ lhs: URL, _ rhs: URL) -> Bool {
+            let l = lhs.deletingLastPathComponent()
+            let r = rhs.deletingLastPathComponent()
+
+            return l.path.hasPrefix(r.path) ||
+                r.path.hasPrefix(l.path) ||
+                l.deletingLastPathComponent() == r.deletingLastPathComponent()
+        }
+        
+        switch (media, targetType) {
         case let (song as Song, .album):
-            return (internalMedia as? [Album])?.first { album in
-                album.artist == song.artist &&
-                    album.url.deletingLastPathComponent() == song.url.deletingLastPathComponent()
-            }
+            return (internalMedia as? [Album])?
+                .first { isRelated(song.url, $0.url) }
+
         case let (song as Song, .artist):
-            return (internalMedia as? [Artist])?.first { artist in
-                artist.name == song.artist
-            }
+            return (internalMedia as? [Artist])?
+                .first { artist in
+                    artist.albums?
+                        .contains { isRelated(song.url, $0.url) } ?? false
+                }
         case let (album as Album, .artist):
-            return (internalMedia as? [Artist])?.first { artist in
-                artist.name == album.artist
-            }
-        case let (artist as Artist, .album):
-            return artist.albums?.first
+            return (internalMedia as? [Artist])?
+                .first { $0.albums?.contains(where: { $0.url == album.url }) ?? false }
         default:
-            throw LibraryManagerError.invalidType
+            return nil
         }
     }
 }
