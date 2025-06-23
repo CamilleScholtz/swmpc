@@ -119,6 +119,18 @@ struct AppView: View {
                                 Spacer()
                             }
                         }
+                        .simultaneousGesture(
+                            TapGesture()
+                                .onEnded {
+                                    guard !simpleMode, showQueuePanel else {
+                                        return
+                                    }
+
+                                    withAnimation(.spring) {
+                                        showQueuePanel = false
+                                    }
+                                }
+                        )
                     #endif
                 }
                 .onAppear {
