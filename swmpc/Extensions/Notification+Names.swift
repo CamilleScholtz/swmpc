@@ -12,8 +12,10 @@ extension Notification.Name {
         "scroll_to_current")
     static let startSearchingNotication = Notification.Name(
         "start_searching")
-    static let createIntelligencePlaylistNotification = Notification.Name(
-        "create_intelligence_playlist")
+    static let fillIntelligencePlaylistNotification = Notification.Name(
+        "fill_intelligence_playlist")
+    static let fillIntelligenceQueueNotification = Notification.Name(
+        "fill_intelligence_queue")
     static let statusBarSettingChangedNotification = Notification.Name(
         "status_bar_setting_changed")
 }

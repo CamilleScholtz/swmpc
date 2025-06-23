@@ -189,7 +189,7 @@ struct SettingsView: View {
                     }
                 }
 
-                Button("Restart", role: .destructive) {
+                Button("Quit swmpc", role: .destructive) {
                     NSApp.terminate(nil)
                 }
             } message: {

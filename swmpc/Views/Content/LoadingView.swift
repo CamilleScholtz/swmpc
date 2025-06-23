@@ -25,6 +25,10 @@ struct LoadingView: View {
             }
         }
         .onChange(of: navigator.category) {
+            guard navigator.category.type != .playlist else {
+                return
+            }
+
             isLoading = true
         }
         .task(id: navigator.category) {
@@ -44,23 +48,24 @@ struct LoadingView: View {
             if navigator.category == .playlists {
                 if mpd.database.playlists != nil {
                     try? await Task.sleep(for: .milliseconds(200))
-                    withAnimation(.interactiveSpring) {
-                        isLoading = false
+                    guard !Task.isCancelled else {
+                        return
                     }
+
+                    isLoading = false
                 }
+
                 return
             }
         #endif
 
-        if navigator.category.type == .playlist || (navigator.category.type == mpd.database.type && !mpd.database.internalMedia.isEmpty) {
+        if navigator.category.type == mpd.database.type, !mpd.database.internalMedia.isEmpty {
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else {
                 return
             }
 
-            withAnimation(.interactiveSpring) {
-                isLoading = false
-            }
+            isLoading = false
         }
     }
 }
