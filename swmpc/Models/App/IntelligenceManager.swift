@@ -16,6 +16,11 @@ enum IntelligenceManagerError: Error {
     case timeout
 }
 
+enum IntelligenceTarget {
+    case playlist(Binding<Playlist?>)
+    case queue
+}
+
 enum IntelligenceModel: String, Identifiable, CaseIterable {
     var id: String { rawValue }
 
@@ -47,9 +52,9 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
         case .deepSeek:
             "deepseek-chat"
         case .gemini:
-            "gemini-2.0-flash"
+            "gemini-2.5-flash-lite-preview-06-17"
         case .grok:
-            "grok-3-mini-beta"
+            "grok-3-mini-latest"
         case .claude:
             "claude-3-5-haiku-latest"
         }
@@ -152,74 +157,92 @@ actor IntelligenceManager {
         ))
     }
 
-    /// Creates a playlist using the given prompt.
+    /// Fills the specified target using the given prompt.
     ///
     /// - Parameters:
-    ///     - playlist: The playlist to fill.
+    ///     - target: The target to fill (playlist or queue).
     ///     - prompt: The prompt to use.
-    /// - Throws: An error if the playlist could not be filled
+    /// - Throws: An error if the target could not be filled
     @MainActor
-    func fillPlaylist(using playlist: Playlist, prompt: String) async throws {
-        try await withThrowingTaskGroup(of: Void.self) { group in
+    func fill(target: IntelligenceTarget, prompt: String) async throws {
+        try await withThrowingTimeout(seconds: 30) {
             @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel
                 .openAI
 
-            let client = try await connect(using: model)
+            let client = try await self.connect(using: model)
 
-            group.addTask {
+            if case .playlist = target {
                 try await ConnectionManager.command().loadPlaylist()
-                let albums = try await ConnectionManager.command().getAlbums(using: .database)
+            }
+            let albums = try await ConnectionManager.command().getAlbums(using: .database)
 
-                let result = try await client.chats(query: ChatQuery(
-                    messages: [
-                        .init(role: .system, content: """
-                        You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering's mood and craft the perfect playlist. Your job is to create a playlist that fits a short description we'll provide. The user will send you a list of available albums in the format `artist - title`.
+            let result = try await client.chats(query: ChatQuery(
+                messages: [
+                    .init(role: .system, content: """
+                    You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering's mood and craft the perfect playlist. Your job is to create a playlist that fits a short description we'll provide. The user will send you a list of available albums in the format `artist - title`.
 
-                        The description for the playlist your should create is: \(prompt)
-                        """)!,
-                        .init(role: .user, content: albums.map(\.description).joined(
-                            separator: "\n"))!,
-                    ],
-                    model: model.model,
-                    responseFormat: .derivedJsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
-                ))
+                    The description for the playlist your should create is: \(prompt)
+                    """)!,
+                    .init(role: .user, content: albums.map(\.description).joined(
+                        separator: "\n"))!,
+                ],
+                model: model.model,
+                responseFormat: .derivedJsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
+            ))
 
-                guard let response = result.choices.first?.message.content else {
-                    throw IntelligenceManagerError.noResponse
-                }
-
-                struct Playlist: Decodable {
-                    let playlist: [String]
-                }
-                let data = try JSONDecoder().decode(Playlist.self, from: Data(
-                    response.utf8))
-
-                var songs: [Song] = []
-
-                for row in data.playlist {
-                    guard let album = albums.first(where: {
-                        $0.description == row
-                    }) else {
-                        continue
-                    }
-
-                    try await songs.append(contentsOf: ConnectionManager.command()
-                        .getSongs(using: .database, for: album))
-                }
-
-                try await ConnectionManager.command().addToPlaylist(playlist, songs:
-                    songs)
-                try await ConnectionManager.command().loadPlaylist(playlist)
+            guard let response = result.choices.first?.message.content else {
+                throw IntelligenceManagerError.noResponse
             }
 
+            struct PlaylistResponse: Decodable {
+                let playlist: [String]
+            }
+            let data = try JSONDecoder().decode(PlaylistResponse.self, from: Data(
+                response.utf8))
+
+            var songs: [Song] = []
+
+            for row in data.playlist {
+                guard let album = albums.first(where: {
+                    $0.description == row
+                }) else {
+                    continue
+                }
+
+                try await songs.append(contentsOf: ConnectionManager.command()
+                    .getSongs(using: .database, for: album))
+            }
+
+            switch target {
+            case let .playlist(playlist):
+                guard let playlist = playlist.wrappedValue else { return }
+                try await ConnectionManager.command().addToPlaylist(playlist, songs: songs)
+                try await ConnectionManager.command().loadPlaylist(playlist)
+            case .queue:
+                try await ConnectionManager.command().addToQueue(songs: songs)
+            }
+        }
+    }
+
+    /// Executes an async operation with a timeout.
+    private func withThrowingTimeout<T: Sendable>(
+        seconds: TimeInterval,
+        operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask {
-                try await Task.sleep(for: .seconds(30))
+                try await operation()
+            }
+            
+            group.addTask {
+                try await Task.sleep(for: .seconds(seconds))
                 throw IntelligenceManagerError.timeout
             }
-
-            try await group.next()
-
+            
+            let result = try await group.next()!
             group.cancelAll()
+
+            return result
         }
     }
 }

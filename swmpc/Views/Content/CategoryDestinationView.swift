@@ -71,8 +71,8 @@ struct EmptyCategoryView: View {
     @State private var playlistToEdit: Playlist?
     @State private var intelligencePlaylistPrompt = ""
 
-    private let createIntelligencePlaylistNotification = NotificationCenter.default
-        .publisher(for: .createIntelligencePlaylistNotification)
+    private let fillIntelligencePlaylistNotification = NotificationCenter.default
+        .publisher(for: .fillIntelligencePlaylistNotification)
 
     var body: some View {
         VStack {
@@ -98,7 +98,7 @@ struct EmptyCategoryView: View {
             }
         }
         .offset(y: -20)
-        .onReceive(createIntelligencePlaylistNotification) { notification in
+        .onReceive(fillIntelligencePlaylistNotification) { notification in
             guard let playlist = notification.object as? Playlist else {
                 return
             }
@@ -107,7 +107,7 @@ struct EmptyCategoryView: View {
             showIntelligencePlaylistSheet = true
         }
         .sheet(isPresented: $showIntelligencePlaylistSheet) {
-            IntelligencePlaylistView(showIntelligencePlaylistSheet: $showIntelligencePlaylistSheet, playlistToEdit: $playlistToEdit)
+            IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
         }
     }
 }

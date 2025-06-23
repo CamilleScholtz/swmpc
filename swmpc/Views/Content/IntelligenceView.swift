@@ -8,17 +8,19 @@
 import ButtonKit
 import SwiftUI
 
-struct IntelligencePlaylistView: View {
+struct IntelligenceView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
-    @Binding var showIntelligencePlaylistSheet: Bool
-    @Binding var playlistToEdit: Playlist?
+    let target: IntelligenceTarget
+
+    @Binding var showSheet: Bool
 
     private let loadingSentences: [LocalizedStringResource] = [
         "Analyzing music preferences…",
         "Matching tracks to vibe…",
         "Curating playlist…",
+        "Curating queue…",
         "Cross-referencing mood with melodies…",
         "Syncing sounds with taste…",
         "Selecting ideal tracks…",
@@ -61,9 +63,9 @@ struct IntelligencePlaylistView: View {
         "Classical Music",
     ]
 
-    init(showIntelligencePlaylistSheet: Binding<Bool>, playlistToEdit: Binding<Playlist?>) {
-        _showIntelligencePlaylistSheet = showIntelligencePlaylistSheet
-        _playlistToEdit = playlistToEdit
+    init(target: IntelligenceTarget, showSheet: Binding<Bool>) {
+        self.target = target
+        _showSheet = showSheet
 
         _loadingSentence = State(initialValue: loadingSentences.randomElement()!)
         _suggestion = State(initialValue: suggestions.randomElement()!)
@@ -134,20 +136,23 @@ struct IntelligencePlaylistView: View {
 
                 HStack {
                     Button("Cancel", role: .cancel) {
-                        playlistToEdit = nil
-                        showIntelligencePlaylistSheet = false
+                        if case let .playlist(playlist) = target {
+                            playlist.wrappedValue = nil
+                        }
+                        showSheet = false
                     }
                     .keyboardShortcut(.cancelAction)
 
-                    AsyncButton("Create") {
+                    AsyncButton(actionButtonTitle) {
                         isLoading = true
 
-                        try await IntelligenceManager.shared.fillPlaylist(using: playlistToEdit!, prompt: prompt)
-                        // try await mpd.database.set(using: .playlist, playlist: playlistToEdit, force: true)
+                        try? await IntelligenceManager.shared.fill(target: target, prompt: prompt)
+                        if case let .playlist(playlist) = target {
+                            playlist.wrappedValue = nil
+                        }
 
                         isLoading = false
-                        playlistToEdit = nil
-                        showIntelligencePlaylistSheet = false
+                        showSheet = false
                     }
                     .asyncButtonStyle(.pulse)
                     .keyboardShortcut(.defaultAction)
@@ -157,6 +162,15 @@ struct IntelligencePlaylistView: View {
         }
         .frame(width: 300)
         .padding(20)
+    }
+
+    private var actionButtonTitle: String {
+        switch target {
+        case .playlist:
+            "Create"
+        case .queue:
+            "Fill Queue"
+        }
     }
 }
 
@@ -198,8 +212,7 @@ struct IntelligenceButtonView: View {
                 throw ViewError.missingData
             }
 
-            NotificationCenter.default.post(name: .createIntelligencePlaylistNotification, object: playlist)
-
+            NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
         } label: {
             VStack {
                 HStack {

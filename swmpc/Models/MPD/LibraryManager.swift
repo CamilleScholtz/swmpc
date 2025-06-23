@@ -169,12 +169,11 @@ final class LibraryManager {
                 r.path.hasPrefix(l.path) ||
                 l.deletingLastPathComponent() == r.deletingLastPathComponent()
         }
-        
+
         switch (media, targetType) {
         case let (song as Song, .album):
             return (internalMedia as? [Album])?
                 .first { isRelated(song.url, $0.url) }
-
         case let (song as Song, .artist):
             return (internalMedia as? [Artist])?
                 .first { artist in

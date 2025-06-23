@@ -1636,6 +1636,9 @@
         }
       }
     },
+    "Curating queue…" : {
+
+    },
     "Currently used for smart playlist generation." : {
       "localizations" : {
         "de" : {
@@ -2012,6 +2015,9 @@
           }
         }
       }
+    },
+    "Fill Queue" : {
+
     },
     "Filtering out noise…" : {
       "localizations" : {

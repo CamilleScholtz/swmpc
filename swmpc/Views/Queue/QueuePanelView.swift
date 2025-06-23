@@ -12,9 +12,15 @@ struct QueuePanelView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+
     @Binding var showQueuePanel: Bool
 
     @State private var showClearQueueAlert = false
+    @State private var showIntelligenceQueueSheet = false
+
+    private let fillIntelligenceQueueNotification = NotificationCenter.default
+        .publisher(for: .fillIntelligenceQueueNotification)
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,18 +38,30 @@ struct QueuePanelView: View {
                 Spacer()
 
                 HStack(spacing: 4) {
-                    Button(action: {
-                        showClearQueueAlert = true
-                    }) {
-                        Image(systemSymbol: .trash)
-                            .frame(width: 22, height: 22)
-                            .foregroundColor(.primary)
-                            .padding(4)
-                            .contentShape(Circle())
+                    if mpd.queue.internalMedia.isEmpty, isIntelligenceEnabled {
+                        Button(action: {
+                            NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                        }) {
+                            Image(systemSymbol: .sparkles)
+                                .frame(width: 22, height: 22)
+                                .foregroundColor(.primary)
+                                .padding(4)
+                                .contentShape(Circle())
+                        }
+                        .styledButton()
+                    } else if !mpd.queue.internalMedia.isEmpty {
+                        Button(action: {
+                            showClearQueueAlert = true
+                        }) {
+                            Image(systemSymbol: .trash)
+                                .frame(width: 22, height: 22)
+                                .foregroundColor(.primary)
+                                .padding(4)
+                                .contentShape(Circle())
+                        }
+                        .styledButton()
+                        .keyboardShortcut(.delete)
                     }
-                    .styledButton()
-                    .keyboardShortcut(.delete)
-                    .opacity(mpd.queue.internalMedia.isEmpty ? 0 : 1)
 
                     Button(role: .cancel, action: {
                         withAnimation(.spring) {
@@ -80,6 +98,12 @@ struct QueuePanelView: View {
             }
         } message: {
             Text("This will remove all songs from the queue.")
+        }
+        .onReceive(fillIntelligenceQueueNotification) { _ in
+            showIntelligenceQueueSheet = true
+        }
+        .sheet(isPresented: $showIntelligenceQueueSheet) {
+            IntelligenceView(target: .queue, showSheet: $showIntelligenceQueueSheet)
         }
     }
 
