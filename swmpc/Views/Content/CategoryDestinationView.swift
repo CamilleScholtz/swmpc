@@ -154,12 +154,21 @@ struct CategoryView: View {
         .id(destination)
         .contentMargins(.all, 15, for: .scrollContent)
         .scrollPosition(id: $scrollPosition, anchor: .center)
-        .onAppear {
-            guard let media = mpd.status.media else {
+        .task(id: destination) {
+            guard let song = mpd.status.song else {
                 return
             }
 
-            scrollPosition = media.id
+            mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+            scrollToCurrent(proxy, animate: false)
+        }
+        .task(id: mpd.status.song, priority: .medium) {
+            guard let song = mpd.status.song else {
+                return
+            }
+
+            mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+            scrollToCurrent(proxy, animate: false)
         }
         .onReceive(scrollToCurrentNotification) { notification in
             guard let media = mpd.status.media else {
