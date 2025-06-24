@@ -153,10 +153,6 @@ struct CategoryView: View {
         }
         .id(destination)
         .contentMargins(.all, 15, for: .scrollContent)
-        .scrollEdgeEffectStyle(.hard, for: .top)
-        .safeAreaBar(edge: .top) {
-            Divider()
-        }
         .scrollPosition(id: $scrollPosition, anchor: .center)
         .onAppear {
             guard let media = mpd.status.media else {
@@ -190,7 +186,9 @@ struct CategoryView: View {
             scrollPosition = media.id
         }
         .navigationTitle(destination.label)
-        .searchable(text: $query, isPresented: $isSearching)
+//        .searchable(text: $query, isPresented: $isSearching)
+//        .scrollEdgeEffectStyle(.soft, for: .top)
+//        .scrollEdgeEffectDisabled(false)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {

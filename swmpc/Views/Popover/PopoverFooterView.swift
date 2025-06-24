@@ -39,19 +39,7 @@ struct PopoverFooterView: View {
             .offset(y: -4)
         }
         .frame(height: 80)
-        .background(.regularMaterial)
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5),
-        )
-        .padding(1)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color.black.opacity(0.2), lineWidth: 1),
-        )
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.15 : 0.05), radius: 3, x: 0, y: 2)
-        .shadow(radius: 20)
+        .glassEffect()
     }
 
     struct PauseView: View {

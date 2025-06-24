@@ -26,42 +26,12 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ArtworkView(image: artwork, animationDuration: 0.6, aspectRatioMode: .fill)
-                .frame(width: 250)
-                .opacity(0.3)
-
             ArtworkView(image: artwork, aspectRatioMode: .fill)
                 .frame(width: 250)
-                .overlay(
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing,
-                                ),
-                                lineWidth: 0.5,
-                            )
-                            .blendMode(.screen)
-
-                        RoundedRectangle(cornerRadius: 10)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing,
-                                ),
-                                lineWidth: 0.5,
-                            )
-                            .blendMode(.multiply)
-                    },
-                )
                 .cornerRadius(10)
                 .scaleEffect(showInfo ? 0.7 : 1)
                 .offset(y: showInfo ? -7 : 0)
                 .animation(.spring(response: 0.7, dampingFraction: 1, blendDuration: 0.7), value: showInfo)
-                .shadow(color: .black.opacity(0.4), radius: 25)
                 .swipeActions(
                     onSwipeLeft: {
                         guard mpd.status.song != nil else {
@@ -82,7 +52,6 @@ struct PopoverView: View {
                         }
                     },
                 )
-                .background(.ultraThinMaterial)
 
             PopoverFooterView()
                 .frame(width: 250 - 30, height: 80)

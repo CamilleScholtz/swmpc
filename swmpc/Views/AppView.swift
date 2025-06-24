@@ -80,21 +80,6 @@ struct AppView: View {
                         } detail: {
                             DetailView()
                                 .padding(60)
-                                .overlay(alignment: .topTrailing) {
-                                    if !simpleMode {
-                                        Button {
-                                            withAnimation(.spring) {
-                                                showQueuePanel.toggle()
-                                            }
-                                        } label: {
-                                            Image(systemSymbol: .musicNoteList)
-                                        }
-                                        .styledButton()
-                                        .offset(x: -15, y: 20)
-                                        .ignoresSafeArea()
-                                        .keyboardShortcut("q", modifiers: [.command])
-                                    }
-                                }
                         }
                         .overlay(alignment: .trailing) {
                             if !simpleMode, showQueuePanel {
@@ -112,8 +97,17 @@ struct AppView: View {
                             }
                         }
                         .toolbar {
-                            ToolbarItem {
-                                Spacer()
+                            if !simpleMode {
+                                ToolbarItem(placement: .primaryAction) {
+                                    Button {
+                                        withAnimation(.spring) {
+                                            showQueuePanel.toggle()
+                                        }
+                                    } label: {
+                                        Image(systemSymbol: .musicNoteList)
+                                    }
+                                    .keyboardShortcut("q", modifiers: [.command])
+                                }
                             }
                         }
                         .simultaneousGesture(

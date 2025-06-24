@@ -41,7 +41,7 @@ struct AlbumView: View {
                 #if os(macOS)
                     Image(systemSymbol: .playFill)
                         .font(.title2)
-                        .padding(10)
+                        .padding(12)
                         .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
                         .opacity(isHovering ? 1 : 0)
                         .animation(.interactiveSpring, value: isHovering)
@@ -104,7 +104,7 @@ struct AlbumView: View {
                 }
 
                 if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
-                    Menu("Add Album to Playlist") {
+                    Menu("Add Album to Playlist", systemImage: SFSymbol.musicNoteList.rawValue) {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
                                 try await ConnectionManager.command().addToPlaylist(playlist, songs: ConnectionManager.command().getSongs(using: .queue, for: album))
@@ -140,7 +140,10 @@ struct AlbumQueueToggleButton: View {
     }
 
     var body: some View {
-        AsyncButton(actuallyInQueue ? "Remove Album from Queue" : "Add Album to Queue") {
+        AsyncButton(
+            actuallyInQueue ? "Remove Album from Queue" : "Add Album to Queue",
+            systemImage: actuallyInQueue ? SFSymbol.minusRectangle.rawValue : SFSymbol.plusSquareOnSquare.rawValue
+        ) {
             if actuallyInQueue {
                 try await ConnectionManager.command().removeFromQueue(album: album)
             } else {

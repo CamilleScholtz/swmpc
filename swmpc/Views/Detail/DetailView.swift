@@ -6,7 +6,7 @@
 //
 
 import ButtonKit
-import Noise
+//import Noise
 import SFSafeSymbols
 import SwiftUI
 #if os(iOS)
@@ -111,11 +111,11 @@ struct DetailView: View {
                     .animation(.spring.delay(isPopupOpen ? 0.2 : 0), value: isPopupOpen)
                 #endif
 
-                Noise(style: .random)
-                    .monochrome()
-                    // TODO: Doesn't really work on dark mode.
-                    .blendMode(colorScheme == .dark ? .darken : .softLight)
-                    .opacity(0.3)
+//                Noise(style: .random)
+//                    .monochrome()
+//                    // TODO: Doesn't really work on dark mode.
+//                    .blendMode(colorScheme == .dark ? .darken : .softLight)
+//                    .opacity(0.3)
 
                 ArtworkView(image: artwork)
                     .overlay(
