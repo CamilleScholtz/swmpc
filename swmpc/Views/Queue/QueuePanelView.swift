@@ -138,12 +138,12 @@ struct QueuePanelView: View {
                 .safeAreaPadding(.bottom, 7.5)
                 .contentMargins(.vertical, -7.5, for: .scrollIndicators)
                 .environment(\.defaultMinListRowHeight, min(31.5 + 15, 50))
-                .onAppear {
-                    //                if let currentSong = mpd.status.media as? Song,
-                    //                   let songId = currentSong.id {
-                    //                    proxy.scrollTo(songId, anchor: .center)
-                    //                }
-                }
+//                .onAppear {
+//                    if let song = mpd.status.media as? Song,
+//                       let songId = currentSong.id {
+//                        proxy.scrollTo(songId, anchor: .center)
+//                    }
+//                }
             }
         }
     }

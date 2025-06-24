@@ -65,13 +65,6 @@ struct MediaListView: View {
                 NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
             }
         }
-        .task(id: mpd.status.song, priority: .medium) {
-            guard let song = mpd.status.song else {
-                return
-            }
-
-            mpd.status.media = try? await mpd.database.get(for: song, using: type)
-        }
         .task(id: library.source) {
             guard type != .playlist else {
                 return

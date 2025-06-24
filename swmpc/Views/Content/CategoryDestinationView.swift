@@ -229,18 +229,27 @@ struct CategoryView: View {
 
                 resetHideHeaderTimer()
             }
-            .onAppear {
-                guard mpd.status.media != nil else {
-                    return
-                }
-
-                scrollToCurrent(proxy, animate: false)
-            }
             .onReceive(scrollToCurrentNotification) { notification in
                 scrollToCurrent(proxy, animate: notification.object as? Bool ?? true)
             }
             .onReceive(startSearchingNotication) { _ in
                 isSearching = true
+            }
+            .task(id: destination) {
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+                scrollToCurrent(proxy, animate: false)
+            }
+            .task(id: mpd.status.song, priority: .medium) {
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+                scrollToCurrent(proxy, animate: false)
             }
             .onChange(of: showHeader) { _, value in
                 if value {
