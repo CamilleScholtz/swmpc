@@ -21,10 +21,12 @@
 
 Key Features:
 
-- Intuitive music library browsing: quickly search by artist, album, or track
-- Efficient playlist management, enabling you to easily create and organize playlists
-- Seamless playback controls directly accessible from your menu bar
-- Smart playlists and queue management (powered by OpenAI, Claude, Gemini or Grok)
+- *Quick and simple music library browsing:* search by artist, album, or track
+- *Intuitive queue management*: add and remove tracks, reorder tracks, and manage your playback queue with ease
+- *Efficient playlist management*: create, edit, and delete playlists, as well as add tracks to them
+- *Favorite tracks*: mark tracks as favorites for easy access
+- *AI-powered recommendations*: Fill playlists or the queue with tracks based on genre or mood
+- *Status bar integration*: control playback from the status bar
 
 
 ## Screenshots
