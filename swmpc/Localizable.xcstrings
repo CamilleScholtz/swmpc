@@ -4209,6 +4209,7 @@
       }
     },
     "Scroll to Current Song" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4243,6 +4244,7 @@
       }
     },
     "Scroll to the current song when the song changes." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

@@ -10,8 +10,6 @@ import SwiftUI
 struct MediaListView: View {
     @Environment(MPD.self) private var mpd
 
-    @AppStorage(Setting.scrollToCurrent) private var scrollToCurrent = false
-
     @State private var library: LibraryManager
 
     private let type: MediaType
@@ -54,36 +52,31 @@ struct MediaListView: View {
                     .frame(height: 0)
             }
         }
-//        .onChange(of: mpd.status.media as? Song) { previous, _ in
-//            if scrollToCurrent {
-//                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: previous != nil)
-//            } else {
-//                guard previous == nil else {
-//                    return
-//                }
-//
-//                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
-//            }
-//        }
-        .task(id: library.source) {
-            guard type != .playlist else {
-                return
-            }
+        .listRowSeparator(.hidden)
+        #if os(iOS)
+            .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+        #elseif os(macOS)
+            .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+        #endif
+            .task(id: library.source) {
+                guard type != .playlist else {
+                    return
+                }
 
-            try? await library.set(using: type)
-        }
-        .onReceive(startSearchingNotification) { notification in
-            guard let query = notification.object as? String else {
-                return
+                try? await library.set(using: type)
             }
+            .onReceive(startSearchingNotification) { notification in
+                guard let query = notification.object as? String else {
+                    return
+                }
 
-            Task {
-                if query.isEmpty {
-                    library.clearResults()
-                } else {
-                    try? await library.search(for: query, using: type)
+                Task {
+                    if query.isEmpty {
+                        library.clearResults()
+                    } else {
+                        try? await library.search(for: query, using: type)
+                    }
                 }
             }
-        }
     }
 }

@@ -158,28 +158,20 @@ struct CategoryView: View {
 
     var body: some View {
         List {
-            Group {
-                switch destination {
-                case .albums:
-                    MediaListView(using: mpd.database, type: .album)
-                case .artists:
-                    MediaListView(using: mpd.database, type: .artist)
-                case .songs:
-                    MediaListView(using: mpd.database, type: .song)
-                case let .playlist(playlist):
-                    MediaListView(for: playlist)
-                #if os(iOS)
-                    default:
-                        EmptyView()
-                #endif
-                }
-            }
-            .listRowSeparator(.hidden)
+            switch destination {
+            case .albums:
+                MediaListView(using: mpd.database, type: .album)
+            case .artists:
+                MediaListView(using: mpd.database, type: .artist)
+            case .songs:
+                MediaListView(using: mpd.database, type: .song)
+            case let .playlist(playlist):
+                MediaListView(for: playlist)
             #if os(iOS)
-                .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-            #elseif os(macOS)
-                .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+                default:
+                    EmptyView()
             #endif
+            }
         }
         .id(destination)
         .listStyle(.plain)
@@ -239,7 +231,7 @@ struct CategoryView: View {
             resetHideHeaderTimer()
         }
         .onReceive(scrollToCurrentNotification) { notification in
-            scrollToCurrent(animate: notification.object as? Bool ?? true)
+            try? scrollToCurrent(animate: notification.object as? Bool ?? true)
         }
         .onReceive(startSearchingNotication) { _ in
             isSearching = true
@@ -250,15 +242,15 @@ struct CategoryView: View {
             }
 
             mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
-            scrollToCurrent(animate: false)
-        }
-        .task(id: mpd.status.song, priority: .medium) {
-            guard let song = mpd.status.song else {
-                return
-            }
 
-            mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
-            scrollToCurrent(animate: false)
+            for _ in 0 ..< 5 {
+                do {
+                    try scrollToCurrent(animate: false)
+                    break
+                } catch {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+            }
         }
         .onChange(of: showHeader) { _, value in
             if value {
@@ -280,7 +272,7 @@ struct CategoryView: View {
                 return
             }
 
-            scrollToCurrent(animate: false)
+            try? scrollToCurrent(animate: false)
         }
         #if os(iOS)
         .navigationTitle(destination.label)
@@ -378,17 +370,17 @@ struct CategoryView: View {
         resetHideHeaderTimer(offset: offset)
     }
 
-    private func scrollToCurrent(animate: Bool = true) {
+    private func scrollToCurrent(animate: Bool = true) throws {
         guard let scrollView,
               let media = mpd.status.media,
               let index = mpd.database.media.firstIndex(where: { $0.url == media.url })
         else {
-            return
+            throw ViewError.missingData
         }
 
         #if os(macOS)
             guard let tableView = scrollView.documentView as? NSTableView else {
-                return
+                throw ViewError.missingData
             }
 
             tableView.layoutSubtreeIfNeeded()
