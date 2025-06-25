@@ -929,7 +929,12 @@ extension ConnectionManager {
     ///           malformed.
     func getSongs(using source: Source) async throws -> [Song] {
         guard !isDemoMode else {
-            return await MockData.shared.getSongs()
+            switch source {
+            case .database, .queue:
+                return await MockData.shared.getSongs()
+            case let .playlist(playlist):
+                return await MockData.shared.getSongs(for: playlist)
+            }
         }
 
         let lines = switch source {
@@ -1009,30 +1014,6 @@ extension ConnectionManager {
         }
     }
 
-    /// Retrieves songs from a specified playlist.
-    ///
-    /// - Note: Since the response from `listplaylistinfo` does not include song
-    ///         IDs, ncremental IDs and positions are assigned manually during
-    ///         parsing.
-    ///
-    /// - Parameter playlist: The `Playlist` object for which the songs should
-    ///                       be retrieved.
-    /// - Returns: An array of `Song` objects representing the songs in the
-    ///            specified playlist.
-    /// - Throws: An error if the command execution fails or if the response is
-    ///           malformed.
-    func getSongs(for playlist: Playlist) async throws -> [Song] {
-        guard !isDemoMode else {
-            return await MockData.shared.getSongs(for: playlist)
-        }
-
-        let lines = try await run(["listplaylistinfo \(playlist.name)"])
-        let chunks = chunkLines(lines, startingWith: "file")
-
-        return try chunks.map { chunk in
-            try parseMediaResponse(chunk, using: .song) as! Song
-        }
-    }
 
     /// Retrieves all albums from the database or queue.
     ///
@@ -1304,7 +1285,7 @@ extension ConnectionManager where Mode == CommandMode {
     ///   - songs: An array of `Song` objects to add to the playlist.
     /// - Throws: An error if the underlying command execution fails.
     func addToPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        let playlistSongs = try await getSongs(for: playlist)
+        let playlistSongs = try await getSongs(using: .playlist(playlist))
         let songsToAdd = songs.filter { song in
             !playlistSongs.contains { $0.url == song.url }
         }
@@ -1324,7 +1305,7 @@ extension ConnectionManager where Mode == CommandMode {
     ///   - songs: An array of `Song` objects to remove from the playlist.
     /// - Throws: An error if the underlying command execution fails.
     func removeFromPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        let playlistSongs = try await getSongs(for: playlist)
+        let playlistSongs = try await getSongs(using: .playlist(playlist))
         let songsToRemove = playlistSongs.filter { song in
             songs.contains { $0.url == song.url }
         }
