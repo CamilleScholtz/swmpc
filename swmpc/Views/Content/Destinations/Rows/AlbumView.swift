@@ -41,7 +41,7 @@ struct AlbumView: View {
                 #if os(macOS)
                     Image(systemSymbol: .playFill)
                         .font(.title2)
-                        .padding(12)
+                        .padding(10)
                         .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
                         .opacity(isHovering ? 1 : 0)
                         .animation(.interactiveSpring, value: isHovering)

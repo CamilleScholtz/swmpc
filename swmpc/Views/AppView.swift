@@ -92,7 +92,7 @@ struct AppView: View {
                                     withAnimation(.spring) {
                                         showQueuePanel = false
                                     }
-                                }
+                                },
                         )
                         .overlay(alignment: .trailing) {
                             if !simpleMode, showQueuePanel {
@@ -109,20 +109,21 @@ struct AppView: View {
                                     .transition(.move(edge: .trailing))
                             }
                         }
-                        .toolbar {
-                            if !simpleMode {
-                                ToolbarItem(placement: .primaryAction) {
-                                    Button {
-                                        withAnimation(.spring) {
-                                            showQueuePanel.toggle()
-                                        }
-                                    } label: {
-                                        Image(systemSymbol: .musicNoteList)
-                                    }
-                                    .keyboardShortcut("q", modifiers: [.command])
-                                }
-                            }
-                        }
+//                        .toolbar {
+//                            if !simpleMode {
+//                                ToolbarItem(placement: .primaryAction) {
+//                                    Button {
+//                                        withAnimation(.spring) {
+//                                            showQueuePanel.toggle()
+//                                        }
+//                                    } label: {
+//                                        Image(systemSymbol: .musicNoteList)
+//                                    }
+//                                    .keyboardShortcut("q", modifiers: [.command])
+//                                }
+//                            }
+//                        }
+//                        .toolbarBackgroundVisibility(.hidden)
                     #endif
                 }
                 .onAppear {

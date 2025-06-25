@@ -138,12 +138,7 @@ struct CategoryView: View {
         @State private var scrollView: NSScrollView?
     #endif
 
-    @State private var offset: CGFloat = 0
-
-    @State private var showHeader = false
     @State private var isSearching = false
-
-    @State private var hideHeaderTask: Task<Void, Never>?
 
     #if os(iOS)
         @State private var showSearchButton = false
@@ -175,61 +170,17 @@ struct CategoryView: View {
         }
         .id(destination)
         .listStyle(.plain)
-        .introspect(.list, on: .macOS(.v15)) { tableView in
+        .introspect(.list, on: .macOS(.v26)) { tableView in
             DispatchQueue.main.async {
                 scrollView = tableView.enclosingScrollView
             }
         }
+        .scrollEdgeEffectStyle(.soft, for: .top)
+        .safeAreaBar(edge: .top) {
+            Text("d")
+        }
         .safeAreaPadding(.bottom, 7.5)
         .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-        .onScrollGeometryChange(for: CGFloat.self) { geometry in
-            geometry.contentOffset.y
-        } action: { previous, value in
-            guard !isSearching else {
-                return
-            }
-
-            guard value > 50 else {
-                offset = 0
-                showHeader = true
-
-                #if os(iOS)
-                    showSearchButton = false
-                #endif
-
-                resetHideHeaderTimer()
-
-                return
-            }
-
-            guard abs(value - offset) > 200 else {
-                if showHeader {
-                    resetHideHeaderTimer(offset: value)
-                }
-
-                return
-            }
-
-            offset = value
-
-            if previous < value {
-                if showHeader {
-                    showHeader = false
-                }
-            } else {
-                if !showHeader {
-                    showHeader = true
-                }
-            }
-
-            #if os(iOS)
-                if !showSearchButton {
-                    showSearchButton = true
-                }
-            #endif
-
-            resetHideHeaderTimer()
-        }
         .onReceive(scrollToCurrentNotification) { notification in
             try? scrollToCurrent(animate: notification.object as? Bool ?? true)
         }
@@ -258,21 +209,6 @@ struct CategoryView: View {
             }
 
             mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
-        }
-        .onChange(of: showHeader) { _, value in
-            if value {
-                resetHideHeaderTimer()
-            } else {
-                hideHeaderTask?.cancel()
-            }
-        }
-        .onChange(of: isSearching) { _, value in
-            if value {
-                showHeader = true
-                hideHeaderTask?.cancel()
-            } else {
-                resetHideHeaderTimer()
-            }
         }
         .onChange(of: mpd.database.results?.count) { _, value in
             guard value == nil else {
@@ -345,36 +281,8 @@ struct CategoryView: View {
             }
         }
         #elseif os(macOS)
-        .safeAreaInset(edge: .top, spacing: 7.5) {
-            Group {
-                HeaderView(destination: destination, isSearching: $isSearching)
-                    .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
-            }
-            .frame(height: 50 + 7.5 + 1)
-        }
         .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
         #endif
-        .animation(.spring, value: showHeader)
-    }
-
-    private func resetHideHeaderTimer(offset: CGFloat) {
-        hideHeaderTask?.cancel()
-        guard showHeader, !isSearching, offset > 0 else {
-            return
-        }
-
-        hideHeaderTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, showHeader, !isSearching, offset > 0 else {
-                return
-            }
-
-            showHeader = false
-        }
-    }
-
-    private func resetHideHeaderTimer() {
-        resetHideHeaderTimer(offset: offset)
     }
 
     private func scrollToCurrent(animate: Bool = true) throws {
@@ -418,7 +326,7 @@ struct CategoryView: View {
 
             scrollView.setContentOffset(
                 CGPoint(x: 0, y: max(0, centeredOffset)),
-                animated: animate
+                animated: animate,
             )
         #endif
     }
