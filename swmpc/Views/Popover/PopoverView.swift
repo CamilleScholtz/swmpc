@@ -11,6 +11,9 @@ import SwiftUI
 struct PopoverView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.openSettings) private var openSettings
+
+    @AppStorage(Setting.runAsAgent) var runAsAgent = false
 
     @State private var artwork: PlatformImage?
     @State private var height = Double(250)
@@ -100,6 +103,22 @@ struct PopoverView: View {
             .scaleEffect(x: 1.5)
         )
         .frame(width: 250, height: height)
+        .overlay(alignment: .topLeading) {
+            if runAsAgent {
+                Button {
+                    openSettings()
+                } label: {
+                    Image(systemSymbol: .gearshapeFill)
+                        .foregroundColor(Color(.tertiaryLabelColor))
+                        .font(.system(size: 14))
+                        .padding(8)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .opacity(showInfo ? 1 : 0)
+                .animation(.spring, value: showInfo)
+            }
+        }
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
                 try? await mpd.status.startTrackingElapsed()

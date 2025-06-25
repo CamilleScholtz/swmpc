@@ -2291,7 +2291,11 @@
         }
       }
     },
+    "If this is disabled, only the icon will be shown." : {
+
+    },
     "If this is disabled, only the swmpc icon will be shown." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4106,6 +4110,9 @@
         }
       }
     },
+    "Run as Agent" : {
+
+    },
     "Russian Music" : {
       "localizations" : {
         "de" : {
@@ -5169,6 +5176,7 @@
       }
     },
     "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5201,6 +5209,12 @@
           }
         }
       }
+    },
+    "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used. Requires restart to take effect." : {
+
+    },
+    "When enabled, the app runs without a dock icon (menu bar only). Requires restart to take effect." : {
+
     },
     "When enabled, uses mock data instead of connecting to MPD." : {
       "localizations" : {
