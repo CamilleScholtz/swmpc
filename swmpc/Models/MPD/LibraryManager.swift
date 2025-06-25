@@ -160,29 +160,56 @@ final class LibraryManager {
 
         try await set(using: targetType)
 
-        @inline(__always)
-        func isRelated(_ lhs: URL, _ rhs: URL) -> Bool {
-            let l = lhs.deletingLastPathComponent()
-            let r = rhs.deletingLastPathComponent()
-
-            return l.path.hasPrefix(r.path) ||
-                r.path.hasPrefix(l.path) ||
-                l.deletingLastPathComponent() == r.deletingLastPathComponent()
-        }
-
         switch (media, targetType) {
         case let (song as Song, .album):
+            let url = song.url.deletingLastPathComponent()
+
+            if let album = (internalMedia as? [Album])?
+                .first(where: { album in
+                    album.url.deletingLastPathComponent().path == url.path
+                })
+            {
+                return album
+            }
+
+            let songComponents = url.deletingLastPathComponent().pathComponents
+
             return (internalMedia as? [Album])?
-                .first { isRelated(song.url, $0.url) }
+                .first { album in
+                    let albumComponents = album.url.pathComponents
+                    let min = min(songComponents.count, albumComponents.count)
+
+                    return albumComponents.prefix(min) ==
+                        songComponents.prefix(min)
+                }
         case let (song as Song, .artist):
+            let url = song.url.deletingLastPathComponent()
+
+            if let artist = (internalMedia as? [Artist])?
+                .first(where: { artist in
+                    artist.albums?.contains { album in
+                        album.url.deletingLastPathComponent().path == url.path
+                    } ?? false
+                })
+            {
+                return artist
+            }
+
+            let songComponents = url.deletingLastPathComponent().pathComponents
+
             return (internalMedia as? [Artist])?
                 .first { artist in
-                    artist.albums?
-                        .contains { isRelated(song.url, $0.url) } ?? false
+                    let artistComponents = artist.url.pathComponents
+                    let min = min(songComponents.count, artistComponents.count)
+
+                    return artistComponents.prefix(min) ==
+                        songComponents.prefix(min)
                 }
         case let (album as Album, .artist):
             return (internalMedia as? [Artist])?
-                .first { $0.albums?.contains(where: { $0.url == album.url }) ?? false }
+                .first { $0.albums?.contains(where: {
+                    $0.url == album.url
+                }) ?? false }
         default:
             return nil
         }

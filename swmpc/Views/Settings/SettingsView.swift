@@ -126,7 +126,6 @@ struct SettingsView: View {
     struct BehaviorView: View {
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-        @AppStorage(Setting.scrollToCurrent) var scrollToCurrent = false
         @AppStorage(Setting.simpleMode) var simpleMode = false
 
         @State private var restartAlertShown = false
@@ -148,14 +147,6 @@ struct SettingsView: View {
 
                     isRestarting = true
                     restartAlertShown = true
-                }
-
-                Divider()
-                    .frame(height: 32, alignment: .center)
-
-                Toggle(isOn: $scrollToCurrent) {
-                    Text("Scroll to Current Song")
-                    Text("Scroll to the current song when the song changes.")
                 }
 
                 #if os(macOS)

@@ -81,6 +81,19 @@ struct AppView: View {
                             DetailView()
                                 .padding(60)
                         }
+                        .background(.background)
+                        .simultaneousGesture(
+                            TapGesture()
+                                .onEnded {
+                                    guard !simpleMode, showQueuePanel else {
+                                        return
+                                    }
+
+                                    withAnimation(.spring) {
+                                        showQueuePanel = false
+                                    }
+                                }
+                        )
                         .overlay(alignment: .trailing) {
                             if !simpleMode, showQueuePanel {
                                 QueuePanelView(showQueuePanel: $showQueuePanel)
@@ -110,18 +123,6 @@ struct AppView: View {
                                 }
                             }
                         }
-                        .simultaneousGesture(
-                            TapGesture()
-                                .onEnded {
-                                    guard !simpleMode, showQueuePanel else {
-                                        return
-                                    }
-
-                                    withAnimation(.spring) {
-                                        showQueuePanel = false
-                                    }
-                                }
-                        )
                     #endif
                 }
                 .onAppear {

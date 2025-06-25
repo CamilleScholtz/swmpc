@@ -128,23 +128,15 @@ struct QueuePanelView: View {
         }
 
         var body: some View {
-            ScrollViewReader { _ in
-                List(songs) { song in
-                    SongView(for: song, isQueued: true)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
-                }
-                .listStyle(.plain)
-                .safeAreaPadding(.bottom, 7.5)
-                .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-                .environment(\.defaultMinListRowHeight, min(31.5 + 15, 50))
-//                .onAppear {
-//                    if let song = mpd.status.media as? Song,
-//                       let songId = currentSong.id {
-//                        proxy.scrollTo(songId, anchor: .center)
-//                    }
-//                }
+            List(songs) { song in
+                SongView(for: song, isQueued: true)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
             }
+            .listStyle(.plain)
+            .safeAreaPadding(.bottom, 7.5)
+            .contentMargins(.vertical, -7.5, for: .scrollIndicators)
+            .environment(\.defaultMinListRowHeight, min(31.5 + 15, 50))
         }
     }
 }
