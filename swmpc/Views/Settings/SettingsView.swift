@@ -96,7 +96,7 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.inline)
                 .disabled(isDemoMode)
-                Text("Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself. Using embedded is not recommended as it is generally much slower.")
+                Text("Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the song metadata. Using embedded is not recommended as it is generally much slower.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -136,7 +136,7 @@ struct SettingsView: View {
 
                 Toggle(isOn: $simpleMode) {
                     Text("Simple Mode")
-                    Text("When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used. Requires restart to take effect.")
+                    Text("When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, standard MPD queue management is used. Requires a restart to take effect.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -174,7 +174,7 @@ struct SettingsView: View {
 
                     Toggle(isOn: $runAsAgent) {
                         Text("Run as Agent")
-                        Text("When enabled, the app runs without a dock icon (menu bar only). Requires restart to take effect.")
+                        Text("When enabled, the app runs without a dock icon (menu bar only). Requires a restart to take effect.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -219,7 +219,7 @@ struct SettingsView: View {
             Form {
                 Toggle(isOn: $isIntelligenceEnabled) {
                     Text("Enable AI Features")
-                    Text("Currently used for smart playlist generation.")
+                    Text("Currently used for smart playlist and queue generation.")
                 }
 
                 Divider()

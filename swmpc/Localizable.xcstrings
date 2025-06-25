@@ -1639,7 +1639,11 @@
     "Curating queue…" : {
 
     },
+    "Currently used for smart playlist and queue generation." : {
+
+    },
     "Currently used for smart playlist generation." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2432,6 +2436,7 @@
       }
     },
     "Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself. Using embedded is not recommended as it is generally much slower." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2464,6 +2469,9 @@
           }
         }
       }
+    },
+    "Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the song metadata. Using embedded is not recommended as it is generally much slower." : {
+
     },
     "Load Playlist" : {
       "localizations" : {
@@ -5175,6 +5183,9 @@
         }
       }
     },
+    "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, standard MPD queue management is used. Requires a restart to take effect." : {
+
+    },
     "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5210,10 +5221,7 @@
         }
       }
     },
-    "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used. Requires restart to take effect." : {
-
-    },
-    "When enabled, the app runs without a dock icon (menu bar only). Requires restart to take effect." : {
+    "When enabled, the app runs without a dock icon (menu bar only). Requires a restart to take effect." : {
 
     },
     "When enabled, uses mock data instead of connecting to MPD." : {

@@ -86,7 +86,7 @@ struct AppView: View {
                                     if !simpleMode {
                                         Button {
                                             withAnimation(.spring) {
-                                                showQueuePanel = true
+                                                showQueuePanel.toggle()
                                             }
                                         } label: {
                                             Image(systemSymbol: .musicNoteList)
@@ -94,7 +94,7 @@ struct AppView: View {
                                         .styledButton()
                                         .offset(x: -15, y: 20)
                                         .ignoresSafeArea()
-                                        .keyboardShortcut("q", modifiers: [.command])
+                                        .keyboardShortcut("`", modifiers: [.command])
                                     }
                                 }
                         }
