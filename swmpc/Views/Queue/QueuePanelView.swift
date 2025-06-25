@@ -7,6 +7,7 @@
 
 import ButtonKit
 import SwiftUI
+import SwiftUIIntrospect
 
 struct QueuePanelView: View {
     @Environment(MPD.self) private var mpd
@@ -127,16 +128,74 @@ struct QueuePanelView: View {
             mpd.queue.internalMedia as? [Song] ?? []
         }
 
+        #if os(iOS)
+            @State private var scrollView: UIScrollView?
+        #elseif os(macOS)
+            @State private var scrollView: NSScrollView?
+        #endif
+
         var body: some View {
-            List(songs) { song in
-                SongView(for: song, isQueued: true)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+            List {
+                MediaListView(using: mpd.queue, type: .song)
             }
             .listStyle(.plain)
+            .introspect(.list, on: .macOS(.v15)) { tableView in
+                DispatchQueue.main.async {
+                    scrollView = tableView.enclosingScrollView
+                }
+            }
             .safeAreaPadding(.bottom, 7.5)
             .contentMargins(.vertical, -7.5, for: .scrollIndicators)
+            .onChange(of: scrollView) {
+                try? scrollToCurrent(animate: false)
+            }
             .environment(\.defaultMinListRowHeight, min(31.5 + 15, 50))
+        }
+
+        private func scrollToCurrent(animate: Bool = true) throws {
+            guard let scrollView,
+                  let song = mpd.status.song,
+                  let index = mpd.queue.media.firstIndex(where: { $0.url == song.url })
+            else {
+                throw ViewError.missingData
+            }
+
+            #if os(macOS)
+                guard let tableView = scrollView.documentView as? NSTableView else {
+                    throw ViewError.missingData
+                }
+
+                tableView.layoutSubtreeIfNeeded()
+                scrollView.layoutSubtreeIfNeeded()
+
+                DispatchQueue.main.async {
+                    let rect = tableView.frameOfCell(atColumn: 0, row: index)
+                    let y = rect.midY - (scrollView.frame.height / 2)
+                    let center = NSPoint(x: 0, y: max(0, y))
+
+                    if animate {
+                        scrollView.contentView.animator().setBoundsOrigin(center)
+                    } else {
+                        scrollView.contentView.setBoundsOrigin(center)
+                    }
+                }
+            #elseif os(iOS)
+                let rowSpacing: CGFloat = 15
+                let baseRowHeight: CGFloat = switch destination {
+                case .albums, .artists: 50
+                case .songs, .playlist, _: 31.5
+                }
+                let rowHeight = baseRowHeight + rowSpacing
+
+                let rowMidY = (CGFloat(currentIndex) * rowHeight) + (rowHeight / 2)
+                let visibleHeight = scrollView.frame.height
+                let centeredOffset = rowMidY - (visibleHeight / 2)
+
+                scrollView.setContentOffset(
+                    CGPoint(x: 0, y: max(0, centeredOffset)),
+                    animated: animate
+                )
+            #endif
         }
     }
 }

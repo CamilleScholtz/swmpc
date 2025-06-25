@@ -86,7 +86,7 @@ struct AppView: View {
                                     if !simpleMode {
                                         Button {
                                             withAnimation(.spring) {
-                                                showQueuePanel.toggle()
+                                                showQueuePanel = true
                                             }
                                         } label: {
                                             Image(systemSymbol: .musicNoteList)
