@@ -188,6 +188,8 @@ struct CategoryView: View {
             isSearching = true
         }
         .task(id: destination) {
+            // TODO: Maybe also use `.onChange(of: scrollView)` here like in
+            // QueuePanelView?
             guard let song = mpd.status.song else {
                 return
             }

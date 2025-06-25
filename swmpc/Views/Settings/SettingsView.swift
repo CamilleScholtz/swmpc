@@ -96,17 +96,10 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.inline)
                 .disabled(isDemoMode)
-                Text("Library will fetch artwork by searching the directory the file resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the file itself. Using embedded is not recommended as it is generally much slower.")
+                Text("Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the song metadata. Using embedded is not recommended as it is generally much slower.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-
-                #if os(macOS)
-                    Divider()
-                        .frame(height: 32, alignment: .center)
-
-                    LaunchAtLogin.Toggle()
-                #endif
 
                 Divider()
                     .frame(height: 32, alignment: .center)
@@ -127,20 +120,28 @@ struct SettingsView: View {
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
         @AppStorage(Setting.simpleMode) var simpleMode = false
+        @AppStorage(Setting.runAsAgent) var runAsAgent = false
 
         @State private var restartAlertShown = false
         @State private var isRestarting = false
 
         var body: some View {
             Form {
+                #if os(macOS)
+                    LaunchAtLogin.Toggle()
+
+                    Divider()
+                        .frame(height: 32, alignment: .center)
+                #endif
+
                 Toggle(isOn: $simpleMode) {
                     Text("Simple Mode")
-                    Text("When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, the more traditional MPD queue management is used.")
+                    Text("When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, standard MPD queue management is used. Requires a restart to take effect.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .onChange(of: simpleMode) { _, _ in
+                .onChange(of: simpleMode) {
                     guard !isRestarting else {
                         return
                     }
@@ -154,18 +155,37 @@ struct SettingsView: View {
                         .frame(height: 32, alignment: .center)
 
                     Toggle("Show in Status Bar", isOn: $showStatusBar)
-                        .onChange(of: showStatusBar) { _, _ in
+                        .onChange(of: showStatusBar) {
                             NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
                         }
                     Toggle(isOn: $showStatusbarSong) {
                         Text("Show Song in Status Bar")
-                        Text("If this is disabled, only the swmpc icon will be shown.")
+                        Text("If this is disabled, only the icon will be shown.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     .disabled(!showStatusBar)
-                    .onChange(of: showStatusbarSong) { _, _ in
+                    .onChange(of: showStatusbarSong) {
                         NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
+                    }
+
+                    Divider()
+                        .frame(height: 32, alignment: .center)
+
+                    Toggle(isOn: $runAsAgent) {
+                        Text("Run as Agent")
+                        Text("When enabled, the app runs without a dock icon (menu bar only). Requires a restart to take effect.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .onChange(of: runAsAgent) {
+                        guard !isRestarting else {
+                            return
+                        }
+
+                        isRestarting = true
+                        restartAlertShown = true
                     }
                 #endif
             }
@@ -199,7 +219,7 @@ struct SettingsView: View {
             Form {
                 Toggle(isOn: $isIntelligenceEnabled) {
                     Text("Enable AI Features")
-                    Text("Currently used for smart playlist generation.")
+                    Text("Currently used for smart playlist and queue generation.")
                 }
 
                 Divider()
