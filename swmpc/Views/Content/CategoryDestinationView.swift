@@ -252,6 +252,13 @@ struct CategoryView: View {
                 }
             }
         }
+        .task(id: mpd.status.song) {
+            guard let song = mpd.status.song else {
+                return
+            }
+
+            mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+        }
         .onChange(of: showHeader) { _, value in
             if value {
                 resetHideHeaderTimer()
