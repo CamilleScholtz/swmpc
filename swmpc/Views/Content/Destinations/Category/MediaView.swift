@@ -1,5 +1,5 @@
 //
-//  MediaListView.swift
+//  MediaView.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 21/06/2025.
@@ -7,32 +7,56 @@
 
 import SwiftUI
 
-struct MediaListView: View {
+struct MediaView: View {
     @Environment(MPD.self) private var mpd
 
     @State private var library: LibraryManager
 
     private let type: MediaType
+    private let isMoveable: Bool
 
     private let startSearchingNotification = NotificationCenter.default
         .publisher(for: .startSearchingNotication)
 
-    init(using library: LibraryManager, type: MediaType) {
+    init(using library: LibraryManager, type: MediaType, isMoveable: Bool = false) {
         _library = State(initialValue: library)
+
         self.type = type
+        self.isMoveable = isMoveable
     }
 
-    init(for playlist: Playlist) {
+    init(for playlist: Playlist, isMoveable: Bool = true) {
         _library = State(initialValue: LibraryManager(using: .playlist(playlist)))
+
         type = .song
+        self.isMoveable = isMoveable
     }
 
     var body: some View {
         Group {
             switch type {
             case .song:
-                ForEach(library.media.compactMap { $0 as? Song }) { song in
-                    SongView(for: song)
+                if isMoveable {
+                    ForEach(library.media.compactMap { $0 as? Song }) { song in
+                        SongView(for: song, isMoveable: true)
+                    }
+                    .onMove { from, to in
+                        Task {
+                            guard let index = from.first,
+                                  let song = library.media[index] as? Song
+                            else {
+                                return
+                            }
+
+                            let to = index < to ? to - 1 : to
+
+                            try? await ConnectionManager.command().moveInQueue(song, to: to)
+                        }
+                    }
+                } else {
+                    ForEach(library.media.compactMap { $0 as? Song }) { song in
+                        SongView(for: song)
+                    }
                 }
             case .album:
                 ForEach(library.media.compactMap { $0 as? Album }) { album in

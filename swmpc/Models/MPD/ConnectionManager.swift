@@ -1462,6 +1462,21 @@ extension ConnectionManager where Mode == CommandMode {
         try await removeFromQueue(songs: songsToRemove)
     }
 
+    /// Moves a song in the queue by its ID to a specific position.
+    ///
+    /// - Parameters:
+    ///   - id: The ID of the song to move.
+    ///   - to: The destination position for the song.
+    /// - Throws: An error if the underlying command execution fails.
+    func moveInQueue(_ media: any Mediable, to: Int) async throws {
+        guard let id = media.identifier else {
+            throw ConnectionManagerError.unsupportedOperation(
+                "Cannot move media without an identifier")
+        }
+
+        _ = try await run(["moveid \(id) \(to)"])
+    }
+
     /// Plays a `Mediable` object.
     ///
     /// - Parameter media: The `Mediable` object to play.
@@ -1469,7 +1484,6 @@ extension ConnectionManager where Mode == CommandMode {
     func play(_ media: any Mediable) async throws {
         if let id = media.identifier {
             _ = try await run(["playid \(id)"])
-            print("id")
             return
         }
 

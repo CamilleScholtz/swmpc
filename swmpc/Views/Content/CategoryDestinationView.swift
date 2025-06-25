@@ -160,13 +160,13 @@ struct CategoryView: View {
         List {
             switch destination {
             case .albums:
-                MediaListView(using: mpd.database, type: .album)
+                MediaView(using: mpd.database, type: .album)
             case .artists:
-                MediaListView(using: mpd.database, type: .artist)
+                MediaView(using: mpd.database, type: .artist)
             case .songs:
-                MediaListView(using: mpd.database, type: .song)
+                MediaView(using: mpd.database, type: .song)
             case let .playlist(playlist):
-                MediaListView(for: playlist)
+                MediaView(for: playlist)
             #if os(iOS)
                 default:
                     EmptyView()
