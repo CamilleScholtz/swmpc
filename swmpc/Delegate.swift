@@ -49,7 +49,7 @@ struct Delegate: App {
             #endif
         }
         #if os(macOS)
-        .windowStyle(.hiddenTitleBar)
+        // .windowStyle(.hiddenTitleBar)
         .commands {
             CommandMenu("Controls") {
                 AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {

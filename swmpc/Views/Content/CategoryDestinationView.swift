@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftUIIntrospect
 
 struct CategoryDestinationView: View {
     @Environment(MPD.self) private var mpd
@@ -120,8 +121,6 @@ struct CategoryView: View {
 
     @State private var isSearching = false
 
-    @State private var scrollPosition: URL?
-
     @State private var showSearchButton = false
     @State private var isGoingToSearch = false
     @State private var query = ""
@@ -132,8 +131,8 @@ struct CategoryView: View {
         .publisher(for: .startSearchingNotication)
 
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 15) {
+        List {
+            Group {
                 switch destination {
                 case .albums:
                     MediaListView(using: mpd.database, type: .album)
@@ -149,18 +148,21 @@ struct CategoryView: View {
                 #endif
                 }
             }
-            .scrollTargetLayout()
+            .listRowSeparator(.hidden)
+            .listRowInsets(.all, 7.5)
         }
         .id(destination)
-        .contentMargins(.all, 15, for: .scrollContent)
-        .scrollPosition(id: $scrollPosition, anchor: .center)
+        .listStyle(.plain)
         .task(id: destination) {
             guard let song = mpd.status.song else {
                 return
             }
 
             mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
-            scrollToCurrent(proxy, animate: false)
+            guard let media = mpd.status.media else {
+                return
+            }
+
         }
         .task(id: mpd.status.song, priority: .medium) {
             guard let song = mpd.status.song else {
@@ -168,7 +170,10 @@ struct CategoryView: View {
             }
 
             mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
-            scrollToCurrent(proxy, animate: false)
+            guard let media = mpd.status.media else {
+                return
+            }
+
         }
         .onReceive(scrollToCurrentNotification) { notification in
             guard let media = mpd.status.media else {
@@ -178,10 +183,10 @@ struct CategoryView: View {
             let animate = notification.object as? Bool ?? true
             if animate {
                 withAnimation(.spring) {
-                    scrollPosition = media.id
+                    //scrollPosition = media.id
                 }
             } else {
-                scrollPosition = media.id
+                //scrollPosition = media.id
             }
         }
         .onReceive(startSearchingNotication) { _ in
@@ -192,12 +197,11 @@ struct CategoryView: View {
                 return
             }
 
-            scrollPosition = media.id
+            //scrollPosition = media.id
         }
-        .navigationTitle(destination.label)
+        // .navigationTitle(destination.label)
 //        .searchable(text: $query, isPresented: $isSearching)
-//        .scrollEdgeEffectStyle(.soft, for: .top)
-//        .scrollEdgeEffectDisabled(false)
+        .scrollEdgeEffectStyle(.soft, for: .all)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -259,19 +263,5 @@ struct CategoryView: View {
                 }
             }
         #endif
-    }
-
-    private func scrollToCurrent(_ proxy: ScrollViewProxy, animate: Bool = true) {
-        guard let media = mpd.status.media else {
-            return
-        }
-
-        if animate {
-            withAnimation {
-                proxy.scrollTo(media.id, anchor: .center)
-            }
-        } else {
-            proxy.scrollTo(media.id, anchor: .center)
-        }
     }
 }

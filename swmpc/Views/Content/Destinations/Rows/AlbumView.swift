@@ -142,7 +142,7 @@ struct AlbumQueueToggleButton: View {
     var body: some View {
         AsyncButton(
             actuallyInQueue ? "Remove Album from Queue" : "Add Album to Queue",
-            systemImage: actuallyInQueue ? SFSymbol.minusRectangle.rawValue : SFSymbol.plusSquareOnSquare.rawValue
+            systemImage: actuallyInQueue ? SFSymbol.minusRectangle.rawValue : SFSymbol.plusSquareOnSquare.rawValue,
         ) {
             if actuallyInQueue {
                 try await ConnectionManager.command().removeFromQueue(album: album)

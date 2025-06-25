@@ -47,12 +47,6 @@ struct MediaListView: View {
             default:
                 EmptyView()
             }
-
-            // XXX: Kinda hacky, but required because else the tasks below never fire.
-            if library.media.isEmpty {
-                Color.clear
-                    .frame(height: 0)
-            }
         }
         .onChange(of: mpd.status.media as? Song) { previous, _ in
             if scrollToCurrent {
