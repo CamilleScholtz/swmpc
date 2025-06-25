@@ -54,17 +54,17 @@ struct MediaListView: View {
                     .frame(height: 0)
             }
         }
-        .onChange(of: mpd.status.media as? Song) { previous, _ in
-            if scrollToCurrent {
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: previous != nil)
-            } else {
-                guard previous == nil else {
-                    return
-                }
-
-                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
-            }
-        }
+//        .onChange(of: mpd.status.media as? Song) { previous, _ in
+//            if scrollToCurrent {
+//                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: previous != nil)
+//            } else {
+//                guard previous == nil else {
+//                    return
+//                }
+//
+//                NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+//            }
+//        }
         .task(id: library.source) {
             guard type != .playlist else {
                 return
