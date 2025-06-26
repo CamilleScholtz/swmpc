@@ -43,7 +43,7 @@ struct CategoryDestinationView: View {
             }
             .task(id: playlist) {
                 isLoadingPlaylist = true
-                playlistSongs = try? await ConnectionManager.command().getSongs(using: .playlist(playlist))
+                playlistSongs = try? await ConnectionManager.command().getSongs(from: .playlist(playlist))
 
                 try? await Task.sleep(for: .milliseconds(200))
                 guard !Task.isCancelled else {

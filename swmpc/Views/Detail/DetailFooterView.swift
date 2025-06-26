@@ -182,9 +182,9 @@ struct DetailFooterView: View {
                 isFavorited.toggle()
 
                 if isFavorited {
-                    try await ConnectionManager.command().addToFavorites(songs: [song])
+                    try await ConnectionManager.command().add(songs: [song], to: .favorites)
                 } else {
-                    try await ConnectionManager.command().removeFromFavorites(songs: [song])
+                    try await ConnectionManager.command().remove(songs: [song], from: .favorites)
                 }
             } label: {
                 Image(systemSymbol: .heartFill)

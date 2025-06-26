@@ -34,7 +34,7 @@ struct SongView: View {
     #endif
 
     var body: some View {
-        ZStack(alignment: .leading) {
+        ZStack(alignment: .trailing) {
             HStack(spacing: 15) {
                 ZStack {
                     Text(String(song.track))
@@ -109,7 +109,7 @@ struct SongView: View {
 
                     if mpd.status.playlist?.name != "Favorites" {
                         AsyncButton("Add Song to Favorites") {
-                            try await ConnectionManager.command().addToFavorites(songs: [song])
+                            try await ConnectionManager.command().add(songs: [song], to: .favorites)
                         }
                     }
 
@@ -117,7 +117,7 @@ struct SongView: View {
                         Menu("Add Song to Playlist") {
                             ForEach(playlists) { playlist in
                                 AsyncButton(playlist.name) {
-                                    try await ConnectionManager.command().addToPlaylist(playlist, songs: [song])
+                                    try await ConnectionManager.command().add(songs: [song], to: .playlist(playlist))
                                 }
                             }
                         }
@@ -127,11 +127,11 @@ struct SongView: View {
 
                             if mpd.status.playlist?.name == "Favorites" {
                                 AsyncButton("Remove Song from Favorites") {
-                                    try await ConnectionManager.command().removeFromFavorites(songs: [song])
+                                    try await ConnectionManager.command().remove(songs: [song], from: .favorites)
                                 }
                             } else {
                                 AsyncButton("Remove Song from Playlist") {
-                                    try await ConnectionManager.command().removeFromPlaylist(playlist, songs: [song])
+                                    try await ConnectionManager.command().remove(songs: [song], from: .playlist(playlist))
                                 }
                             }
                         }
@@ -140,19 +140,25 @@ struct SongView: View {
 
             if isMoveable {
                 Image(systemSymbol: .line3HorizontalCircle)
-                    .font(.headline)
-                    .fontDesign(.rounded)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .contentShape(.circle)
-                    .padding(3)
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                    .frame(maxHeight: .infinity)
                     .background(
-                        Circle()
-                            .fill(.background)
+                        LinearGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: .clear, location: 0.0),
+                                .init(color: Color(.textBackgroundColor), location: 0.3),
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: trackSize * 4)
                     )
                     .opacity(isHoveringHandle ? 1 : 0)
                     .onHover { value in
-                        isHoveringHandle = value
+                        withAnimation(.interactiveSpring) {
+                            isHoveringHandle = value
+                        }
                     }
             }
         }
@@ -214,10 +220,10 @@ struct QueueToggleButton: View {
             if actuallyInQueue {
                 let queueSongs = mpd.queue.internalMedia as? [Song]
                 if let queuedSong = queueSongs?.first(where: { $0.url == song.url }) {
-                    try await ConnectionManager.command().removeFromQueue(songs: [queuedSong])
+                    try await ConnectionManager.command().remove(songs: [queuedSong], from: .queue)
                 }
             } else {
-                try await ConnectionManager.command().addToQueue(songs: [song])
+                try await ConnectionManager.command().add(songs: [song], to: .queue)
             }
         }
     }

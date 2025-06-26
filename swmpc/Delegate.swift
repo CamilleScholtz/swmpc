@@ -77,9 +77,9 @@ struct Delegate: App {
                     let isFavorited = appDelegate.mpd.playlists.favorites.contains { $0.url == song.url }
 
                     if isFavorited {
-                        try await ConnectionManager.command().removeFromFavorites(songs: [song])
+                        try await ConnectionManager.command().remove(songs: [song], from: .favorites)
                     } else {
-                        try await ConnectionManager.command().addToFavorites(songs: [song])
+                        try await ConnectionManager.command().add(songs: [song], to: .favorites)
                     }
                 }
                 .keyboardShortcut("l", modifiers: [.command, .option])
@@ -272,8 +272,8 @@ struct Delegate: App {
                 popoverAnchor.button!.image = NSImage(systemSymbol: .arrowUpArrowDown, accessibilityDescription: "sequential")
             case "repeat":
                 popoverAnchor.button!.image = NSImage(systemSymbol: .repeat, accessibilityDescription: "repeat")
-            case "singe":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .return, accessibilityDescription: "singe")
+            case "single":
+                popoverAnchor.button!.image = NSImage(systemSymbol: .return, accessibilityDescription: "single")
             default:
                 return popoverAnchor.button!.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
             }
@@ -383,9 +383,9 @@ struct Delegate: App {
                     let isFavorited = mpd.playlists.favorites.contains { $0.url == song.url }
 
                     if isFavorited {
-                        try? await ConnectionManager.command().removeFromFavorites(songs: [song])
+                        try? await ConnectionManager.command().remove(songs: [song], from: .favorites)
                     } else {
-                        try? await ConnectionManager.command().addToFavorites(songs: [song])
+                        try? await ConnectionManager.command().add(songs: [song], to: .favorites)
                     }
                 }
             }

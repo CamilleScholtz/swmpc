@@ -188,15 +188,15 @@ actor MockData {
         mockSongs
     }
 
-    func getSongs(for artist: Artist) -> [Song] {
+    func getSongs(by artist: Artist) -> [Song] {
         mockSongs.filter { $0.artist == artist.name }
     }
 
-    func getSongs(for album: Album) -> [Song] {
+    func getSongs(in album: Album) -> [Song] {
         mockSongs.filter { $0.url.absoluteString.contains(album.url.absoluteString) }
     }
 
-    func getSongs(for playlist: Playlist) -> [Song] {
+    func getSongs(in playlist: Playlist) -> [Song] {
         switch playlist.name {
         case "Favorites":
             return Array(mockSongs.shuffled().prefix(15))

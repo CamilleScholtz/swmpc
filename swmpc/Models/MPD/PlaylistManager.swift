@@ -34,7 +34,7 @@ final class PlaylistManager {
             return
         }
 
-        favorites = try await ConnectionManager.idle.getSongs(using:
-                .playlist(favoritePlaylist))
+        favorites = try await ConnectionManager.idle.getSongs(from:
+            .playlist(favoritePlaylist))
     }
 }

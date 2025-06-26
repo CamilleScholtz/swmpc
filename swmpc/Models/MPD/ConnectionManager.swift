@@ -64,6 +64,20 @@ enum Source: Equatable, Hashable {
     case queue
     /// Media items from a specific playlist.
     case playlist(Playlist)
+    /// Media items from the favorites playlist.
+    case favorites
+
+    /// Returns the playlist if this source represents a playlist.
+    var playlist: Playlist? {
+        switch self {
+        case .database, .queue:
+            nil
+        case let .playlist(playlist):
+            playlist
+        case .favorites:
+            Playlist(name: "Favorites")
+        }
+    }
 }
 
 /// Errors that can occur during MPD connection management.
@@ -923,17 +937,23 @@ extension ConnectionManager {
 
     /// Retrieves all songs from the database or queue.
     ///
+    /// - Parameter source: The source from which to retrieve the songs.
     /// - Returns: An array of `Song` objects representing all songs in the
     ///            database.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(using source: Source) async throws -> [Song] {
+    func getSongs(from source: Source) async throws -> [Song] {
         guard !isDemoMode else {
             switch source {
             case .database, .queue:
                 return await MockData.shared.getSongs()
-            case let .playlist(playlist):
-                return await MockData.shared.getSongs(for: playlist)
+            case .playlist, .favorites:
+                guard let playlist = source.playlist else {
+                    throw ConnectionManagerError.unsupportedOperation(
+                        "Playlist is required for adding songs to a playlist")
+                }
+
+                return await MockData.shared.getSongs(in: playlist)
             }
         }
 
@@ -942,8 +962,8 @@ extension ConnectionManager {
             try await run(["listallinfo"])
         case .queue:
             try await run(["playlistinfo"])
-        case let .playlist(playlist):
-            try await run(["listplaylistinfo \(playlist.name)"])
+        case .playlist, .favorites:
+            try await run(["listplaylistinfo \(source.playlist!.name)"])
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -956,15 +976,17 @@ extension ConnectionManager {
     /// Retrieves songs from the database or queue that match a specific artist
     /// name.
     ///
-    /// - Parameter artist: The `Artist` object for which the songs should be
-    ///                     retrieved.
+    /// - Parameters:
+    ///   - artist: The `Artist` object for which the songs should be
+    ///             retrieved.
+    ///   - source: The source from which to retrieve the songs.
     /// - Returns: An array of `Song` objects corresponding to the specified
     ///            artist.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(using source: Source, for artist: Artist) async throws -> [Song] {
+    func getSongs(by artist: Artist, from source: Source) async throws -> [Song] {
         guard !isDemoMode else {
-            return await MockData.shared.getSongs(for: artist)
+            return await MockData.shared.getSongs(by: artist)
         }
 
         let lines = switch source {
@@ -972,9 +994,9 @@ extension ConnectionManager {
             try await run(["find \(filter(key: "albumartist", value: artist.name))"])
         case .queue:
             try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))"])
-        case .playlist:
+        default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Retrieving songs by artist from a playlist is not supported")
+                "Only database and queue sources are supported for retrieving songs by artist")
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -986,15 +1008,16 @@ extension ConnectionManager {
 
     /// Retrieves songs from the database or queue that match a specific album.
     ///
-    /// - Parameter album: The `Album` object for which the songs should be
-    ///                    retrieved.
+    /// - Parameters:
+    ///   - album: The `Album` object for which the songs should be retrieved.
+    ///   - source: The source from which to retrieve the songs.
     /// - Returns: An array of `Song` objects corresponding to the specified
     ///            album.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(using source: Source, for album: Album) async throws -> [Song] {
+    func getSongs(in album: Album, from source: Source) async throws -> [Song] {
         guard !isDemoMode else {
-            return await MockData.shared.getSongs(for: album)
+            return await MockData.shared.getSongs(in: album)
         }
 
         let lines = switch source {
@@ -1002,9 +1025,9 @@ extension ConnectionManager {
             try await run(["find \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""])
         case .queue:
             try await run(["playlistfind \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""])
-        case .playlist:
+        default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Retrieving songs by album from a playlist is not supported")
+                "Only database and queue sources are supported for retrieving songs in an album")
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -1014,14 +1037,14 @@ extension ConnectionManager {
         }
     }
 
-
     /// Retrieves all albums from the database or queue.
     ///
+    /// - Parameter source: The source from which to retrieve albums.
     /// - Returns: An array of `Album` objects representing all albums in the
     ///            database.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getAlbums(using source: Source) async throws -> [Album] {
+    func getAlbums(from source: Source) async throws -> [Album] {
         guard !isDemoMode else {
             return await MockData.shared.getAlbums()
         }
@@ -1031,9 +1054,9 @@ extension ConnectionManager {
             try await run(["find \"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
         case .queue:
             try await run(["playlistfind \"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
-        case .playlist:
+        default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Retrieving albums from a playlist is not supported")
+                "Only database and queue sources are supported for retrieving albums")
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -1045,16 +1068,17 @@ extension ConnectionManager {
 
     /// Retrieves all album artists from the database or queue.
     ///
+    /// - Parameter source: The source from which to retrieve artists.
     /// - Returns: An array of `Artist` objects representing all album artists
     ///            in the database.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getArtists(using source: Source) async throws -> [Artist] {
+    func getArtists(from source: Source) async throws -> [Artist] {
         guard !isDemoMode else {
             return await MockData.shared.getArtists()
         }
 
-        let albums = try await getAlbums(using: source)
+        let albums = try await getAlbums(from: source)
         let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
 
         return try albumsByArtist.map { artist, albums in
@@ -1072,9 +1096,9 @@ extension ConnectionManager {
                 $0.name < $1.name
             case .queue:
                 $0.position! < $1.position!
-            case .playlist:
+            default:
                 throw ConnectionManagerError.unsupportedOperation(
-                    "Retrieving artists from a playlist is not supported")
+                    "Only database and queue sources are supported for retrieving artists")
             }
         }
     }
@@ -1274,79 +1298,6 @@ extension ConnectionManager where Mode == CommandMode {
         _ = try await run(["rm \(playlist.name)"])
     }
 
-    /// Adds songs to a playlist.
-    ///
-    /// This function appends the specified songs to the end of the specified
-    /// playlist. If the playlist does not exist, it creates a new one.
-    ///
-    /// - Parameters:
-    ///   - playlist: The `Playlist` object representing the playlist to which
-    ///               the songs should be added.
-    ///   - songs: An array of `Song` objects to add to the playlist.
-    /// - Throws: An error if the underlying command execution fails.
-    func addToPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        let playlistSongs = try await getSongs(using: .playlist(playlist))
-        let songsToAdd = songs.filter { song in
-            !playlistSongs.contains { $0.url == song.url }
-        }
-
-        let commands = songsToAdd.map {
-            "playlistadd \(playlist.name) \(escape($0.url.path))"
-        }
-
-        _ = try await run(commands)
-    }
-
-    /// Removes songs from a playlist.
-    ///
-    /// - Parameters:
-    ///   - playlist: The `Playlist` object representing the playlist from which
-    ///               the songs should be removed.
-    ///   - songs: An array of `Song` objects to remove from the playlist.
-    /// - Throws: An error if the underlying command execution fails.
-    func removeFromPlaylist(_ playlist: Playlist, songs: [Song]) async throws {
-        let playlistSongs = try await getSongs(using: .playlist(playlist))
-        let songsToRemove = playlistSongs.filter { song in
-            songs.contains { $0.url == song.url }
-        }
-
-        var commands: [String]
-        let positions = songsToRemove.compactMap(\.position).sorted()
-
-        if positions.count > 1,
-           let first = positions.first,
-           let last = positions.last,
-           positions == Array(first ... last)
-        {
-            commands = ["playlistdelete \(playlist.name) \(first):\(last)"]
-        } else {
-            commands = songsToRemove.compactMap { song in
-                guard let position = song.position else { return nil }
-                return "playlistdelete \(playlist.name) \(position)"
-            }
-        }
-
-        _ = try await run(commands)
-    }
-
-    /// Adds songs to the favorites playlist.
-    ///
-    /// - Parameter songs: An array of `Song` objects to add to the favorites
-    ///                    playlist.
-    /// - Throws: An error if the underlying command execution fails.
-    func addToFavorites(songs: [Song]) async throws {
-        try await addToPlaylist(Playlist(name: "Favorites"), songs: songs)
-    }
-
-    /// Removes songs from the favorites playlist.
-    ///
-    /// - Parameter songs: An array of `Song` objects to remove from the
-    ///                    favorites playlist.
-    /// - Throws: An error if the underlying command execution fails.
-    func removeFromFavorites(songs: [Song]) async throws {
-        try await removeFromPlaylist(Playlist(name: "Favorites"), songs: songs)
-    }
-
     /// Updates the media server's database.
     ///
     /// This function triggers a database update on the media server, which
@@ -1364,98 +1315,187 @@ extension ConnectionManager where Mode == CommandMode {
         }
     }
 
-    /// Adds songs to the queue.
+    /// Adds songs to the specified source (queue or playlist).
     ///
-    /// - Parameter songs: An array of `Song` objects to add to the queue.
+    /// - Parameters:
+    ///   - songs: An array of `Song` objects to add.
+    ///   - source: The destination source (queue or playlist).
     /// - Throws: An error if the underlying command execution fails.
-    func addToQueue(songs: [Song]) async throws {
-        let commands = songs.map { "add \(escape($0.url.path))" }
-        _ = try await run(commands)
-    }
-
-    /// Remove songs from the queue.
-    ///
-    /// - Parameter songs: An array of `Song` objects to remove from the queue.
-    /// - Throws: An error if the underlying command execution fails.
-    func removeFromQueue(songs: [Song]) async throws {
-        let commands: [String] = songs.compactMap { song in
-            guard let id = song.identifier else {
-                return nil
-            }
-
-            return "deleteid \(id)"
-        }
-        guard !commands.isEmpty else {
+    func add(songs: [Song], to source: Source) async throws {
+        guard !songs.isEmpty else {
             return
         }
 
+        let existingSongs = try await getSongs(from: source)
+        let songsToAdd = songs.filter { song in
+            !existingSongs.contains { $0.url == song.url }
+        }
+
+        let commands: [String]
+        switch source {
+        case .queue:
+            commands = songsToAdd.map {
+                "add \(escape($0.url.path))"
+            }
+        case .playlist, .favorites:
+            guard let playlist = source.playlist else {
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Playlist is required for adding songs to a playlist")
+            }
+
+            commands = songsToAdd.map {
+                "playlistadd \(playlist.name) \(escape($0.url.path))"
+            }
+        case .database:
+            throw ConnectionManagerError.unsupportedOperation(
+                "Cannot add songs to the database")
+        }
+
         _ = try await run(commands)
     }
 
-    /// Adds an album to the queue.
-    ///
-    /// - Parameter album: The `Album` object to add to the queue.
-    /// - Throws: An error if the underlying command execution fails.
-    func addToQueue(album: Album) async throws {
-        let songs = try await getSongs(using: .database, for: album)
-        try await addToQueue(songs: songs)
-    }
-
-    /// Removes an album to the queue.
-    ///
-    /// - Parameter album: The `Album` object to remove from the queue.
-    /// - Throws: An error if the underlying command execution fails.
-    func removeFromQueue(album: Album) async throws {
-        let filterClause = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""
-        let lines = try await run(["playlistfind \(filterClause)"])
-
-        let chunks = chunkLines(lines, startingWith: "file")
-        let songsToRemove = try chunks.compactMap { chunk in
-            try parseMediaResponse(chunk, using: .song) as? Song
-        }
-
-        try await removeFromQueue(songs: songsToRemove)
-    }
-
-    /// Adds all songs by an artist to the queue.
-    ///
-    /// - Parameter artist: The `Artist` object whose songs to add to the queue.
-    /// - Throws: An error if the underlying command execution fails.
-    func addToQueue(artist: Artist) async throws {
-        let songs = try await getSongs(using: .database, for: artist)
-        try await addToQueue(songs: songs)
-    }
-
-    /// Removes all songs by an artist to the queue.
-    ///
-    /// - Parameter artist: The `Artist` object whose songs to remove from the
-    ///                     queue.
-    /// - Throws: An error if the underlying command execution fails.
-    func removeFromQueue(artist: Artist) async throws {
-        let filterClause = filter(key: "albumartist", value: artist.name)
-        let lines = try await run(["playlistfind \(filterClause)"])
-
-        let chunks = chunkLines(lines, startingWith: "file")
-        let songsToRemove = try chunks.compactMap { chunk in
-            try parseMediaResponse(chunk, using: .song) as? Song
-        }
-
-        try await removeFromQueue(songs: songsToRemove)
-    }
-
-    /// Moves a song in the queue by its ID to a specific position.
+    /// Removes songs from the specified source (queue or playlist).
     ///
     /// - Parameters:
-    ///   - id: The ID of the song to move.
-    ///   - to: The destination position for the song.
+    ///   - songs: An array of `Song` objects to remove.
+    ///   - source: The source from which to remove the songs.
     /// - Throws: An error if the underlying command execution fails.
-    func moveInQueue(_ media: any Mediable, to: Int) async throws {
-        guard let id = media.identifier else {
-            throw ConnectionManagerError.unsupportedOperation(
-                "Cannot move media without an identifier")
+    func remove(songs: [Song], from source: Source) async throws {
+        guard !songs.isEmpty else {
+            return
         }
 
-        _ = try await run(["moveid \(id) \(to)"])
+        let sourceSongs = try await getSongs(from: source)
+        let urls = songs.map { $0.url }
+        let positions = sourceSongs
+            .compactMap { song in
+                urls.contains(song.url) ? song.position : nil
+            }
+            .sorted(by: >)
+
+        guard !positions.isEmpty else {
+            return
+        }
+
+        var commands = [String]()
+
+        var i = 0
+        while i < positions.count {
+            let start = positions[i]
+            var end = start
+
+            while i + 1 < positions.count && positions[i + 1] + 1 == end {
+                i += 1
+                end = positions[i]
+            }
+
+            switch source {
+            case .queue:
+                if start == end {
+                    commands.append("delete \(start)")
+                } else {
+                    commands.append("delete \(end):\(start + 1)")
+                }
+            case .playlist, .favorites:
+                let playlist = source.playlist!
+                if start == end {
+                    commands.append("playlistdelete \(playlist.name) \(start)")
+                } else {
+                    // For playlists, we need to delete one by one in reverse order
+                    for pos in stride(from: Int(start), through: Int(end), by: -1) {
+                        commands.append("playlistdelete \(playlist.name) \(pos)")
+                    }
+                }
+            default:
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Only queue and playlist sources are supported for removing songs")
+            }
+
+            i += 1
+        }
+
+        _ = try await run(commands)
+    }
+
+    /// Adds all songs from an artist to the specified source.
+    ///
+    /// - Parameters:
+    ///   - artist: The artist whose songs to add.
+    ///   - source: The destination source (queue or playlist).
+    /// - Throws: An error if the underlying command execution fails.
+    func add(artist: Artist, to source: Source) async throws {
+        let songs = try await getSongs(by: artist, from: .database)
+        try await add(songs: songs, to: source)
+    }
+
+    /// Adds all songs from an album to the specified source.
+    ///
+    /// - Parameters:
+    ///   - album: The album whose songs to add.
+    ///   - source: The destination source (queue or playlist).
+    /// - Throws: An error if the underlying command execution fails.
+    func add(album: Album, to source: Source) async throws {
+        let songs = try await getSongs(in: album, from: .database)
+        try await add(songs: songs, to: source)
+    }
+
+    /// Removes all songs from an artist from the specified source.
+    ///
+    /// - Parameters:
+    ///   - artist: The artist whose songs to remove.
+    ///   - source: The source from which to remove the songs.
+    /// - Throws: An error if the underlying command execution fails.
+    func remove(artist: Artist, from source: Source) async throws {
+        let artistSongs = try await getSongs(by: artist, from: .database)
+        let sourceSongs = try await getSongs(from: source)
+        let songsToRemove = sourceSongs.filter { song in
+            artistSongs.contains { $0.url == song.url }
+        }
+        try await remove(songs: songsToRemove, from: source)
+    }
+
+    /// Removes all songs from an album from the specified source.
+    ///
+    /// - Parameters:
+    ///   - album: The album whose songs to remove.
+    ///   - source: The source from which to remove the songs.
+    /// - Throws: An error if the underlying command execution fails.
+    func remove(album: Album, from source: Source) async throws {
+        let albumSongs = try await getSongs(in: album, from: .database)
+        let sourceSongs = try await getSongs(from: source)
+        let songsToRemove = sourceSongs.filter { song in
+            albumSongs.contains { $0.url == song.url }
+        }
+        try await remove(songs: songsToRemove, from: source)
+    }
+
+    /// Moves a media item to a specific position in the specified source.
+    ///
+    /// - Parameters:
+    ///   - media: The `Mediable` object representing the item to move.
+    ///   - position: The destination position for the item.
+    ///   - source: The source in which to move the item.
+    /// - Throws: An error if the underlying command execution fails.
+    func move(_ media: any Mediable, to position: Int, in source: Source) async throws {
+        guard let currentPosition = media.position else {
+            throw ConnectionManagerError.unsupportedOperation(
+                "Cannot move media without a position")
+        }
+
+        switch source {
+        case .queue:
+            _ = try await run(["move \(currentPosition) \(position)"])
+        case .playlist, .favorites:
+            guard let playlist = source.playlist else {
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Playlist is required for adding songs to a playlist")
+            }
+
+            _ = try await run(["playlistmove \(playlist.name) \(currentPosition) \(position)"])
+        default:
+            throw ConnectionManagerError.unsupportedOperation(
+                "Only queue and playlist sources are supported for moving media")
+        }
     }
 
     /// Plays a `Mediable` object.
@@ -1468,11 +1508,11 @@ extension ConnectionManager where Mode == CommandMode {
             return
         }
 
-        let queueSongs = try await getSongs(using: .queue)
+        let queueSongs = try await getSongs(from: .queue)
 
         switch media {
         case let album as Album:
-            let albumSongs = try await getSongs(using: .database, for: album)
+            let albumSongs = try await getSongs(in: album, from: .database)
             guard !albumSongs.isEmpty else {
                 throw ConnectionManagerError.malformedResponse(
                     "No songs found for album \(album.title)")
@@ -1504,7 +1544,7 @@ extension ConnectionManager where Mode == CommandMode {
             }
 
         case let artist as Artist:
-            let artistSongs = try await getSongs(using: .database, for: artist)
+            let artistSongs = try await getSongs(by: artist, from: .database)
             guard !artistSongs.isEmpty else {
                 throw ConnectionManagerError.malformedResponse(
                     "No songs found for artist \(artist.name)")
@@ -1553,7 +1593,7 @@ extension ConnectionManager where Mode == CommandMode {
 
         default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Unsupported media type: \(type(of: media))")
+                "Only Album, Artist, and Song types are supported for playback")
         }
     }
 

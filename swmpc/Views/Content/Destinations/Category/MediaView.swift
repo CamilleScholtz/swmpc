@@ -50,7 +50,7 @@ struct MediaView: View {
 
                             let to = index < to ? to - 1 : to
 
-                            try? await ConnectionManager.command().moveInQueue(song, to: to)
+                            try? await ConnectionManager.command().move(song, to: to, in: library.source)
                         }
                     }
                 } else {

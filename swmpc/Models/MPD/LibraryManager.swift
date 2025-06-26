@@ -78,16 +78,16 @@ final class LibraryManager {
         switch targetType {
         case .album:
             media = try await idle
-                ? ConnectionManager.idle.getAlbums(using: source)
-                : ConnectionManager.command().getAlbums(using: source)
+                ? ConnectionManager.idle.getAlbums(from: source)
+                : ConnectionManager.command().getAlbums(from: source)
         case .artist:
             media = try await idle
-                ? ConnectionManager.idle.getArtists(using: source)
-                : ConnectionManager.command().getArtists(using: source)
+                ? ConnectionManager.idle.getArtists(from: source)
+                : ConnectionManager.command().getArtists(from: source)
         case .song:
             media = try await idle
-                ? ConnectionManager.idle.getSongs(using: source)
-                : ConnectionManager.command().getSongs(using: source)
+                ? ConnectionManager.idle.getSongs(from: source)
+                : ConnectionManager.command().getSongs(from: source)
         default:
             throw LibraryManagerError.invalidType
         }
