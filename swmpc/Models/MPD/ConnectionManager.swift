@@ -963,7 +963,7 @@ extension ConnectionManager {
         case .queue:
             try await run(["playlistinfo"])
         case .playlist, .favorites:
-            try await run(["listplaylistinfo \(source.playlist!.name)"])
+            try await run(["listplaylistinfo \(escape(source.playlist!.name))"])
         }
 
         let chunks = chunkLines(lines, startingWith: "file")
@@ -1258,7 +1258,7 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Throws: An error if the underlying command execution fails.
     func loadPlaylist(_ playlist: Playlist? = nil) async throws {
         if let playlist {
-            _ = try await run(["clear", "load \(playlist.name)"])
+            _ = try await run(["clear", "load \(escape(playlist.name))"])
         } else {
             _ = try await run(["clear", "add /"])
         }
@@ -1276,7 +1276,7 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Parameter name: The name of the new playlist to create.
     /// - Throws: An error if the underlying command execution fails.
     func createPlaylist(named name: String) async throws {
-        _ = try await run(["save \(name)", "playlistclear \(name)"])
+        _ = try await run(["save \(escape(name))", "playlistclear \(escape(name))"])
     }
 
     /// Renames a playlist.
@@ -1286,7 +1286,7 @@ extension ConnectionManager where Mode == CommandMode {
     ///   - name: The new name for the playlist.
     /// - Throws: An error if the underlying command execution fails.
     func renamePlaylist(_ playlist: Playlist, to name: String) async throws {
-        _ = try await run(["rename \(playlist.name) \(name)"])
+        _ = try await run(["rename \(escape(playlist.name)) \(escape(name))"])
     }
 
     /// Removes a playlist from the media server.
@@ -1295,7 +1295,7 @@ extension ConnectionManager where Mode == CommandMode {
     ///                       remove.
     /// - Throws: An error if the underlying command execution fails.
     func removePlaylist(_ playlist: Playlist) async throws {
-        _ = try await run(["rm \(playlist.name)"])
+        _ = try await run(["rm \(escape(playlist.name))"])
     }
 
     /// Updates the media server's database.
@@ -1399,11 +1399,10 @@ extension ConnectionManager where Mode == CommandMode {
             case .playlist, .favorites:
                 let playlist = source.playlist!
                 if start == end {
-                    commands.append("playlistdelete \(playlist.name) \(start)")
+                    commands.append("playlistdelete \(escape(playlist.name)) \(start)")
                 } else {
-                    // For playlists, we need to delete one by one in reverse order
                     for pos in stride(from: Int(start), through: Int(end), by: -1) {
-                        commands.append("playlistdelete \(playlist.name) \(pos)")
+                        commands.append("playlistdelete \(escape(playlist.name)) \(pos)")
                     }
                 }
             default:
