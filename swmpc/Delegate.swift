@@ -299,6 +299,7 @@ struct Delegate: App {
             }
 
             guard var description = mpd.status.song?.description else {
+                statusItem.button!.title = ""
                 return
             }
 
