@@ -1366,7 +1366,7 @@ extension ConnectionManager where Mode == CommandMode {
         }
 
         let sourceSongs = try await getSongs(from: source)
-        let urls = songs.map { $0.url }
+        let urls = songs.map(\.url)
         let positions = sourceSongs
             .compactMap { song in
                 urls.contains(song.url) ? song.position : nil
@@ -1384,7 +1384,7 @@ extension ConnectionManager where Mode == CommandMode {
             let start = positions[i]
             var end = start
 
-            while i + 1 < positions.count && positions[i + 1] + 1 == end {
+            while i + 1 < positions.count, positions[i + 1] + 1 == end {
                 i += 1
                 end = positions[i]
             }
@@ -1450,6 +1450,7 @@ extension ConnectionManager where Mode == CommandMode {
         let songsToRemove = sourceSongs.filter { song in
             artistSongs.contains { $0.url == song.url }
         }
+
         try await remove(songs: songsToRemove, from: source)
     }
 
@@ -1465,6 +1466,7 @@ extension ConnectionManager where Mode == CommandMode {
         let songsToRemove = sourceSongs.filter { song in
             albumSongs.contains { $0.url == song.url }
         }
+
         try await remove(songs: songsToRemove, from: source)
     }
 

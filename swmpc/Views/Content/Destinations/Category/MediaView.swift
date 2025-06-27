@@ -25,11 +25,11 @@ struct MediaView: View {
         self.isMoveable = isMoveable
     }
 
-    init(for playlist: Playlist, isMoveable: Bool = true) {
+    init(for playlist: Playlist) {
         _library = State(initialValue: LibraryManager(using: .playlist(playlist)))
 
         type = .song
-        self.isMoveable = isMoveable
+        isMoveable = false
     }
 
     var body: some View {
