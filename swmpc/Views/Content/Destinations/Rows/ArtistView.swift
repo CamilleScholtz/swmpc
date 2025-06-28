@@ -85,20 +85,20 @@ struct ArtistQueueToggleButton: View {
             return false
         }
 
-        let urls = Set(mpd.queue.internalMedia.map(\.url))
+        let urls = Set(mpd.queue.internalMedia.compactMap { ($0 as? Song)?.url })
         return songs.contains { urls.contains($0.url) }
     }
 
     var body: some View {
         AsyncButton(actuallyInQueue ? "Remove All by Artist from Queue" : "Add All by Artist to Queue") {
             if actuallyInQueue {
-                try await ConnectionManager.command().removeFromQueue(artist: artist)
+                try await ConnectionManager.command().remove(artist: artist, from: .queue)
             } else {
-                try await ConnectionManager.command().addToQueue(artist: artist)
+                try await ConnectionManager.command().add(artist: artist, to: .queue)
             }
         }
         .task(id: artist) {
-            songs = try? await ConnectionManager.command().getSongs(using: .database, for: artist)
+            songs = try? await ConnectionManager.command().getSongs(by: artist, from: .database)
         }
     }
 }

@@ -136,7 +136,7 @@ struct QueuePanelView: View {
 
         var body: some View {
             List {
-                MediaListView(using: mpd.queue, type: .song)
+                MediaView(using: mpd.queue, type: .song, isMoveable: true)
             }
             .listStyle(.plain)
             .introspect(.list, on: .macOS(.v15)) { tableView in

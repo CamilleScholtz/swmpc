@@ -174,7 +174,7 @@ actor IntelligenceManager {
             if case .playlist = target {
                 try await ConnectionManager.command().loadPlaylist()
             }
-            let albums = try await ConnectionManager.command().getAlbums(using: .database)
+            let albums = try await ConnectionManager.command().getAlbums(from: .database)
 
             let result = try await client.chats(query: ChatQuery(
                 messages: [
@@ -210,16 +210,16 @@ actor IntelligenceManager {
                 }
 
                 try await songs.append(contentsOf: ConnectionManager.command()
-                    .getSongs(using: .database, for: album))
+                    .getSongs(in: album, from: .database))
             }
 
             switch target {
             case let .playlist(playlist):
                 guard let playlist = playlist.wrappedValue else { return }
-                try await ConnectionManager.command().addToPlaylist(playlist, songs: songs)
+                try await ConnectionManager.command().add(songs: songs, to: .playlist(playlist))
                 try await ConnectionManager.command().loadPlaylist(playlist)
             case .queue:
-                try await ConnectionManager.command().addToQueue(songs: songs)
+                try await ConnectionManager.command().add(songs: songs, to: .queue)
             }
         }
     }

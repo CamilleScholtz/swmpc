@@ -13,14 +13,17 @@ struct SongView: View {
 
     private let song: Song
     private let isQueued: Bool
+    private let isMoveable: Bool
 
-    init(for song: Song, isQueued: Bool = false) {
+    init(for song: Song, isQueued: Bool = false, isMoveable: Bool = false) {
         self.song = song
         self.isQueued = isQueued
+        self.isMoveable = isMoveable
     }
 
     #if os(macOS)
         @State private var isHovering = false
+        @State private var isHoveringHandle = false
         @State private var hoverHandler = HoverTaskHandler()
     #endif
 
@@ -31,108 +34,134 @@ struct SongView: View {
     #endif
 
     var body: some View {
-        HStack(spacing: 15) {
-            ZStack {
-                Text(String(song.track))
-                    .font(.headline)
-                    .fontDesign(.rounded)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
+        ZStack(alignment: .trailing) {
+            HStack(spacing: 15) {
+                ZStack {
+                    Text(String(song.track))
+                        .font(.headline)
+                        .fontDesign(.rounded)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
 
-                #if os(macOS)
-                    Image(systemSymbol: .playFill)
-                        .font(.title3)
-                        .foregroundColor(.accentColor)
+                    #if os(macOS)
+                        Image(systemSymbol: .playFill)
+                            .font(.title3)
+                            .foregroundColor(.accentColor)
+                            .background(
+                                Rectangle()
+                                    .fill(.background)
+                                    .frame(width: trackSize, height: trackSize)
+                            )
+                            .opacity(isHovering ? 1 : 0)
+                    #endif
+
+                    WaveView()
                         .background(
                             Rectangle()
                                 .fill(.background)
                                 .frame(width: trackSize, height: trackSize),
                         )
-                        .opacity(isHovering ? 1 : 0)
-                #endif
-
-                WaveView()
-                    .background(
-                        Rectangle()
-                            .fill(.background)
-                            .frame(width: trackSize, height: trackSize),
-                    )
-                    .opacity(mpd.status.song == song ? 1 : 0)
-            }
-            .frame(width: trackSize, height: trackSize)
-
-            VStack(alignment: .leading) {
-                Text(song.title)
-                    .font(.headline)
-                    .foregroundColor(mpd.status.song == song ? .accentColor : .primary)
-                    .lineLimit(2)
-
-                Text((song.artist) + " • " + song.duration.timeString)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-
-            Spacer()
-        }
-        .contentShape(Rectangle())
-        #if os(iOS)
-            .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 10))
-        #elseif os(macOS)
-            .onHoverWithDebounce(handler: hoverHandler) { hovering in
-                withAnimation(.interactiveSpring) {
-                    isHovering = hovering
+                        .opacity(mpd.status.song == song ? 1 : 0)
                 }
-            }
-        #endif
-            .onTapGesture {
-                Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().play(song)
-                }
-            }
-            .contextMenu {
-                @AppStorage(Setting.simpleMode) var simpleMode = false
-                if !simpleMode {
-                    QueueToggleButton(song: song, isQueued: isQueued)
-                    Divider()
+                .frame(width: trackSize, height: trackSize)
+
+                VStack(alignment: .leading) {
+                    Text(song.title)
+                        .font(.headline)
+                        .foregroundColor(mpd.status.song == song ? .accentColor : .primary)
+                        .lineLimit(2)
+
+                    Text((song.artist) + " • " + song.duration.timeString)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
 
-                Button("Copy Song Title") {
-                    song.title.copyToClipboard()
-                }
-
-                Divider()
-
-                if mpd.status.playlist?.name != "Favorites" {
-                    AsyncButton("Add Song to Favorites") {
-                        try await ConnectionManager.command().addToFavorites(songs: [song])
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            #if os(iOS)
+                .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 10))
+            #elseif os(macOS)
+                .onHoverWithDebounce(handler: hoverHandler) { hovering in
+                    withAnimation(.interactiveSpring) {
+                        isHovering = hovering
                     }
                 }
-
-                if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
-                    Menu("Add Song to Playlist") {
-                        ForEach(playlists) { playlist in
-                            AsyncButton(playlist.name) {
-                                try await ConnectionManager.command().addToPlaylist(playlist, songs: [song])
-                            }
-                        }
+            #endif
+                .onTapGesture {
+                    Task(priority: .userInitiated) {
+                        try? await ConnectionManager.command().play(song)
                     }
-
-                    if let playlist = mpd.status.playlist {
+                }
+                .contextMenu {
+                    @AppStorage(Setting.simpleMode) var simpleMode = false
+                    if !simpleMode {
+                        QueueToggleButton(song: song, isQueued: isQueued)
                         Divider()
+                    }
 
-                        if mpd.status.playlist?.name == "Favorites" {
-                            AsyncButton("Remove Song from Favorites") {
-                                try await ConnectionManager.command().removeFromFavorites(songs: [song])
+                    Button("Copy Song Title") {
+                        song.title.copyToClipboard()
+                    }
+
+                    Divider()
+
+                    if mpd.status.playlist?.name != "Favorites" {
+                        AsyncButton("Add Song to Favorites") {
+                            try await ConnectionManager.command().add(songs: [song], to: .favorites)
+                        }
+                    }
+
+                    if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
+                        Menu("Add Song to Playlist") {
+                            ForEach(playlists) { playlist in
+                                AsyncButton(playlist.name) {
+                                    try await ConnectionManager.command().add(songs: [song], to: .playlist(playlist))
+                                }
                             }
-                        } else {
-                            AsyncButton("Remove Song from Playlist") {
-                                try await ConnectionManager.command().removeFromPlaylist(playlist, songs: [song])
+                        }
+
+                        if let playlist = mpd.status.playlist {
+                            Divider()
+
+                            if mpd.status.playlist?.name == "Favorites" {
+                                AsyncButton("Remove Song from Favorites") {
+                                    try await ConnectionManager.command().remove(songs: [song], from: .favorites)
+                                }
+                            } else {
+                                AsyncButton("Remove Song from Playlist") {
+                                    try await ConnectionManager.command().remove(songs: [song], from: .playlist(playlist))
+                                }
                             }
                         }
                     }
                 }
+
+            if isMoveable {
+                Image(systemSymbol: .line3HorizontalCircle)
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                    .frame(maxHeight: .infinity)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: .clear, location: 0.0),
+                                .init(color: Color(.textBackgroundColor), location: 0.3),
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: trackSize * 4)
+                    )
+                    .opacity(isHoveringHandle ? 1 : 0)
+                    .onHover { value in
+                        withAnimation(.interactiveSpring) {
+                            isHoveringHandle = value
+                        }
+                    }
             }
+        }
     }
 }
 
@@ -191,10 +220,10 @@ struct QueueToggleButton: View {
             if actuallyInQueue {
                 let queueSongs = mpd.queue.internalMedia as? [Song]
                 if let queuedSong = queueSongs?.first(where: { $0.url == song.url }) {
-                    try await ConnectionManager.command().removeFromQueue(songs: [queuedSong])
+                    try await ConnectionManager.command().remove(songs: [queuedSong], from: .queue)
                 }
             } else {
-                try await ConnectionManager.command().addToQueue(songs: [song])
+                try await ConnectionManager.command().add(songs: [song], to: .queue)
             }
         }
     }
