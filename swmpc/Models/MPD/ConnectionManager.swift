@@ -1416,60 +1416,6 @@ extension ConnectionManager where Mode == CommandMode {
         _ = try await run(commands)
     }
 
-    /// Adds all songs from an artist to the specified source.
-    ///
-    /// - Parameters:
-    ///   - artist: The artist whose songs to add.
-    ///   - source: The destination source (queue or playlist).
-    /// - Throws: An error if the underlying command execution fails.
-    func add(artist: Artist, to source: Source) async throws {
-        let songs = try await getSongs(by: artist, from: .database)
-        try await add(songs: songs, to: source)
-    }
-
-    /// Adds all songs from an album to the specified source.
-    ///
-    /// - Parameters:
-    ///   - album: The album whose songs to add.
-    ///   - source: The destination source (queue or playlist).
-    /// - Throws: An error if the underlying command execution fails.
-    func add(album: Album, to source: Source) async throws {
-        let songs = try await getSongs(in: album, from: .database)
-        try await add(songs: songs, to: source)
-    }
-
-    /// Removes all songs from an artist from the specified source.
-    ///
-    /// - Parameters:
-    ///   - artist: The artist whose songs to remove.
-    ///   - source: The source from which to remove the songs.
-    /// - Throws: An error if the underlying command execution fails.
-    func remove(artist: Artist, from source: Source) async throws {
-        let artistSongs = try await getSongs(by: artist, from: .database)
-        let sourceSongs = try await getSongs(from: source)
-        let songsToRemove = sourceSongs.filter { song in
-            artistSongs.contains { $0.url == song.url }
-        }
-
-        try await remove(songs: songsToRemove, from: source)
-    }
-
-    /// Removes all songs from an album from the specified source.
-    ///
-    /// - Parameters:
-    ///   - album: The album whose songs to remove.
-    ///   - source: The source from which to remove the songs.
-    /// - Throws: An error if the underlying command execution fails.
-    func remove(album: Album, from source: Source) async throws {
-        let albumSongs = try await getSongs(in: album, from: .database)
-        let sourceSongs = try await getSongs(from: source)
-        let songsToRemove = sourceSongs.filter { song in
-            albumSongs.contains { $0.url == song.url }
-        }
-
-        try await remove(songs: songsToRemove, from: source)
-    }
-
     /// Moves a media item to a specific position in the specified source.
     ///
     /// - Parameters:
