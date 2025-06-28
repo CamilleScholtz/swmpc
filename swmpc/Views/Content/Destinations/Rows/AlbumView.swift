@@ -102,7 +102,7 @@ struct AlbumView: View {
             .contextMenu {
                 @AppStorage(Setting.simpleMode) var simpleMode = false
                 if !simpleMode {
-                    AlbumQueueToggleButton(album: album)
+                    SourceToggleButton(media: album, source: .queue)
                     Divider()
                 }
 
@@ -112,15 +112,14 @@ struct AlbumView: View {
 
                 Divider()
 
-                AsyncButton("Add Album to Favorites") {
-                    try await ConnectionManager.command().add(album: album, to: .favorites)
-                }
+                SourceToggleButton(media: album, source: .favorites)
 
                 if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
                     Menu("Add Album to Playlist") {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
-                                try await ConnectionManager.command().add(album: album, to: .playlist(playlist))
+                                let songs = try await ConnectionManager.command().getSongs(in: album, from: .database)
+                                try await ConnectionManager.command().add(songs: songs, to: .playlist(playlist))
                             }
                         }
                     }
@@ -133,35 +132,5 @@ struct AlbumView: View {
 
                 artwork = try? await album.artwork()
             }
-    }
-}
-
-struct AlbumQueueToggleButton: View {
-    @Environment(MPD.self) private var mpd
-
-    let album: Album
-
-    @State private var songs: [Song]?
-
-    private var actuallyInQueue: Bool {
-        guard let songs else {
-            return false
-        }
-
-        let urls = Set(mpd.queue.internalMedia.compactMap { ($0 as? Song)?.url })
-        return songs.contains { urls.contains($0.url) }
-    }
-
-    var body: some View {
-        AsyncButton(actuallyInQueue ? "Remove Album from Queue" : "Add Album to Queue") {
-            if actuallyInQueue {
-                try await ConnectionManager.command().remove(album: album, from: .queue)
-            } else {
-                try await ConnectionManager.command().add(album: album, to: .queue)
-            }
-        }
-        .task(id: album) {
-            songs = try? await ConnectionManager.command().getSongs(in: album, from: .database)
-        }
     }
 }

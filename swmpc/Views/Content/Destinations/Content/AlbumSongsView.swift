@@ -113,7 +113,7 @@ struct AlbumSongsView: View {
                 .contextMenu {
                     @AppStorage(Setting.simpleMode) var simpleMode = false
                     if !simpleMode {
-                        AlbumQueueToggleButton(album: album)
+                        SourceToggleButton(media: album, source: .queue)
                         Divider()
                     }
 
@@ -123,8 +123,17 @@ struct AlbumSongsView: View {
 
                     Divider()
 
-                    AsyncButton("Add Album to Favorites") {
-                        try await ConnectionManager.command().add(songs: songs?.values.flatMap(\.self) ?? [], to: .favorites)
+                    if let albumSongs = songs?.values.flatMap(\.self), !albumSongs.isEmpty {
+                        let favoriteUrls = Set(mpd.playlists.favorites.map(\.url))
+                        let allInFavorites = albumSongs.allSatisfy { favoriteUrls.contains($0.url) }
+
+                        AsyncButton(allInFavorites ? "Remove Album from Favorites" : "Add Album to Favorites") {
+                            if allInFavorites {
+                                try await ConnectionManager.command().remove(songs: albumSongs, from: .favorites)
+                            } else {
+                                try await ConnectionManager.command().add(songs: albumSongs, to: .favorites)
+                            }
+                        }
                     }
 
                     if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
@@ -157,8 +166,17 @@ struct AlbumSongsView: View {
 
                             Divider()
 
-                            AsyncButton("Add Album to Favorites") {
-                                try await ConnectionManager.command().add(songs: songs?.values.flatMap(\.self) ?? [], to: .favorites)
+                            if let albumSongs = songs?.values.flatMap(\.self), !albumSongs.isEmpty {
+                                let favoriteUrls = Set(mpd.playlists.favorites.map(\.url))
+                                let allInFavorites = albumSongs.allSatisfy { favoriteUrls.contains($0.url) }
+
+                                AsyncButton(allInFavorites ? "Remove Album from Favorites" : "Add Album to Favorites") {
+                                    if allInFavorites {
+                                        try await ConnectionManager.command().remove(songs: albumSongs, from: .favorites)
+                                    } else {
+                                        try await ConnectionManager.command().add(songs: albumSongs, to: .favorites)
+                                    }
+                                }
                             }
 
                             if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {

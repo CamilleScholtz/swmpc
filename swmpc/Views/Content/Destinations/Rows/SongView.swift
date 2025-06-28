@@ -97,7 +97,7 @@ struct SongView: View {
                 .contextMenu {
                     @AppStorage(Setting.simpleMode) var simpleMode = false
                     if !simpleMode {
-                        QueueToggleButton(song: song, isQueued: isQueued)
+                        SourceToggleButton(media: song, source: .queue)
                         Divider()
                     }
 
@@ -107,11 +107,7 @@ struct SongView: View {
 
                     Divider()
 
-                    if mpd.status.playlist?.name != "Favorites" {
-                        AsyncButton("Add Song to Favorites") {
-                            try await ConnectionManager.command().add(songs: [song], to: .favorites)
-                        }
-                    }
+                    SourceToggleButton(media: song, source: .favorites)
 
                     if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
                         Menu("Add Song to Playlist") {
@@ -122,17 +118,11 @@ struct SongView: View {
                             }
                         }
 
-                        if let playlist = mpd.status.playlist {
+                        if let playlist = mpd.status.playlist, playlist.name != "Favorites" {
                             Divider()
 
-                            if mpd.status.playlist?.name == "Favorites" {
-                                AsyncButton("Remove Song from Favorites") {
-                                    try await ConnectionManager.command().remove(songs: [song], from: .favorites)
-                                }
-                            } else {
-                                AsyncButton("Remove Song from Playlist") {
-                                    try await ConnectionManager.command().remove(songs: [song], from: .playlist(playlist))
-                                }
+                            AsyncButton("Remove Song from Playlist") {
+                                try await ConnectionManager.command().remove(songs: [song], from: .playlist(playlist))
                             }
                         }
                     }
@@ -200,31 +190,5 @@ struct WaveView: View {
         RoundedRectangle(cornerRadius: 2)
             .fill(.secondary)
             .frame(width: 2, height: (isAnimating ? high : low) * 12)
-    }
-}
-
-struct QueueToggleButton: View {
-    @Environment(MPD.self) private var mpd
-
-    let song: Song
-    let isQueued: Bool
-
-    private var actuallyInQueue: Bool {
-        isQueued || mpd.queue.internalMedia.contains {
-            $0.url == song.url
-        }
-    }
-
-    var body: some View {
-        AsyncButton(actuallyInQueue ? "Remove Song from Queue" : "Add Song to Queue") {
-            if actuallyInQueue {
-                let queueSongs = mpd.queue.internalMedia as? [Song]
-                if let queuedSong = queueSongs?.first(where: { $0.url == song.url }) {
-                    try await ConnectionManager.command().remove(songs: [queuedSong], from: .queue)
-                }
-            } else {
-                try await ConnectionManager.command().add(songs: [song], to: .queue)
-            }
-        }
     }
 }

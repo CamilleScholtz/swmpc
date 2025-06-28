@@ -208,6 +208,16 @@
         }
       }
     },
+    "Add %@ to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add %1$@ to %2$@"
+          }
+        }
+      }
+    },
     "Add Album to Favorites" : {
       "localizations" : {
         "de" : {
@@ -277,6 +287,7 @@
       }
     },
     "Add Album to Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -311,6 +322,7 @@
       }
     },
     "Add All by Artist to Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -379,6 +391,7 @@
       }
     },
     "Add Song to Favorites" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -447,6 +460,7 @@
       }
     },
     "Add Song to Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3744,6 +3758,19 @@
     "Reload Library" : {
 
     },
+    "Remove %@ from %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove %1$@ from %2$@"
+          }
+        }
+      }
+    },
+    "Remove Album from Favorites" : {
+
+    },
     "Remove Album from Playlist" : {
       "localizations" : {
         "de" : {
@@ -3779,6 +3806,7 @@
       }
     },
     "Remove Album from Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3813,6 +3841,7 @@
       }
     },
     "Remove All by Artist from Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3847,6 +3876,7 @@
       }
     },
     "Remove Song from Favorites" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3915,6 +3945,7 @@
       }
     },
     "Remove Song from Queue" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
