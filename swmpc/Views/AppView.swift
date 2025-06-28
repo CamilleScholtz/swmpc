@@ -119,7 +119,7 @@ struct AppView: View {
 //                                    } label: {
 //                                        Image(systemSymbol: .musicNoteList)
 //                                    }
-//                                    .keyboardShortcut("q", modifiers: [.command])
+//                                    .keyboardShortcut("`", modifiers: [.command])
 //                                }
 //                            }
 //                        }
