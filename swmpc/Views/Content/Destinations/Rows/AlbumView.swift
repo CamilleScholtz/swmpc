@@ -100,30 +100,7 @@ struct AlbumView: View {
                 navigator.navigate(to: ContentDestination.album(album))
             }
             .contextMenu {
-                @AppStorage(Setting.simpleMode) var simpleMode = false
-                if !simpleMode {
-                    SourceToggleButton(media: album, source: .queue)
-                    Divider()
-                }
-
-                Button("Copy Album Title") {
-                    album.title.copyToClipboard()
-                }
-
-                Divider()
-
-                SourceToggleButton(media: album, source: .favorites)
-
-                if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
-                    Menu("Add Album to Playlist") {
-                        ForEach(playlists) { playlist in
-                            AsyncButton(playlist.name) {
-                                let songs = try await ConnectionManager.command().getSongs(in: album, from: .database)
-                                try await ConnectionManager.command().add(songs: songs, to: .playlist(playlist))
-                            }
-                        }
-                    }
-                }
+                RowContextMenuView(for: album)
             }
             .task(id: album, priority: .high) {
                 guard artwork == nil else {

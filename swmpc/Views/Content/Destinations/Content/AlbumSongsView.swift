@@ -228,9 +228,7 @@ struct AlbumSongsView: View {
                     if let songs {
                         let flat = songs.values.flatMap(\.self)
                         Text(
-                            String(format: flat.count > 1
-                                ? NSLocalizedString("%d songs", comment: "")
-                                : NSLocalizedString("%d song", comment: ""), flat.count)
+                            String(localized: "\(flat.count) \(flat.count == 1 ? "song" : "songs")")
                                 + " • "
                                 + (flat.reduce(0) { $0 + $1.duration }.humanTimeString)
                         )

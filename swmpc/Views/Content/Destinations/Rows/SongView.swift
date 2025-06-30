@@ -12,13 +12,11 @@ struct SongView: View {
     @Environment(MPD.self) private var mpd
 
     private let song: Song
-    private let isQueued: Bool
-    private let isMoveable: Bool
+    private let membershipContext: MembershipContext
 
-    init(for song: Song, isQueued: Bool = false, isMoveable: Bool = false) {
+    init(for song: Song, membershipContext: MembershipContext = .none) {
         self.song = song
-        self.isQueued = isQueued
-        self.isMoveable = isMoveable
+        self.membershipContext = membershipContext
     }
 
     #if os(macOS)
@@ -95,40 +93,10 @@ struct SongView: View {
                     }
                 }
                 .contextMenu {
-                    @AppStorage(Setting.simpleMode) var simpleMode = false
-                    if !simpleMode {
-                        SourceToggleButton(media: song, source: .queue)
-                        Divider()
-                    }
-
-                    Button("Copy Song Title") {
-                        song.title.copyToClipboard()
-                    }
-
-                    Divider()
-
-                    SourceToggleButton(media: song, source: .favorites)
-
-                    if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
-                        Menu("Add Song to Playlist") {
-                            ForEach(playlists) { playlist in
-                                AsyncButton(playlist.name) {
-                                    try await ConnectionManager.command().add(songs: [song], to: .playlist(playlist))
-                                }
-                            }
-                        }
-
-                        if let playlist = mpd.status.playlist, playlist.name != "Favorites" {
-                            Divider()
-
-                            AsyncButton("Remove Song from Playlist") {
-                                try await ConnectionManager.command().remove(songs: [song], from: .playlist(playlist))
-                            }
-                        }
-                    }
+                    RowContextMenuView(for: song, membershipContext: membershipContext)
                 }
 
-            if isMoveable {
+            if membershipContext.showsHandle {
                 Image(systemSymbol: .line3HorizontalCircle)
                     .font(.title3)
                     .foregroundColor(.secondary)

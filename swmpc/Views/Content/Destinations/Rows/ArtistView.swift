@@ -60,15 +60,7 @@ struct ArtistView: View {
             navigator.navigate(to: ContentDestination.artist(artist))
         }
         .contextMenu {
-            @AppStorage(Setting.simpleMode) var simpleMode = false
-            if !simpleMode {
-                SourceToggleButton(media: artist, source: .queue)
-                Divider()
-            }
-
-            Button("Copy Artist Name") {
-                artist.name.copyToClipboard()
-            }
+            RowContextMenuView(for: artist)
         }
     }
 }
