@@ -80,13 +80,13 @@ struct DetailFooterView: View {
                             .font(.system(size: 30))
                             .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
                             .opacity(mpd.status.isPlaying ? 1 : 0.1)
-                            .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
+                            .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
 
                         Image(systemSymbol: .playFill)
                             .font(.system(size: 30))
                             .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
                             .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                            .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
+                            .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
                     }
                 }
             }
@@ -95,28 +95,88 @@ struct DetailFooterView: View {
     }
 
     struct PreviousView: View {
+        @State private var animating = false
+
+        var value: CGFloat {
+            animating ? 1 : 0
+        }
+
         var body: some View {
             AsyncButton {
+                withAnimation(.interactiveSpring(duration: 0.4, extraBounce: 0.3)) {
+                    if !animating {
+                        animating = true
+                    }
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        animating = false
+                    }
+                }
+
                 try await ConnectionManager.command().previous()
             } label: {
-                Image(systemSymbol: .backwardFill)
+                Group {
+                    HStack(spacing: -5) {
+                        Image(systemSymbol: .arrowtriangleBackwardFill)
+                            .opacity(1 - value)
+                            .scaleEffect(1 - value)
+
+                        Image(systemSymbol: .arrowtriangleBackwardFill)
+
+                        Image(systemSymbol: .arrowtriangleBackwardFill)
+                            .opacity(value)
+                            .scaleEffect(value)
+                    }
                     .font(.system(size: 18))
-                    .padding(12)
-                    .contentShape(Circle())
+                    .offset(x: -value * (18 - 5))
+                    .offset(x: -(18 - 5) / 2)
+                }
+                .padding(12)
+                .contentShape(Circle())
             }
             .styledButton()
         }
     }
 
     struct NextView: View {
+        @State private var animating = false
+
+        var value: CGFloat {
+            animating ? 1 : 0
+        }
+
         var body: some View {
             AsyncButton {
+                withAnimation(.interactiveSpring(duration: 0.4, extraBounce: 0.3)) {
+                    if !animating {
+                        animating = true
+                    }
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        animating = false
+                    }
+                }
+
                 try await ConnectionManager.command().next()
             } label: {
-                Image(systemSymbol: .forwardFill)
+                Group {
+                    HStack(spacing: -5) {
+                        Image(systemSymbol: .arrowtriangleForwardFill)
+                            .opacity(value)
+                            .scaleEffect(value)
+
+                        Image(systemSymbol: .arrowtriangleForwardFill)
+
+                        Image(systemSymbol: .arrowtriangleForwardFill)
+                            .opacity(1 - value)
+                            .scaleEffect(1 - value)
+                    }
                     .font(.system(size: 18))
-                    .padding(12)
-                    .contentShape(Circle())
+                    .offset(x: value * (18 - 5))
+                    .offset(x: -(18 - 5) / 2)
+                }
+                .padding(12)
+                .contentShape(Circle())
             }
             .styledButton()
         }

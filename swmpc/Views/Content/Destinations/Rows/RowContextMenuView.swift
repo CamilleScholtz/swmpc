@@ -97,13 +97,6 @@ struct RowContextMenuView<Media: Mediable>: View {
             SourceToggleButton(media: media, source: .queue, action: membershipContext == .queued ? .remove : nil)
             Divider()
         }
-
-        Button(copyTitle) {
-            textToCopy.copyToClipboard()
-        }
-
-        Divider()
-
         SourceToggleButton(media: media, source: .favorites, action: membershipContext == .favorited ? .remove : nil)
 
         if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
@@ -117,6 +110,12 @@ struct RowContextMenuView<Media: Mediable>: View {
                     SourceToggleButton(media: media, source: .playlist(playlist), action: action)
                 }
             }
+        }
+
+        Divider()
+
+        Button(copyTitle) {
+            textToCopy.copyToClipboard()
         }
     }
 }
@@ -189,11 +188,7 @@ struct SourceToggleButton<Media: Mediable>: View {
             }
 
             if songs.contains(where: { urls.contains($0.url) }) {
-                do {
-                    try await ConnectionManager.command().remove(songs: songs, from: source)
-                } catch {
-                    print(error)
-                }
+                try await ConnectionManager.command().remove(songs: songs, from: source)
             } else {
                 try await ConnectionManager.command().add(songs: songs, to: source)
             }
