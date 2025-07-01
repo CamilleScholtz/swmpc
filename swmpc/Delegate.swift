@@ -284,7 +284,7 @@ struct Delegate: App {
                 guard !Task.isCancelled else {
                     return
                 }
-                
+
                 self.popoverAnchor.button!.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
             }
         }

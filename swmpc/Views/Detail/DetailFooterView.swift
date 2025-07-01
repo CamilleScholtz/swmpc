@@ -114,7 +114,7 @@ struct DetailFooterView: View {
 
                 try await ConnectionManager.command().previous()
             } label: {
-                Group {
+                VStack(alignment: .trailing) {
                     HStack(spacing: -5) {
                         Image(systemSymbol: .arrowtriangleBackwardFill)
                             .opacity(1 - value)
@@ -128,8 +128,9 @@ struct DetailFooterView: View {
                     }
                     .font(.system(size: 18))
                     .offset(x: -value * (18 - 5))
-                    .offset(x: -(18 - 5) / 2)
+                    .offset(x: (18 - 5) / 3)
                 }
+                .frame(width: (18 - 5) * 2)
                 .padding(12)
                 .contentShape(Circle())
             }
@@ -158,7 +159,7 @@ struct DetailFooterView: View {
 
                 try await ConnectionManager.command().next()
             } label: {
-                Group {
+                VStack(alignment: .leading) {
                     HStack(spacing: -5) {
                         Image(systemSymbol: .arrowtriangleForwardFill)
                             .opacity(value)
@@ -172,8 +173,9 @@ struct DetailFooterView: View {
                     }
                     .font(.system(size: 18))
                     .offset(x: value * (18 - 5))
-                    .offset(x: -(18 - 5) / 2)
+                    .offset(x: -(18 - 5) / 3)
                 }
+                .frame(width: (18 - 5) * 2)
                 .padding(12)
                 .contentShape(Circle())
             }
