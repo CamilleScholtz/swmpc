@@ -80,14 +80,13 @@ struct DetailFooterView: View {
                             .font(.system(size: 30))
                             .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
                             .opacity(mpd.status.isPlaying ? 1 : 0.1)
-                            .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
 
                         Image(systemSymbol: .playFill)
                             .font(.system(size: 30))
                             .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
                             .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                            .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
                     }
+                    .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
                 }
             }
             .styledButton(hoverScale: 1.13)
