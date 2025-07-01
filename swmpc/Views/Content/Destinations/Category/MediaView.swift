@@ -68,8 +68,12 @@ struct MediaView: View {
                             let to = index < to ? to - 1 : to
 
                             try? await ConnectionManager.command().move(song, to: to, in: library.source)
-                            if case .playlist = library.source {
+                            
+                            switch library.source {
+                            case .playlist, .favorites:
                                 NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
+                            default:
+                                break
                             }
                         }
                     }
