@@ -154,7 +154,7 @@ struct Delegate: App {
 
         let popover = NSPopover()
 
-        private var changeImageWorkItem: DispatchWorkItem?
+        private var changeImageTask: Task<Void, Never>?
 
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
@@ -278,13 +278,14 @@ struct Delegate: App {
                 return popoverAnchor.button!.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
             }
 
-            changeImageWorkItem?.cancel()
-            changeImageWorkItem = DispatchWorkItem {
+            changeImageTask?.cancel()
+            changeImageTask = Task {
+                try? await Task.sleep(for: .seconds(0.8))
+                guard !Task.isCancelled else {
+                    return
+                }
+                
                 self.popoverAnchor.button!.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
-            }
-
-            if let workItem = changeImageWorkItem {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8, execute: workItem)
             }
         }
 
