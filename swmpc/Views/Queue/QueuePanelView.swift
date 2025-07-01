@@ -61,7 +61,7 @@ struct QueuePanelView: View {
                                 .contentShape(Circle())
                         }
                         .styledButton()
-                        .keyboardShortcut(.delete)
+                        .keyboardShortcut(.delete, modifiers: [.shift, .command])
                     }
 
                     Button(role: .cancel, action: {

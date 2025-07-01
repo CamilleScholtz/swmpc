@@ -96,7 +96,7 @@ struct SongView: View {
                     RowContextMenuView(for: song, membershipContext: membershipContext)
                 }
 
-            if membershipContext.showsHandle {
+            if membershipContext.isMovable {
                 Image(systemSymbol: .line3HorizontalCircle)
                     .font(.title3)
                     .foregroundColor(.secondary)

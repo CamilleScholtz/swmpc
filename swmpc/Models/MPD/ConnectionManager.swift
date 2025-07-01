@@ -56,30 +56,6 @@ enum CommandMode: ConnectionMode {
     static let qos: DispatchQoS = .userInitiated
 }
 
-/// Specifies the source of media items.
-enum Source: Equatable, Hashable {
-    /// Media items from the MPD database.
-    case database
-    /// Media items from the current queue.
-    case queue
-    /// Media items from a specific playlist.
-    case playlist(Playlist)
-    /// Media items from the favorites playlist.
-    case favorites
-
-    /// Returns the playlist if this source represents a playlist.
-    var playlist: Playlist? {
-        switch self {
-        case .database, .queue:
-            nil
-        case let .playlist(playlist):
-            playlist
-        case .favorites:
-            Playlist(name: "Favorites")
-        }
-    }
-}
-
 /// Errors that can occur during MPD connection management.
 enum ConnectionManagerError: LocalizedError {
     case invalidPort

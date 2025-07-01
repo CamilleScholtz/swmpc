@@ -28,10 +28,6 @@ enum MembershipContext: Equatable {
         }
     }
 
-    var showsHandle: Bool {
-        isMovable
-    }
-
     var contextMenuAction: SourceToggleButtonAction? {
         switch self {
         case .none:
@@ -44,8 +40,6 @@ enum MembershipContext: Equatable {
 
 struct RowContextMenuView<Media: Mediable>: View {
     @Environment(MPD.self) private var mpd
-
-    @AppStorage(Setting.simpleMode) private var simpleMode = false
 
     let media: Media
     let membershipContext: MembershipContext
@@ -86,28 +80,51 @@ struct RowContextMenuView<Media: Mediable>: View {
         case is Song: "Song"
         case is Album: "Album"
         case is Artist: "Artist"
-        default: "Item"
+        default: ""
         }
 
         return "Add or Remove \(mediaType) from Playlist"
     }
-
+    
     var body: some View {
-        if !simpleMode {
-            SourceToggleButton(media: media, source: .queue, action: membershipContext == .queued ? .remove : nil)
-            Divider()
+        switch membershipContext {
+        case .queued:
+            SourceToggleButton(media: media, source: .queue, action: .remove)
+        case .favorited:
+            SourceToggleButton(media: media, source: .favorites, action: .remove)
+        case let .inPlaylist(playlist):
+            SourceToggleButton(media: media, source: .playlist(playlist), action: .remove)
+        case .none:
+            SourceToggleButton(media: media, source: .queue, action: nil)
         }
-        SourceToggleButton(media: media, source: .favorites, action: membershipContext == .favorited ? .remove : nil)
+        
+        Divider()
+        
+        if membershipContext != .queued && membershipContext != .none {
+            SourceToggleButton(media: media, source: .queue, action: nil)
+        }
+
+        if membershipContext != .favorited {
+            SourceToggleButton(media: media, source: .favorites, action: nil)
+        }
 
         if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
             Menu(playlistMenuTitle) {
                 ForEach(playlists) { playlist in
-                    let action: SourceToggleButtonAction? = if case let .inPlaylist(contextPlaylist) = membershipContext, contextPlaylist == playlist {
-                        .remove
+                    let skipPlaylist = if case let .inPlaylist(contextPlaylist) = membershipContext {
+                        contextPlaylist == playlist
                     } else {
-                        nil
+                        false
                     }
-                    SourceToggleButton(media: media, source: .playlist(playlist), action: action)
+                    
+                    if !skipPlaylist {
+                        let action: SourceToggleButtonAction? = if case let .inPlaylist(contextPlaylist) = membershipContext, contextPlaylist == playlist {
+                            .remove
+                        } else {
+                            nil
+                        }
+                        SourceToggleButton(media: media, source: .playlist(playlist), action: action, title: playlist.name)
+                    }
                 }
             }
         }
@@ -126,6 +143,7 @@ struct SourceToggleButton<Media: Mediable>: View {
     let media: Media
     let source: Source
     var action: SourceToggleButtonAction? = nil
+    var title: String? = nil
 
     private var mediaTypeName: LocalizedStringResource {
         switch media {
@@ -153,15 +171,21 @@ struct SourceToggleButton<Media: Mediable>: View {
         }
     }
 
-    private var title: String {
-        switch source {
-        case .playlist: String(localized: sourceName)
-        default: String(localized: "\(String(localized: actionName)) \(String(localized: mediaTypeName)) from \(String(localized: sourceName))")
+    private var computedTitle: String {
+        guard title == nil else {
+            return title!
+        }
+        
+        return switch source {
+        case .playlist:
+            String(localized: "\(String(localized: actionName)) \(String(localized: mediaTypeName)) from Playlist")
+        default:
+            String(localized: "\(String(localized: actionName)) \(String(localized: mediaTypeName)) from \(String(localized: sourceName))")
         }
     }
 
     var body: some View {
-        AsyncButton(title) {
+        AsyncButton(computedTitle) {
             let songs: [Song]
             switch media {
             case let album as Album:

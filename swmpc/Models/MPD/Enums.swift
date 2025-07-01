@@ -29,6 +29,30 @@ enum MediaType {
     case playlist
 }
 
+/// Specifies the source of media items.
+enum Source: Equatable, Hashable {
+    /// Media items from the MPD database.
+    case database
+    /// Media items from the current queue.
+    case queue
+    /// Media items from a specific playlist.
+    case playlist(Playlist)
+    /// Media items from the favorites playlist.
+    case favorites
+
+    /// Returns the playlist if this source represents a playlist.
+    var playlist: Playlist? {
+        switch self {
+        case .database, .queue:
+            nil
+        case let .playlist(playlist):
+            playlist
+        case .favorites:
+            Playlist(name: "Favorites")
+        }
+    }
+}
+
 /// Represents the different subsystems that MPD monitors for changes.
 ///
 /// These events are used with MPD's idle command to receive notifications.
@@ -52,3 +76,4 @@ enum ArtworkGetter: String {
     /// Retrieve artwork embedded in the audio file.
     case embedded = "readpicture"
 }
+
