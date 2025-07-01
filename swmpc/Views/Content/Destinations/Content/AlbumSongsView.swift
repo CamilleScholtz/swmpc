@@ -111,42 +111,7 @@ struct AlbumSongsView: View {
                 }
                 #endif
                 .contextMenu {
-                    SourceToggleButton(media: album, source: .queue)
-
-                    Button("Copy Album Title") {
-                        album.title.copyToClipboard()
-                    }
-
-                    Divider()
-
-                    if let albumSongs = songs?.values.flatMap(\.self), !albumSongs.isEmpty {
-                        let favoriteUrls = Set(mpd.playlists.favorites.map(\.url))
-                        let allInFavorites = albumSongs.allSatisfy { favoriteUrls.contains($0.url) }
-
-                        AsyncButton(allInFavorites ? "Remove Album from Favorites" : "Add Album to Favorites") {
-                            if allInFavorites {
-                                try await ConnectionManager.command().remove(songs: albumSongs, from: .favorites)
-                            } else {
-                                try await ConnectionManager.command().add(songs: albumSongs, to: .favorites)
-                            }
-                        }
-                    }
-
-                    if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
-                        Menu("Add Album to Playlist") {
-                            ForEach(playlists) { playlist in
-                                AsyncButton(playlist.name) {
-                                    try await ConnectionManager.command().add(songs: songs?.values.flatMap(\.self) ?? [], to: .playlist(playlist))
-                                }
-                            }
-                        }
-
-                        if let playlist = mpd.status.playlist {
-                            AsyncButton("Remove Album from Playlist") {
-                                try await ConnectionManager.command().remove(songs: songs?.values.flatMap(\.self) ?? [], from: .playlist(playlist))
-                            }
-                        }
-                    }
+                    ContextMenuView(for: album)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -155,42 +120,6 @@ struct AlbumSongsView: View {
                         .fontWeight(.semibold)
                         .fontDesign(.rounded)
                         .lineLimit(3)
-                        .contextMenu {
-                            Button("Copy Album Title") {
-                                album.title.copyToClipboard()
-                            }
-
-                            Divider()
-
-                            if let albumSongs = songs?.values.flatMap(\.self), !albumSongs.isEmpty {
-                                let favoriteUrls = Set(mpd.playlists.favorites.map(\.url))
-                                let allInFavorites = albumSongs.allSatisfy { favoriteUrls.contains($0.url) }
-
-                                AsyncButton(allInFavorites ? "Remove Album from Favorites" : "Add Album to Favorites") {
-                                    if allInFavorites {
-                                        try await ConnectionManager.command().remove(songs: albumSongs, from: .favorites)
-                                    } else {
-                                        try await ConnectionManager.command().add(songs: albumSongs, to: .favorites)
-                                    }
-                                }
-                            }
-
-                            if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
-                                Menu("Add Album to Playlist") {
-                                    ForEach(playlists) { playlist in
-                                        AsyncButton(playlist.name) {
-                                            try await ConnectionManager.command().add(songs: songs?.values.flatMap(\.self) ?? [], to: .playlist(playlist))
-                                        }
-                                    }
-                                }
-
-                                if let playlist = mpd.status.playlist {
-                                    AsyncButton("Remove Album from Playlist") {
-                                        try await ConnectionManager.command().remove(songs: songs?.values.flatMap(\.self) ?? [], from: .playlist(playlist))
-                                    }
-                                }
-                            }
-                        }
 
                     AsyncButton {
                         guard let artist = try? await mpd.database.get(for: album, using: .artist) as? Artist else {

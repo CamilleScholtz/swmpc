@@ -150,6 +150,7 @@
 
     },
     "Add Album to Favorites" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -178,6 +179,7 @@
       }
     },
     "Add Album to Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2843,10 +2845,8 @@
     "Remove" : {
 
     },
-    "Remove Album from Favorites" : {
-
-    },
     "Remove Album from Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

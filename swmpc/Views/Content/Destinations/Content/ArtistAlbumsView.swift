@@ -33,9 +33,7 @@ struct ArtistAlbumsView: View {
                         .fontDesign(.rounded)
                         .lineLimit(3)
                         .contextMenu {
-                            Button("Copy Artist Name") {
-                                artist.name.copyToClipboard()
-                            }
+                            ContextMenuView(for: artist)
                         }
 
                     Text(artist.albums?.count ?? 0 > 1 ? "\(String(artist.albums!.count)) albums" : "1 album")
