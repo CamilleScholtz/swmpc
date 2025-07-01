@@ -12,11 +12,11 @@ struct SongView: View {
     @Environment(MPD.self) private var mpd
 
     private let song: Song
-    private let membershipContext: MembershipContext
+    private let source: Source?
 
-    init(for song: Song, membershipContext: MembershipContext = .none) {
+    init(for song: Song, source: Source? = nil) {
         self.song = song
-        self.membershipContext = membershipContext
+        self.source = source
     }
 
     #if os(macOS)
@@ -93,10 +93,10 @@ struct SongView: View {
                     }
                 }
                 .contextMenu {
-                    RowContextMenuView(for: song, membershipContext: membershipContext)
+                    ContextMenuView(for: song, source: source)
                 }
 
-            if membershipContext.isMovable {
+            if source?.isMovable ?? false {
                 Image(systemSymbol: .line3HorizontalCircle)
                     .font(.title3)
                     .foregroundColor(.secondary)

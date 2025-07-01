@@ -21,8 +21,6 @@ struct AppView: View {
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
-    @AppStorage(Setting.simpleMode) private var simpleMode = false
-
     #if os(iOS)
         @State private var isPopupBarPresented = true
         @State private var isPopupOpen = false
@@ -83,26 +81,24 @@ struct AppView: View {
                             DetailView()
                                 .padding(60)
                                 .overlay(alignment: .topTrailing) {
-                                    if !simpleMode {
-                                        Button {
-                                            withAnimation(.spring) {
-                                                showQueuePanel.toggle()
-                                            }
-                                        } label: {
-                                            Image(systemSymbol: .musicNoteList)
+                                    Button {
+                                        withAnimation(.spring) {
+                                            showQueuePanel.toggle()
                                         }
-                                        .styledButton()
-                                        .offset(x: -15, y: 20)
-                                        .ignoresSafeArea()
-                                        .keyboardShortcut("`", modifiers: [.command])
+                                    } label: {
+                                        Image(systemSymbol: .musicNoteList)
                                     }
+                                    .styledButton()
+                                    .offset(x: -15, y: 20)
+                                    .ignoresSafeArea()
+                                    .keyboardShortcut("`", modifiers: [.command])
                                 }
                         }
                         .background(.background)
                         .simultaneousGesture(
                             TapGesture()
                                 .onEnded {
-                                    guard !simpleMode, showQueuePanel else {
+                                    guard showQueuePanel else {
                                         return
                                     }
 
@@ -112,7 +108,7 @@ struct AppView: View {
                                 }
                         )
                         .overlay(alignment: .trailing) {
-                            if !simpleMode, showQueuePanel {
+                            if showQueuePanel {
                                 QueuePanelView(showQueuePanel: $showQueuePanel)
                                     .frame(width: 310)
                                     .background(.background)

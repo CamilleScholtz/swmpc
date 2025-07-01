@@ -111,11 +111,7 @@ struct AlbumSongsView: View {
                 }
                 #endif
                 .contextMenu {
-                    @AppStorage(Setting.simpleMode) var simpleMode = false
-                    if !simpleMode {
-                        SourceToggleButton(media: album, source: .queue)
-                        Divider()
-                    }
+                    SourceToggleButton(media: album, source: .queue)
 
                     Button("Copy Album Title") {
                         album.title.copyToClipboard()
@@ -247,11 +243,7 @@ struct AlbumSongsView: View {
             #endif
                 .task {
                     artwork = try? await album.artwork()
-
-                    @AppStorage(Setting.simpleMode) var simpleMode = false
-                    let source: Source = simpleMode ? .queue : .database
-
-                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(in: album, from: source)) ?? [], by: { $0.disc })
+                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(in: album, from: .database)) ?? [], by: { $0.disc })
                 }
         }
         #if os(macOS)

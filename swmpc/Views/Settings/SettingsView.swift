@@ -119,7 +119,6 @@ struct SettingsView: View {
     struct BehaviorView: View {
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-        @AppStorage(Setting.simpleMode) var simpleMode = false
         @AppStorage(Setting.runAsAgent) var runAsAgent = false
 
         @State private var restartAlertShown = false
@@ -130,27 +129,6 @@ struct SettingsView: View {
                 #if os(macOS)
                     LaunchAtLogin.Toggle()
 
-                    Divider()
-                        .frame(height: 32, alignment: .center)
-                #endif
-
-                Toggle(isOn: $simpleMode) {
-                    Text("Simple Mode")
-                    Text("When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, standard MPD queue management is used. Requires a restart to take effect.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .onChange(of: simpleMode) {
-                    guard !isRestarting else {
-                        return
-                    }
-
-                    isRestarting = true
-                    restartAlertShown = true
-                }
-
-                #if os(macOS)
                     Divider()
                         .frame(height: 32, alignment: .center)
 
@@ -193,7 +171,7 @@ struct SettingsView: View {
             .navigationTitle("Behavior")
             .alert("Restart Required", isPresented: $restartAlertShown) {
                 Button("Cancel", role: .cancel) {
-                    simpleMode = !simpleMode
+                    runAsAgent = !runAsAgent
 
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         isRestarting = false

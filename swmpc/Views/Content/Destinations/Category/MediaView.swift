@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+extension Source {
+    var isMovable: Bool {
+        switch self {
+        case .queue, .playlist:
+            true
+        case .database, .favorites:
+            false
+        }
+    }
+}
+
 struct MediaView: View {
     @Environment(MPD.self) private var mpd
 
@@ -32,20 +43,16 @@ struct MediaView: View {
         type = .song
     }
 
-    private var membershipContext: MembershipContext {
+    private var source: Source? {
         guard type == .song else {
-            return .none
+            return nil
         }
 
         switch library.source {
-        case .queue:
-            return .queued
-        case let .playlist(playlist):
-            return .inPlaylist(playlist)
-        case .favorites:
-            return .favorited
+        case .queue, .playlist, .favorites:
+            return library.source
         case .database:
-            return .none
+            return nil
         }
     }
 
@@ -53,9 +60,9 @@ struct MediaView: View {
         Group {
             switch type {
             case .song:
-                if membershipContext.isMovable {
+                if source?.isMovable ?? false {
                     ForEach(library.media.compactMap { $0 as? Song }) { song in
-                        SongView(for: song, membershipContext: membershipContext)
+                        SongView(for: song, source: source)
                     }
                     .onMove { from, to in
                         Task {
@@ -68,7 +75,7 @@ struct MediaView: View {
                             let to = index < to ? to - 1 : to
 
                             try? await ConnectionManager.command().move(song, to: to, in: library.source)
-                            
+
                             switch library.source {
                             case .playlist, .favorites:
                                 NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
@@ -79,7 +86,7 @@ struct MediaView: View {
                     }
                 } else {
                     ForEach(library.media.compactMap { $0 as? Song }) { song in
-                        SongView(for: song, membershipContext: membershipContext)
+                        SongView(for: song, source: source)
                     }
                 }
             case .album:

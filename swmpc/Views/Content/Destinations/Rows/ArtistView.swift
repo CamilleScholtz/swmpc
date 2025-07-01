@@ -60,7 +60,7 @@ struct ArtistView: View {
             navigator.navigate(to: ContentDestination.artist(artist))
         }
         .contextMenu {
-            RowContextMenuView(for: artist)
+            ContextMenuView(for: artist)
         }
     }
 }

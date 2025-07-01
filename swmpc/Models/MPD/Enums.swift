@@ -76,4 +76,3 @@ enum ArtworkGetter: String {
     /// Retrieve artwork embedded in the audio file.
     case embedded = "readpicture"
 }
-

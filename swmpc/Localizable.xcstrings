@@ -42,6 +42,16 @@
         }
       }
     },
+    "%@ %@ from Playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ from Playlist"
+          }
+        }
+      }
+    },
     "%@ albums" : {
       "localizations" : {
         "de" : {
@@ -3348,6 +3358,7 @@
       }
     },
     "Simple Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3856,9 +3867,6 @@
           }
         }
       }
-    },
-    "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, standard MPD queue management is used. Requires a restart to take effect." : {
-
     },
     "When enabled, the app runs without a dock icon (menu bar only). Requires a restart to take effect." : {
 

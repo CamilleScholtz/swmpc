@@ -18,10 +18,8 @@ import SwiftUI
     /// The MPD status manager, tracking playback state and current song.
     let status = StatusManager()
 
-    /// The MPD database manager, handling music library queries. This value
-    /// will route to the `queue` `LLibraryManager` when in simple mode,
-    /// otherwise it will route to the actual MPD database.
-    var database: LibraryManager
+    /// The MPD database manager, handling music library queries.
+    var database = LibraryManager(using: .database)
 
     /// The MPD queue manager, handling music library queries.
     let queue = LibraryManager(using: .queue)
@@ -38,9 +36,6 @@ import SwiftUI
 
     @MainActor
     init() {
-        @AppStorage(Setting.simpleMode) var simpleMode = false
-        database = simpleMode ? queue : LibraryManager(using: .database)
-
         updateLoopTask = Task { [weak self] in
             await self?.updateLoop()
         }

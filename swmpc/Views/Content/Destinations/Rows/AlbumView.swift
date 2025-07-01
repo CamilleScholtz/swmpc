@@ -100,7 +100,7 @@ struct AlbumView: View {
                 navigator.navigate(to: ContentDestination.album(album))
             }
             .contextMenu {
-                RowContextMenuView(for: album)
+                ContextMenuView(for: album)
             }
             .task(id: album, priority: .high) {
                 guard artwork == nil else {
