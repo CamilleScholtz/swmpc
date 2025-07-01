@@ -13,32 +13,49 @@ struct MediaView: View {
     @State private var library: LibraryManager
 
     private let type: MediaType
-    private let isMoveable: Bool
 
     private let startSearchingNotification = NotificationCenter.default
         .publisher(for: .startSearchingNotication)
 
-    init(using library: LibraryManager, type: MediaType, isMoveable: Bool = false) {
+    private let playlistModifiedNotification = NotificationCenter.default
+        .publisher(for: .playlistModifiedNotification)
+
+    init(using library: LibraryManager, type: MediaType) {
         _library = State(initialValue: library)
 
         self.type = type
-        self.isMoveable = isMoveable
     }
 
     init(for playlist: Playlist) {
         _library = State(initialValue: LibraryManager(using: .playlist(playlist)))
 
         type = .song
-        isMoveable = false
+    }
+
+    private var membershipContext: MembershipContext {
+        guard type == .song else {
+            return .none
+        }
+
+        switch library.source {
+        case .queue:
+            return .queued
+        case let .playlist(playlist):
+            return .inPlaylist(playlist)
+        case .favorites:
+            return .favorited
+        case .database:
+            return .none
+        }
     }
 
     var body: some View {
         Group {
             switch type {
             case .song:
-                if isMoveable {
+                if membershipContext.isMovable {
                     ForEach(library.media.compactMap { $0 as? Song }) { song in
-                        SongView(for: song, isMoveable: true)
+                        SongView(for: song, membershipContext: membershipContext)
                     }
                     .onMove { from, to in
                         Task {
@@ -51,11 +68,18 @@ struct MediaView: View {
                             let to = index < to ? to - 1 : to
 
                             try? await ConnectionManager.command().move(song, to: to, in: library.source)
+                            
+                            switch library.source {
+                            case .playlist, .favorites:
+                                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
+                            default:
+                                break
+                            }
                         }
                     }
                 } else {
                     ForEach(library.media.compactMap { $0 as? Song }) { song in
-                        SongView(for: song)
+                        SongView(for: song, membershipContext: membershipContext)
                     }
                 }
             case .album:
@@ -94,6 +118,11 @@ struct MediaView: View {
                     } else {
                         try? await library.search(for: query, using: type)
                     }
+                }
+            }
+            .onReceive(playlistModifiedNotification) { _ in
+                Task {
+                    try? await library.set(force: true)
                 }
             }
     }

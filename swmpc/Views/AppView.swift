@@ -43,7 +43,7 @@ struct AppView: View {
                             ForEach(CategoryDestination.categories) { category in
                                 // NOTE: Use SFSafeSymbols version when it is available.
                                 // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
-                                Tab(category.label, systemImage: category.symbol.rawValue, value: category) {
+                                Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
                                     ZStack {
                                         NavigationStack(path: $boundNavigator.path) {
                                             CategoryDestinationView(destination: category)

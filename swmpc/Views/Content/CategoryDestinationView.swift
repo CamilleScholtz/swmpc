@@ -78,7 +78,7 @@ struct EmptyCategoryView: View {
         VStack {
             switch destination {
             case .albums, .artists, .songs:
-                Text("No \(destination.label.lowercased()) in library.")
+                Text("No \(String(localized: destination.label).lowercased()) in library.")
                     .font(.headline)
 
                 Text("Add songs to your library.")

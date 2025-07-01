@@ -91,16 +91,16 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         }
     }
 
-    var label: String {
+    var label: LocalizedStringResource {
         switch self {
-        case .albums: String(localized: "Albums")
-        case .artists: String(localized: "Artists")
-        case .songs: String(localized: "Songs")
-        case let .playlist(playlist): playlist.name
+        case .albums: "Albums"
+        case .artists: "Artists"
+        case .songs: "Songs"
+        case let .playlist(playlist): LocalizedStringResource(stringLiteral: playlist.name)
 
         #if os(iOS)
-            case .playlists: String(localized: "Playlists")
-            case .settings: String(localized: "Settings")
+            case .playlists: "Playlists"
+            case .settings: "Settings"
         #endif
         }
     }

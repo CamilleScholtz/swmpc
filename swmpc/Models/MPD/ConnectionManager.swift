@@ -739,10 +739,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   `title`, `duration`, `disc`, and `track` fields, with default values
     ///   for missing information.
     ///
-    /// The function requires that the response includes mandatory fields such
-    /// as `id`, `pos`, and `file` (used for the URL). If any of these are
-    /// missing, or if the response is malformed, it throws a
-    /// `ConnectionManagerError.malformedResponse` error.
+    /// The function requires that the response includes mandatory fields `file`
+    /// (used for the URL and id). If this field is not present, or if the
+    /// response is malformed, a `ConnectionManagerError.malformedResponse` is
+    /// thrown.
     ///
     /// Additionally, if an optional `index` is provided, it overrides the
     /// parsed `id` and `position` values. This workaround is used for responses
@@ -753,12 +753,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            mpd server.
     ///   - media: The expected media type, which determines whether an `Album`
     ///            or a `Song` is created.
+    ///   - index: An optional index value to use as the `position`.
     /// - Returns: A media object conforming to `Mediable` (either an `Album` or
     ///            a `Song`) based on the parsed data.
     /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
     ///           are missing or if the response is improperly formatted.
-    private func parseMediaResponse(_ lines: [String], using media: MediaType)
-        throws -> (any Mediable)?
+    private func parseMediaResponse(_ lines: [String], using media: MediaType,
+                                    index: Int? = nil) throws -> (any Mediable)?
     {
         var id: UInt32?
         var position: UInt32?
@@ -818,6 +819,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
         guard let url else {
             throw ConnectionManagerError.malformedResponse(
                 "Missing mandatory field: url")
+        }
+
+        // XXX: Not all repsonses provide a position, see:
+        // https://github.com/MusicPlayerDaemon/MPD/issues/2330
+        if position == nil, let index {
+            position = UInt32(index)
         }
 
         switch media {
@@ -968,8 +975,8 @@ extension ConnectionManager {
 
         let chunks = chunkLines(lines, startingWith: "file")
 
-        return try chunks.map { chunk in
-            try parseMediaResponse(chunk, using: .song) as! Song
+        return try chunks.enumerated().map { index, chunk in
+            try parseMediaResponse(chunk, using: .song, index: index) as! Song
         }
     }
 
@@ -1438,7 +1445,7 @@ extension ConnectionManager where Mode == CommandMode {
                     "Playlist is required for adding songs to a playlist")
             }
 
-            _ = try await run(["playlistmove \(playlist.name) \(currentPosition) \(position)"])
+            _ = try await run(["playlistmove \(escape(playlist.name)) \(currentPosition) \(position)"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only queue and playlist sources are supported for moving media")
