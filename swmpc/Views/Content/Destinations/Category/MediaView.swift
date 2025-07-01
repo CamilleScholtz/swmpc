@@ -38,7 +38,7 @@ struct MediaView: View {
     }
 
     init(for playlist: Playlist) {
-        _library = State(initialValue: LibraryManager(using: .playlist(playlist)))
+        _library = State(initialValue: LibraryManager(using: playlist.name == "Favorites" ? .favorites : .playlist(playlist)))
 
         type = .song
     }
