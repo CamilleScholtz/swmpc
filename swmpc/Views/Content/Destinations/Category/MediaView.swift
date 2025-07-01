@@ -17,6 +17,9 @@ struct MediaView: View {
     private let startSearchingNotification = NotificationCenter.default
         .publisher(for: .startSearchingNotication)
 
+    private let playlistModifiedNotification = NotificationCenter.default
+        .publisher(for: .playlistModifiedNotification)
+
     init(using library: LibraryManager, type: MediaType) {
         _library = State(initialValue: library)
 
@@ -66,7 +69,7 @@ struct MediaView: View {
 
                             try? await ConnectionManager.command().move(song, to: to, in: library.source)
                             if case .playlist = library.source {
-                                try? await library.set(force: true)
+                                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
                             }
                         }
                     }
@@ -117,6 +120,11 @@ struct MediaView: View {
                     } else {
                         try? await library.search(for: query, using: type)
                     }
+                }
+            }
+            .onReceive(playlistModifiedNotification) { _ in
+                Task {
+                    try? await library.set(force: true)
                 }
             }
     }

@@ -192,6 +192,10 @@ struct SourceToggleButton<Media: Mediable>: View {
             } else {
                 try await ConnectionManager.command().add(songs: songs, to: source)
             }
+
+            if case .playlist = source {
+                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
+            }
         }
     }
 }
