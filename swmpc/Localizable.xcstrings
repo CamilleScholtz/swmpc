@@ -42,6 +42,16 @@
         }
       }
     },
+    "%@ %@ from Playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ from Playlist"
+          }
+        }
+      }
+    },
     "%@ albums" : {
       "localizations" : {
         "de" : {
@@ -140,6 +150,7 @@
 
     },
     "Add Album to Favorites" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -168,6 +179,7 @@
       }
     },
     "Add Album to Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2833,10 +2845,8 @@
     "Remove" : {
 
     },
-    "Remove Album from Favorites" : {
-
-    },
     "Remove Album from Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3348,6 +3358,7 @@
       }
     },
     "Simple Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3856,9 +3867,6 @@
           }
         }
       }
-    },
-    "When enabled, loads all songs into the queue, this effectivly disables queue management. When disabled, standard MPD queue management is used. Requires a restart to take effect." : {
-
     },
     "When enabled, the app runs without a dock icon (menu bar only). Requires a restart to take effect." : {
 

@@ -1,5 +1,5 @@
 //
-//  RowContextMenuView.swift
+//  ContextMenuView.swift
 //  swmpc
 //
 //  Created by Camille Scholtz on 30/06/2025.
@@ -8,51 +8,15 @@
 import ButtonKit
 import SwiftUI
 
-enum SourceToggleButtonAction {
-    case add
-    case remove
-}
-
-enum MembershipContext: Equatable {
-    case none
-    case queued
-    case favorited
-    case inPlaylist(Playlist)
-
-    var isMovable: Bool {
-        switch self {
-        case .queued, .inPlaylist:
-            true
-        case .none, .favorited:
-            false
-        }
-    }
-
-    var showsHandle: Bool {
-        isMovable
-    }
-
-    var contextMenuAction: SourceToggleButtonAction? {
-        switch self {
-        case .none:
-            nil
-        case .queued, .favorited, .inPlaylist:
-            .remove
-        }
-    }
-}
-
-struct RowContextMenuView<Media: Mediable>: View {
+struct ContextMenuView<Media: Mediable>: View {
     @Environment(MPD.self) private var mpd
 
-    @AppStorage(Setting.simpleMode) private var simpleMode = false
-
     let media: Media
-    let membershipContext: MembershipContext
+    let source: Source?
 
-    init(for media: Media, membershipContext: MembershipContext = .none) {
+    init(for media: Media, source: Source? = nil) {
         self.media = media
-        self.membershipContext = membershipContext
+        self.source = source
     }
 
     private var copyTitle: String {
@@ -86,28 +50,46 @@ struct RowContextMenuView<Media: Mediable>: View {
         case is Song: "Song"
         case is Album: "Album"
         case is Artist: "Artist"
-        default: "Item"
+        default: ""
         }
 
         return "Add or Remove \(mediaType) from Playlist"
     }
 
     var body: some View {
-        if !simpleMode {
-            SourceToggleButton(media: media, source: .queue, action: membershipContext == .queued ? .remove : nil)
-            Divider()
+        // Primary action - always present
+        if let source {
+            // When viewing from a source, primary action is to remove from that source
+            SourceToggleButton(media: media, source: source, forceAction: .remove)
+        } else {
+            // When viewing from database or no source, primary action is add/remove to queue
+            SourceToggleButton(media: media, source: .queue)
         }
-        SourceToggleButton(media: media, source: .favorites, action: membershipContext == .favorited ? .remove : nil)
+
+        Divider()
+
+        // Secondary actions - only show if not already the primary
+        if source != .queue, source != nil {
+            // Only show secondary queue action if we're not viewing queue and not in database
+            SourceToggleButton(media: media, source: .queue)
+        }
+
+        if source != .favorites {
+            SourceToggleButton(media: media, source: .favorites)
+        }
 
         if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
             Menu(playlistMenuTitle) {
                 ForEach(playlists) { playlist in
-                    let action: SourceToggleButtonAction? = if case let .inPlaylist(contextPlaylist) = membershipContext, contextPlaylist == playlist {
-                        .remove
+                    let shouldSkip = if case let .playlist(currentPlaylist) = source {
+                        currentPlaylist == playlist
                     } else {
-                        nil
+                        false
                     }
-                    SourceToggleButton(media: media, source: .playlist(playlist), action: action)
+
+                    if !shouldSkip {
+                        SourceToggleButton(media: media, source: .playlist(playlist), title: playlist.name)
+                    }
                 }
             }
         }
@@ -125,7 +107,13 @@ struct SourceToggleButton<Media: Mediable>: View {
 
     let media: Media
     let source: Source
-    var action: SourceToggleButtonAction? = nil
+    var forceAction: SourceToggleButtonAction? = nil
+    var title: String? = nil
+
+    enum SourceToggleButtonAction {
+        case add
+        case remove
+    }
 
     private var mediaTypeName: LocalizedStringResource {
         switch media {
@@ -146,22 +134,31 @@ struct SourceToggleButton<Media: Mediable>: View {
     }
 
     private var actionName: LocalizedStringResource {
-        switch action {
-        case .add: "Add"
-        case .remove: "Remove"
-        default: "Add or Remove"
+        if let forceAction {
+            switch forceAction {
+            case .add: "Add"
+            case .remove: "Remove"
+            }
+        } else {
+            "Add or Remove"
         }
     }
 
-    private var title: String {
-        switch source {
-        case .playlist: String(localized: sourceName)
-        default: String(localized: "\(String(localized: actionName)) \(String(localized: mediaTypeName)) from \(String(localized: sourceName))")
+    private var computedTitle: String {
+        guard title == nil else {
+            return title!
+        }
+
+        return switch source {
+        case .playlist:
+            String(localized: "\(String(localized: actionName)) \(String(localized: mediaTypeName)) from Playlist")
+        default:
+            String(localized: "\(String(localized: actionName)) \(String(localized: mediaTypeName)) from \(String(localized: sourceName))")
         }
     }
 
     var body: some View {
-        AsyncButton(title) {
+        AsyncButton(computedTitle) {
             let songs: [Song]
             switch media {
             case let album as Album:
@@ -187,7 +184,15 @@ struct SourceToggleButton<Media: Mediable>: View {
                 throw ViewError.missingData
             }
 
-            if songs.contains(where: { urls.contains($0.url) }) {
+            let shouldRemove: Bool = if let forceAction {
+                // If action is forced, use it regardless of current state
+                forceAction == .remove
+            } else {
+                // If not forced, toggle based on current presence
+                songs.contains(where: { urls.contains($0.url) })
+            }
+
+            if shouldRemove {
                 try await ConnectionManager.command().remove(songs: songs, from: source)
             } else {
                 try await ConnectionManager.command().add(songs: songs, to: source)

@@ -108,12 +108,14 @@ struct Delegate: App {
 
                 Divider()
 
-                AsyncButton("Reload Library") {
-                    @AppStorage(Setting.simpleMode) var simpleMode = false
-                    if simpleMode {
-                        try await ConnectionManager.command().loadPlaylist(appDelegate.mpd.status.playlist)
-                    }
+                AsyncButton("Clear Queue") {
+                    try await ConnectionManager.command().clearQueue()
+                }
+                .keyboardShortcut(.delete, modifiers: [.command, .option])
 
+                Divider()
+
+                AsyncButton("Reload Library") {
                     try await ConnectionManager.command().update()
                     try await appDelegate.mpd.database.set(force: true)
                 }

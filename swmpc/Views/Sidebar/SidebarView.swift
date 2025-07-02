@@ -37,6 +37,7 @@ struct SidebarView: View {
         List(selection: $boundNavigator.category) {
             Text("swmpc")
                 .font(.system(size: 18))
+                .foregroundStyle(.secondary)
                 .fontWeight(.semibold)
                 .fontDesign(.rounded)
                 .padding(.bottom, 15)

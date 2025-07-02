@@ -12,7 +12,6 @@ enum Setting {
 
     static let showStatusBar = "show_status_bar"
     static let showStatusbarSong = "show_statusbar_song"
-    static let simpleMode = "simple_mode"
 
     static let isIntelligenceEnabled = "is_intelligence_enabled"
     static let intelligenceModel = "intelligence_model"

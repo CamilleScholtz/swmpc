@@ -18,8 +18,6 @@ struct ChangeQueueModifier: ViewModifier {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    @AppStorage(Setting.simpleMode) var simpleMode = false
-
     @State private var showAlert = false
     @State private var playlistToQueue: Playlist?
     @State private var previousDestination: CategoryDestination?
@@ -44,13 +42,8 @@ struct ChangeQueueModifier: ViewModifier {
                         return
                     }
 
-                    if simpleMode {
-                        playlistToQueue = nil
-                        showAlert = true
-                    } else {
-                        Task(priority: .userInitiated) {
-                            try? await mpd.database.set(using: navigator.category.type, force: true)
-                        }
+                    Task(priority: .userInitiated) {
+                        try? await mpd.database.set(using: navigator.category.type, force: true)
                     }
                 default:
                     return
