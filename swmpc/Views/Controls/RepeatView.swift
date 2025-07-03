@@ -10,7 +10,7 @@ import SwiftUI
 
 struct RepeatView: View {
     @Environment(MPD.self) private var mpd
-    
+
     var body: some View {
         AsyncButton {
             try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))

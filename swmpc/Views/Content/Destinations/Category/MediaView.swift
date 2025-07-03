@@ -21,8 +21,7 @@ extension Source {
 struct MediaView: View {
     @Environment(MPD.self) private var mpd
 
-    @State private var library: LibraryManager
-
+    private let library: LibraryManager
     private let type: MediaType
 
     private let startSearchingNotification = NotificationCenter.default
@@ -32,14 +31,12 @@ struct MediaView: View {
         .publisher(for: .playlistModifiedNotification)
 
     init(using library: LibraryManager, type: MediaType) {
-        _library = State(initialValue: library)
-
+        self.library = library
         self.type = type
     }
 
     init(for playlist: Playlist) {
-        _library = State(initialValue: LibraryManager(using: playlist.name == "Favorites" ? .favorites : .playlist(playlist)))
-
+        library = LibraryManager(using: playlist.name == "Favorites" ? .favorites : .playlist(playlist))
         type = .song
     }
 

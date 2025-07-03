@@ -10,7 +10,7 @@ import SwiftUI
 
 struct NextView: View {
     var size: CGFloat = 18
-    
+
     @State private var animating = false
 
     private var value: CGFloat {

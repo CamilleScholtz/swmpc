@@ -134,7 +134,7 @@ struct PopoverView: View {
                 }
 
                 height = (Double(artwork.size.height) / Double(artwork.size.width) * 250).rounded(.down)
-                
+
                 try? await mpd.status.startTrackingElapsed()
             }
         }
