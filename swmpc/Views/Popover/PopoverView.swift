@@ -121,8 +121,6 @@ struct PopoverView: View {
         }
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
-                try? await mpd.status.startTrackingElapsed()
-
                 guard let song = mpd.status.song else {
                     artwork = nil
                     height = 250
@@ -136,6 +134,8 @@ struct PopoverView: View {
                 }
 
                 height = (Double(artwork.size.height) / Double(artwork.size.width) * 250).rounded(.down)
+                
+                try? await mpd.status.startTrackingElapsed()
             }
         }
         .onReceive(didCloseNotification) { _ in
