@@ -178,11 +178,7 @@ struct DetailView: View {
                     )
                     .onTapGesture {
                         Task(priority: .userInitiated) {
-                            guard let song = mpd.status.song else {
-                                return
-                            }
-
-                            guard let album = try? await mpd.database.get(for: song, using: .album) as? Album else {
+                            guard let song = mpd.status.song, let album = try? await ConnectionManager.command().getAlbum(for: song) else {
                                 return
                             }
 

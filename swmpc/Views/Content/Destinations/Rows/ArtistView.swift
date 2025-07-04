@@ -45,7 +45,7 @@ struct ArtistView: View {
             VStack(alignment: .leading) {
                 Text(artist.name)
                     .font(.headline)
-                    .foregroundColor(mpd.status.media?.id == artist.id ? .accentColor : .primary)
+                    .foregroundColor(mpd.status.song?.isBy(artist) ?? false ? .accentColor : .primary)
                     .lineLimit(2)
                 Text(artist.albums?.count ?? 0 == 1 ? "1 album" : "\(artist.albums!.count) albums")
                     .font(.subheadline)

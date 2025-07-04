@@ -821,6 +821,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 artist: artist ?? "Unknown Artist",
                 title: title ?? "Unknown Title",
                 duration: duration,
+                albumArtist: albumArtist ?? "Unknown Artist",
+                albumTitle: album ?? "Unknown Album",
                 disc: disc ?? 1,
                 track: track ?? 1
             )
@@ -972,11 +974,13 @@ extension ConnectionManager {
             return await MockData.shared.getSongs(by: artist)
         }
 
+        let filters = filter(key: "albumartist", value: artist.name)
+
         let lines = switch source {
         case .database:
-            try await run(["find \(filter(key: "albumartist", value: artist.name))"])
+            try await run(["find \(filters)"])
         case .queue:
-            try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))"])
+            try await run(["playlistfind \(filters)"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving songs by artist")
@@ -1003,11 +1007,13 @@ extension ConnectionManager {
             return await MockData.shared.getSongs(in: album)
         }
 
+        let filters = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""
+
         let lines = switch source {
         case .database:
-            try await run(["find \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""])
+            try await run(["find \(filters)"])
         case .queue:
-            try await run(["playlistfind \"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""])
+            try await run(["playlistfind \(filters)"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving songs in an album")
@@ -1032,11 +1038,13 @@ extension ConnectionManager {
             return await MockData.shared.getAlbums()
         }
 
+        let filters = "\"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""
+
         let lines = switch source {
         case .database:
-            try await run(["find \"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
+            try await run(["find \(filters)"])
         case .queue:
-            try await run(["playlistfind \"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""])
+            try await run(["playlistfind \(filters)"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving albums")
@@ -1084,6 +1092,42 @@ extension ConnectionManager {
                     "Only database and queue sources are supported for retrieving artists")
             }
         }
+    }
+
+    /// Retrieves the album for a given song.
+    ///
+    /// - Parameter media: The `Mediable` object to get the album for.
+    /// - Returns: An `Album` object representing the album of the specified
+    ///            song, or `nil` if no album is found.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getAlbum(for media: any Mediable) async throws -> Album? {
+        let lines = try await run(["find \(filter(key: "file", value: media.url.path))"])
+
+        let chunks = chunkLines(lines, startingWith: "file")
+        guard let chunk = chunks.first else {
+            return nil
+        }
+
+        return try parseMediaResponse(chunk, using: .album) as? Album
+    }
+
+    /// Retrieves the artist for a given song.
+    ///
+    /// - Parameter media: The `Mediable` object to get the artist for.
+    /// - Returns: An `Album` object representing the artist of the specified
+    ///            song, or `nil` if no artist is found.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getArtist(for media: any Mediable) async throws -> Artist? {
+        let lines = try await run(["find \(filter(key: "file", value: media.url.path))"])
+
+        let chunks = chunkLines(lines, startingWith: "file")
+        guard let chunk = chunks.first else {
+            return nil
+        }
+
+        return try parseMediaResponse(chunk, using: .artist) as? Artist
     }
 
     /// Retrieves all playlists.

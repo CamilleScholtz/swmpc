@@ -236,30 +236,10 @@ struct CategoryView: View {
         .onReceive(startSearchingNotication) { _ in
             isSearching = true
         }
-        .task(id: destination) {
-            // TODO: Maybe also use `.onChange(of: scrollView)` here like in
-            // QueuePanelView?
-            guard let song = mpd.status.song else {
-                return
+        .onChange(of: scrollView) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                try? scrollToCurrent(animate: false)
             }
-
-            mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
-
-            for _ in 0 ..< 5 {
-                do {
-                    try scrollToCurrent(animate: false)
-                    break
-                } catch {
-                    try? await Task.sleep(for: .milliseconds(100))
-                }
-            }
-        }
-        .task(id: mpd.status.song) {
-            guard let song = mpd.status.song else {
-                return
-            }
-
-            mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
         }
         .onChange(of: showHeader) { _, value in
             if value {
@@ -380,10 +360,39 @@ struct CategoryView: View {
     }
 
     private func scrollToCurrent(animate: Bool = true) throws {
-        guard let scrollView,
-              let media = mpd.status.media,
-              let index = mpd.database.media.firstIndex(where: { $0.url == media.url })
-        else {
+        guard let scrollView, let song = mpd.status.song else {
+            throw ViewError.missingData
+        }
+
+        let index: Int?
+        switch destination {
+        case .songs, .playlist:
+            index = mpd.database.media.firstIndex { media in
+                media as? Song == song
+            }
+        case .albums:
+            index = mpd.database.media.firstIndex { media in
+                guard let album = media as? Album else { return
+                    false
+                }
+
+                return song.isIn(album)
+            }
+        case .artists:
+            index = mpd.database.media.firstIndex { media in
+                guard let artist = media as? Artist else {
+                    return false
+                }
+
+                return song.isBy(artist)
+            }
+        #if os(iOS)
+            default:
+                index = nil
+        #endif
+        }
+
+        guard let index else {
             throw ViewError.missingData
         }
 
@@ -410,11 +419,14 @@ struct CategoryView: View {
             let rowSpacing: CGFloat = 15
             let baseRowHeight: CGFloat = switch destination {
             case .albums, .artists: 50
-            case .songs, .playlist, _: 31.5
+            case .songs, .playlist: 31.5
+            #if os(iOS)
+                default: 31.5
+            #endif
             }
             let rowHeight = baseRowHeight + rowSpacing
 
-            let rowMidY = (CGFloat(currentIndex) * rowHeight) + (rowHeight / 2)
+            let rowMidY = (CGFloat(index) * rowHeight) + (rowHeight / 2)
             let visibleHeight = scrollView.frame.height
             let centeredOffset = rowMidY - (visibleHeight / 2)
 

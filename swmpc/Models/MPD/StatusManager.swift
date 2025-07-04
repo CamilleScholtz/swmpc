@@ -37,11 +37,6 @@ final class StatusManager {
     /// The currently playing song.
     var song: Song?
 
-    /// The media item (album, artist, etc.) associated with the current song.
-    // TODO: I currently set this in SidebarView, I'd rather want to do it here,
-    // however, accessing the navigator from here feels wrong.
-    var media: (any Mediable)?
-
     /// The currently loaded playlist, if any.
     var playlist: Playlist?
 
@@ -74,32 +69,6 @@ final class StatusManager {
 
     /// The start time used for calculating elapsed time.
     private var startTime: Date?
-
-    /// Starts tracking elapsed time for the current song.
-    ///
-    /// This method initiates real-time elapsed time tracking. Multiple
-    /// omponents can request tracking, and tracking will continue until all
-    /// requesters have called `stopTrackingElapsed()`.
-    ///
-    /// - Throws: An error if fetching the current status fails.
-    @MainActor
-    func startTrackingElapsed() async throws {
-        if !trackElapsed {
-            let data = try await ConnectionManager.command().getStatusData()
-            _ = elapsed.update(to: data.elapsed ?? 0)
-        }
-
-        activeTrackingCount += 1
-    }
-
-    /// Stops tracking elapsed time for the current song.
-    ///
-    /// This decrements the tracking count. When the count reaches zero, elapsed
-    /// time tracking is completely stopped.
-    @MainActor
-    func stopTrackingElapsed() {
-        activeTrackingCount = max(0, activeTrackingCount - 1)
-    }
 
     /// Updates the status from the MPD server.
     ///
@@ -163,6 +132,32 @@ final class StatusManager {
         }
 
         _ = playlist.update(to: data.playlist)
+    }
+
+    /// Starts tracking elapsed time for the current song.
+    ///
+    /// This method initiates real-time elapsed time tracking. Multiple
+    /// omponents can request tracking, and tracking will continue until all
+    /// requesters have called `stopTrackingElapsed()`.
+    ///
+    /// - Throws: An error if fetching the current status fails.
+    @MainActor
+    func startTrackingElapsed() async throws {
+        if !trackElapsed {
+            let data = try await ConnectionManager.command().getStatusData()
+            _ = elapsed.update(to: data.elapsed ?? 0)
+        }
+
+        activeTrackingCount += 1
+    }
+
+    /// Stops tracking elapsed time for the current song.
+    ///
+    /// This decrements the tracking count. When the count reaches zero, elapsed
+    /// time tracking is completely stopped.
+    @MainActor
+    func stopTrackingElapsed() {
+        activeTrackingCount = max(0, activeTrackingCount - 1)
     }
 
     /// Starts the background task that updates elapsed time.

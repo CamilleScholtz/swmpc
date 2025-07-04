@@ -77,7 +77,7 @@ struct AlbumView: View {
             VStack(alignment: .leading) {
                 Text(album.title)
                     .font(.headline)
-                    .foregroundColor(mpd.status.media?.url == album.url ? .accentColor : .primary)
+                    .foregroundColor(mpd.status.song?.isIn(album) ?? false ? .accentColor : .primary)
                     .lineLimit(2)
 
                 Text(album.artist)

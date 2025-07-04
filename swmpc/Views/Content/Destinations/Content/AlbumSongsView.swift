@@ -71,15 +71,15 @@ struct AlbumSongsView: View {
                                     .cornerRadius(100)
                                     .padding(10)
                                 }
-                                .opacity(mpd.status.media?.id == album.id ? 1 : 0)
-                                .animation(.interactiveSpring, value: mpd.status.media?.id == album.id)
+                                .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
+                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false)
                             )
                     }
 
                     #if os(macOS)
-                        if isHovering, mpd.status.media?.id != album.id {
+                        if isHovering, mpd.status.song?.isIn(album) ?? false {
                             AsyncButton {
-                                guard mpd.status.media?.id != album.id else {
+                                guard let song = mpd.status.song, let album = try? await ConnectionManager.command().getAlbum(for: song) else {
                                     return
                                 }
 
@@ -122,7 +122,7 @@ struct AlbumSongsView: View {
                         .lineLimit(3)
 
                     AsyncButton {
-                        guard let artist = try? await mpd.database.get(for: album, using: .artist) as? Artist else {
+                        guard let artist = try await ConnectionManager.command().getArtist(for: album) else {
                             throw ViewError.missingData
                         }
 
@@ -132,15 +132,6 @@ struct AlbumSongsView: View {
                             .font(.system(size: 12))
                             .fontWeight(.semibold)
                             .lineLimit(2)
-                            .onTapGesture {
-                                Task(priority: .userInitiated) {
-                                    guard let artist = try? await mpd.database.get(for: album, using: .artist) as? Artist else {
-                                        return
-                                    }
-
-                                    navigator.navigate(to: ContentDestination.artist(artist))
-                                }
-                            }
                     }
                     .buttonStyle(.plain)
                     .asyncButtonStyle(.pulse)

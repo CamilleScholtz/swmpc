@@ -20,7 +20,7 @@ actor MockData {
     private var elapsed: Double = 0.0
 
     private var currentPlaylist: Playlist?
-    private var currentSong: Song? = Song(identifier: 1, position: 1, url: URL(string: "file:///music/Quantum%20Dragons/Nebula%20Dreams/01%20Starlight%20Symphony.mp3")!, artist: "Quantum Dragons", title: "Starlight Symphony", duration: 289.0, disc: 1, track: 1)
+    private var currentSong: Song? = Song(identifier: 1, position: 1, url: URL(string: "file:///music/Quantum%20Dragons/Nebula%20Dreams/01%20Starlight%20Symphony.mp3")!, artist: "Quantum Dragons", title: "Nebula Dreams", duration: 289.0, albumArtist: "Starlight Symphony", albumTitle: "Starlight Symphony", disc: 1, track: 1)
 
     // MARK: - Mock Data Generation
 
@@ -139,6 +139,8 @@ actor MockData {
                     artist: album.artist,
                     title: songTitle,
                     duration: duration,
+                    albumArtist: album.artist,
+                    albumTitle: album.title,
                     disc: 1,
                     track: songIndex + 1
                 )

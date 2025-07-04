@@ -49,13 +49,6 @@ struct ArtistAlbumsView: View {
             #elseif os(macOS)
                 .listRowInsets(.init(top: 15, leading: 7.5, bottom: 7.5, trailing: 7.5))
             #endif
-                .task(priority: .medium) {
-                    guard let song = mpd.status.song else {
-                        return
-                    }
-
-                    mpd.status.media = try? await mpd.database.get(for: song, using: .album)
-                }
         }
         #if os(macOS)
         .frame(width: 310)

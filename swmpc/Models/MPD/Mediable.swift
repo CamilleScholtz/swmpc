@@ -15,14 +15,19 @@ import SwiftUI
 protocol Mediable: Identifiable, Equatable, Hashable, Codable, Sendable {
     /// A unique identifier for the media item. This derived from MPD song
     /// metadata (`id`).
+    /// - Note: This is `nil` for items not in the queue. It is NOT the stable
+    ///         `Identifiable.id`.
     var identifier: UInt32? { get }
 
     /// The position of the item in a queue or playlist.
-    /// - Note: This is nil for items not in a queue.
+    /// - Note: This is `nil` for items not in a queue or playlist.
     var position: UInt32? { get }
 
     /// The URL or file path of the media item.
-    /// - Note: This is relative to the MPD music directory.
+    /// - Note: This is relative to the MPD music directory. For albums and
+    ///         artists, this should be the URL of a representative song (e.g.,
+    ///         the first track) and is used primarily for fetching artwork. It
+    ///         is NOT used for identity.
     var url: URL { get }
 }
 
@@ -110,11 +115,32 @@ struct Song: Mediable {
     let title: String
     let duration: Double
 
+    let albumArtist: String
+    let albumTitle: String
+
     let disc: Int
     let track: Int
 
     var description: String {
         "\(artist) - \(title)"
+    }
+
+    /// Checks if the song is part of a specific album.
+    ///
+    /// - Parameter album: The album to check against.
+    /// - Returns: `true` if the song belongs to the specified album, `false`
+    ///            otherwise.
+    func isIn(_ album: Album) -> Bool {
+        albumTitle == album.title && albumArtist == album.artist
+    }
+
+    /// Checks if the song is by a specific artist.
+    ///
+    /// - Parameter artist: The artist to check against.
+    /// - Returns: `true` if the song is by the specified artist, `false`
+    ///            otherwise.
+    func isBy(_ artist: Artist) -> Bool {
+        albumArtist == artist.name
     }
 }
 
