@@ -1288,6 +1288,7 @@
       }
     },
     "Demo Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3872,6 +3873,7 @@
 
     },
     "When enabled, uses mock data instead of connecting to MPD." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

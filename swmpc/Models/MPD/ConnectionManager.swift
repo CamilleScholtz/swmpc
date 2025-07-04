@@ -111,8 +111,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     @AppStorage(Setting.host) private var host = "localhost"
     @AppStorage(Setting.port) private var port = 6600
 
-    @AppStorage(Setting.isDemoMode) private var isDemoMode = false
-
     @KeychainStorage(Setting.password) private var password: String?
 
     private var connection: NWConnection?
@@ -153,11 +151,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///           `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
     func connect() async throws {
-        guard !isDemoMode else {
-            version = "0 (Demo Mode)"
-            return
-        }
-
         try ensureVersionSupported()
         guard connection?.state != .ready else {
             return
@@ -867,10 +860,6 @@ extension ConnectionManager {
                                           isRepeat: Bool?, elapsed: Double?,
                                           playlist: Playlist?, song: Song?)
     {
-        guard !isDemoMode else {
-            return await MockData.shared.getStatusData()
-        }
-
         let lines = try await run(["status"])
 
         var state: PlayerState?
@@ -928,20 +917,6 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(from source: Source) async throws -> [Song] {
-        guard !isDemoMode else {
-            switch source {
-            case .database, .queue:
-                return await MockData.shared.getSongs()
-            case .playlist, .favorites:
-                guard let playlist = source.playlist else {
-                    throw ConnectionManagerError.unsupportedOperation(
-                        "Playlist is required for adding songs to a playlist")
-                }
-
-                return await MockData.shared.getSongs(in: playlist)
-            }
-        }
-
         let lines = switch source {
         case .database:
             try await run(["listallinfo"])
@@ -970,10 +945,6 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(by artist: Artist, from source: Source) async throws -> [Song] {
-        guard !isDemoMode else {
-            return await MockData.shared.getSongs(by: artist)
-        }
-
         let filters = filter(key: "albumartist", value: artist.name)
 
         let lines = switch source {
@@ -1003,10 +974,6 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(in album: Album, from source: Source) async throws -> [Song] {
-        guard !isDemoMode else {
-            return await MockData.shared.getSongs(in: album)
-        }
-
         let filters = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""
 
         let lines = switch source {
@@ -1034,10 +1001,6 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getAlbums(from source: Source) async throws -> [Album] {
-        guard !isDemoMode else {
-            return await MockData.shared.getAlbums()
-        }
-
         let filters = "\"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""
 
         let lines = switch source {
@@ -1065,10 +1028,6 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getArtists(from source: Source) async throws -> [Artist] {
-        guard !isDemoMode else {
-            return await MockData.shared.getArtists()
-        }
-
         let albums = try await getAlbums(from: source)
         let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
 
@@ -1137,10 +1096,6 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getPlaylists() async throws -> [Playlist] {
-        guard !isDemoMode else {
-            return await MockData.shared.getPlaylists()
-        }
-
         let lines = try await run(["listplaylists"])
         var index: UInt32 = 0
         var playlists = [Playlist]()
