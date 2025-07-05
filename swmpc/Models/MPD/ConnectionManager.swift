@@ -1055,13 +1055,13 @@ extension ConnectionManager {
 
     /// Retrieves the album for a given song.
     ///
-    /// - Parameter media: The `Mediable` object to get the album for.
+    /// - Parameter song: The `Song` object to get the album for.
     /// - Returns: An `Album` object representing the album of the specified
     ///            song, or `nil` if no album is found.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getAlbum(for media: any Mediable) async throws -> Album? {
-        let lines = try await run(["find \(filter(key: "file", value: media.url.path))"])
+    func getAlbum(for song: Song) async throws -> Album? {
+        let lines = try await run(["find \(filter(key: "file", value: song.url.path))"])
 
         let chunks = chunkLines(lines, startingWith: "file")
         guard let chunk = chunks.first else {
@@ -1437,93 +1437,57 @@ extension ConnectionManager where Mode == CommandMode {
             return
         }
 
-        let queueSongs = try await getSongs(from: .queue)
-
-        switch media {
+        let songs: [Song] = switch media {
         case let album as Album:
-            let albumSongs = try await getSongs(in: album, from: .database)
-            guard !albumSongs.isEmpty else {
-                throw ConnectionManagerError.malformedResponse(
-                    "No songs found for album \(album.title)")
-            }
-
-            let songsInQueue = queueSongs.filter { queueSong in
-                albumSongs.contains { $0.url == queueSong.url }
-            }
-
-            if let firstInQueue = songsInQueue.first,
-               let id = firstInQueue.identifier
-            {
-                _ = try await run(["playid \(id)"])
-            } else {
-                let response = try await run(["addid \(escape(albumSongs[0].url.path))"])
-
-                if let line = response.first(where: { $0.hasPrefix("Id: ") }),
-                   let string = line.split(separator: " ").last,
-                   let id = UInt32(string)
-                {
-                    if albumSongs.count > 1 {
-                        let remainingCommands = albumSongs.dropFirst()
-                            .map { "add \(escape($0.url.path))" }
-                        _ = try await run(remainingCommands)
-                    }
-
-                    _ = try await run(["playid \(id)"])
-                }
-            }
-
+            try await getSongs(in: album, from: .database)
         case let artist as Artist:
-            let artistSongs = try await getSongs(by: artist, from: .database)
-            guard !artistSongs.isEmpty else {
-                throw ConnectionManagerError.malformedResponse(
-                    "No songs found for artist \(artist.name)")
-            }
-
-            let songsInQueue = queueSongs.filter { queueSong in
-                artistSongs.contains { $0.url == queueSong.url }
-            }
-
-            if let firstInQueue = songsInQueue.first,
-               let id = firstInQueue.identifier
-            {
-                _ = try await run(["playid \(id)"])
-            } else {
-                let response = try await run(["addid \(escape(artistSongs[0].url.path))"])
-
-                if let line = response.first(where: { $0.hasPrefix("Id: ") }),
-                   let string = line.split(separator: " ").last,
-                   let id = UInt32(string)
-                {
-                    if artistSongs.count > 1 {
-                        let remainingCommands = artistSongs.dropFirst()
-                            .map { "add \(escape($0.url.path))" }
-                        _ = try await run(remainingCommands)
-                    }
-
-                    _ = try await run(["playid \(id)"])
-                }
-            }
-
+            try await getSongs(by: artist, from: .database)
         case let song as Song:
-            if let match = queueSongs.first(where: { $0.url == song.url }),
-               let id = match.identifier
-            {
-                _ = try await run(["playid \(id)"])
-            } else {
-                let response = try await run(["addid \(escape(song.url.path))"])
-
-                if let line = response.first(where: { $0.hasPrefix("Id: ") }),
-                   let string = line.split(separator: " ").last,
-                   let id = UInt32(string)
-                {
-                    _ = try await run(["playid \(id)"])
-                }
-            }
-
+            [song]
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only Album, Artist, and Song types are supported for playback")
         }
+
+        guard !songs.isEmpty else {
+            throw ConnectionManagerError.malformedResponse(
+                "No songs found for the specified media")
+        }
+
+        let queue = try await getSongs(from: .queue)
+
+        var id: UInt32?
+        var commands = [String]()
+
+        for (index, song) in songs.enumerated() {
+            if let existingSong = queue.first(where: { $0.url == song.url }) {
+                if index == 0 {
+                    id = existingSong.identifier
+                }
+            } else {
+                commands.append("addid \(escape(song.url.path))")
+            }
+        }
+
+        if !commands.isEmpty {
+            let responses = try await run(commands)
+
+            if id == nil {
+                for response in responses {
+                    if response.hasPrefix("Id: ") {
+                        id = UInt32(response.dropFirst(4))
+                        break
+                    }
+                }
+            }
+        }
+
+        guard let id else {
+            throw ConnectionManagerError.malformedResponse(
+                "Failed to determine song ID to play")
+        }
+
+        _ = try await run(["playid \(id)"])
     }
 
     /// Toggle playback.
