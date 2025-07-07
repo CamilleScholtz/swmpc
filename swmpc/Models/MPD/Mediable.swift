@@ -95,7 +95,6 @@ struct Album: Mediable {
 
     let artist: String
     let title: String
-    let date: String
 
     var description: String {
         "\(artist) - \(title)"

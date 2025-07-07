@@ -737,10 +737,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
         var album: String?
         var title: String?
         var track: Int?
-        var date: String?
         var disc: Int?
         var albumArtist: String?
-        var duration: Double = 0
+        var duration: Double?
 
         for line in lines {
             guard line != "OK" else {
@@ -772,22 +771,20 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 title = value
             case "track":
                 track = Int(value)
-            case "date":
-                date = value
             case "disc":
                 disc = Int(value)
             case "albumartist":
                 albumArtist = value
             case "duration":
-                duration = Double(value) ?? 0
+                duration = Double(value)
             default:
                 break
             }
         }
 
-        guard let url else {
+        guard let url, let duration else {
             throw ConnectionManagerError.malformedResponse(
-                "Missing mandatory field: url")
+                "Missing mandatory fields: url or duration")
         }
 
         // XXX: Not all repsonses provide a position, see:
@@ -804,7 +801,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 url: url,
                 artist: albumArtist ?? "Unknown Artist",
                 title: album ?? "Unknown Title",
-                date: date ?? "1970"
             )
         default:
             return Song(
