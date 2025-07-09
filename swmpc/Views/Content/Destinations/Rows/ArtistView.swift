@@ -45,12 +45,21 @@ struct ArtistView: View {
             VStack(alignment: .leading) {
                 Text(artist.name)
                     .font(.headline)
-                    .foregroundColor(mpd.status.song?.isBy(artist) ?? false ? .accentColor : .primary)
+                    // .foregroundColor(mpd.status.song?.isBy(artist) ?? false ? .accentColor : .primary)
                     .lineLimit(2)
-                Text(artist.albums?.count ?? 0 == 1 ? "1 album" : "\(artist.albums!.count) albums")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+//                if let albumCount = artist.albums?.count {
+//                    // For queue artists, albums are pre-loaded
+//                    Text(albumCount == 1 ? "1 album" : "\(albumCount) albums")
+//                        .font(.subheadline)
+//                        .foregroundStyle(.secondary)
+//                        .lineLimit(2)
+//                } else {
+//                    // For database artists, we don't show album count to avoid blocking UI
+//                    Text("Artist")
+//                        .font(.subheadline)
+//                        .foregroundStyle(.secondary)
+//                        .lineLimit(2)
+//                }
             }
 
             Spacer()

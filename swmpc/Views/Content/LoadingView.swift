@@ -34,7 +34,7 @@ struct LoadingView: View {
         .task(id: navigator.category) {
             await checkAndHideLoading()
         }
-        .task(id: mpd.database.lastUpdated) {
+        .task(id: mpd.database.albums) {
             await checkAndHideLoading()
         }
     }
@@ -46,7 +46,7 @@ struct LoadingView: View {
 
         #if os(iOS)
             if navigator.category == .playlists {
-                if mpd.database.playlists != nil {
+                if mpd.playlists.playlists != nil {
                     try? await Task.sleep(for: .milliseconds(200))
                     guard !Task.isCancelled else {
                         return
@@ -59,7 +59,7 @@ struct LoadingView: View {
             }
         #endif
 
-        if navigator.category.type == mpd.database.type, !mpd.database.internalMedia.isEmpty {
+        if !(mpd.database.albums?.isEmpty ?? true) {
             try? await Task.sleep(for: .milliseconds(200))
             guard !Task.isCancelled else {
                 return

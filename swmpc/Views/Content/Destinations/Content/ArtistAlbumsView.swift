@@ -14,6 +14,8 @@ struct ArtistAlbumsView: View {
     #endif
 
     private var artist: Artist
+    @State private var albums: [Album] = []
+    @State private var isLoadingAlbums = true
 
     init(for artist: Artist) {
         self.artist = artist
@@ -36,7 +38,7 @@ struct ArtistAlbumsView: View {
                             ContextMenuView(for: artist)
                         }
 
-                    Text(artist.albums?.count ?? 0 > 1 ? "\(String(artist.albums!.count)) albums" : "1 album")
+                    Text(albums.count > 1 ? "\(String(albums.count)) albums" : albums.count == 1 ? "1 album" : "Loading...")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -66,9 +68,21 @@ struct ArtistAlbumsView: View {
         )
 
         Section {
-            ForEach(artist.albums ?? []) { album in
+            ForEach(albums) { album in
                 AlbumView(for: album)
             }
+        }
+        .task {
+//            if isLoadingAlbums {
+//                // Check if albums are already populated (for queue source)
+//                if let existingAlbums = artist.albums {
+//                    albums = existingAlbums
+//                } else {
+//                    // Lazy load albums for database source
+//                    //albums = await (try? ConnectionManager.command().getAlbums(for: artist)) ?? []
+//                }
+//                isLoadingAlbums = false
+//            }
         }
     }
 }

@@ -102,23 +102,6 @@ struct HeaderView: View {
         .onChange(of: destination) {
             isSearching = false
         }
-        .onChange(of: isSearching) { _, value in
-            guard !value else {
-                return
-            }
-
-            mpd.database.clearResults()
-        }
-        .task(id: query) {
-            guard isSearching else {
-                return
-            }
-
-            if query.isEmpty {
-                mpd.database.clearResults()
-            } else {
-                try? await mpd.database.search(for: query)
-            }
-        }
+        // Search is now handled by SwiftUI's .searchable in CategoryDestinationView
     }
 }

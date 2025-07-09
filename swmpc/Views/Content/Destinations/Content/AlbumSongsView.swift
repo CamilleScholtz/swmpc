@@ -77,12 +77,8 @@ struct AlbumSongsView: View {
                     }
 
                     #if os(macOS)
-                        if isHovering, mpd.status.song?.isIn(album) ?? false {
+                        if isHovering {
                             AsyncButton {
-                                guard let song = mpd.status.song, let album = try? await ConnectionManager.command().getAlbum(for: song) else {
-                                    return
-                                }
-
                                 try await ConnectionManager.command().play(album)
                             } label: {
                                 ZStack {
@@ -122,13 +118,13 @@ struct AlbumSongsView: View {
                         .lineLimit(3)
 
                     AsyncButton {
-                        guard let artist = try await ConnectionManager.command().getArtist(for: album) else {
-                            throw ViewError.missingData
-                        }
-
-                        navigator.navigate(to: ContentDestination.artist(artist))
+//                        guard let artist = try await ConnectionManager.command().getArtist(for: album) else {
+//                            throw ViewError.missingData
+//                        }
+//
+//                        navigator.navigate(to: ContentDestination.artist(artist))
                     } label: {
-                        Text(album.artist)
+                        Text(album.artist.name)
                             .font(.system(size: 12))
                             .fontWeight(.semibold)
                             .lineLimit(2)
@@ -137,7 +133,7 @@ struct AlbumSongsView: View {
                     .asyncButtonStyle(.pulse)
                     .contextMenu {
                         Button("Copy Artist Name") {
-                            album.artist.copyToClipboard()
+                            album.artist.name.copyToClipboard()
                         }
                     }
 

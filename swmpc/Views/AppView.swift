@@ -74,9 +74,9 @@ struct AppView: View {
                             .navigationSplitViewColumnWidth(310)
                             .navigationBarBackButtonHidden(true)
                             .ignoresSafeArea()
-                            .overlay(
-                                LoadingView()
-                            )
+//                            .overlay(
+//                                LoadingView()
+//                            )
                         } detail: {
                             DetailView()
                                 .padding(60)

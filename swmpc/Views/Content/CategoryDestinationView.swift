@@ -53,7 +53,7 @@ struct CategoryDestinationView: View {
                 isLoadingPlaylist = false
             }
         default:
-            if mpd.database.internalMedia.isEmpty {
+            if mpd.database.albums?.isEmpty ?? true {
                 EmptyCategoryView(destination: destination)
             } else {
                 CategoryView(destination: destination)
@@ -256,13 +256,13 @@ struct CategoryView: View {
                 resetHideHeaderTimer()
             }
         }
-        .onChange(of: mpd.database.results?.count) { _, value in
-            guard value == nil else {
-                return
-            }
-
-            try? scrollToCurrent(animate: false)
-        }
+//        .onChange(of: query) { _, value in
+//            guard value.isEmpty else {
+//                return
+//            }
+//
+//            try? scrollToCurrent(animate: false)
+//        }
         #if os(iOS)
         .navigationTitle(destination.label)
         .navigationBarTitleDisplayMode(.large)
@@ -290,7 +290,6 @@ struct CategoryView: View {
                 return
             }
 
-            mpd.database.results = nil
             // For playlists, notify to clear search results
             if case .playlist = navigator.category {
                 NotificationCenter.default.post(name: .startSearchingNotication, object: "")
@@ -311,20 +310,11 @@ struct CategoryView: View {
                 return
             }
 
-            if query.isEmpty {
-                mpd.database.results = nil
-                // For playlists, notify to clear search results
-                if case .playlist = navigator.category {
-                    NotificationCenter.default.post(name: .startSearchingNotication, object: "")
-                }
-            } else {
-                // For playlists, search is handled by MediaListView internally
-                if case .playlist = navigator.category {
-                    NotificationCenter.default.post(name: .startSearchingNotication, object: query)
-                } else {
-                    try? await mpd.database.search(for: query)
-                }
+            // For playlists, search is handled by MediaListView internally
+            if case .playlist = navigator.category {
+                NotificationCenter.default.post(name: .startSearchingNotication, object: query.isEmpty ? "" : query)
             }
+            // For database views, search will be handled by SwiftUI's searchable with filtered views
         }
         #elseif os(macOS)
         .safeAreaInset(edge: .top, spacing: 7.5) {
@@ -359,81 +349,57 @@ struct CategoryView: View {
         resetHideHeaderTimer(offset: offset)
     }
 
-    private func scrollToCurrent(animate: Bool = true) throws {
-        guard let scrollView, let song = mpd.status.song else {
-            throw ViewError.missingData
-        }
-
-        let index: Int?
-        switch destination {
-        case .songs, .playlist:
-            index = mpd.database.media.firstIndex { media in
-                media as? Song == song
-            }
-        case .albums:
-            index = mpd.database.media.firstIndex { media in
-                guard let album = media as? Album else { return
-                    false
-                }
-
-                return song.isIn(album)
-            }
-        case .artists:
-            index = mpd.database.media.firstIndex { media in
-                guard let artist = media as? Artist else {
-                    return false
-                }
-
-                return song.isBy(artist)
-            }
-        #if os(iOS)
-            default:
-                index = nil
-        #endif
-        }
-
-        guard let index else {
-            throw ViewError.missingData
-        }
-
-        #if os(macOS)
-            guard let tableView = scrollView.documentView as? NSTableView else {
-                throw ViewError.missingData
-            }
-
-            tableView.layoutSubtreeIfNeeded()
-            scrollView.layoutSubtreeIfNeeded()
-
-            DispatchQueue.main.async {
-                let rect = tableView.frameOfCell(atColumn: 0, row: index)
-                let y = rect.midY - (scrollView.frame.height / 2)
-                let center = NSPoint(x: 0, y: max(0, y))
-
-                if animate {
-                    scrollView.contentView.animator().setBoundsOrigin(center)
-                } else {
-                    scrollView.contentView.setBoundsOrigin(center)
-                }
-            }
-        #elseif os(iOS)
-            let rowSpacing: CGFloat = 15
-            let baseRowHeight: CGFloat = switch destination {
-            case .albums, .artists: 50
-            case .songs, .playlist: 31.5
-            #if os(iOS)
-                default: 31.5
-            #endif
-            }
-            let rowHeight = baseRowHeight + rowSpacing
-
-            let rowMidY = (CGFloat(index) * rowHeight) + (rowHeight / 2)
-            let visibleHeight = scrollView.frame.height
-            let centeredOffset = rowMidY - (visibleHeight / 2)
-
-            scrollView.setContentOffset(
-                CGPoint(x: 0, y: max(0, centeredOffset)),
-                animated: animate
-            )
-        #endif
+    private func scrollToCurrent(animate _: Bool = true) throws {
+//        guard let scrollView, let song = mpd.status.song else {
+//            throw ViewError.missingData
+//        }
+//
+//        let index: Int?
+//        switch destination {
+//        case .songs:
+//
+//        guard let index else {
+//            throw ViewError.missingData
+//        }
+//
+//        #if os(macOS)
+//            guard let tableView = scrollView.documentView as? NSTableView else {
+//                throw ViewError.missingData
+//            }
+//
+//            tableView.layoutSubtreeIfNeeded()
+//            scrollView.layoutSubtreeIfNeeded()
+//
+//            DispatchQueue.main.async {
+//                let rect = tableView.frameOfCell(atColumn: 0, row: index)
+//                let y = rect.midY - (scrollView.frame.height / 2)
+//                let center = NSPoint(x: 0, y: max(0, y))
+//
+//                if animate {
+//                    scrollView.contentView.animator().setBoundsOrigin(center)
+//                } else {
+//                    scrollView.contentView.setBoundsOrigin(center)
+//                }
+//            }
+//        #elseif os(iOS)
+//            let rowSpacing: CGFloat = 15
+//            let baseRowHeight: CGFloat = switch destination {
+//            case .albums, .artists: 50
+//            case .songs, .playlist: 31.5
+//            #if os(iOS)
+//                default: 31.5
+//            #endif
+//            }
+//            let rowHeight = baseRowHeight + rowSpacing
+//
+//            let rowMidY = (CGFloat(index) * rowHeight) + (rowHeight / 2)
+//            let visibleHeight = scrollView.frame.height
+//            let centeredOffset = rowMidY - (visibleHeight / 2)
+//
+//            scrollView.setContentOffset(
+//                CGPoint(x: 0, y: max(0, centeredOffset)),
+//                animated: animate
+//            )
+//        #endif
     }
 }

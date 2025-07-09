@@ -159,51 +159,58 @@ struct SourceToggleButton<Media: Mediable>: View {
 
     var body: some View {
         AsyncButton(computedTitle) {
-            let songs: [Song]
-            switch media {
-            case let album as Album:
-                songs = try await ConnectionManager.command().getSongs(in: album, from: .database)
-            case let artist as Artist:
-                songs = try await ConnectionManager.command().getSongs(by: artist, from: .database)
-            case let song as Song:
-                songs = [song]
-            default:
-                throw ViewError.missingData
-            }
-
-            let urls: Set<URL>
-            switch source {
-            case .queue:
-                urls = Set(mpd.queue.internalMedia.map(\.url))
-            case .favorites:
-                urls = Set(mpd.playlists.favorites.map(\.url))
-            case .playlist:
-                let playlistSongs = try await ConnectionManager.command().getSongs(from: source)
-                urls = Set(playlistSongs.map(\.url))
-            default:
-                throw ViewError.missingData
-            }
-
-            let shouldRemove: Bool = if let forceAction {
-                // If action is forced, use it regardless of current state
-                forceAction == .remove
-            } else {
-                // If not forced, toggle based on current presence
-                songs.contains(where: { urls.contains($0.url) })
-            }
-
-            if shouldRemove {
-                try await ConnectionManager.command().remove(songs: songs, from: source)
-            } else {
-                try await ConnectionManager.command().add(songs: songs, to: source)
-            }
-
-            switch source {
-            case .playlist, .favorites:
-                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
-            default:
-                break
-            }
+//            let songs: [Song]
+//            switch media {
+//            case let album as Album:
+//                songs = try await ConnectionManager.command().getSongs(in: album, from: .database)
+//            case let artist as Artist:
+//                // Get all albums for the artist, then all songs for those albums
+//                let albums = artist.albums ?? []
+//                var artistSongs: [Song] = []
+//                for album in albums {
+//                    let albumSongs = try await ConnectionManager.command().getSongs(in: album, from: .database)
+//                    artistSongs.append(contentsOf: albumSongs)
+//                }
+//                songs = artistSongs
+//            case let song as Song:
+//                songs = [song]
+//            default:
+//                throw ViewError.missingData
+//            }
+//
+//            let urls: Set<URL>
+//            switch source {
+//            case .queue:
+//                urls = Set(mpd.queue.songs.map(\.url))
+//            case .favorites:
+//                urls = Set(mpd.playlists.favorites.map(\.url))
+//            case .playlist:
+//                let playlistSongs = try await ConnectionManager.command().getSongs(from: source)
+//                urls = Set(playlistSongs.map(\.url))
+//            default:
+//                throw ViewError.missingData
+//            }
+//
+//            let shouldRemove: Bool = if let forceAction {
+//                // If action is forced, use it regardless of current state
+//                forceAction == .remove
+//            } else {
+//                // If not forced, toggle based on current presence
+//                songs.contains(where: { urls.contains($0.url) })
+//            }
+//
+//            if shouldRemove {
+//                try await ConnectionManager.command().remove(songs: songs, from: source)
+//            } else {
+//                try await ConnectionManager.command().add(songs: songs, to: source)
+//            }
+//
+//            switch source {
+//            case .playlist, .favorites:
+//                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
+//            default:
+//                break
+//            }
         }
     }
 }

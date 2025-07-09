@@ -24,12 +24,12 @@ xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Debug
 
 The app follows an MVVM-style architecture using SwiftUI and the Observation framework:
 
-- **Models/App/**: App-level managers
+- **swmpc/Models/App/**: App-level managers
   - `NavigationManager`: Handles navigation state
   - `IntelligenceManager`: AI integration for smart playlists
   - `Settings`: User preferences with @AppStorage
 
-- **Models/MPD/**: MPD protocol implementation
+- **swmpc/Models/MPD/**: MPD protocol implementation
   - `ConnectionManager`: Lower level TCP connection to MPD
   - `StatusManager`: Manages MPD status updates
   - `LibraryManager`: Manages the media in MPD's database when `source` is set to `.database` , and the queue when `source` is set to `.queue`
