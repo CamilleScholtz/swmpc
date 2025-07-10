@@ -142,6 +142,7 @@ struct CategoryView: View {
 
     @State private var showHeader = false
     @State private var isSearching = false
+    @State private var searchQuery = ""
 
     @State private var hideHeaderTask: Task<Void, Never>?
 
@@ -160,13 +161,13 @@ struct CategoryView: View {
         List {
             switch destination {
             case .albums:
-                MediaView(using: mpd.database, type: .album)
+                MediaView(using: mpd.database, type: .album, searchQuery: searchQuery)
             case .artists:
-                MediaView(using: mpd.database, type: .artist)
+                MediaView(using: mpd.database, type: .artist, searchQuery: searchQuery)
             case .songs:
-                MediaView(using: mpd.database, type: .song)
+                MediaView(using: mpd.database, type: .song, searchQuery: searchQuery)
             case let .playlist(playlist):
-                MediaView(for: playlist)
+                MediaView(for: playlist, searchQuery: searchQuery)
             #if os(iOS)
                 default:
                     EmptyView()
@@ -253,6 +254,7 @@ struct CategoryView: View {
                 showHeader = true
                 hideHeaderTask?.cancel()
             } else {
+                searchQuery = ""
                 resetHideHeaderTimer()
             }
         }
@@ -319,7 +321,7 @@ struct CategoryView: View {
         #elseif os(macOS)
         .safeAreaInset(edge: .top, spacing: 7.5) {
             Group {
-                HeaderView(destination: destination, isSearching: $isSearching)
+                HeaderView(destination: destination, isSearching: $isSearching, searchQuery: $searchQuery)
                     .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
             }
             .frame(height: 50 + 7.5 + 1)

@@ -12,8 +12,8 @@ struct MediaView: View {
 
     let source: Source?
     let type: MediaType
+    let searchQuery: String
 
-    @State private var searchQuery = ""
     @State private var playlistSongs: [Song] = []
     @State private var hasFetchedDatabaseSongs = false
 
@@ -23,20 +23,23 @@ struct MediaView: View {
     private let playlistModifiedNotification = NotificationCenter.default
         .publisher(for: .playlistModifiedNotification)
 
-    init(using _: DatabaseManager, type: MediaType) {
+    init(using _: DatabaseManager, type: MediaType, searchQuery: String = "") {
         source = nil
         self.type = type
+        self.searchQuery = searchQuery
     }
 
-    init(using _: QueueManager) {
+    init(using _: QueueManager, searchQuery: String = "") {
         source = .queue
         type = .song
+        self.searchQuery = searchQuery
     }
 
     // Playlist initializer
-    init(for playlist: Playlist) {
+    init(for playlist: Playlist, searchQuery: String = "") {
         source = playlist.name == "Favorites" ? .favorites : .playlist(playlist)
         type = .song
+        self.searchQuery = searchQuery
     }
 
     private var isMovable: Bool {
@@ -71,13 +74,28 @@ struct MediaView: View {
                 }
                 
                 let artistDict = Dictionary(grouping: albums.compactMap(\.artist), by: { $0.name })
-                return artistDict.values.compactMap(\.first).sorted { $0.name < $1.name }
+                let artists = artistDict.values.compactMap(\.first).sorted { $0.name < $1.name }
+                
+                if searchQuery.isEmpty {
+                    return artists
+                } else {
+                    return artists.filter {
+                        $0.name.range(of: searchQuery, options: .caseInsensitive) != nil
+                    }
+                }
             case .album:
                 guard let albums = mpd.database.albums else {
                     return []
                 }
                 
-                return albums
+                if searchQuery.isEmpty {
+                    return albums
+                } else {
+                    return albums.filter {
+                        $0.title.range(of: searchQuery, options: .caseInsensitive) != nil ||
+                        ($0.artist.name.range(of: searchQuery, options: .caseInsensitive) != nil)
+                    }
+                }
             default:
                // TODO
                 return []
@@ -139,12 +157,7 @@ struct MediaView: View {
             .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
         #endif
             .onReceive(startSearchingNotification) { notification in
-                if case .playlist = source {
-                    searchQuery = notification.object as? String ?? ""
-                } else if source == nil && type == .song {
-                    // Handle search for database songs
-                    searchQuery = notification.object as? String ?? ""
-                }
+                // Search query is now managed by the parent view and passed as a parameter
             }
             .onReceive(playlistModifiedNotification) { _ in
                 Task {
