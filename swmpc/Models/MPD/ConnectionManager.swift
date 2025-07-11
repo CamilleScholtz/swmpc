@@ -773,9 +773,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
             }
         }
 
-        guard let url, let duration else {
+        guard let url else {
             throw ConnectionManagerError.malformedResponse(
-                "Missing mandatory fields: url or duration")
+                "Missing mandatory url field")
         }
 
         // XXX: Not all repsonses provide a position, see:
@@ -790,7 +790,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             url: url,
             artist: artist ?? "Unknown Artist",
             title: title ?? "Unknown Title",
-            duration: duration,
+            duration: duration ?? 0,
             disc: disc ?? 1,
             track: track ?? 1,
             album: Album(
@@ -913,20 +913,23 @@ extension ConnectionManager {
 
             switch key {
             case "albumartist":
-                artist = Artist(name: value)
+                artist = Artist(name: value.isEmpty ? "Unknown Artist" : value)
             case "album":
                 guard let artist else {
                     throw ConnectionManagerError.malformedResponse(
                         "Album found without associated artist")
                 }
 
-                albums.append(Album(title: value, artist: artist))
+                albums.append(Album(
+                    title: value.isEmpty ? "Unknown Album" : value,
+                    artist: artist
+                ))
             default:
                 continue
             }
         }
 
-        return albums
+        return albums.sorted { $0.artist.name < $1.artist.name }
     }
 
     /// Retrieves all songs from the database or queue.

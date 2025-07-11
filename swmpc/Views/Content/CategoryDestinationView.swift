@@ -13,9 +13,6 @@ struct CategoryDestinationView: View {
 
     let destination: CategoryDestination
 
-    @State private var isLoadingPlaylist = true
-    @State private var playlistSongs: [Song]?
-
     var body: some View {
         switch destination {
         #if os(iOS)
@@ -24,40 +21,10 @@ struct CategoryDestinationView: View {
             case .settings:
                 SettingsView()
         #endif
-        case let .playlist(playlist):
-            Group {
-                if isLoadingPlaylist {
-                    ZStack {
-                        Rectangle()
-                            .fill(.background)
-                            .ignoresSafeArea()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        ProgressView()
-                    }
-                } else if playlistSongs == nil || playlistSongs!.isEmpty {
-                    EmptyCategoryView(destination: destination)
-                } else {
-                    CategoryView(destination: destination)
-                }
-            }
-            .task(id: playlist) {
-                isLoadingPlaylist = true
-                playlistSongs = try? await ConnectionManager.command().getSongs(from: .playlist(playlist))
-
-                try? await Task.sleep(for: .milliseconds(200))
-                guard !Task.isCancelled else {
-                    return
-                }
-
-                isLoadingPlaylist = false
-            }
+        case .playlist:
+            CategoryView(destination: destination)
         default:
-            if mpd.database.albums?.isEmpty ?? true {
-                EmptyCategoryView(destination: destination)
-            } else {
-                CategoryView(destination: destination)
-            }
+            CategoryView(destination: destination)
         }
     }
 }
@@ -159,23 +126,38 @@ struct CategoryView: View {
 
     var body: some View {
         List {
-            switch destination {
-            case .albums:
-                MediaView(using: mpd.database, type: .album, searchQuery: searchQuery)
-            case .artists:
-                MediaView(using: mpd.database, type: .artist, searchQuery: searchQuery)
-            case .songs:
-                MediaView(using: mpd.database, type: .song, searchQuery: searchQuery)
-            case let .playlist(playlist):
-                MediaView(for: playlist, searchQuery: searchQuery)
-            #if os(iOS)
-                default:
-                    EmptyView()
-            #endif
+            if case let .playlist(playlist) = destination {
+                MediaView(using: playlist, searchQuery: searchQuery)
+            } else {
+                MediaView(using: mpd.database, searchQuery: searchQuery)
             }
         }
         .id(destination)
         .listStyle(.plain)
+        .task(id: destination) {
+            switch destination {
+            case .albums:
+                do {
+                    try await mpd.database.set(type: .album, idle: false)
+                } catch {
+                    print("Failed to load albums: \(error)")
+                }
+            case .artists:
+                do {
+                    try await mpd.database.set(type: .artist, idle: false)
+                } catch {
+                    print("Failed to load artists: \(error)")
+                }
+            case .songs:
+                do {
+                    try await mpd.database.set(type: .song, idle: false)
+                } catch {
+                    print("Failed to load songs: \(error)")
+                }
+            default:
+                break
+            }
+        }
         .introspect(.list, on: .macOS(.v15)) { tableView in
             DispatchQueue.main.async {
                 scrollView = tableView.enclosingScrollView

@@ -76,8 +76,8 @@ import SwiftUI
     private func updateLoop() async {
         await connect()
 
-        try? await database.set(idle: true)
-        try? await queue.set(idle: true)
+        try? await database.set()
+        try? await queue.set()
         try? await playlists.set()
         try? await status.set()
 
@@ -116,9 +116,9 @@ import SwiftUI
         case .playlists:
             try await playlists.set()
         case .database:
-            try await database.set(idle: true)
+            try await database.set()
         case .queue:
-            try await queue.set(idle: true, force: true)
+            try await queue.set(force: true)
             try await status.set()
         case .player:
             try await status.set()

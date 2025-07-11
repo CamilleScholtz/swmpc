@@ -10,18 +10,56 @@ import SwiftUI
 /// Manages the MPD database, handling artists, albums, and song queries.
 @Observable
 final class DatabaseManager {
-    /// The artists in the database with their albums.
-    private(set) var albums: [Album]?
+    private(set) var type: MediaType = .album
+
+    /// The media in the database.
+    private(set) var media: [any Mediable]?
 
     /// Sets the media type and loads the appropriate data.
     ///
     /// - Parameters:
+    ///   - type: The type of media to load.
     ///   - idle: Whether to use the idle connection.
     /// - Throws: An error if the media could not be set.
     @MainActor
-    func set(idle: Bool = false) async throws {
-        albums = try await idle
-            ? ConnectionManager.idle.getDatabase()
-            : ConnectionManager.command().getDatabase()
+    func set(type: MediaType? = nil, idle: Bool = true) async throws {
+        guard type != self.type else {
+            return
+        }
+
+        if let type {
+            self.type = type
+        }
+
+        media = nil
+
+        switch self.type {
+        case .album:
+            media = try await idle
+                ? ConnectionManager.idle.getDatabase()
+                : ConnectionManager.command().getDatabase()
+        case .artist:
+            let fetchedAlbums = try await idle
+                ? ConnectionManager.idle.getDatabase()
+                : ConnectionManager.command().getDatabase()
+
+            if let fetchedAlbums {
+                let artistDict = Dictionary(grouping: fetchedAlbums.compactMap(\.artist), by: {
+                    $0.name
+                })
+                let artists = artistDict.values.compactMap(\.first).sorted {
+                    $0.name < $1.name
+                }
+                media = artists
+            } else {
+                media = nil
+            }
+        case .song:
+            media = try await idle
+                ? ConnectionManager.idle.getSongs(from: Source.database)
+                : ConnectionManager.command().getSongs(from: Source.database)
+        case .playlist:
+            break
+        }
     }
 }

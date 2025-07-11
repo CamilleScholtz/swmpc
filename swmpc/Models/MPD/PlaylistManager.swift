@@ -29,8 +29,10 @@ final class PlaylistManager {
     ///
     /// - Throws: An error if the playlists could not be set.
     @MainActor
-    func set() async throws {
-        let allPlaylists = try await ConnectionManager.idle.getPlaylists()
+    func set(idle: Bool = true) async throws {
+        let allPlaylists = try await idle
+            ? ConnectionManager.idle.getPlaylists()
+            : ConnectionManager.command().getPlaylists()
 
         playlists = allPlaylists.filter { $0.name != "Favorites" }
 
@@ -39,9 +41,11 @@ final class PlaylistManager {
         }) else {
             return
         }
-
-        favorites = try await ConnectionManager.idle.getSongs(from:
-            .playlist(favoritePlaylist))
+        favorites = try await idle
+            ? ConnectionManager.idle.getSongs(from:
+                .playlist(favoritePlaylist))
+            : ConnectionManager.command().getSongs(from:
+                .playlist(favoritePlaylist))
     }
 
     /// Gets songs for a specific playlist, with caching

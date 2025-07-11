@@ -156,8 +156,7 @@ struct QueuePanelView: View {
             guard let scrollView,
                   let song = mpd.status.song,
                   let index = mpd.queue.songs.firstIndex(where: {
-                      guard let queueSong = $0 as? Song else { return false }
-                      return queueSong.url == song.url
+                      $0.url == song.url
                   })
             else {
                 throw ViewError.missingData

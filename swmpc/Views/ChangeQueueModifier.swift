@@ -64,7 +64,7 @@ struct ChangeQueueModifier: ViewModifier {
                         try await ConnectionManager.command().loadPlaylist(nil)
                     }
 
-                    try await mpd.database.set()
+                    try await mpd.database.set(idle: false)
                 }
             } message: {
                 Text("This will overwrite the current queue.")
