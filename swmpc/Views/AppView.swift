@@ -49,16 +49,7 @@ struct AppView: View {
                                                     ContentDestinationView(destination: destination)
                                                 }
                                         }
-                                        .loadingOverlay(isLoading: {
-                                            switch navigator.category {
-                                            case .playlist:
-                                                mpd.playlists.playlists == nil
-                                            case let category where category.type != .playlist:
-                                                mpd.database.media?.isEmpty ?? true
-                                            default:
-                                                false
-                                            }
-                                        }())
+                                        
                                     }
                                 }
                             }
@@ -81,16 +72,9 @@ struct AppView: View {
                             .navigationSplitViewColumnWidth(310)
                             .navigationBarBackButtonHidden(true)
                             .ignoresSafeArea()
-                            .loadingOverlay(isLoading: {
-                                switch navigator.category {
-                                case .playlist:
-                                    false
-                                case let category where category.type != .playlist:
-                                    mpd.database.media?.isEmpty ?? true
-                                default:
-                                    false
-                                }
-                            }())
+                            .overlay(
+                                LoadingView()
+                            )
                         } detail: {
                             DetailView()
                                 .padding(60)
@@ -142,18 +126,6 @@ struct AppView: View {
                             }
                         }
                     #endif
-                }
-                .onAppear {
-                    if let playlist = mpd.status.playlist {
-                        navigator.category = .playlist(playlist)
-                    }
-
-                    Task {
-                        try? await mpd.status.startTrackingElapsed()
-                    }
-                }
-                .onDisappear {
-                    mpd.status.stopTrackingElapsed()
                 }
             }
         }

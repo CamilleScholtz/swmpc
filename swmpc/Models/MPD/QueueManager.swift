@@ -21,6 +21,9 @@ final class QueueManager {
     /// - Throws: An error if the queue could not be loaded.
     @MainActor
     func set(idle: Bool = false, force _: Bool = false) async throws {
+        LoadingManager.shared.show()
+        defer { LoadingManager.shared.hide() }
+
         songs = try await idle
             ? ConnectionManager.idle.getSongs(from: .queue)
             : ConnectionManager.command().getSongs(from: .queue)

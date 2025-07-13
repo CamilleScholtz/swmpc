@@ -80,6 +80,9 @@ final class StatusManager {
     /// - Throws: An error if fetching the status fails.
     @MainActor
     func set(idle: Bool = true) async throws {
+        LoadingManager.shared.show()
+        defer { LoadingManager.shared.hide() }
+
         let data = try await idle
             ? ConnectionManager.idle.getStatusData()
             : ConnectionManager.command().getStatusData()

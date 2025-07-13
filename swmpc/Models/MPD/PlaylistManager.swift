@@ -23,7 +23,10 @@ final class PlaylistManager {
     ///
     /// - Throws: An error if the playlists could not be set.
     @MainActor
-    func set(idle: Bool = true) async throws {
+    func set(idle: Bool = true) async throws {        
+        LoadingManager.shared.show()
+        defer { LoadingManager.shared.hide() }
+
         let allPlaylists = try await idle
             ? ConnectionManager.idle.getPlaylists()
             : ConnectionManager.command().getPlaylists()

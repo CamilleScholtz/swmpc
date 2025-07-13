@@ -24,6 +24,9 @@ final class DatabaseManager {
     /// - Throws: An error if the media could not be set.
     @MainActor
     func set(type: MediaType? = nil, idle: Bool = true, force: Bool = false) async throws {
+        LoadingManager.shared.show()
+        defer { LoadingManager.shared.hide() }
+
         guard type != self.type || force else {
             return
         }
