@@ -178,7 +178,7 @@ struct DetailView: View {
                     )
                     .onTapGesture {
                         Task(priority: .userInitiated) {
-                            guard let song = mpd.status.song, let album = try? await ConnectionManager.command().getAlbum(for: song) else {
+                            guard let song = mpd.status.song else {
                                 return
                             }
 
@@ -187,7 +187,7 @@ struct DetailView: View {
                                     navigator.category = .albums
                                 }
                             #endif
-                            navigator.navigate(to: ContentDestination.album(album))
+                            navigator.navigate(to: ContentDestination.album(song.album))
 
                             #if os(iOS)
                                 isPopupOpen = false

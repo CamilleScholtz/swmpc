@@ -80,7 +80,7 @@ struct AlbumView: View {
                     .foregroundColor(mpd.status.song?.isIn(album) ?? false ? .accentColor : .primary)
                     .lineLimit(2)
 
-                Text(album.artist)
+                Text(album.artist.name)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

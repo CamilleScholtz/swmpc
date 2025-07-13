@@ -2134,6 +2134,9 @@
         }
       }
     },
+    "No content" : {
+
+    },
     "No songs in playlist." : {
       "localizations" : {
         "de" : {
@@ -2645,6 +2648,7 @@
       }
     },
     "Queue Library" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2701,6 +2705,7 @@
       }
     },
     "Queue Playlist %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

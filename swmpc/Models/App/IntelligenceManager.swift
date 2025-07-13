@@ -174,7 +174,7 @@ actor IntelligenceManager {
             if case .playlist = target {
                 try await ConnectionManager.command().loadPlaylist()
             }
-            let albums = try await ConnectionManager.command().getAlbums(from: .database)
+            let albums = try await ConnectionManager.command().getDatabase()
 
             let result = try await client.chats(query: ChatQuery(
                 messages: [
@@ -183,8 +183,7 @@ actor IntelligenceManager {
 
                     The description for the playlist your should create is: \(prompt)
                     """)!,
-                    .init(role: .user, content: albums.map(\.description).joined(
-                        separator: "\n"))!,
+                    .init(role: .user, content: albums.map(\.description))!,
                 ],
                 model: model.model,
                 responseFormat: .derivedJsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
@@ -203,14 +202,13 @@ actor IntelligenceManager {
             var songs: [Song] = []
 
             for row in data.playlist {
-                guard let album = albums.first(where: {
+                guard let album = albums?.first(where: {
                     $0.description == row
                 }) else {
                     continue
                 }
 
-                try await songs.append(contentsOf: ConnectionManager.command()
-                    .getSongs(in: album, from: .database))
+                try await songs.append(contentsOf: album.getSongs())
             }
 
             switch target {

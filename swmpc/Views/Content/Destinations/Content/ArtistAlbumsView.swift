@@ -19,6 +19,8 @@ struct ArtistAlbumsView: View {
         self.artist = artist
     }
 
+    @State private var albums: [Album] = []
+
     var body: some View {
         Section {
             HStack(spacing: 15) {
@@ -36,7 +38,7 @@ struct ArtistAlbumsView: View {
                             ContextMenuView(for: artist)
                         }
 
-                    Text(artist.albums?.count ?? 0 > 1 ? "\(String(artist.albums!.count)) albums" : "1 album")
+                    Text(albums.count == 1 ? "1 album" : "\(albums.count) albums")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -64,9 +66,12 @@ struct ArtistAlbumsView: View {
                 .frame(height: 1),
             alignment: .bottom
         )
+        .task {
+            albums = await (try? artist.getAlbums()) ?? []
+        }
 
         Section {
-            ForEach(artist.albums ?? []) { album in
+            ForEach(albums) { album in
                 AlbumView(for: album)
             }
         }

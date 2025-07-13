@@ -77,12 +77,8 @@ struct AlbumSongsView: View {
                     }
 
                     #if os(macOS)
-                        if isHovering, mpd.status.song?.isIn(album) ?? false {
+                        if isHovering, !(mpd.status.song?.isIn(album) ?? false) {
                             AsyncButton {
-                                guard let song = mpd.status.song, let album = try? await ConnectionManager.command().getAlbum(for: song) else {
-                                    return
-                                }
-
                                 try await ConnectionManager.command().play(album)
                             } label: {
                                 ZStack {
@@ -121,23 +117,18 @@ struct AlbumSongsView: View {
                         .fontDesign(.rounded)
                         .lineLimit(3)
 
-                    AsyncButton {
-                        guard let artist = try await ConnectionManager.command().getArtist(for: album) else {
-                            throw ViewError.missingData
-                        }
-
-                        navigator.navigate(to: ContentDestination.artist(artist))
+                    Button {
+                        navigator.navigate(to: ContentDestination.artist(album.artist))
                     } label: {
-                        Text(album.artist)
+                        Text(album.artist.name)
                             .font(.system(size: 12))
                             .fontWeight(.semibold)
                             .lineLimit(2)
                     }
                     .buttonStyle(.plain)
-                    .asyncButtonStyle(.pulse)
                     .contextMenu {
                         Button("Copy Artist Name") {
-                            album.artist.copyToClipboard()
+                            album.artist.name.copyToClipboard()
                         }
                     }
 
@@ -163,7 +154,7 @@ struct AlbumSongsView: View {
             #endif
                 .task {
                     artwork = try? await album.artwork()
-                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(in: album, from: .database)) ?? [], by: { $0.disc })
+                    songs = await Dictionary(grouping: (try? album.getSongs()) ?? [], by: { $0.disc })
                 }
         }
         #if os(macOS)

@@ -9,12 +9,7 @@ import SwiftUI
 import SwiftUIIntrospect
 
 struct CategoryDestinationView: View {
-    @Environment(MPD.self) private var mpd
-
     let destination: CategoryDestination
-
-    @State private var isLoadingPlaylist = true
-    @State private var playlistSongs: [Song]?
 
     var body: some View {
         switch destination {
@@ -24,52 +19,17 @@ struct CategoryDestinationView: View {
             case .settings:
                 SettingsView()
         #endif
-        case let .playlist(playlist):
-            Group {
-                if isLoadingPlaylist {
-                    ZStack {
-                        Rectangle()
-                            .fill(.background)
-                            .ignoresSafeArea()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        ProgressView()
-                    }
-                } else if playlistSongs == nil || playlistSongs!.isEmpty {
-                    EmptyCategoryView(destination: destination)
-                } else {
-                    CategoryView(destination: destination)
-                }
-            }
-            .task(id: playlist) {
-                isLoadingPlaylist = true
-                playlistSongs = try? await ConnectionManager.command().getSongs(from: .playlist(playlist))
-
-                try? await Task.sleep(for: .milliseconds(200))
-                guard !Task.isCancelled else {
-                    return
-                }
-
-                isLoadingPlaylist = false
-            }
         default:
-            if mpd.database.internalMedia.isEmpty {
-                EmptyCategoryView(destination: destination)
-            } else {
-                CategoryView(destination: destination)
-            }
+            CategoryView(destination: destination)
         }
     }
 }
 
 struct EmptyCategoryView: View {
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
-
     let destination: CategoryDestination
 
     @State private var showIntelligencePlaylistSheet = false
     @State private var playlistToEdit: Playlist?
-    @State private var intelligencePlaylistPrompt = ""
 
     private let fillIntelligencePlaylistNotification = NotificationCenter.default
         .publisher(for: .fillIntelligencePlaylistNotification)
@@ -88,7 +48,6 @@ struct EmptyCategoryView: View {
                     .font(.headline)
                 Text("Add songs to your playlist.")
                     .font(.subheadline)
-
                 IntelligenceButtonView(using: playlist)
                     .offset(y: 20)
             #if os(iOS)
@@ -102,7 +61,6 @@ struct EmptyCategoryView: View {
             guard let playlist = notification.object as? Playlist else {
                 return
             }
-
             playlistToEdit = playlist
             showIntelligencePlaylistSheet = true
         }
@@ -118,16 +76,10 @@ struct CategoryView: View {
     let destination: CategoryDestination
 
     #if os(macOS)
-        // NOTE: Kind of hacky. See https://github.com/feedback-assistant/reports/issues/651
-        private let rowHeight: CGFloat
-
-        init(destination: CategoryDestination) {
-            self.destination = destination
-
-            rowHeight = switch destination {
-            case .albums: 50 + 15
-            case .artists: 50 + 15
-            case .songs, .playlist: 31.5 + 15
+        private var rowHeight: CGFloat {
+            switch destination {
+            case .albums, .artists: 65
+            case .songs, .playlist: 46.5
             }
         }
     #endif
@@ -142,14 +94,9 @@ struct CategoryView: View {
 
     @State private var showHeader = false
     @State private var isSearching = false
+    @State private var searchQuery = ""
 
     @State private var hideHeaderTask: Task<Void, Never>?
-
-    #if os(iOS)
-        @State private var showSearchButton = false
-        @State private var isGoingToSearch = false
-        @State private var query = ""
-    #endif
 
     private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
@@ -158,23 +105,26 @@ struct CategoryView: View {
 
     var body: some View {
         List {
-            switch destination {
-            case .albums:
-                MediaView(using: mpd.database, type: .album)
-            case .artists:
-                MediaView(using: mpd.database, type: .artist)
-            case .songs:
-                MediaView(using: mpd.database, type: .song)
-            case let .playlist(playlist):
-                MediaView(for: playlist)
-            #if os(iOS)
-                default:
-                    EmptyView()
-            #endif
+            if case let .playlist(playlist) = destination {
+                MediaView(using: playlist, searchQuery: searchQuery)
+            } else {
+                MediaView(using: mpd.database, searchQuery: searchQuery)
             }
         }
         .id(destination)
         .listStyle(.plain)
+        .task(id: destination) {
+            switch destination {
+            case .albums:
+                try? await mpd.database.set(type: .album, idle: false)
+            case .artists:
+                try? await mpd.database.set(type: .artist, idle: false)
+            case .songs:
+                try? await mpd.database.set(type: .song, idle: false)
+            default:
+                break
+            }
+        }
         .introspect(.list, on: .macOS(.v15)) { tableView in
             DispatchQueue.main.async {
                 scrollView = tableView.enclosingScrollView
@@ -206,26 +156,14 @@ struct CategoryView: View {
                 if showHeader {
                     resetHideHeaderTimer(offset: value)
                 }
-
                 return
             }
 
             offset = value
-
-            if previous < value {
-                if showHeader {
-                    showHeader = false
-                }
-            } else {
-                if !showHeader {
-                    showHeader = true
-                }
-            }
+            showHeader = previous >= value
 
             #if os(iOS)
-                if !showSearchButton {
-                    showSearchButton = true
-                }
+                showSearchButton = true
             #endif
 
             resetHideHeaderTimer()
@@ -253,11 +191,12 @@ struct CategoryView: View {
                 showHeader = true
                 hideHeaderTask?.cancel()
             } else {
+                searchQuery = ""
                 resetHideHeaderTimer()
             }
         }
-        .onChange(of: mpd.database.results?.count) { _, value in
-            guard value == nil else {
+        .onChange(of: searchQuery) { _, value in
+            guard value.isEmpty else {
                 return
             }
 
@@ -290,7 +229,6 @@ struct CategoryView: View {
                 return
             }
 
-            mpd.database.results = nil
             // For playlists, notify to clear search results
             if case .playlist = navigator.category {
                 NotificationCenter.default.post(name: .startSearchingNotication, object: "")
@@ -311,25 +249,16 @@ struct CategoryView: View {
                 return
             }
 
-            if query.isEmpty {
-                mpd.database.results = nil
-                // For playlists, notify to clear search results
-                if case .playlist = navigator.category {
-                    NotificationCenter.default.post(name: .startSearchingNotication, object: "")
-                }
-            } else {
-                // For playlists, search is handled by MediaListView internally
-                if case .playlist = navigator.category {
-                    NotificationCenter.default.post(name: .startSearchingNotication, object: query)
-                } else {
-                    try? await mpd.database.search(for: query)
-                }
+            // For playlists, search is handled by MediaListView internally
+            if case .playlist = navigator.category {
+                NotificationCenter.default.post(name: .startSearchingNotication, object: query.isEmpty ? "" : query)
             }
+            // For database views, search will be handled by SwiftUI's searchable with filtered views
         }
         #elseif os(macOS)
         .safeAreaInset(edge: .top, spacing: 7.5) {
             Group {
-                HeaderView(destination: destination, isSearching: $isSearching)
+                HeaderView(destination: destination, isSearching: $isSearching, searchQuery: $searchQuery)
                     .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
             }
             .frame(height: 50 + 7.5 + 1)
@@ -364,31 +293,28 @@ struct CategoryView: View {
             throw ViewError.missingData
         }
 
-        let index: Int?
+        var index: Int?
         switch destination {
-        case .songs, .playlist:
-            index = mpd.database.media.firstIndex { media in
-                media as? Song == song
-            }
         case .albums:
-            index = mpd.database.media.firstIndex { media in
-                guard let album = media as? Album else { return
-                    false
-                }
-
-                return song.isIn(album)
+            guard let albums = mpd.database.media as? [Album] else {
+                throw ViewError.missingData
             }
+            index = albums.firstIndex(where: { $0 == song.album })
         case .artists:
-            index = mpd.database.media.firstIndex { media in
-                guard let artist = media as? Artist else {
-                    return false
-                }
-
-                return song.isBy(artist)
+            guard let artists = mpd.database.media as? [Artist] else {
+                throw ViewError.missingData
             }
+            index = artists.firstIndex(where: { $0.name == song.artist })
+        case .songs:
+            guard let songs = mpd.database.media as? [Song] else {
+                throw ViewError.missingData
+            }
+            index = songs.firstIndex(where: { $0.url == song.url })
+        case .playlist:
+            break
         #if os(iOS)
             default:
-                index = nil
+                throw ViewError.missingData
         #endif
         }
 
@@ -420,9 +346,7 @@ struct CategoryView: View {
             let baseRowHeight: CGFloat = switch destination {
             case .albums, .artists: 50
             case .songs, .playlist: 31.5
-            #if os(iOS)
-                default: 31.5
-            #endif
+            default: 31.5
             }
             let rowHeight = baseRowHeight + rowSpacing
 

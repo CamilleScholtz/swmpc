@@ -51,6 +51,15 @@ enum Source: Equatable, Hashable {
             Playlist(name: "Favorites")
         }
     }
+
+    var isMovable: Bool {
+        switch self {
+        case .queue, .playlist, .favorites:
+            true
+        case .database:
+            false
+        }
+    }
 }
 
 /// Represents the different subsystems that MPD monitors for changes.

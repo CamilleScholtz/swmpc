@@ -133,7 +133,6 @@ struct SidebarView: View {
             }
         }
         .toolbar(removing: .sidebarToggle)
-        .handleQueueChange()
         .alert("Delete Playlist", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {
                 playlistToDelete = nil

@@ -7,101 +7,127 @@
 
 import SwiftUI
 
-extension Source {
-    var isMovable: Bool {
-        switch self {
-        case .queue, .playlist:
-            true
-        case .database, .favorites:
-            false
-        }
-    }
-}
-
 struct MediaView: View {
     @Environment(MPD.self) private var mpd
 
-    private let library: LibraryManager
+    private let source: Source
     private let type: MediaType
+    private let searchQuery: String
 
-    private let startSearchingNotification = NotificationCenter.default
-        .publisher(for: .startSearchingNotication)
+    @State private var loadedSongs: [Song] = []
+    @State private var isLoadingSongs = false
 
     private let playlistModifiedNotification = NotificationCenter.default
         .publisher(for: .playlistModifiedNotification)
 
-    init(using library: LibraryManager, type: MediaType) {
-        self.library = library
-        self.type = type
+    init(using database: DatabaseManager, searchQuery: String = "") {
+        source = .database
+        type = database.type
+        self.searchQuery = searchQuery
     }
 
-    init(for playlist: Playlist) {
-        library = LibraryManager(using: playlist.name == "Favorites" ? .favorites : .playlist(playlist))
+    init(using _: QueueManager, searchQuery: String = "") {
+        source = .queue
         type = .song
+        self.searchQuery = searchQuery
     }
 
-    private var source: Source? {
-        guard type == .song else {
-            return nil
+    init(using playlist: Playlist, searchQuery: String = "") {
+        source = playlist.name == "Favorites" ? .favorites : .playlist(playlist)
+        type = .song
+        self.searchQuery = searchQuery
+    }
+
+    private var isMovable: Bool {
+        switch source {
+        case .queue, .playlist:
+            true
+        default:
+            false
+        }
+    }
+
+    private var media: [any Mediable] {
+        let baseMedia: [any Mediable] = switch source {
+        case .queue:
+            mpd.queue.songs
+        case .playlist:
+            loadedSongs
+        case .favorites:
+            mpd.playlists.favorites
+        case .database:
+            mpd.database.media ?? []
         }
 
-        switch library.source {
-        case .queue, .playlist, .favorites:
-            return library.source
-        case .database:
-            return nil
+        guard !searchQuery.isEmpty else {
+            return baseMedia
+        }
+
+        return baseMedia.filter { mediable in
+            switch mediable {
+            case let song as Song:
+                song.artist.range(of: searchQuery, options: .caseInsensitive) != nil ||
+                    song.title.range(of: searchQuery, options: .caseInsensitive) != nil
+            case let album as Album:
+                album.title.range(of: searchQuery, options: .caseInsensitive) != nil ||
+                    album.artist.name.range(of: searchQuery, options: .caseInsensitive) != nil
+            case let artist as Artist:
+                artist.name.range(of: searchQuery, options: .caseInsensitive) != nil
+            default:
+                false
+            }
         }
     }
 
     var body: some View {
         Group {
-            switch type {
-            case .song:
-                if source?.isMovable ?? false {
-                    ForEach(library.media.compactMap { $0 as? Song }) { song in
-                        SongView(for: song, source: source)
-                    }
-                    .onMove { from, to in
-                        Task {
-                            guard let index = from.first,
-                                  let song = library.media[index] as? Song
-                            else {
-                                return
-                            }
+            if media.isEmpty {
+                VStack {
+                    Text("No content")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if isMovable, let songs = media as? [Song] {
+                ForEach(songs) { song in
+                    SongView(for: song, source: source)
+                }
+                .onMove { from, to in
+                    Task {
+                        guard let index = from.first,
+                              index < media.count,
+                              let song = media[index] as? Song
+                        else {
+                            return
+                        }
 
-                            let to = index < to ? to - 1 : to
+                        let adjustedTo = index < to ? to - 1 : to
+                        try? await ConnectionManager.command().move(song, to: adjustedTo, in: source)
 
-                            try? await ConnectionManager.command().move(song, to: to, in: library.source)
-
-                            switch library.source {
-                            case .playlist, .favorites:
-                                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
-                            default:
-                                break
-                            }
+                        if case .playlist = source {
+                            NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
+                        } else if case .favorites = source {
+                            NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
                         }
                     }
-                } else {
-                    ForEach(library.media.compactMap { $0 as? Song }) { song in
+                }
+            } else {
+                switch type {
+                case .album:
+                    ForEach(media.compactMap { $0 as? Album }) { album in
+                        AlbumView(for: album)
+                    }
+                case .artist:
+                    ForEach(media.compactMap { $0 as? Artist }) { artist in
+                        ArtistView(for: artist)
+                    }
+                case .song:
+                    ForEach(media.compactMap { $0 as? Song }) { song in
                         SongView(for: song, source: source)
                     }
+                default:
+                    EmptyView()
                 }
-            case .album:
-                ForEach(library.media.compactMap { $0 as? Album }) { album in
-                    AlbumView(for: album)
-                }
-            case .artist:
-                ForEach(library.media.compactMap { $0 as? Artist }) { artist in
-                    ArtistView(for: artist)
-                }
-            default:
-                EmptyView()
-            }
-
-            // XXX: Kinda hacky, but required because else the tasks below never fire.
-            if library.media.isEmpty {
-                Color.clear
-                    .frame(height: 0)
             }
         }
         .listRowSeparator(.hidden)
@@ -110,29 +136,33 @@ struct MediaView: View {
         #elseif os(macOS)
             .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
         #endif
-            .task(id: library.source) {
-                guard type != .playlist else {
-                    return
-                }
-
-                try? await library.set(using: type)
-            }
-            .onReceive(startSearchingNotification) { notification in
-                guard let query = notification.object as? String else {
-                    return
-                }
-
+            .onReceive(playlistModifiedNotification) { _ in
                 Task {
-                    if query.isEmpty {
-                        library.clearResults()
-                    } else {
-                        try? await library.search(for: query, using: type)
+                    if case let .playlist(playlist) = source {
+                        if playlist.name == "Favorites" {
+                            try? await mpd.playlists.set()
+                        } else {
+                            loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
+                        }
                     }
                 }
             }
-            .onReceive(playlistModifiedNotification) { _ in
-                Task {
-                    try? await library.set(force: true)
+            .task {
+                // Load songs on initialization for playlist sources only
+                // Database songs are now handled by DatabaseManager
+                guard loadedSongs.isEmpty else { return }
+
+                isLoadingSongs = true
+                defer { isLoadingSongs = false }
+
+                if case let .playlist(playlist) = source {
+                    // Load playlist songs
+                    do {
+                        let songs = try await ConnectionManager.command().getSongs(from: .playlist(playlist))
+                        loadedSongs = songs
+                    } catch {
+                        print("Failed to load playlist \(playlist.name): \(error)")
+                    }
                 }
             }
     }

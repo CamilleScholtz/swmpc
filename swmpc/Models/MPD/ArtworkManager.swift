@@ -33,20 +33,20 @@ actor ArtworkManager {
     ///     - shouldCache: Whether or not to cache the fetched data.
     /// - Returns: The artwork data.
     /// - Throws: An error if the artwork data could not be fetched.
-    func get(for media: any Mediable, shouldCache: Bool = true) async throws ->
+    func get(for url: URL, shouldCache: Bool = true) async throws ->
         Data
     {
-        if shouldCache, let data = cache.object(forKey: media.url as NSURL) {
+        if shouldCache, let data = cache.object(forKey: url as NSURL) {
             return data as Data
         }
 
-        if let existingTask = tasks[media.url] {
+        if let existingTask = tasks[url] {
             return try await existingTask.value
         }
 
-        let task = createFetchTask(for: media.url, priority: .high,
+        let task = createFetchTask(for: url, priority: .high,
                                    shouldCache: shouldCache)
-        tasks[media.url] = task
+        tasks[url] = task
 
         return try await task.value
     }

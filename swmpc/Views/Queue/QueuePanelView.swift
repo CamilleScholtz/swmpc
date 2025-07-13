@@ -25,7 +25,7 @@ struct QueuePanelView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if mpd.queue.internalMedia.isEmpty {
+            if mpd.queue.songs.isEmpty {
                 EmptyQueueView()
             } else {
                 QueueView()
@@ -39,7 +39,7 @@ struct QueuePanelView: View {
                 Spacer()
 
                 HStack(spacing: 4) {
-                    if mpd.queue.internalMedia.isEmpty, isIntelligenceEnabled {
+                    if mpd.queue.songs.isEmpty, isIntelligenceEnabled {
                         Button(action: {
                             NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
                         }) {
@@ -50,7 +50,7 @@ struct QueuePanelView: View {
                                 .contentShape(Circle())
                         }
                         .styledButton()
-                    } else if !mpd.queue.internalMedia.isEmpty {
+                    } else if !mpd.queue.songs.isEmpty {
                         Button(action: {
                             showClearQueueAlert = true
                         }) {
@@ -125,7 +125,7 @@ struct QueuePanelView: View {
         @Environment(\.colorScheme) private var colorScheme
 
         private var songs: [Song] {
-            mpd.queue.internalMedia as? [Song] ?? []
+            mpd.queue.songs
         }
 
         #if os(iOS)
@@ -136,7 +136,7 @@ struct QueuePanelView: View {
 
         var body: some View {
             List {
-                MediaView(using: mpd.queue, type: .song)
+                MediaView(using: mpd.queue)
             }
             .listStyle(.plain)
             .introspect(.list, on: .macOS(.v15)) { tableView in
@@ -155,7 +155,9 @@ struct QueuePanelView: View {
         private func scrollToCurrent(animate: Bool = true) throws {
             guard let scrollView,
                   let song = mpd.status.song,
-                  let index = mpd.queue.media.firstIndex(where: { $0.url == song.url })
+                  let index = mpd.queue.songs.firstIndex(where: {
+                      $0.url == song.url
+                  })
             else {
                 throw ViewError.missingData
             }

@@ -19,10 +19,10 @@ import SwiftUI
     let status = StatusManager()
 
     /// The MPD database manager, handling music library queries.
-    var database = LibraryManager(using: .database)
+    let database = DatabaseManager()
 
-    /// The MPD queue manager, handling music library queries.
-    let queue = LibraryManager(using: .queue)
+    /// The MPD queue manager, handling queue operations.
+    let queue = QueueManager()
 
     /// The playlist manager, handling playlist operations.
     let playlists = PlaylistManager()
@@ -76,10 +76,8 @@ import SwiftUI
     private func updateLoop() async {
         await connect()
 
-        try? await database.set(using: .album, idle: true)
-        if database.source == .database {
-            try? await queue.set(using: .song, idle: true)
-        }
+        try? await database.set()
+        try? await queue.set()
         try? await playlists.set()
         try? await status.set()
 
@@ -118,9 +116,9 @@ import SwiftUI
         case .playlists:
             try await playlists.set()
         case .database:
-            try await database.set(idle: true, force: true)
+            try await database.set(force: true)
         case .queue:
-            try await queue.set(idle: true, force: true)
+            try await queue.set(force: true)
             try await status.set()
         case .player:
             try await status.set()

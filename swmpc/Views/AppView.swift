@@ -49,13 +49,20 @@ struct AppView: View {
                                                     ContentDestinationView(destination: destination)
                                                 }
                                         }
-
-                                        LoadingView()
+                                        .loadingOverlay(isLoading: {
+                                            switch navigator.category {
+                                            case .playlist:
+                                                mpd.playlists.playlists == nil
+                                            case let category where category.type != .playlist:
+                                                mpd.database.media?.isEmpty ?? true
+                                            default:
+                                                false
+                                            }
+                                        }())
                                     }
                                 }
                             }
                         }
-                        .handleQueueChange()
                         .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
                             DetailView(isPopupOpen: $isPopupOpen)
                         }
@@ -74,9 +81,16 @@ struct AppView: View {
                             .navigationSplitViewColumnWidth(310)
                             .navigationBarBackButtonHidden(true)
                             .ignoresSafeArea()
-                            .overlay(
-                                LoadingView()
-                            )
+                            .loadingOverlay(isLoading: {
+                                switch navigator.category {
+                                case .playlist:
+                                    false
+                                case let category where category.type != .playlist:
+                                    mpd.database.media?.isEmpty ?? true
+                                default:
+                                    false
+                                }
+                            }())
                         } detail: {
                             DetailView()
                                 .padding(60)

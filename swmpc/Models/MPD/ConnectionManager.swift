@@ -691,22 +691,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
         return (parts[0].lowercased(), parts[1])
     }
 
-    /// Parses a set of response lines from the media server into a media
+    /// Parses a set of response lines from the media server into a `Song`
     /// object.
     ///
     /// This function processes an array of strings, each representing a line
     /// from an mpd server's response, and extracts key-value pairs using a
     /// colon (`:`) as the delimiter. It then maps these key-value pairs to the
-    /// corresponding properties of a media object that conforms to the
-    /// `Mediable` protocol. Depending on the provided `media` type, it
-    /// constructs either an `Album` or a `Song`:
-    ///
-    /// - For `.album`, it creates an `Album` using the `albumartist`, `album`,
-    ///   and `date` fields, defaulting to "Unknown Artist", "Unknown Title",
-    ///   and "1970" if the respective fields are absent.
-    /// - For other media types, it creates a `Song` using the `artist`,
-    ///   `title`, `duration`, `disc`, and `track` fields, with default values
-    ///   for missing information.
+    /// corresponding properties of a `Song` object.
     ///
     /// The function requires that the response includes mandatory fields `file`
     /// (used for the URL and id). If this field is not present, or if the
@@ -714,21 +705,21 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// thrown.
     ///
     /// Additionally, if an optional `index` is provided, it overrides the
-    /// parsed `id` and `position` values. This workaround is used for responses
-    /// (like those from `listplaylistinfo`) that do not include these fields.
+    /// parsed `position` values. This workaround is used for responses (like
+    /// those from `listplaylistinfo`) that do not include this field.
     ///
     /// - Parameters:
     ///   - lines: An array of strings representing the response lines from the
     ///            mpd server.
-    ///   - media: The expected media type, which determines whether an `Album`
-    ///            or a `Song` is created.
+    ///   - album: An optional `Album` object to associate with the song. If
+    ///            provided, it will be set as the album property of the song.
     ///   - index: An optional index value to use as the `position`.
-    /// - Returns: A media object conforming to `Mediable` (either an `Album` or
-    ///            a `Song`) based on the parsed data.
+    /// - Returns: An optional `Song` object if the response contains valid song
+    ///           data; otherwise, it returns `nil`.
     /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
     ///           are missing or if the response is improperly formatted.
-    private func parseMediaResponse(_ lines: [String], using media: MediaType,
-                                    index: Int? = nil) throws -> (any Mediable)?
+    private func parseSongResponse(_ lines: [String], index: Int? = nil) throws
+        -> Song?
     {
         var id: UInt32?
         var position: UInt32?
@@ -782,9 +773,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
             }
         }
 
-        guard let url, let duration else {
+        guard let url else {
             throw ConnectionManagerError.malformedResponse(
-                "Missing mandatory fields: url or duration")
+                "Missing mandatory url field")
         }
 
         // XXX: Not all repsonses provide a position, see:
@@ -793,29 +784,20 @@ actor ConnectionManager<Mode: ConnectionMode> {
             position = UInt32(index)
         }
 
-        switch media {
-        case .album:
-            return Album(
-                identifier: id,
-                position: position,
-                url: url,
-                artist: albumArtist ?? "Unknown Artist",
-                title: album ?? "Unknown Title",
+        return Song(
+            identifier: id,
+            position: position,
+            url: url,
+            artist: artist ?? "Unknown Artist",
+            title: title ?? "Unknown Title",
+            duration: duration ?? 0,
+            disc: disc ?? 1,
+            track: track ?? 1,
+            album: Album(
+                title: album ?? "Unknown Album",
+                artist: Artist(name: albumArtist ?? "Unknown Artist")
             )
-        default:
-            return Song(
-                identifier: id,
-                position: position,
-                url: url,
-                artist: artist ?? "Unknown Artist",
-                title: title ?? "Unknown Title",
-                duration: duration,
-                albumArtist: albumArtist ?? "Unknown Artist",
-                albumTitle: album ?? "Unknown Album",
-                disc: disc ?? 1,
-                track: track ?? 1
-            )
-        }
+        )
     }
 }
 
@@ -896,13 +878,58 @@ extension ConnectionManager {
             case "songid":
                 let lines = try await run(["playlistid \(value)"])
 
-                song = try parseMediaResponse(lines, using: .song) as? Song
+                song = try parseSongResponse(lines)
             default:
                 break
             }
         }
 
         return (state, isRandom, isRepeat, elapsed, playlist, song)
+    }
+
+    /// Retrieves the current database of albums from the media server.
+    ///
+    /// This asynchronous function sends a command to list all albums grouped by
+    /// album artist and parses the response to construct an array of `Album`
+    /// objects. Each `Album` object contains the album title and its associated
+    /// artist.
+    ///
+    /// - Returns: An optional array of `Album` objects representing the albums
+    ///            in the database. If no albums are found, it returns `nil`.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getDatabase() async throws -> [Album]? {
+        let lines = try await run(["list album group albumartist"])
+
+        var albums: [Album] = []
+        var artist: Artist?
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let (key, value) = try parseLine(line)
+
+            switch key {
+            case "albumartist":
+                artist = Artist(name: value.isEmpty ? "Unknown Artist" : value)
+            case "album":
+                guard let artist else {
+                    throw ConnectionManagerError.malformedResponse(
+                        "Album found without associated artist")
+                }
+
+                albums.append(Album(
+                    title: value.isEmpty ? "Unknown Album" : value,
+                    artist: artist
+                ))
+            default:
+                continue
+            }
+        }
+
+        return albums.sorted { $0.artist.name < $1.artist.name }
     }
 
     /// Retrieves all songs from the database or queue.
@@ -924,39 +951,8 @@ extension ConnectionManager {
 
         let chunks = chunkLines(lines, startingWith: "file")
 
-        return try chunks.enumerated().map { index, chunk in
-            try parseMediaResponse(chunk, using: .song, index: index) as! Song
-        }
-    }
-
-    /// Retrieves songs from the database or queue that match a specific artist
-    /// name.
-    ///
-    /// - Parameters:
-    ///   - artist: The `Artist` object for which the songs should be
-    ///             retrieved.
-    ///   - source: The source from which to retrieve the songs.
-    /// - Returns: An array of `Song` objects corresponding to the specified
-    ///            artist.
-    /// - Throws: An error if the command execution fails or if the response is
-    ///           malformed.
-    func getSongs(by artist: Artist, from source: Source) async throws -> [Song] {
-        let filters = filter(key: "albumartist", value: artist.name)
-
-        let lines = switch source {
-        case .database:
-            try await run(["find \(filters)"])
-        case .queue:
-            try await run(["playlistfind \(filters)"])
-        default:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Only database and queue sources are supported for retrieving songs by artist")
-        }
-
-        let chunks = chunkLines(lines, startingWith: "file")
-
-        return try chunks.map { chunk in
-            try parseMediaResponse(chunk, using: .song) as! Song
+        return try chunks.enumerated().compactMap { index, chunk in
+            try parseSongResponse(chunk, index: index)
         }
     }
 
@@ -970,7 +966,7 @@ extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(in album: Album, from source: Source) async throws -> [Song] {
-        let filters = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist, quote: false)))\""
+        let filters = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist.name, quote: false)))\""
 
         let lines = switch source {
         case .database:
@@ -984,105 +980,99 @@ extension ConnectionManager {
 
         let chunks = chunkLines(lines, startingWith: "file")
 
-        return try chunks.map { chunk in
-            try parseMediaResponse(chunk, using: .song) as! Song
+        return try chunks.compactMap { chunk in
+            try parseSongResponse(chunk)
         }
     }
 
-    /// Retrieves all albums from the database or queue.
-    ///
-    /// - Parameter source: The source from which to retrieve albums.
-    /// - Returns: An array of `Album` objects representing all albums in the
-    ///            database.
-    /// - Throws: An error if the command execution fails or if the response is
-    ///           malformed.
-    func getAlbums(from source: Source) async throws -> [Album] {
-        let filters = "\"(\(filter(key: "track", value: "1", quote: false)) AND \(filter(key: "disc", value: "1", quote: false)))\""
+    func getAlbums(by artist: Artist, from source: Source) async throws -> [Album] {
+        let lines: [String]
 
-        let lines = switch source {
+        switch source {
         case .database:
-            try await run(["find \(filters)"])
+            let filterExpression = filter(key: "albumartist", value: artist.name)
+            lines = try await run(["list album \(filterExpression)"])
         case .queue:
-            try await run(["playlistfind \(filters)"])
+            let filters = "\"(\(filter(key: "albumartist", value: artist.name, quote: false)))\""
+            lines = try await run(["playlistfind \(filters)"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Only database and queue sources are supported for retrieving albums")
+                "Only database and queue sources are supported for retrieving albums by artist")
         }
 
-        let chunks = chunkLines(lines, startingWith: "file")
+        switch source {
+        case .database:
+            var albums: [Album] = []
 
-        return try chunks.map { chunk in
-            try parseMediaResponse(chunk, using: .album) as! Album
+            for line in lines {
+                guard line != "OK" else { break }
+
+                let (key, value) = try parseLine(line)
+                if key == "album" {
+                    albums.append(Album(title: value.isEmpty ? "Unknown Album" : value, artist: artist))
+                }
+            }
+
+            return albums
+        case .queue:
+            let chunks = chunkLines(lines, startingWith: "file")
+            var albumTitles = Set<String>()
+
+            for chunk in chunks {
+                for line in chunk {
+                    let (key, value) = try parseLine(line)
+                    if key == "album" {
+                        albumTitles.insert(value.isEmpty ? "Unknown Album" : value)
+                    }
+                }
+            }
+
+            return albumTitles.map { Album(title: $0, artist: artist) }
+        default:
+            return []
         }
     }
 
-    /// Retrieves all album artists from the database or queue.
+    /// Retrieves the URL of the first song in an album.
     ///
-    /// - Parameter source: The source from which to retrieve artists.
-    /// - Returns: An array of `Artist` objects representing all album artists
-    ///            in the database.
-    /// - Throws: An error if the command execution fails or if the response is
-    ///           malformed.
-    func getArtists(from source: Source) async throws -> [Artist] {
-        let albums = try await getAlbums(from: source)
-        let albumsByArtist = Dictionary(grouping: albums, by: { $0.artist })
+    /// This is a more efficient method than fetching all songs when only the first
+    /// song's URL is needed (e.g., for artwork retrieval).
+    ///
+    /// - Parameter album: The album to retrieve the first song URL from.
+    /// - Returns: The URL of the first song in the album.
+    /// - Throws: An error if the command execution fails, if the album's artist is
+    ///           not set, or if no songs are found in the album.
+    func getURL(of album: Album) async throws -> URL {
+        let filters = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist.name, quote: false)))\""
 
-        return try albumsByArtist.map { artist, albums in
-            Artist(
-                identifier: albums.first!.identifier,
-                position: albums.first!.position,
-                url: albums.first!.url,
-                name: artist,
-                albums: albums
-            )
+        let lines = try await run(["find \(filters) window 0:1"])
+        guard !lines.isEmpty, lines.first != "OK" else {
+            throw ConnectionManagerError.malformedResponse(
+                "No songs found in album: \(album.title)")
         }
-        .sorted {
-            switch source {
-            case .database:
-                $0.name < $1.name
-            case .queue:
-                $0.position! < $1.position!
-            default:
-                throw ConnectionManagerError.unsupportedOperation(
-                    "Only database and queue sources are supported for retrieving artists")
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let (key, value) = try parseLine(line)
+
+            if key == "file" {
+                guard let encoded = value.addingPercentEncoding(
+                    withAllowedCharacters: .urlPathAllowed),
+                    let formatted = URL(string: encoded)
+                else {
+                    throw ConnectionManagerError.malformedResponse(
+                        "Failed to parse URL")
+                }
+
+                return formatted
             }
         }
-    }
 
-    /// Retrieves the album for a given song.
-    ///
-    /// - Parameter song: The `Song` object to get the album for.
-    /// - Returns: An `Album` object representing the album of the specified
-    ///            song, or `nil` if no album is found.
-    /// - Throws: An error if the command execution fails or if the response is
-    ///           malformed.
-    func getAlbum(for song: Song) async throws -> Album? {
-        let lines = try await run(["find \(filter(key: "file", value: song.url.path))"])
-
-        let chunks = chunkLines(lines, startingWith: "file")
-        guard let chunk = chunks.first else {
-            return nil
-        }
-
-        return try parseMediaResponse(chunk, using: .album) as? Album
-    }
-
-    /// Retrieves the artist for a given song.
-    ///
-    /// - Parameter media: The `Mediable` object to get the artist for.
-    /// - Returns: An `Album` object representing the artist of the specified
-    ///            song, or `nil` if no artist is found.
-    /// - Throws: An error if the command execution fails or if the response is
-    ///           malformed.
-    func getArtist(for media: any Mediable) async throws -> Artist? {
-        let lines = try await run(["find \(filter(key: "file", value: media.url.path))"])
-
-        let chunks = chunkLines(lines, startingWith: "file")
-        guard let chunk = chunks.first else {
-            return nil
-        }
-
-        return try parseMediaResponse(chunk, using: .artist) as? Artist
+        throw ConnectionManagerError.malformedResponse(
+            "No file URL found in response for album: \(album.title)")
     }
 
     /// Retrieves all playlists.
@@ -1394,17 +1384,17 @@ extension ConnectionManager where Mode == CommandMode {
         _ = try await run(commands)
     }
 
-    /// Moves a media item to a specific position in the specified source.
+    /// Moves a song to a specific position in the specified source.
     ///
     /// - Parameters:
-    ///   - media: The `Mediable` object representing the item to move.
+    ///   - song: The `Song` object representing the item to move.
     ///   - position: The destination position for the item.
     ///   - source: The source in which to move the item.
     /// - Throws: An error if the underlying command execution fails.
-    func move(_ media: any Mediable, to position: Int, in source: Source) async throws {
-        guard let currentPosition = media.position else {
+    func move(_ song: Song, to position: Int, in source: Source) async throws {
+        guard let currentPosition = song.position else {
             throw ConnectionManagerError.unsupportedOperation(
-                "Cannot move media without a position")
+                "Cannot move song without a position")
         }
 
         switch source {
@@ -1423,23 +1413,31 @@ extension ConnectionManager where Mode == CommandMode {
         }
     }
 
-    /// Plays a `Mediable` object.
+    /// Plays a media object (Song, Album, or Artist).
     ///
-    /// - Parameter media: The `Mediable` object to play.
+    /// - Parameter media: The media object to play.
     /// - Throws: An error if the underlying command execution fails.
     func play(_ media: any Mediable) async throws {
-        if let id = media.identifier {
+        // Check if it's a Song with an identifier
+        if let song = media as? Song, let id = song.identifier {
             _ = try await run(["playid \(id)"])
             return
         }
 
-        let songs: [Song] = switch media {
+        let songs: [Song]
+        switch media {
         case let album as Album:
-            try await getSongs(in: album, from: .database)
+            songs = try await getSongs(in: album, from: .database)
         case let artist as Artist:
-            try await getSongs(by: artist, from: .database)
+            // For artists, we need to get all songs by that artist
+            let filter = filter(key: "artist", value: artist.name)
+            let lines = try await run(["find \(filter)"])
+            let chunks = chunkLines(lines, startingWith: "file")
+            songs = try chunks.compactMap { chunk in
+                try parseSongResponse(chunk)
+            }
         case let song as Song:
-            [song]
+            songs = [song]
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only Album, Artist, and Song types are supported for playback")

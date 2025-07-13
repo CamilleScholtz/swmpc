@@ -79,8 +79,10 @@ final class StatusManager {
     ///
     /// - Throws: An error if fetching the status fails.
     @MainActor
-    func set() async throws {
-        let data = try await ConnectionManager.idle.getStatusData()
+    func set(idle: Bool = true) async throws {
+        let data = try await idle
+            ? ConnectionManager.idle.getStatusData()
+            : ConnectionManager.command().getStatusData()
 
         if state.update(to: data.state) {
             #if os(macOS)

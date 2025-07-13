@@ -18,6 +18,8 @@ struct ArtistView: View {
         self.artist = artist
     }
 
+    @State private var albumCount: Int = 0
+
     var body: some View {
         HStack(spacing: 15) {
             Circle()
@@ -47,7 +49,8 @@ struct ArtistView: View {
                     .font(.headline)
                     .foregroundColor(mpd.status.song?.isBy(artist) ?? false ? .accentColor : .primary)
                     .lineLimit(2)
-                Text(artist.albums?.count ?? 0 == 1 ? "1 album" : "\(artist.albums!.count) albums")
+
+                Text(albumCount == 1 ? "1 album" : "\(albumCount) albums")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -56,6 +59,9 @@ struct ArtistView: View {
             Spacer()
         }
         .contentShape(Rectangle())
+        .task {
+            albumCount = await (try? artist.getAlbums().count) ?? 0
+        }
         .onTapGesture {
             navigator.navigate(to: ContentDestination.artist(artist))
         }

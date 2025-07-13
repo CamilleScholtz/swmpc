@@ -129,7 +129,7 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
     }
 }
 
-enum ContentDestination: Identifiable, Codable, Hashable {
+enum ContentDestination: Identifiable, Hashable {
     var id: Self { self }
 
     case album(Album)
