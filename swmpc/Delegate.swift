@@ -37,7 +37,6 @@ struct Delegate: App {
         WindowGroup {
             AppView()
                 .environment(navigator)
-                .environment(LoadingManager.shared)
             #if os(iOS)
                 .environment(Delegate.mpd)
             #elseif os(macOS)

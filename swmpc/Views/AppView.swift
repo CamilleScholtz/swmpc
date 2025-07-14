@@ -49,7 +49,6 @@ struct AppView: View {
                                                     ContentDestinationView(destination: destination)
                                                 }
                                         }
-                                        
                                     }
                                 }
                             }

@@ -15,7 +15,6 @@ struct MediaView: View {
     private let searchQuery: String
 
     @State private var loadedSongs: [Song] = []
-    @State private var isLoadingSongs = false
 
     private let playlistModifiedNotification = NotificationCenter.default
         .publisher(for: .playlistModifiedNotification)
@@ -148,21 +147,12 @@ struct MediaView: View {
                 }
             }
             .task {
-                // Load songs on initialization for playlist sources only
-                // Database songs are now handled by DatabaseManager
-                guard loadedSongs.isEmpty else { return }
-
-                isLoadingSongs = true
-                defer { isLoadingSongs = false }
+                guard loadedSongs.isEmpty else {
+                    return
+                }
 
                 if case let .playlist(playlist) = source {
-                    // Load playlist songs
-                    do {
-                        let songs = try await ConnectionManager.command().getSongs(from: .playlist(playlist))
-                        loadedSongs = songs
-                    } catch {
-                        print("Failed to load playlist \(playlist.name): \(error)")
-                    }
+                    loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
                 }
             }
     }

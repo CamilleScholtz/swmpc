@@ -10,6 +10,12 @@ import SwiftUI
 /// Manages playlist operations for the MPD client.
 @Observable
 final class PlaylistManager {
+    private let state: LoadingState
+
+    init(state: LoadingState) {
+        self.state = state
+    }
+
     /// The playlists available on the server.
     private(set) var playlists: [Playlist]?
 
@@ -23,10 +29,7 @@ final class PlaylistManager {
     ///
     /// - Throws: An error if the playlists could not be set.
     @MainActor
-    func set(idle: Bool = true) async throws {        
-        LoadingManager.shared.show()
-        defer { LoadingManager.shared.hide() }
-
+    func set(idle: Bool = true) async throws {
         let allPlaylists = try await idle
             ? ConnectionManager.idle.getPlaylists()
             : ConnectionManager.command().getPlaylists()
@@ -45,9 +48,12 @@ final class PlaylistManager {
                 .playlist(favoritePlaylist))
     }
 
-    /// Gets songs for a specific playlist, with caching
+    /// Gets songs for a specific playlist.
     @MainActor
     func getSongs(for playlist: Playlist) async throws -> [Song] {
-        try await ConnectionManager.command().getSongs(from: .playlist(playlist))
+        state.isLoading = true
+        defer { state.isLoading = false }
+
+        return try await ConnectionManager.command().getSongs(from: .playlist(playlist))
     }
 }

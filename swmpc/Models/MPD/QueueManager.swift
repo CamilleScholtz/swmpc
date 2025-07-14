@@ -10,6 +10,12 @@ import SwiftUI
 /// Manages the MPD queue, handling song operations.
 @Observable
 final class QueueManager {
+    private let state: LoadingState
+
+    init(state: LoadingState) {
+        self.state = state
+    }
+
     /// The songs in the queue.
     private(set) var songs: [Song] = []
 
@@ -21,8 +27,8 @@ final class QueueManager {
     /// - Throws: An error if the queue could not be loaded.
     @MainActor
     func set(idle: Bool = false, force _: Bool = false) async throws {
-        LoadingManager.shared.show()
-        defer { LoadingManager.shared.hide() }
+        state.isLoading = true
+        defer { state.isLoading = false }
 
         songs = try await idle
             ? ConnectionManager.idle.getSongs(from: .queue)

@@ -19,13 +19,16 @@ import SwiftUI
     let status = StatusManager()
 
     /// The MPD database manager, handling music library queries.
-    let database = DatabaseManager()
+    let database: DatabaseManager
 
     /// The MPD queue manager, handling queue operations.
-    let queue = QueueManager()
+    let queue: QueueManager
 
     /// The playlist manager, handling playlist operations.
-    let playlists = PlaylistManager()
+    let playlists: PlaylistManager
+
+    /// The loading state of the MPD client.
+    let state = LoadingState()
 
     /// The most recent connection or communication error, if any.
     var error: Error?
@@ -36,6 +39,10 @@ import SwiftUI
 
     @MainActor
     init() {
+        database = DatabaseManager(state: state)
+        queue = QueueManager(state: state)
+        playlists = PlaylistManager(state: state)
+
         updateLoopTask = Task { [weak self] in
             await self?.updateLoop()
         }

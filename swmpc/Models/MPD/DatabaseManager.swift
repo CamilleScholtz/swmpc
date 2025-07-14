@@ -10,6 +10,12 @@ import SwiftUI
 /// Manages the MPD database, handling artists, albums, and song queries.
 @Observable
 final class DatabaseManager {
+    private let state: LoadingState
+
+    init(state: LoadingState) {
+        self.state = state
+    }
+
     private(set) var type: MediaType = .album
 
     /// The media in the database.
@@ -24,8 +30,8 @@ final class DatabaseManager {
     /// - Throws: An error if the media could not be set.
     @MainActor
     func set(type: MediaType? = nil, idle: Bool = true, force: Bool = false) async throws {
-        LoadingManager.shared.show()
-        defer { LoadingManager.shared.hide() }
+        state.isLoading = true
+        defer { state.isLoading = false }
 
         guard type != self.type || force else {
             return
