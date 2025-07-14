@@ -12,11 +12,11 @@ struct ContextMenuView<Media: Mediable>: View {
     @Environment(MPD.self) private var mpd
 
     let media: Media
-    let source: Source?
+    let source: Source
 
     init(for media: Media, source: Source? = nil) {
         self.media = media
-        self.source = source
+        self.source = source ?? .database
     }
 
     private var copyTitle: String {
@@ -57,20 +57,15 @@ struct ContextMenuView<Media: Mediable>: View {
     }
 
     var body: some View {
-        // Primary action - always present
-        if let source {
-            // When viewing from a source, primary action is to remove from that source
+        if source != .database {
             SourceToggleButton(media: media, source: source, forceAction: .remove)
         } else {
-            // When viewing from database or no source, primary action is add/remove to queue
             SourceToggleButton(media: media, source: .queue)
         }
 
         Divider()
 
-        // Secondary actions - only show if not already the primary
-        if source != .queue, source != nil {
-            // Only show secondary queue action if we're not viewing queue and not in database
+        if source != .queue, source != .database {
             SourceToggleButton(media: media, source: .queue)
         }
 
@@ -160,11 +155,20 @@ struct SourceToggleButton<Media: Mediable>: View {
     var body: some View {
         AsyncButton(computedTitle) {
             let songs: [Song]
+
             switch media {
             case let album as Album:
-                songs = try await ConnectionManager.command().getSongs(in: album, from: .database)
+                songs = try await album.getSongs()
             case let artist as Artist:
-                songs = try await ConnectionManager.command().getSongs(by: artist, from: .database)
+                let allAlbums = try await ConnectionManager.command().getDatabase() ?? []
+                let artistAlbums = allAlbums.filter { $0.artist.name == artist.name }
+
+                var artistSongs: [Song] = []
+                for album in artistAlbums {
+                    let albumSongs = try await album.getSongs()
+                    artistSongs.append(contentsOf: albumSongs)
+                }
+                songs = artistSongs
             case let song as Song:
                 songs = [song]
             default:
@@ -174,7 +178,7 @@ struct SourceToggleButton<Media: Mediable>: View {
             let urls: Set<URL>
             switch source {
             case .queue:
-                urls = Set(mpd.queue.internalMedia.map(\.url))
+                urls = Set(mpd.queue.songs.map(\.url))
             case .favorites:
                 urls = Set(mpd.playlists.favorites.map(\.url))
             case .playlist:

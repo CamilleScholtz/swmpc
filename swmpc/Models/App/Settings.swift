@@ -24,7 +24,5 @@ enum Setting {
 
     static let artworkGetter = "artwork_getter"
 
-    static let isDemoMode = "is_demo_mode"
-
     static let runAsAgent = "run_as_agent"
 }

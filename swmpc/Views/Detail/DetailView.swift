@@ -169,16 +169,12 @@ struct DetailView: View {
                                 return
                             }
 
-                            guard let album = try? await mpd.database.get(for: song, using: .album) as? Album else {
-                                return
-                            }
-
                             #if os(iOS)
                                 if navigator.category != .albums {
                                     navigator.category = .albums
                                 }
                             #endif
-                            navigator.navigate(to: ContentDestination.album(album))
+                            navigator.navigate(to: ContentDestination.album(song.album))
 
                             #if os(iOS)
                                 isPopupOpen = false

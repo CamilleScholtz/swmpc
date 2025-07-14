@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea for this swmpc
 title: ''
-labels: ''
+labels: enhancement
 assignees: ''
 
 ---

@@ -64,17 +64,13 @@ struct SettingsView: View {
         @State private var password = ""
 
         @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
-        @AppStorage(Setting.isDemoMode) var isDemoMode = false
 
         var body: some View {
             Form {
                 TextField("MPD Host:", text: $host)
-                    .disabled(isDemoMode)
                 TextField("MPD Port:", value: $port, formatter: NumberFormatter())
-                    .disabled(isDemoMode)
 
                 SecureField("MPD Password:", text: $password)
-                    .disabled(isDemoMode)
                     .onAppear {
                         @KeychainStorage(Setting.password) var passwordSecureStorage: String?
                         password = passwordSecureStorage ?? ""
@@ -95,7 +91,6 @@ struct SettingsView: View {
                     Text("Embedded").tag(ArtworkGetter.embedded)
                 }
                 .pickerStyle(.inline)
-                .disabled(isDemoMode)
                 Text("Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the song metadata. Using embedded is not recommended as it is generally much slower.")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -103,13 +98,6 @@ struct SettingsView: View {
 
                 Divider()
                     .frame(height: 32, alignment: .center)
-
-                Toggle(isOn: $isDemoMode) {
-                    Text("Demo Mode")
-                    Text("When enabled, uses mock data instead of connecting to MPD.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
             }
             .padding(32)
             .navigationTitle("General")

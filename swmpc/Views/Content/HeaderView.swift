@@ -7,6 +7,7 @@
 
 import ButtonKit
 import SwiftUI
+import SwiftUIIntrospect
 
 struct HeaderView: View {
     @Environment(MPD.self) private var mpd
@@ -14,6 +15,7 @@ struct HeaderView: View {
 
     let destination: CategoryDestination
     @Binding var isSearching: Bool
+    @Binding var searchQuery: String
 
     @State private var query = ""
 
@@ -53,7 +55,11 @@ struct HeaderView: View {
                     }
                 }
             } else {
-                TextField("Search", text: $query)
+                TextField("Search", text: $searchQuery)
+                    .introspect(.textField, on: .macOS(.v15)) {
+                        $0.drawsBackground = true
+                        $0.backgroundColor = .clear
+                    }
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background(Color(.secondarySystemFill))
@@ -61,11 +67,9 @@ struct HeaderView: View {
                     .disableAutocorrection(true)
                     .focused($isFocused)
                     .onAppear {
-                        query = ""
                         isFocused = true
                     }
                     .onDisappear {
-                        query = ""
                         isFocused = false
                     }
             }
@@ -92,28 +96,11 @@ struct HeaderView: View {
             Rectangle()
                 .frame(height: 1)
                 .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-            alignment: .bottom,
+            alignment: .bottom
         )
         .onChange(of: destination) {
             isSearching = false
-        }
-        .onChange(of: isSearching) { _, value in
-            guard !value else {
-                return
-            }
-
-            mpd.database.clearResults()
-        }
-        .task(id: query) {
-            guard isSearching else {
-                return
-            }
-
-            if query.isEmpty {
-                mpd.database.clearResults()
-            } else {
-                try? await mpd.database.search(for: query)
-            }
+            searchQuery = ""
         }
     }
 }

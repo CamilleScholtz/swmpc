@@ -49,8 +49,6 @@ struct AppView: View {
                                                     ContentDestinationView(destination: destination)
                                                 }
                                         }
-
-                                        LoadingView()
                                     }
                                 }
                             }
@@ -64,7 +62,7 @@ struct AppView: View {
                         .tabBarMinimizeBehavior(.onScrollDown)
                         .tabViewBottomAccessory {
                             HStack {
-                                
+
                             }
                         }
                         .handleQueueChange()
@@ -121,18 +119,6 @@ struct AppView: View {
                         }
 //                        .toolbarBackgroundVisibility(.hidden)
                     #endif
-                }
-                .onAppear {
-                    if let playlist = mpd.status.playlist {
-                        navigator.category = .playlist(playlist)
-                    }
-
-                    Task {
-                        try? await mpd.status.startTrackingElapsed()
-                    }
-                }
-                .onDisappear {
-                    mpd.status.stopTrackingElapsed()
                 }
             }
         }

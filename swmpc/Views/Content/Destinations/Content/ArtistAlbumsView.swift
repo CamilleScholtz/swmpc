@@ -19,6 +19,8 @@ struct ArtistAlbumsView: View {
         self.artist = artist
     }
 
+    @State private var albums: [Album] = []
+
     var body: some View {
         Section {
             HStack(spacing: 15) {
@@ -36,7 +38,7 @@ struct ArtistAlbumsView: View {
                             ContextMenuView(for: artist)
                         }
 
-                    Text(artist.albums?.count ?? 0 > 1 ? "\(String(artist.albums!.count)) albums" : "1 album")
+                    Text(albums.count == 1 ? "1 album" : "\(albums.count) albums")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -49,13 +51,6 @@ struct ArtistAlbumsView: View {
             #elseif os(macOS)
                 .listRowInsets(.init(top: 15, leading: 7.5, bottom: 7.5, trailing: 7.5))
             #endif
-                .task(priority: .medium) {
-                    guard let song = mpd.status.song else {
-                        return
-                    }
-
-                    mpd.status.media = try? await mpd.database.get(for: song, using: .album)
-                }
         }
         #if os(macOS)
         .frame(width: 310)
@@ -71,9 +66,12 @@ struct ArtistAlbumsView: View {
                 .frame(height: 1),
             alignment: .bottom,
         )
+        .task {
+            albums = await (try? artist.getAlbums()) ?? []
+        }
 
         Section {
-            ForEach(artist.albums ?? []) { album in
+            ForEach(albums) { album in
                 AlbumView(for: album)
             }
         }

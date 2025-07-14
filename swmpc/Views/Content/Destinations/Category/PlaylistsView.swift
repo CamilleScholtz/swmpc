@@ -145,7 +145,6 @@ struct PlaylistsView: View {
             .padding(.vertical, 10)
         }
         .background(Color(.systemBackground))
-        .handleQueueChange()
         .alert("Delete Playlist", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {
                 playlistToDelete = nil

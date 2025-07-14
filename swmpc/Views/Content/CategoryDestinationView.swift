@@ -9,12 +9,7 @@ import SwiftUI
 import SwiftUIIntrospect
 
 struct CategoryDestinationView: View {
-    @Environment(MPD.self) private var mpd
-
     let destination: CategoryDestination
-
-    @State private var isLoadingPlaylist = true
-    @State private var playlistSongs: [Song]?
 
     var body: some View {
         switch destination {
@@ -24,52 +19,17 @@ struct CategoryDestinationView: View {
             case .settings:
                 SettingsView()
         #endif
-        case let .playlist(playlist):
-            Group {
-                if isLoadingPlaylist {
-                    ZStack {
-                        Rectangle()
-                            .fill(.background)
-                            .ignoresSafeArea()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        ProgressView()
-                    }
-                } else if playlistSongs == nil || playlistSongs!.isEmpty {
-                    EmptyCategoryView(destination: destination)
-                } else {
-                    CategoryView(destination: destination)
-                }
-            }
-            .task(id: playlist) {
-                isLoadingPlaylist = true
-                playlistSongs = try? await ConnectionManager.command().getSongs(from: .playlist(playlist))
-
-                try? await Task.sleep(for: .milliseconds(200))
-                guard !Task.isCancelled else {
-                    return
-                }
-
-                isLoadingPlaylist = false
-            }
         default:
-            if mpd.database.internalMedia.isEmpty {
-                EmptyCategoryView(destination: destination)
-            } else {
-                CategoryView(destination: destination)
-            }
+            CategoryView(destination: destination)
         }
     }
 }
 
 struct EmptyCategoryView: View {
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
-
     let destination: CategoryDestination
 
     @State private var showIntelligencePlaylistSheet = false
     @State private var playlistToEdit: Playlist?
-    @State private var intelligencePlaylistPrompt = ""
 
     private let fillIntelligencePlaylistNotification = NotificationCenter.default
         .publisher(for: .fillIntelligencePlaylistNotification)
@@ -88,7 +48,6 @@ struct EmptyCategoryView: View {
                     .font(.headline)
                 Text("Add songs to your playlist.")
                     .font(.subheadline)
-
                 IntelligenceButtonView(using: playlist)
                     .offset(y: 20)
             #if os(iOS)
@@ -102,7 +61,6 @@ struct EmptyCategoryView: View {
             guard let playlist = notification.object as? Playlist else {
                 return
             }
-
             playlistToEdit = playlist
             showIntelligencePlaylistSheet = true
         }
@@ -118,16 +76,10 @@ struct CategoryView: View {
     let destination: CategoryDestination
 
     #if os(macOS)
-        // NOTE: Kind of hacky. See https://github.com/feedback-assistant/reports/issues/651
-        private let rowHeight: CGFloat
-
-        init(destination: CategoryDestination) {
-            self.destination = destination
-
-            rowHeight = switch destination {
-            case .albums: 50 + 15
-            case .artists: 50 + 15
-            case .songs, .playlist: 31.5 + 15
+        private var rowHeight: CGFloat {
+            switch destination {
+            case .albums, .artists: 65
+            case .songs, .playlist: 46.5
             }
         }
     #endif
@@ -138,7 +90,13 @@ struct CategoryView: View {
         @State private var scrollView: NSScrollView?
     #endif
 
+    @State private var offset: CGFloat = 0
+
+    @State private var showHeader = false
     @State private var isSearching = false
+    @State private var searchQuery = ""
+
+    @State private var hideHeaderTask: Task<Void, Never>?
 
     private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
@@ -147,104 +105,224 @@ struct CategoryView: View {
 
     var body: some View {
         List {
-            switch destination {
-            case .albums:
-                MediaView(using: mpd.database, type: .album)
-            case .artists:
-                MediaView(using: mpd.database, type: .artist)
-            case .songs:
-                MediaView(using: mpd.database, type: .song)
-            case let .playlist(playlist):
-                MediaView(for: playlist)
-            #if os(iOS)
-                default:
-                    EmptyView()
-            #endif
+            if case let .playlist(playlist) = destination {
+                MediaView(using: playlist, searchQuery: searchQuery)
+            } else {
+                MediaView(using: mpd.database, searchQuery: searchQuery)
             }
         }
         .id(destination)
         .listStyle(.plain)
-        #if os(macOS)
-            .introspect(.list, on: .macOS(.v26)) { tableView in
-                DispatchQueue.main.async {
-                    scrollView = tableView.enclosingScrollView
-                }
+        .task(id: destination) {
+            switch destination {
+            case .albums:
+                try? await mpd.database.set(type: .album, idle: false)
+            case .artists:
+                try? await mpd.database.set(type: .artist, idle: false)
+            case .songs:
+                try? await mpd.database.set(type: .song, idle: false)
+            default:
+                break
             }
-        #endif
-            .safeAreaBar(edge: .bottom) {
-                Text("D")
+        }
+        .introspect(.list, on: .macOS(.v15)) { tableView in
+            DispatchQueue.main.async {
+                scrollView = tableView.enclosingScrollView
             }
-            .scrollEdgeEffectStyle(.soft, for: .top)
-            .safeAreaPadding(.bottom, 7.5)
-            .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-            .onReceive(scrollToCurrentNotification) { notification in
-                try? scrollToCurrent(animate: notification.object as? Bool ?? true)
+        }
+        .safeAreaPadding(.bottom, 7.5)
+        .contentMargins(.vertical, -7.5, for: .scrollIndicators)
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentOffset.y
+        } action: { previous, value in
+            guard !isSearching else {
+                return
             }
-            .onReceive(startSearchingNotication) { _ in
-                isSearching = true
-            }
-            .task(id: destination) {
-                // TODO: Maybe also use `.onChange(of: scrollView)` here like in
-                // QueuePanelView?
-                guard let song = mpd.status.song else {
-                    return
-                }
 
-                mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+            guard value > 50 else {
+                offset = 0
+                showHeader = true
 
-                for _ in 0 ..< 5 {
-                    do {
-                        try scrollToCurrent(animate: false)
-                        break
-                    } catch {
-                        try? await Task.sleep(for: .milliseconds(100))
-                    }
-                }
+                #if os(iOS)
+                    showSearchButton = false
+                #endif
+
+                resetHideHeaderTimer()
+
+                return
             }
-            .task(id: mpd.status.song) {
-                guard let song = mpd.status.song else {
-                    return
-                }
 
-                mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+            guard abs(value - offset) > 200 else {
+                if showHeader {
+                    resetHideHeaderTimer(offset: value)
+                }
+                return
             }
-            .onChange(of: mpd.database.results?.count) { _, value in
-                guard value == nil else {
-                    return
-                }
 
+            offset = value
+            showHeader = previous >= value
+
+            #if os(iOS)
+                showSearchButton = true
+            #endif
+
+            resetHideHeaderTimer()
+        }
+        .onReceive(scrollToCurrentNotification) { notification in
+            try? scrollToCurrent(animate: notification.object as? Bool ?? true)
+        }
+        .onReceive(startSearchingNotication) { _ in
+            isSearching = true
+        }
+        .onChange(of: scrollView) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 try? scrollToCurrent(animate: false)
             }
-        #if os(macOS)
-            .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
+        }
+        .onChange(of: showHeader) { _, value in
+            if value {
+                resetHideHeaderTimer()
+            } else {
+                hideHeaderTask?.cancel()
+            }
+        }
+        .onChange(of: isSearching) { _, value in
+            if value {
+                showHeader = true
+                hideHeaderTask?.cancel()
+            } else {
+                searchQuery = ""
+                resetHideHeaderTimer()
+            }
+        }
+        .onChange(of: searchQuery) { _, value in
+            guard value.isEmpty else {
+                return
+            }
+
+            try? scrollToCurrent(animate: false)
+        }
+        #if os(iOS)
+        .navigationTitle(destination.label)
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarVisibility(showHeader ? .visible : .hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    if isSearching {
+                        isSearching = false
+                    } else {
+                        isGoingToSearch = true
+                    }
+                } label: {
+                    Image(systemSymbol: .magnifyingglass)
+                        .padding(5)
+                }
+                .opacity(showSearchButton ? 1 : 0)
+                .animation(.spring, value: showSearchButton)
+            }
+        }
+        .searchable(text: $query, isPresented: $isSearching)
+        .disableAutocorrection(true)
+        .onChange(of: isSearching) { _, value in
+            guard !value else {
+                return
+            }
+
+            // For playlists, notify to clear search results
+            if case .playlist = navigator.category {
+                NotificationCenter.default.post(name: .startSearchingNotication, object: "")
+            }
+        }
+        .onChange(of: isGoingToSearch) { _, value in
+            guard value else {
+                return
+            }
+
+            isSearching = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                isGoingToSearch = false
+            }
+        }
+        .task(id: query) {
+            guard isSearching else {
+                return
+            }
+
+            // For playlists, search is handled by MediaListView internally
+            if case .playlist = navigator.category {
+                NotificationCenter.default.post(name: .startSearchingNotication, object: query.isEmpty ? "" : query)
+            }
+            // For database views, search will be handled by SwiftUI's searchable with filtered views
+        }
+        #elseif os(macOS)
+        .safeAreaInset(edge: .top, spacing: 7.5) {
+            Group {
+                HeaderView(destination: destination, isSearching: $isSearching, searchQuery: $searchQuery)
+                    .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
+            }
+            .frame(height: 50 + 7.5 + 1)
+        }
+        .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
         #endif
+        .animation(.spring, value: showHeader)
+    }
+
+    private func resetHideHeaderTimer(offset: CGFloat) {
+        hideHeaderTask?.cancel()
+        guard showHeader, !isSearching, offset > 0 else {
+            return
+        }
+
+        hideHeaderTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, showHeader, !isSearching, offset > 0 else {
+                return
+            }
+
+            showHeader = false
+        }
+    }
+
+    private func resetHideHeaderTimer() {
+        resetHideHeaderTimer(offset: offset)
     }
 
     private func scrollToCurrent(animate: Bool = true) throws {
-        guard let scrollView,
-              let media = mpd.status.media,
-              let index = mpd.database.media.firstIndex(where: { $0.url == media.url })
-        else {
+        guard let scrollView, let song = mpd.status.song else {
             throw ViewError.missingData
         }
 
+        var index: Int?
+        switch destination {
+        case .albums:
+            guard let albums = mpd.database.media as? [Album] else {
+                throw ViewError.missingData
+            }
+            index = albums.firstIndex(where: { $0 == song.album })
+        case .artists:
+            guard let artists = mpd.database.media as? [Artist] else {
+                throw ViewError.missingData
+            }
+            index = artists.firstIndex(where: { $0.name == song.artist })
+        case .songs:
+            guard let songs = mpd.database.media as? [Song] else {
+                throw ViewError.missingData
+            }
+            index = songs.firstIndex(where: { $0.url == song.url })
+        case .playlist:
+            break
         #if os(iOS)
-//            let rowSpacing: CGFloat = 15
-//            let baseRowHeight: CGFloat = switch destination {
-//            case .albums, .artists: 50
-//            case .songs, .playlist, _: 31.5
-//            }
-//            let rowHeight = baseRowHeight + rowSpacing
-//
-//            let rowMidY = (CGFloat(currentIndex) * rowHeight) + (rowHeight / 2)
-//            let visibleHeight = scrollView.frame.height
-//            let centeredOffset = rowMidY - (visibleHeight / 2)
-//
-//            scrollView.setContentOffset(
-//                CGPoint(x: 0, y: max(0, centeredOffset)),
-//                animated: animate,
-//            )
-        #elseif os(macOS)
+            default:
+                throw ViewError.missingData
+        #endif
+        }
+
+        guard let index else {
+            throw ViewError.missingData
+        }
+
+        #if os(macOS)
             guard let tableView = scrollView.documentView as? NSTableView else {
                 throw ViewError.missingData
             }
@@ -263,6 +341,23 @@ struct CategoryView: View {
                     scrollView.contentView.setBoundsOrigin(center)
                 }
             }
+        #elseif os(iOS)
+            let rowSpacing: CGFloat = 15
+            let baseRowHeight: CGFloat = switch destination {
+            case .albums, .artists: 50
+            case .songs, .playlist: 31.5
+            default: 31.5
+            }
+            let rowHeight = baseRowHeight + rowSpacing
+
+            let rowMidY = (CGFloat(index) * rowHeight) + (rowHeight / 2)
+            let visibleHeight = scrollView.frame.height
+            let centeredOffset = rowMidY - (visibleHeight / 2)
+
+            scrollView.setContentOffset(
+                CGPoint(x: 0, y: max(0, centeredOffset)),
+                animated: animate
+            )
         #endif
     }
 }

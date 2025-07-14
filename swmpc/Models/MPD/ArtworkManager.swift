@@ -14,11 +14,8 @@ import SwiftUI
 /// - In-memory caching using NSCache with automatic memory management
 /// - Deduplication of concurrent requests for the same artwork
 /// - Connection pooling for efficient network utilization
-/// - Support for demo mode with generated mock artwork
 actor ArtworkManager {
     static let shared = ArtworkManager()
-
-    @AppStorage(Setting.isDemoMode) private var isDemoMode = false
 
     private let cache = NSCache<NSURL, NSData>()
     private var tasks: [URL: Task<Data, Error>] = [:]
@@ -36,24 +33,20 @@ actor ArtworkManager {
     ///     - shouldCache: Whether or not to cache the fetched data.
     /// - Returns: The artwork data.
     /// - Throws: An error if the artwork data could not be fetched.
-    func get(for media: any Mediable, shouldCache: Bool = true) async throws ->
+    func get(for url: URL, shouldCache: Bool = true) async throws ->
         Data
     {
-        if shouldCache, let data = cache.object(forKey: media.url as NSURL) {
+        if shouldCache, let data = cache.object(forKey: url as NSURL) {
             return data as Data
         }
 
-        if let existingTask = tasks[media.url] {
+        if let existingTask = tasks[url] {
             return try await existingTask.value
         }
 
-        if isDemoMode {
-            return await MockData.shared.generateMockArtwork(for: media.url)
-        }
-
-        let task = createFetchTask(for: media.url, priority: .high,
+        let task = createFetchTask(for: url, priority: .high,
                                    shouldCache: shouldCache)
-        tasks[media.url] = task
+        tasks[url] = task
 
         return try await task.value
     }

@@ -6,7 +6,6 @@
 //
 
 import ButtonKit
-import SFSafeSymbols
 import SwiftUI
 
 struct AlbumSongsView: View {
@@ -55,8 +54,8 @@ struct AlbumSongsView: View {
                                                     .init(color: .black.opacity(0), location: 1.0),
                                                 ]),
                                                 startPoint: .bottom,
-                                                endPoint: .top,
-                                            ),
+                                                endPoint: .top
+                                            )
                                         )
 
                                     HStack(spacing: 5) {
@@ -72,18 +71,14 @@ struct AlbumSongsView: View {
                                     .cornerRadius(100)
                                     .padding(10)
                                 }
-                                .opacity(mpd.status.media?.id == album.id ? 1 : 0)
-                                .animation(.interactiveSpring, value: mpd.status.media?.id == album.id),
+                                .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
+                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false)
                             )
                     }
 
                     #if os(macOS)
-                        if isHovering, mpd.status.media?.id != album.id {
+                        if isHovering, !(mpd.status.song?.isIn(album) ?? false) {
                             AsyncButton {
-                                guard mpd.status.media?.id != album.id else {
-                                    return
-                                }
-
                                 try await ConnectionManager.command().play(album)
                             } label: {
                                 ZStack {
@@ -122,32 +117,18 @@ struct AlbumSongsView: View {
                         .fontDesign(.rounded)
                         .lineLimit(3)
 
-                    AsyncButton {
-                        guard let artist = try? await mpd.database.get(for: album, using: .artist) as? Artist else {
-                            throw ViewError.missingData
-                        }
-
-                        navigator.navigate(to: ContentDestination.artist(artist))
+                    Button {
+                        navigator.navigate(to: ContentDestination.artist(album.artist))
                     } label: {
-                        Text(album.artist)
+                        Text(album.artist.name)
                             .font(.system(size: 12))
                             .fontWeight(.semibold)
                             .lineLimit(2)
-                            .onTapGesture {
-                                Task(priority: .userInitiated) {
-                                    guard let artist = try? await mpd.database.get(for: album, using: .artist) as? Artist else {
-                                        return
-                                    }
-
-                                    navigator.navigate(to: ContentDestination.artist(artist))
-                                }
-                            }
                     }
                     .buttonStyle(.plain)
-                    .asyncButtonStyle(.pulse)
                     .contextMenu {
-                        Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
-                            album.artist.copyToClipboard()
+                        Button("Copy Artist Name") {
+                            album.artist.name.copyToClipboard()
                         }
                     }
 
@@ -156,7 +137,7 @@ struct AlbumSongsView: View {
                         Text(
                             String(localized: "\(flat.count) \(flat.count == 1 ? "song" : "songs")")
                                 + " • "
-                                + (flat.reduce(0) { $0 + $1.duration }.humanTimeString),
+                                + (flat.reduce(0) { $0 + $1.duration }.humanTimeString)
                         )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -173,7 +154,7 @@ struct AlbumSongsView: View {
             #endif
                 .task {
                     artwork = try? await album.artwork()
-                    songs = await Dictionary(grouping: (try? ConnectionManager.command().getSongs(in: album, from: .database)) ?? [], by: { $0.disc })
+                    songs = await Dictionary(grouping: (try? album.getSongs()) ?? [], by: { $0.disc })
                 }
         }
         #if os(macOS)
@@ -188,7 +169,7 @@ struct AlbumSongsView: View {
                 .offset(x: -15)
             #endif
                 .frame(height: 1),
-            alignment: .bottom,
+            alignment: .bottom
         )
 
         if let songs {

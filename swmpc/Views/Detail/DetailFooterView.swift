@@ -12,334 +12,54 @@ struct DetailFooterView: View {
     @Environment(MPD.self) private var mpd
 
     var body: some View {
-        GlassEffectContainer {
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .center) {
-                    Text(mpd.status.song?.title ?? "No song playing")
-                    #if os(iOS)
-                        .font(.system(size: 22))
-                    #elseif os(macOS)
-                        .font(.system(size: 18))
-                    #endif
-                        .fontWeight(.semibold)
-                        .fontDesign(.rounded)
-
-                    Spacer()
-
-                    FavoriteView()
-                        .offset(x: 4, y: 1)
-                }
-
-                PlayerProgressView()
-            }
-
-            VStack {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(alignment: .center) {
+                Text(mpd.status.song?.title ?? "No song playing")
                 #if os(iOS)
-                    HStack(alignment: .center, spacing: 20) {
-                        RepeatView()
-
-                        HStack(spacing: 15) {
-                            PreviousView()
-                            PauseView()
-                            NextView()
-                        }
-
-                        RandomView()
-                    }
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.circle)
-                    .asyncButtonStyle(.pulse)
+                    .font(.system(size: 22))
                 #elseif os(macOS)
-                    HStack(alignment: .center, spacing: 40) {
-                        RepeatView()
-
-                        HStack(spacing: 20) {
-                            PreviousView()
-                            PauseView()
-                            NextView()
-                        }
-
-                        RandomView()
-                    }
-                    .buttonStyle(.glass)
-                    .buttonBorderShape(.circle)
-                    .asyncButtonStyle(.pulse)
+                    .font(.system(size: 18))
                 #endif
+                    .fontWeight(.semibold)
+                    .fontDesign(.rounded)
+
+                Spacer()
+
+                FavoriteView()
+                    .offset(x: 4, y: 1)
             }
-        }
-    }
 
-    struct PauseView: View {
-        @Environment(MPD.self) private var mpd
-
-        var body: some View {
-            AsyncButton {
-                try await ConnectionManager.command().pause(mpd.status.isPlaying)
-            } label: {
-                ZStack {
-                    Image(systemSymbol: .pauseFill)
-                        .font(.system(size: 30))
-                        .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
-                        .opacity(mpd.status.isPlaying ? 1 : 0.1)
-
-                    Image(systemSymbol: .playFill)
-                        .font(.system(size: 30))
-                        .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
-                        .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                }
-                .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
-                .padding(20)
-            }
-        }
-    }
-
-    struct PreviousView: View {
-        @State private var animating = false
-
-        var value: CGFloat {
-            animating ? 1 : 0
+            PlayerProgressView()
         }
 
-        var body: some View {
-            AsyncButton {
-                withAnimation(.interactiveSpring(duration: 0.4, extraBounce: 0.3)) {
-                    if !animating {
-                        animating = true
+        VStack {
+            #if os(iOS)
+                HStack(alignment: .center, spacing: 20) {
+                    RepeatView()
+
+                    HStack(spacing: 15) {
+                        PreviousView()
+                        PauseView()
+                        NextView()
                     }
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        animating = false
-                    }
+                    RandomView()
                 }
+                .asyncButtonStyle(.pulse)
+            #elseif os(macOS)
+                HStack(alignment: .center, spacing: 40) {
+                    RepeatView()
 
-                try await ConnectionManager.command().previous()
-            } label: {
-                VStack(alignment: .trailing) {
-                    HStack(spacing: -5) {
-                        Image(systemSymbol: .arrowtriangleBackwardFill)
-                            .opacity(1 - value)
-                            .scaleEffect(1 - value)
-
-                        Image(systemSymbol: .arrowtriangleBackwardFill)
-
-                        Image(systemSymbol: .arrowtriangleBackwardFill)
-                            .opacity(value)
-                            .scaleEffect(value)
-                    }
-                    .font(.system(size: 18))
-                    .offset(x: -value * (18 - 5))
-                    .offset(x: (18 - 5) / 3)
-                }
-                .frame(width: (18 - 5) * 2)
-                .padding(12)
-            }
-        }
-    }
-
-    struct NextView: View {
-        @State private var animating = false
-
-        var value: CGFloat {
-            animating ? 1 : 0
-        }
-
-        var body: some View {
-            AsyncButton {
-                withAnimation(.interactiveSpring(duration: 0.4, extraBounce: 0.3)) {
-                    if !animating {
-                        animating = true
+                    HStack(spacing: 20) {
+                        PreviousView()
+                        PauseView()
+                        NextView()
                     }
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        animating = false
-                    }
+                    RandomView()
                 }
-
-                try await ConnectionManager.command().next()
-            } label: {
-                VStack(alignment: .leading) {
-                    HStack(spacing: -5) {
-                        Image(systemSymbol: .arrowtriangleForwardFill)
-                            .opacity(value)
-                            .scaleEffect(value)
-
-                        Image(systemSymbol: .arrowtriangleForwardFill)
-
-                        Image(systemSymbol: .arrowtriangleForwardFill)
-                            .opacity(1 - value)
-                            .scaleEffect(1 - value)
-                    }
-                    .font(.system(size: 18))
-                    .offset(x: value * (18 - 5))
-                    .offset(x: -(18 - 5) / 3)
-                }
-                .frame(width: (18 - 5) * 2)
-                .padding(12)
-            }
-        }
-    }
-
-    struct RandomView: View {
-        @Environment(MPD.self) private var mpd
-
-        var body: some View {
-            ZStack {
-                AsyncButton {
-                    try await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
-                } label: {
-                    Image(systemSymbol: .shuffle)
-                        .padding(10)
-                }
-
-                Circle()
-                    .fill(Color(.accent))
-                    .frame(width: 3.5, height: 3.5)
-                    .offset(y: 25)
-                    .opacity((mpd.status.isRandom ?? false) ? 1 : 0)
-            }
-        }
-    }
-
-    struct RepeatView: View {
-        @Environment(MPD.self) private var mpd
-
-        var body: some View {
-            ZStack {
-                AsyncButton {
-                    try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
-                } label: {
-                    Image(systemSymbol: .repeat)
-                        .padding(10)
-                }
-
-                Circle()
-                    .fill(Color(.accent))
-                    .frame(width: 8, height: 8)
-                    .offset(y: 12)
-                    .opacity((mpd.status.isRepeat ?? false) ? 1 : 0)
-            }
-        }
-    }
-
-    struct FavoriteView: View {
-        @Environment(MPD.self) private var mpd
-
-        @State private var isFavorited = false
-
-        var body: some View {
-            AsyncButton(id: ButtonNotification.favorite) {
-                guard let song = mpd.status.song else {
-                    throw ViewError.missingData
-                }
-
-                isFavorited.toggle()
-
-                if isFavorited {
-                    try await ConnectionManager.command().add(songs: [song], to: .favorites)
-                } else {
-                    try await ConnectionManager.command().remove(songs: [song], from: .favorites)
-                }
-            } label: {
-                Image(systemSymbol: .heartFill)
-                    .foregroundColor(isFavorited ? .red : Color(.secondarySystemFill))
-                    .opacity(isFavorited ? 0.7 : 1)
-                    .animation(.interactiveSpring, value: isFavorited)
-                    .scaleEffect(isFavorited ? 1.1 : 1)
-                    .animation(isFavorited ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true) : .default, value: isFavorited)
-                    .padding(4)
-                    .contentShape(Circle())
-            }
-            .styledButton()
-            .asyncButtonStyle(.pulse)
-            .onChange(of: mpd.status.song) { _, value in
-                guard let song = value else {
-                    return
-                }
-
-                isFavorited = mpd.playlists.favorites.contains { $0.url == song.url }
-            }
-            .onChange(of: mpd.playlists.favorites) { _, value in
-                guard let song = mpd.status.song else {
-                    return
-                }
-
-                isFavorited = value.contains { $0.url == song.url }
-            }
-        }
-    }
-
-    struct PlayerProgressView: View {
-        @Environment(MPD.self) private var mpd
-
-        @State private var isHovering = false
-        @State private var isDragging = false
-
-        private var progress: CGFloat {
-            guard let elapsed = mpd.status.elapsed,
-                  let duration = mpd.status.song?.duration,
-                  duration > 0
-            else {
-                return 0
-            }
-
-            return CGFloat(elapsed / duration)
-        }
-
-        var body: some View {
-            GeometryReader { geometry in
-                VStack(spacing: 0) {
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color(.secondarySystemFill))
-                            .frame(width: geometry.size.width, height: 3)
-
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(.accent)
-                            .frame(width: progress * geometry.size.width, height: 3)
-                            .animation(.spring, value: progress)
-
-                        Circle()
-                            .fill(isDragging ? .clear : .accent)
-                            .frame(width: 8, height: 8)
-                            .scaleEffect(isHovering ? (isDragging ? 2 : 1.5) : 1)
-                            .animation(.spring, value: isHovering)
-                            .glassEffect(.clear.interactive())
-                            .offset(x: (progress * geometry.size.width) - 4)
-                            .animation(.spring, value: progress)
-                            .animation(.spring, value: isDragging)
-                    }
-                    .padding(.vertical, 3)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                isDragging = true
-
-                                Task(priority: .userInitiated) {
-                                    try? await ConnectionManager.command().seek(min(max(value.location.x / geometry.size.width, 0), 1) * (mpd.status.song?.duration ?? 100))
-                                }
-                            }
-                            .onEnded { _ in
-                                isDragging = false
-                            },
-                    )
-                    .onHover { value in
-                        isHovering = value
-                    }
-
-                    HStack(alignment: .center) {
-                        Text(mpd.status.elapsed?.timeString ?? "0:00")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
-
-                        Text(mpd.status.song?.duration.timeString ?? "0:00")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
+                .asyncButtonStyle(.pulse)
+            #endif
         }
     }
 }
