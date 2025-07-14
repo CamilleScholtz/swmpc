@@ -51,7 +51,8 @@ final class PlaylistManager {
     /// Gets songs for a specific playlist.
     @MainActor
     func getSongs(for playlist: Playlist) async throws -> [Song] {
-        defer { state.setLoading(false, for: .playlist(playlist)) }
+        defer { state.isLoading = false }
+
         return try await ConnectionManager.command().getSongs(from: .playlist(playlist))
     }
 }

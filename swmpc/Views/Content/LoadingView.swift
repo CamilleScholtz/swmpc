@@ -13,10 +13,8 @@ struct LoadingView: View {
 
     private var shouldShowLoading: Bool {
         switch navigator.category {
-        case .albums, .artists, .songs:
-            return mpd.state.isLoading([.database])
-        case let .playlist(playlist):
-            return mpd.state.isLoading([.playlist(playlist)])
+        case .albums, .artists, .songs, .playlist:
+            return mpd.state.isLoading
         #if os(iOS)
             case .playlists, .settings:
                 return false

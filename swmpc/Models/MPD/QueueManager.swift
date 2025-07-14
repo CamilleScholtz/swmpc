@@ -27,7 +27,7 @@ final class QueueManager {
     /// - Throws: An error if the queue could not be loaded.
     @MainActor
     func set(idle: Bool = false, force _: Bool = false) async throws {
-        defer { state.setLoading(false, for: .queue) }
+        defer { state.isLoading = false }
 
         songs = try await idle
             ? ConnectionManager.idle.getSongs(from: .queue)

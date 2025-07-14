@@ -174,30 +174,39 @@ struct CategoryView: View {
         .onReceive(startSearchingNotication) { _ in
             isSearching = true
         }
-        .onChange(of: destination) {
-            switch destination {
+        .onChange(of: destination) { _, value in
+            switch value {
             case .albums, .artists, .songs:
-                mpd.state.setLoading(true, for: .database)
+                mpd.state.isLoading = true
             case let .playlist(playlist):
-                mpd.state.setLoading(true, for: .playlist(playlist))
+                mpd.state.isLoading = true
 
                 if playlist.name == "Favorites" {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        mpd.state.setLoading(false, for: .playlist(playlist))
+                        mpd.state.isLoading = false
+                    }
+                }
+            }
+
+            // try? scrollToCurrent(animate: false)
+
+            // for i in 1 ..< 6 {
+            //     DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.1) {
+            //         try? scrollToCurrent(animate: false)
+            //     }
+            // }
+
+            Task {
+                while true {
+                    try? await Task.sleep(for: .seconds(0.1))
+
+                    if mpd.database.media != nil {
+                        try? scrollToCurrent(animate: false)
+                        break
                     }
                 }
             }
         }
-//        .onChange(of: mpd.state.isLoading(.database)) { _, value in
-//            guard !value else {
-//                return
-//            }
-//
-//            try? scrollToCurrent(animate: false)
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-//                try? scrollToCurrent(animate: false)
-//            }
-//        }
         .onChange(of: showHeader) { _, value in
             if value {
                 resetHideHeaderTimer()
