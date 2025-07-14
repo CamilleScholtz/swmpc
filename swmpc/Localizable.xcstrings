@@ -118,6 +118,9 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "1 album" : {
       "localizations" : {
         "de" : {

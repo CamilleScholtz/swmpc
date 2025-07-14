@@ -30,8 +30,7 @@ final class DatabaseManager {
     /// - Throws: An error if the media could not be set.
     @MainActor
     func set(type: MediaType? = nil, idle: Bool = true, force: Bool = false) async throws {
-        state.isLoading = true
-        defer { state.isLoading = false }
+        defer { state.setLoading(false, for: .database) }
 
         guard type != self.type || force else {
             return

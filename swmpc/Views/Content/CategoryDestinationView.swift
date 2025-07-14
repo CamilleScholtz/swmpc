@@ -174,11 +174,30 @@ struct CategoryView: View {
         .onReceive(startSearchingNotication) { _ in
             isSearching = true
         }
-        .onChange(of: scrollView) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                try? scrollToCurrent(animate: false)
+        .onChange(of: destination) {
+            switch destination {
+            case .albums, .artists, .songs:
+                mpd.state.setLoading(true, for: .database)
+            case let .playlist(playlist):
+                mpd.state.setLoading(true, for: .playlist(playlist))
+
+                if playlist.name == "Favorites" {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        mpd.state.setLoading(false, for: .playlist(playlist))
+                    }
+                }
             }
         }
+//        .onChange(of: mpd.state.isLoading(.database)) { _, value in
+//            guard !value else {
+//                return
+//            }
+//
+//            try? scrollToCurrent(animate: false)
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+//                try? scrollToCurrent(animate: false)
+//            }
+//        }
         .onChange(of: showHeader) { _, value in
             if value {
                 resetHideHeaderTimer()

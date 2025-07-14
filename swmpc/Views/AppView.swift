@@ -128,6 +128,12 @@ struct AppView: View {
                 }
             }
         }
+        .task(priority: .medium) {
+            try? await mpd.status.startTrackingElapsed()
+        }
+        .onDisappear {
+            mpd.status.stopTrackingElapsed()
+        }
         #if os(macOS)
         .frame(minWidth: 180 + 310 + 650, minHeight: 650)
         #endif
