@@ -96,6 +96,7 @@ import SwiftUI
                 .queue,
                 .player,
                 .options,
+                .mixer,
             ])
             guard let changes else {
                 continue
@@ -130,6 +131,8 @@ import SwiftUI
         case .player:
             try await status.set()
         case .options:
+            try await status.set()
+        case .mixer:
             try await status.set()
         }
     }
