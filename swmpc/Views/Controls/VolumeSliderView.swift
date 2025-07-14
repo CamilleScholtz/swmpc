@@ -38,6 +38,7 @@ struct VolumeSliderView: View {
                 HStack(spacing: 4) {
                     Slider(value: $volume, in: 0 ... 100, step: 1, onEditingChanged: { editing in
                         isChanging = editing
+
                         if !editing {
                             Task {
                                 try? await ConnectionManager.command().setVolume(Int(volume))
@@ -68,11 +69,11 @@ struct VolumeSliderView: View {
             isHovering = hovering
         }
         .onAppear {
-            volume = Double(mpd.status.volume ?? 50)
+            volume = Double(mpd.status.volume ?? 0)
         }
-        .onChange(of: mpd.status.volume) { _, newValue in
+        .onChange(of: mpd.status.volume) { _, value in
             if !isChanging {
-                volume = Double(newValue ?? 50)
+                volume = Double(value ?? 0)
             }
         }
     }
