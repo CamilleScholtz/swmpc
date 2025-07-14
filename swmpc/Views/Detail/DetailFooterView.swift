@@ -303,7 +303,7 @@ struct DetailFooterView: View {
                             .frame(width: 8, height: 8)
                             .scaleEffect(isHovering ? (isDragging ? 2 : 1.5) : 1)
                             .animation(.spring, value: isHovering)
-                            .glassEffect(.regular.interactive(), isEnabled: isDragging)
+                            .glassEffect(.clear.interactive())
                             .offset(x: (progress * geometry.size.width) - 4)
                             .animation(.spring, value: progress)
                             .animation(.spring, value: isDragging)

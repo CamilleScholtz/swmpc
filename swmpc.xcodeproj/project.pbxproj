@@ -11,7 +11,6 @@
 		9131261C2E0ADB2200D86527 /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 9131261B2E0ADB2200D86527 /* SwiftUIIntrospect */; };
 		91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91489B852D6A6C6C0038092A /* SFSafeSymbols */; };
 		91775F5E2D93729F002589C5 /* Noise in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F5D2D93729F002589C5 /* Noise */; };
-		9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = 9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */; };
 		9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 9182FEF32D97757000FED9D4 /* OpenAI */; };
 		9185FD1D2D8E188D008E3B29 /* KeychainStorageKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
@@ -74,7 +73,6 @@
 			files = (
 				9131261C2E0ADB2200D86527 /* SwiftUIIntrospect in Frameworks */,
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
-				9182FEF12D976DD500FED9D4 /* LNPopupUI-Static in Frameworks */,
 				9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */,
 				91775F5E2D93729F002589C5 /* Noise in Frameworks */,
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
@@ -135,7 +133,6 @@
 				91489B852D6A6C6C0038092A /* SFSafeSymbols */,
 				9185FD1C2D8E188D008E3B29 /* KeychainStorageKit */,
 				91775F5D2D93729F002589C5 /* Noise */,
-				9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */,
 				9182FEF32D97757000FED9D4 /* OpenAI */,
 				9114DB412DB11A8500DD5E6E /* ButtonKit */,
 				9131261B2E0ADB2200D86527 /* SwiftUIIntrospect */,
@@ -178,7 +175,6 @@
 				91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */,
 				9185FD1B2D8E188D008E3B29 /* XCRemoteSwiftPackageReference "KeychainStorageKit" */,
-				91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */,
 				91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */,
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
 				9131261A2E0ADB2200D86527 /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
@@ -482,14 +478,6 @@
 				minimumVersion = 0.3.6;
 			};
 		};
-		91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/LeoNatan/LNPopupUI";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-		};
 		91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/heestand-xyz/Noise";
@@ -544,11 +532,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */;
 			productName = Noise;
-		};
-		9182FEF02D976DD500FED9D4 /* LNPopupUI-Static */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91775F452D934EBC002589C5 /* XCRemoteSwiftPackageReference "LNPopupUI" */;
-			productName = "LNPopupUI-Static";
 		};
 		9182FEF32D97757000FED9D4 /* OpenAI */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -45,18 +45,18 @@ struct LoadingView: View {
         }
 
         #if os(iOS)
-            if navigator.category == .playlists {
-                if mpd.database.playlists != nil {
-                    try? await Task.sleep(for: .milliseconds(200))
-                    guard !Task.isCancelled else {
-                        return
-                    }
-
-                    isLoading = false
-                }
-
-                return
-            }
+//            if navigator.category == .playlists {
+//                if mpd.database.playlists != nil {
+//                    try? await Task.sleep(for: .milliseconds(200))
+//                    guard !Task.isCancelled else {
+//                        return
+//                    }
+//
+//                    isLoading = false
+//                }
+//
+//                return
+//            }
         #endif
 
         if navigator.category.type == mpd.database.type, !mpd.database.internalMedia.isEmpty {

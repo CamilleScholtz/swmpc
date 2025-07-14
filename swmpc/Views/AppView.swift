@@ -8,10 +8,6 @@
 import ButtonKit
 import SwiftUI
 
-#if os(iOS)
-    import LNPopupUI
-#endif
-
 enum ViewError: Error {
     case missingData
 }
@@ -21,6 +17,10 @@ struct AppView: View {
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
+    #if os(iOS)
+        @Environment(\.tabViewBottomAccessoryPlacement) var placement
+    #endif
+    
     #if os(iOS)
         @State private var isPopupBarPresented = true
         @State private var isPopupOpen = false
@@ -54,12 +54,20 @@ struct AppView: View {
                                     }
                                 }
                             }
+                            
+//                            Tab(value: .search, role: .search) {
+//                                HStack {
+//                                    
+//                                }
+//                            }
+                        }
+                        .tabBarMinimizeBehavior(.onScrollDown)
+                        .tabViewBottomAccessory {
+                            HStack {
+                                
+                            }
                         }
                         .handleQueueChange()
-                        .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
-                            DetailView(isPopupOpen: $isPopupOpen)
-                        }
-                        .popupBarProgressViewStyle(.top)
                     #elseif os(macOS)
                         NavigationSplitView {
                             SidebarView()
@@ -107,20 +115,10 @@ struct AppView: View {
                                     .transition(.move(edge: .trailing))
                             }
                         }
-//                        .toolbar {
-//                            if !simpleMode {
-//                                ToolbarItem(placement: .primaryAction) {
-//                                    Button {
-//                                        withAnimation(.spring) {
-//                                            showQueuePanel.toggle()
-//                                        }
-//                                    } label: {
-//                                        Image(systemSymbol: .musicNoteList)
-//                                    }
-//                                    .keyboardShortcut("`", modifiers: [.command])
-//                                }
-//                            }
-//                        }
+//                        .toolbarVisibility(.hidden)
+                        .toolbar {
+                           
+                        }
 //                        .toolbarBackgroundVisibility(.hidden)
                     #endif
                 }

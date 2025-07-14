@@ -169,21 +169,23 @@ struct SettingsView: View {
             }
             .padding(32)
             .navigationTitle("Behavior")
-            .alert("Restart Required", isPresented: $restartAlertShown) {
-                Button("Cancel", role: .cancel) {
-                    runAsAgent = !runAsAgent
+            #if os(macOS)
+                .alert("Restart Required", isPresented: $restartAlertShown) {
+                    Button("Cancel", role: .cancel) {
+                        runAsAgent = !runAsAgent
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        isRestarting = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isRestarting = false
+                        }
                     }
-                }
 
-                Button("Quit swmpc", role: .destructive) {
-                    NSApp.terminate(nil)
+                    Button("Quit swmpc", role: .destructive) {
+                        NSApp.terminate(nil)
+                    }
+                } message: {
+                    Text("You need to restart the app for this change to take effect.")
                 }
-            } message: {
-                Text("You need to restart the app for this change to take effect.")
-            }
+            #endif
         }
     }
 

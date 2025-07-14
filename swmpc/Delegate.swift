@@ -41,15 +41,10 @@ struct Delegate: App {
                 .environment(Delegate.mpd)
             #elseif os(macOS)
                 .environment(appDelegate.mpd)
-//                .onAppear {
-//                    for window in NSApplication.shared.windows {
-//                        window.tabbingMode = .disallowed
-//                    }
-//                }
             #endif
         }
         #if os(macOS)
-        //.windowStyle(.hiddenTitleBar)
+        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandMenu("Controls") {
                 AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {

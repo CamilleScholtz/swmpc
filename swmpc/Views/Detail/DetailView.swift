@@ -7,12 +7,9 @@
 
 import ButtonKit
 
-// import Noise
+import Noise
 import SFSafeSymbols
 import SwiftUI
-#if os(iOS)
-    import LNPopupUI
-#endif
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
@@ -112,23 +109,23 @@ struct DetailView: View {
                     .animation(.spring.delay(isPopupOpen ? 0.2 : 0), value: isPopupOpen)
                 #endif
 
-//                Noise(style: .random)
-//                    .monochrome()
-//                    // TODO: Doesn't really work on dark mode.
-//                    .blendMode(colorScheme == .dark ? .darken : .softLight)
-//                    .opacity(0.3)
+                Noise(style: .random)
+                    .monochrome()
+                    // TODO: Doesn't really work on dark mode.
+                    .blendMode(colorScheme == .dark ? .darken : .softLight)
+                    .opacity(0.3)
 
                 ArtworkView(image: artwork)
                     .overlay(
                         RoundedRectangle(cornerRadius: 30)
                             .fill(.clear)
-                            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 30))
+                            .glassEffect(.clear, in: .rect(cornerRadius: 30))
                             .mask(
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 30)
 
                                     RoundedRectangle(cornerRadius: 30)
-                                        .scale(0.9)
+                                        .scale(0.8)
                                         .blur(radius: 8)
                                         .blendMode(.destinationOut)
                                 },
@@ -138,7 +135,6 @@ struct DetailView: View {
                     .shadow(color: .black.opacity(0.2), radius: 16)
                 #if os(iOS)
                     .frame(width: 300)
-                    .popupTransitionTarget()
                 #elseif os(macOS)
                     .frame(width: 250)
                     .scaleEffect(isHovering ? 1.02 : 1)
@@ -203,47 +199,6 @@ struct DetailView: View {
                 #endif
             }
         }
-        #if os(iOS)
-        .popupImage(artwork != nil ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
-        .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
-        // swiftformat:disable:next trailingClosures
-        .popupBarItems({
-            ToolbarItemGroup(placement: .popupBar) {
-                AsyncButton {
-                    try await ConnectionManager.command().pause(mpd.status.isPlaying)
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(.thinMaterial)
-                            .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-
-                        ZStack {
-                            Image(systemSymbol: .pauseFill)
-                                .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
-                                .opacity(mpd.status.isPlaying ? 1 : 0.1)
-                                .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
-
-                            Image(systemSymbol: .playFill)
-                                .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
-                                .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                                .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
-                        }
-                    }
-                }
-                .asyncButtonStyle(.pulse)
-                .styledButton(hoverScale: 1.13)
-
-                AsyncButton {
-                    try await ConnectionManager.command().next()
-                } label: {
-                    Image(systemSymbol: .forwardFill)
-                        .foregroundColor(.primary)
-                }
-                .asyncButtonStyle(.pulse)
-            }
-        })
-        .popupProgress(progress)
-        #endif
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
                 artwork = nil

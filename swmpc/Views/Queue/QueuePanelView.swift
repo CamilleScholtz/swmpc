@@ -139,17 +139,25 @@ struct QueuePanelView: View {
                 MediaView(using: mpd.queue, type: .song)
             }
             .listStyle(.plain)
-            .introspect(.list, on: .macOS(.v15)) { tableView in
-                DispatchQueue.main.async {
-                    scrollView = tableView.enclosingScrollView
+            #if os(iOS)
+                .introspect(.list, on: .iOS(.v26)) { _ in
+                    DispatchQueue.main.async {
+                        // scrollView = collectionView.enclosingScrollView
+                    }
                 }
-            }
-            .safeAreaPadding(.bottom, 7.5)
-            .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-            .onChange(of: scrollView) {
-                try? scrollToCurrent(animate: false)
-            }
-            .environment(\.defaultMinListRowHeight, min(31.5 + 15, 50))
+            #elseif os(macOS)
+                .introspect(.list, on: .macOS(.v26)) { tableView in
+                    DispatchQueue.main.async {
+                        scrollView = tableView.enclosingScrollView
+                    }
+                }
+            #endif
+                .safeAreaPadding(.bottom, 7.5)
+                .contentMargins(.vertical, -7.5, for: .scrollIndicators)
+                .onChange(of: scrollView) {
+                    try? scrollToCurrent(animate: false)
+                }
+                .environment(\.defaultMinListRowHeight, min(31.5 + 15, 50))
         }
 
         private func scrollToCurrent(animate: Bool = true) throws {
@@ -160,7 +168,23 @@ struct QueuePanelView: View {
                 throw ViewError.missingData
             }
 
-            #if os(macOS)
+            #if os(iOS)
+            //                let rowSpacing: CGFloat = 15
+            //                let baseRowHeight: CGFloat = switch destination {
+            //                case .albums, .artists: 50
+            //                case .songs, .playlist, _: 31.5
+            //                }
+            //                let rowHeight = baseRowHeight + rowSpacing
+            //
+            //                let rowMidY = (CGFloat(currentIndex) * rowHeight) + (rowHeight / 2)
+            //                let visibleHeight = scrollView.frame.height
+            //                let centeredOffset = rowMidY - (visibleHeight / 2)
+            //
+            //                scrollView.setContentOffset(
+            //                    CGPoint(x: 0, y: max(0, centeredOffset)),
+            //                    animated: animate
+            //                )
+            #elseif os(macOS)
                 guard let tableView = scrollView.documentView as? NSTableView else {
                     throw ViewError.missingData
                 }
@@ -179,22 +203,6 @@ struct QueuePanelView: View {
                         scrollView.contentView.setBoundsOrigin(center)
                     }
                 }
-            #elseif os(iOS)
-                let rowSpacing: CGFloat = 15
-                let baseRowHeight: CGFloat = switch destination {
-                case .albums, .artists: 50
-                case .songs, .playlist, _: 31.5
-                }
-                let rowHeight = baseRowHeight + rowSpacing
-
-                let rowMidY = (CGFloat(currentIndex) * rowHeight) + (rowHeight / 2)
-                let visibleHeight = scrollView.frame.height
-                let centeredOffset = rowMidY - (visibleHeight / 2)
-
-                scrollView.setContentOffset(
-                    CGPoint(x: 0, y: max(0, centeredOffset)),
-                    animated: animate
-                )
             #endif
         }
     }

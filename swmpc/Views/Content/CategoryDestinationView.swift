@@ -140,12 +140,6 @@ struct CategoryView: View {
 
     @State private var isSearching = false
 
-    #if os(iOS)
-        @State private var showSearchButton = false
-        @State private var isGoingToSearch = false
-        @State private var query = ""
-    #endif
-
     private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
     private let startSearchingNotication = NotificationCenter.default
@@ -170,120 +164,59 @@ struct CategoryView: View {
         }
         .id(destination)
         .listStyle(.plain)
-        .introspect(.list, on: .macOS(.v26)) { tableView in
-            DispatchQueue.main.async {
-                scrollView = tableView.enclosingScrollView
-            }
-        }
-        .scrollEdgeEffectStyle(.soft, for: .top)
-        .safeAreaBar(edge: .top) {
-            Text("d")
-        }
-        .safeAreaPadding(.bottom, 7.5)
-        .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-        .onReceive(scrollToCurrentNotification) { notification in
-            try? scrollToCurrent(animate: notification.object as? Bool ?? true)
-        }
-        .onReceive(startSearchingNotication) { _ in
-            isSearching = true
-        }
-        .task(id: destination) {
-            // TODO: Maybe also use `.onChange(of: scrollView)` here like in
-            // QueuePanelView?
-            guard let song = mpd.status.song else {
-                return
-            }
-
-            mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
-
-            for _ in 0 ..< 5 {
-                do {
-                    try scrollToCurrent(animate: false)
-                    break
-                } catch {
-                    try? await Task.sleep(for: .milliseconds(100))
+        #if os(macOS)
+            .introspect(.list, on: .macOS(.v26)) { tableView in
+                DispatchQueue.main.async {
+                    scrollView = tableView.enclosingScrollView
                 }
             }
-        }
-        .task(id: mpd.status.song) {
-            guard let song = mpd.status.song else {
-                return
+        #endif
+            .safeAreaBar(edge: .bottom) {
+                Text("D")
             }
-
-            mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
-        }
-        .onChange(of: mpd.database.results?.count) { _, value in
-            guard value == nil else {
-                return
+            .scrollEdgeEffectStyle(.soft, for: .top)
+            .safeAreaPadding(.bottom, 7.5)
+            .contentMargins(.vertical, -7.5, for: .scrollIndicators)
+            .onReceive(scrollToCurrentNotification) { notification in
+                try? scrollToCurrent(animate: notification.object as? Bool ?? true)
             }
+            .onReceive(startSearchingNotication) { _ in
+                isSearching = true
+            }
+            .task(id: destination) {
+                // TODO: Maybe also use `.onChange(of: scrollView)` here like in
+                // QueuePanelView?
+                guard let song = mpd.status.song else {
+                    return
+                }
 
-            try? scrollToCurrent(animate: false)
-        }
-        #if os(iOS)
-        .navigationTitle(destination.label)
-        .navigationBarTitleDisplayMode(.large)
-        .toolbarVisibility(showHeader ? .visible : .hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    if isSearching {
-                        isSearching = false
-                    } else {
-                        isGoingToSearch = true
+                mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+
+                for _ in 0 ..< 5 {
+                    do {
+                        try scrollToCurrent(animate: false)
+                        break
+                    } catch {
+                        try? await Task.sleep(for: .milliseconds(100))
                     }
-                } label: {
-                    Image(systemSymbol: .magnifyingglass)
-                        .padding(5)
-                }
-                .opacity(showSearchButton ? 1 : 0)
-                .animation(.spring, value: showSearchButton)
-            }
-        }
-        .searchable(text: $query, isPresented: $isSearching)
-        .disableAutocorrection(true)
-        .onChange(of: isSearching) { _, value in
-            guard !value else {
-                return
-            }
-
-            mpd.database.results = nil
-            // For playlists, notify to clear search results
-            if case .playlist = navigator.category {
-                NotificationCenter.default.post(name: .startSearchingNotication, object: "")
-            }
-        }
-        .onChange(of: isGoingToSearch) { _, value in
-            guard value else {
-                return
-            }
-
-            isSearching = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                isGoingToSearch = false
-            }
-        }
-        .task(id: query) {
-            guard isSearching else {
-                return
-            }
-
-            if query.isEmpty {
-                mpd.database.results = nil
-                // For playlists, notify to clear search results
-                if case .playlist = navigator.category {
-                    NotificationCenter.default.post(name: .startSearchingNotication, object: "")
-                }
-            } else {
-                // For playlists, search is handled by MediaListView internally
-                if case .playlist = navigator.category {
-                    NotificationCenter.default.post(name: .startSearchingNotication, object: query)
-                } else {
-                    try? await mpd.database.search(for: query)
                 }
             }
-        }
-        #elseif os(macOS)
-        .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
+            .task(id: mpd.status.song) {
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                mpd.status.media = try? await mpd.database.get(for: song, using: destination.type)
+            }
+            .onChange(of: mpd.database.results?.count) { _, value in
+                guard value == nil else {
+                    return
+                }
+
+                try? scrollToCurrent(animate: false)
+            }
+        #if os(macOS)
+            .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
         #endif
     }
 
@@ -295,7 +228,23 @@ struct CategoryView: View {
             throw ViewError.missingData
         }
 
-        #if os(macOS)
+        #if os(iOS)
+//            let rowSpacing: CGFloat = 15
+//            let baseRowHeight: CGFloat = switch destination {
+//            case .albums, .artists: 50
+//            case .songs, .playlist, _: 31.5
+//            }
+//            let rowHeight = baseRowHeight + rowSpacing
+//
+//            let rowMidY = (CGFloat(currentIndex) * rowHeight) + (rowHeight / 2)
+//            let visibleHeight = scrollView.frame.height
+//            let centeredOffset = rowMidY - (visibleHeight / 2)
+//
+//            scrollView.setContentOffset(
+//                CGPoint(x: 0, y: max(0, centeredOffset)),
+//                animated: animate,
+//            )
+        #elseif os(macOS)
             guard let tableView = scrollView.documentView as? NSTableView else {
                 throw ViewError.missingData
             }
@@ -314,22 +263,6 @@ struct CategoryView: View {
                     scrollView.contentView.setBoundsOrigin(center)
                 }
             }
-        #elseif os(iOS)
-            let rowSpacing: CGFloat = 15
-            let baseRowHeight: CGFloat = switch destination {
-            case .albums, .artists: 50
-            case .songs, .playlist, _: 31.5
-            }
-            let rowHeight = baseRowHeight + rowSpacing
-
-            let rowMidY = (CGFloat(currentIndex) * rowHeight) + (rowHeight / 2)
-            let visibleHeight = scrollView.frame.height
-            let centeredOffset = rowMidY - (visibleHeight / 2)
-
-            scrollView.setContentOffset(
-                CGPoint(x: 0, y: max(0, centeredOffset)),
-                animated: animate,
-            )
         #endif
     }
 }
