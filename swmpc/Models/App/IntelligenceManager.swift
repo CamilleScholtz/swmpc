@@ -186,7 +186,14 @@ actor IntelligenceManager {
                     .init(role: .user, content: albums.map(\.description))!,
                 ],
                 model: model.model,
-                responseFormat: .derivedJsonSchema(name: "intelligence_response", type: IntelligenceResponse.self)
+                responseFormat: .jsonSchema(
+                    .init(
+                        name: "intelligence_response",
+                        description: nil,
+                        schema: .derivedJsonSchema(IntelligenceResponse.self),
+                        strict: true
+                    )
+                )
             ))
 
             guard let response = result.choices.first?.message.content else {

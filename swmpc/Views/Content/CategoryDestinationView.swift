@@ -188,14 +188,6 @@ struct CategoryView: View {
                 }
             }
 
-            // try? scrollToCurrent(animate: false)
-
-            // for i in 1 ..< 6 {
-            //     DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.1) {
-            //         try? scrollToCurrent(animate: false)
-            //     }
-            // }
-
             Task {
                 while true {
                     try? await Task.sleep(for: .seconds(0.1))
@@ -257,7 +249,6 @@ struct CategoryView: View {
                 return
             }
 
-            // For playlists, notify to clear search results
             if case .playlist = navigator.category {
                 NotificationCenter.default.post(name: .startSearchingNotication, object: "")
             }
