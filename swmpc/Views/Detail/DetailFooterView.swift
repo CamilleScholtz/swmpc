@@ -25,6 +25,9 @@ struct DetailFooterView: View {
 
                 Spacer()
 
+                VolumeSliderView()
+                    .offset(y: 1)
+
                 FavoriteView()
                     .offset(x: 4, y: 1)
             }

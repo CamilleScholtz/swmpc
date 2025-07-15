@@ -76,6 +76,8 @@ enum IdleEvent: String {
     case options
     /// The player state (play, pause, stop) or current song has changed.
     case player
+    /// The mixer volume has changed.
+    case mixer
 }
 
 /// Specifies the method for retrieving artwork from MPD.

@@ -40,6 +40,9 @@ final class StatusManager {
     /// The currently loaded playlist, if any.
     var playlist: Playlist?
 
+    /// The current volume level (0-100).
+    var volume: Int?
+
     /// Whether elapsed time tracking is currently active.
     @ObservationIgnored @MainActor private(set) var trackElapsed = false {
         didSet {
@@ -134,6 +137,7 @@ final class StatusManager {
         }
 
         _ = playlist.update(to: data.playlist)
+        _ = volume.update(to: data.volume)
     }
 
     /// Starts tracking elapsed time for the current song.

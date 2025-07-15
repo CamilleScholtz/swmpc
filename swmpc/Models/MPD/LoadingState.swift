@@ -9,5 +9,5 @@ import SwiftUI
 
 /// Represents the loading state of the MPD client.
 @Observable final class LoadingState {
-    var isLoading: Bool = false
+    var isLoading = false
 }

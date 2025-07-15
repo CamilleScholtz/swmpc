@@ -9,9 +9,21 @@ import SwiftUI
 
 struct LoadingView: View {
     @Environment(MPD.self) private var mpd
+    @Environment(NavigationManager.self) private var navigator
+
+    private var shouldShowLoading: Bool {
+        switch navigator.category {
+        case .albums, .artists, .songs, .playlist:
+            return mpd.state.isLoading
+        #if os(iOS)
+            case .playlists, .settings:
+                return false
+        #endif
+        }
+    }
 
     var body: some View {
-        if mpd.state.isLoading {
+        if shouldShowLoading {
             ZStack {
                 Rectangle()
                     .fill(.background)

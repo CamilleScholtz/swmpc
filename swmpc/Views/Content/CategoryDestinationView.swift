@@ -174,9 +174,29 @@ struct CategoryView: View {
         .onReceive(startSearchingNotication) { _ in
             isSearching = true
         }
-        .onChange(of: scrollView) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                try? scrollToCurrent(animate: false)
+        .onChange(of: destination) { _, value in
+            switch value {
+            case .albums, .artists, .songs:
+                mpd.state.isLoading = true
+            case let .playlist(playlist):
+                mpd.state.isLoading = true
+
+                if playlist.name == "Favorites" {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        mpd.state.isLoading = false
+                    }
+                }
+            }
+
+            Task {
+                while true {
+                    try? await Task.sleep(for: .seconds(0.1))
+
+                    if mpd.database.media != nil {
+                        try? scrollToCurrent(animate: false)
+                        break
+                    }
+                }
             }
         }
         .onChange(of: showHeader) { _, value in
@@ -229,7 +249,6 @@ struct CategoryView: View {
                 return
             }
 
-            // For playlists, notify to clear search results
             if case .playlist = navigator.category {
                 NotificationCenter.default.post(name: .startSearchingNotication, object: "")
             }

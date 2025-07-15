@@ -836,7 +836,7 @@ extension ConnectionManager {
     ///           if any underlying command execution fails.
     func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?,
                                           isRepeat: Bool?, elapsed: Double?,
-                                          playlist: Playlist?, song: Song?)
+                                          playlist: Playlist?, song: Song?, volume: Int?)
     {
         let lines = try await run(["status"])
 
@@ -846,6 +846,7 @@ extension ConnectionManager {
         var elapsed: Double?
         var playlist: Playlist?
         var song: Song?
+        var volume: Int?
 
         for line in lines {
             guard line != "OK" else {
@@ -879,12 +880,14 @@ extension ConnectionManager {
                 let lines = try await run(["playlistid \(value)"])
 
                 song = try parseSongResponse(lines)
+            case "volume":
+                volume = Int(value)
             default:
                 break
             }
         }
 
-        return (state, isRandom, isRepeat, elapsed, playlist, song)
+        return (state, isRandom, isRepeat, elapsed, playlist, song, volume)
     }
 
     /// Retrieves the current database of albums from the media server.
@@ -1532,5 +1535,13 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Throws: An error if the underlying command execution fails.
     func seek(_ value: Double) async throws {
         _ = try await run(["seekcur \(value)"])
+    }
+
+    /// Set the volume level.
+    ///
+    /// - Parameter volume: The volume level to set (0-100).
+    /// - Throws: An error if the underlying command execution fails.
+    func setVolume(_ volume: Int) async throws {
+        _ = try await run(["setvol \(volume)"])
     }
 }
