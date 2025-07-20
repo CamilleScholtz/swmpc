@@ -125,7 +125,7 @@ struct CategoryView: View {
                 break
             }
         }
-        .introspect(.list, on: .macOS(.v15)) { tableView in
+        .introspect(.list, on: .macOS(.v26)) { tableView in
             DispatchQueue.main.async {
                 scrollView = tableView.enclosingScrollView
             }
@@ -375,7 +375,7 @@ struct CategoryView: View {
 
             scrollView.setContentOffset(
                 CGPoint(x: 0, y: max(0, centeredOffset)),
-                animated: animate
+                animated: animate,
             )
         #endif
     }

@@ -118,7 +118,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         label: "com.camille.swmpc.connection.\(Mode.label)",
         qos: Mode.qos,
         attributes: Mode.queueAttributes,
-        target: .global(qos: Mode.qos.qosClass)
+        target: .global(qos: Mode.qos.qosClass),
     )
 
     private var buffer = Deque<UInt8>()
@@ -167,7 +167,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         connection = NWConnection(
             host: NWEndpoint.Host(host),
             port: port,
-            using: NWParameters(tls: nil, tcp: options)
+            using: NWParameters(tls: nil, tcp: options),
         )
         guard let connection else {
             throw ConnectionManagerError.connectionSetupFailed
@@ -795,8 +795,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
             track: track ?? 1,
             album: Album(
                 title: album ?? "Unknown Album",
-                artist: Artist(name: albumArtist ?? "Unknown Artist")
-            )
+                artist: Artist(name: albumArtist ?? "Unknown Artist"),
+            ),
         )
     }
 }
@@ -925,7 +925,7 @@ extension ConnectionManager {
 
                 albums.append(Album(
                     title: value.isEmpty ? "Unknown Album" : value,
-                    artist: artist
+                    artist: artist,
                 ))
             default:
                 continue

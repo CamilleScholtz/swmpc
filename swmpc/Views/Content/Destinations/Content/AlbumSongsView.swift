@@ -54,8 +54,8 @@ struct AlbumSongsView: View {
                                                     .init(color: .black.opacity(0), location: 1.0),
                                                 ]),
                                                 startPoint: .bottom,
-                                                endPoint: .top
-                                            )
+                                                endPoint: .top,
+                                            ),
                                         )
 
                                     HStack(spacing: 5) {
@@ -72,7 +72,7 @@ struct AlbumSongsView: View {
                                     .padding(10)
                                 }
                                 .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false)
+                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
                             )
                     }
 
@@ -137,7 +137,7 @@ struct AlbumSongsView: View {
                         Text(
                             String(localized: "\(flat.count) \(flat.count == 1 ? "song" : "songs")")
                                 + " • "
-                                + (flat.reduce(0) { $0 + $1.duration }.humanTimeString)
+                                + (flat.reduce(0) { $0 + $1.duration }.humanTimeString),
                         )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -169,7 +169,7 @@ struct AlbumSongsView: View {
                 .offset(x: -15)
             #endif
                 .frame(height: 1),
-            alignment: .bottom
+            alignment: .bottom,
         )
 
         if let songs {

@@ -20,7 +20,7 @@ struct AppView: View {
     #if os(iOS)
         @Environment(\.tabViewBottomAccessoryPlacement) var placement
     #endif
-    
+
     #if os(iOS)
         @State private var isPopupBarPresented = true
         @State private var isPopupOpen = false
@@ -52,18 +52,16 @@ struct AppView: View {
                                     }
                                 }
                             }
-                            
+
 //                            Tab(value: .search, role: .search) {
 //                                HStack {
-//                                    
+//
 //                                }
 //                            }
                         }
                         .tabBarMinimizeBehavior(.onScrollDown)
                         .tabViewBottomAccessory {
-                            HStack {
-
-                            }
+                            HStack {}
                         }
                         .handleQueueChange()
                     #elseif os(macOS)
@@ -114,9 +112,7 @@ struct AppView: View {
                             }
                         }
 //                        .toolbarVisibility(.hidden)
-                        .toolbar {
-                           
-                        }
+                        .toolbar {}
 //                        .toolbarBackgroundVisibility(.hidden)
                     #endif
                 }

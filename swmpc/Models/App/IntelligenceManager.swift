@@ -191,9 +191,9 @@ actor IntelligenceManager {
                         name: "intelligence_response",
                         description: nil,
                         schema: .derivedJsonSchema(IntelligenceResponse.self),
-                        strict: true
-                    )
-                )
+                        strict: true,
+                    ),
+                ),
             ))
 
             guard let response = result.choices.first?.message.content else {

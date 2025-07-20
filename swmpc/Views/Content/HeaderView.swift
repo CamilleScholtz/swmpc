@@ -56,7 +56,7 @@ struct HeaderView: View {
                 }
             } else {
                 TextField("Search", text: $searchQuery)
-                    .introspect(.textField, on: .macOS(.v15)) {
+                    .introspect(.textField, on: .macOS(.v26)) {
                         $0.drawsBackground = true
                         $0.backgroundColor = .clear
                     }
@@ -96,7 +96,7 @@ struct HeaderView: View {
             Rectangle()
                 .frame(height: 1)
                 .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-            alignment: .bottom
+            alignment: .bottom,
         )
         .onChange(of: destination) {
             isSearching = false

@@ -46,8 +46,8 @@ struct VolumeSliderView: View {
                         }
                     })
                     .controlSize(.mini)
-                    .introspect(.slider, on: .macOS(.v15)) {
-                        $0.numberOfTickMarks = 1
+                    .introspect(.slider, on: .macOS(.v26)) {
+                        $0.numberOfTickMarks = 2
                     }
                     .frame(width: 80)
 
