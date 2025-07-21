@@ -1445,13 +1445,8 @@ extension ConnectionManager where Mode == CommandMode {
         case let album as Album:
             songs = try await getSongs(in: album, from: .database)
         case let artist as Artist:
-            // For artists, we need to get all songs by that artist
-            let filter = filter(key: "artist", value: artist.name)
-            let lines = try await run(["find \(filter)"])
-            let chunks = chunkLines(lines, startingWith: "file")
-            songs = try chunks.compactMap { chunk in
-                try parseSongResponse(chunk)
-            }
+            let lines = try await run(["find \(filter(key: "artist", value: artist.name))"])
+            songs = try await parseSongsResponse(lines)
         case let song as Song:
             songs = [song]
         default:
