@@ -41,7 +41,7 @@ enum Source: Equatable, Hashable {
     case favorites
 
     /// Returns the playlist if this source represents a playlist.
-    var playlist: Playlist? {
+    nonisolated var playlist: Playlist? {
         switch self {
         case .database, .queue:
             nil
@@ -52,7 +52,7 @@ enum Source: Equatable, Hashable {
         }
     }
 
-    var isMovable: Bool {
+    nonisolated var isMovable: Bool {
         switch self {
         case .queue, .playlist, .favorites:
             true

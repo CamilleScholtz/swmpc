@@ -113,7 +113,7 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
     }
 }
 
-struct IntelligenceResponse: JSONSchemaConvertible {
+nonisolated struct IntelligenceResponse: JSONSchemaConvertible {
     let playlist: [String]
 
     static let example: Self = .init(playlist: [
@@ -163,11 +163,12 @@ actor IntelligenceManager {
     ///     - target: The target to fill (playlist or queue).
     ///     - prompt: The prompt to use.
     /// - Throws: An error if the target could not be filled
-    @MainActor
     func fill(target: IntelligenceTarget, prompt: String) async throws {
         try await withThrowingTimeout(seconds: 30) {
-            @AppStorage(Setting.intelligenceModel) var model = IntelligenceModel
-                .openAI
+            let model = await MainActor.run {
+                UserDefaults.standard.string(forKey: Setting.intelligenceModel)
+                    .flatMap { IntelligenceModel(rawValue: $0) } ?? .openAI
+            }
 
             let client = try await self.connect(using: model)
 

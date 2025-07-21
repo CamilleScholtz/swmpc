@@ -10,8 +10,7 @@ import SwiftUI
 
 // TODO: `content` and `path` feel a duplicate, but I really cant figure out how
 // to get the "contents" of the `path`.
-@Observable
-final class NavigationManager {
+@Observable final class NavigationManager {
     var path = NavigationPath()
 
     var category: CategoryDestination = .albums {

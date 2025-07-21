@@ -8,11 +8,10 @@
 import AppIntents
 import SwiftUI
 
-struct PreviousSongIntent: AppIntent {
+struct PreviousSongIntent: @preconcurrency AppIntent {
     static let title: LocalizedStringResource = "Previous Song"
     static let description = IntentDescription("Go back to the previous song")
 
-    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         try await ConnectionManager.command().previous()
 

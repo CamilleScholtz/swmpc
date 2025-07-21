@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-protocol Mediable: Identifiable, Equatable, Hashable {
+protocol Mediable: Identifiable, Equatable, Hashable, Sendable {
     /// Returns a unique identifier for the media item.
-    var id: String { get }
+    nonisolated var id: String { get }
 }
 
 extension Mediable {
@@ -19,20 +19,19 @@ extension Mediable {
     ///   - lhs: The first media item.
     ///   - rhs: The second media item.
     /// - Returns: `true` if the identifiers match, `false` otherwise.
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
 
     /// Generates a hash value for the media item based on its identifier.
     ///
     /// - Parameter hasher: The hasher to use for generating the hash value.
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
 protocol Artworkable {
-    @MainActor
     func artwork() async throws -> PlatformImage?
 }
 
@@ -45,7 +44,6 @@ extension Artworkable where Self: Mediable {
     /// - Returns: A platform-specific image if artwork is available, or `nil`
     ///           if no artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
-    @MainActor
     func artwork() async throws -> PlatformImage? {
         let url: URL?
         let shouldCache: Bool
@@ -72,8 +70,8 @@ extension Artworkable where Self: Mediable {
 }
 
 /// Represents an artist in the MPD database.
-struct Artist: Mediable {
-    var id: String { name }
+nonisolated struct Artist: Mediable {
+    nonisolated var id: String { name }
 
     let name: String
 
@@ -83,14 +81,14 @@ struct Artist: Mediable {
 }
 
 /// Represents an album in the MPD database.
-struct Album: Mediable, Artworkable {
-    var id: String { description }
+nonisolated struct Album: Mediable, Artworkable {
+    nonisolated var id: String { description }
 
     let title: String
 
     let artist: Artist
 
-    var description: String {
+    nonisolated var description: String {
         "\(artist.name) - \(title)"
     }
 
@@ -115,8 +113,8 @@ struct Album: Mediable, Artworkable {
 ///
 /// Songs contain detailed metadata including title, artist, album, duration,
 /// and more.
-struct Song: Mediable, Artworkable {
-    var id: String { url.absoluteString }
+nonisolated struct Song: Mediable, Artworkable {
+    nonisolated var id: String { url.absoluteString }
 
     let identifier: UInt32?
     let position: UInt32?
@@ -131,7 +129,7 @@ struct Song: Mediable, Artworkable {
 
     let album: Album
 
-    var description: String {
+    nonisolated var description: String {
         "\(artist) - \(title)"
     }
 
@@ -155,8 +153,8 @@ struct Song: Mediable, Artworkable {
 /// Represents a playlist in the MPD database.
 ///
 /// Playlists are named collections of songs that can be saved and loaded.
-struct Playlist: Identifiable, Equatable, Hashable, Codable, Sendable {
-    var id: String { name }
+nonisolated struct Playlist: Identifiable, Equatable, Hashable, Codable, Sendable {
+    nonisolated var id: String { name }
 
     let name: String
 }

@@ -8,11 +8,10 @@
 import AppIntents
 import SwiftUI
 
-struct ToggleShuffleIntent: AppIntent {
+struct ToggleShuffleIntent: @preconcurrency AppIntent {
     static let title: LocalizedStringResource = "Toggle Shuffle"
     static let description = IntentDescription("Enable or disable shuffle mode")
 
-    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         try await ConnectionManager.command().repeat(!(mpd.status.isRandom ?? false))
 

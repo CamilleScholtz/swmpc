@@ -48,6 +48,8 @@ actor ArtworkManager {
                                    shouldCache: shouldCache)
         tasks[url] = task
 
+        defer { tasks.removeValue(forKey: url) }
+        
         return try await task.value
     }
 
@@ -62,8 +64,6 @@ actor ArtworkManager {
                                  shouldCache: Bool) -> Task<Data, Error>
     {
         Task(priority: priority) {
-            defer { removeTask(for: url) }
-
             try Task.checkCancellation()
 
             var connection: ConnectionManager<ArtworkMode>?
@@ -106,12 +106,6 @@ actor ArtworkManager {
     ///   - url: The URL key for the cached data.
     private func storeInCache(_ data: Data, for url: URL) {
         cache.setObject(data as NSData, forKey: url as NSURL, cost: data.count)
-    }
-
-    /// Removes a completed or failed task from the active tasks dictionary.
-    /// - Parameter url: The URL key for the task to remove.
-    private func removeTask(for url: URL) {
-        tasks.removeValue(forKey: url)
     }
 }
 

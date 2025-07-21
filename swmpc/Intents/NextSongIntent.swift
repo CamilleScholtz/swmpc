@@ -8,11 +8,10 @@
 import AppIntents
 import SwiftUI
 
-struct NextSongIntent: AppIntent {
+struct NextSongIntent: @preconcurrency AppIntent {
     static let title: LocalizedStringResource = "Next Song"
     static let description = IntentDescription("Skip to the next song in the queue")
 
-    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         try await ConnectionManager.command().next()
 

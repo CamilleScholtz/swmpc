@@ -8,11 +8,10 @@
 import AppIntents
 import SwiftUI
 
-struct ToggleRepeatIntent: AppIntent {
+struct ToggleRepeatIntent: @preconcurrency AppIntent {
     static let title: LocalizedStringResource = "Toggle Repeat"
     static let description = IntentDescription("Enable or disable repeat mode")
 
-    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
 

@@ -140,7 +140,6 @@ struct Delegate: App {
 }
 
 #if os(macOS)
-    @MainActor
     final class AppDelegate: NSObject, NSApplicationDelegate {
         private(set) static var shared: AppDelegate!
 

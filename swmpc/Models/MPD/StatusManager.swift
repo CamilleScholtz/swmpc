@@ -15,8 +15,7 @@ import SwiftUI
 /// time tracking when playback is active. It automatically synchronizes with
 /// the MPD server and updates platform-specific UI elements like the macOS
 /// status bar.
-@Observable
-final class StatusManager {
+@Observable final class StatusManager {
     /// The current player state (play, pause, stop).
     var state: PlayerState?
 
@@ -44,7 +43,7 @@ final class StatusManager {
     var volume: Int?
 
     /// Whether elapsed time tracking is currently active.
-    @ObservationIgnored @MainActor private(set) var trackElapsed = false {
+    @ObservationIgnored private(set) var trackElapsed = false {
         didSet {
             if trackElapsed {
                 state == .play
@@ -57,7 +56,7 @@ final class StatusManager {
     }
 
     /// The number of active tracking requests.
-    @ObservationIgnored @MainActor private var activeTrackingCount = 0 {
+    @ObservationIgnored private var activeTrackingCount = 0 {
         didSet {
             if activeTrackingCount > 0, !trackElapsed {
                 trackElapsed = true
@@ -81,7 +80,6 @@ final class StatusManager {
     /// status bar.
     ///
     /// - Throws: An error if fetching the status fails.
-    @MainActor
     func set(idle: Bool = true) async throws {
         let data = try await idle
             ? ConnectionManager.idle.getStatusData()
@@ -147,7 +145,6 @@ final class StatusManager {
     /// requesters have called `stopTrackingElapsed()`.
     ///
     /// - Throws: An error if fetching the current status fails.
-    @MainActor
     func startTrackingElapsed() async throws {
         if !trackElapsed {
             let data = try await ConnectionManager.command().getStatusData()
@@ -161,7 +158,6 @@ final class StatusManager {
     ///
     /// This decrements the tracking count. When the count reaches zero, elapsed
     /// time tracking is completely stopped.
-    @MainActor
     func stopTrackingElapsed() {
         activeTrackingCount = max(0, activeTrackingCount - 1)
     }
@@ -170,7 +166,6 @@ final class StatusManager {
     ///
     /// This method creates a timer that updates the elapsed time every second
     /// while the player is in the play state.
-    @MainActor
     private func startTrackingElapsedTask() {
         if let trackingTask, !trackingTask.isCancelled {
             stopTrackingElapsed()
@@ -200,7 +195,6 @@ final class StatusManager {
     /// Stops the background task that updates elapsed time.
     ///
     /// This method cancels the timer task and clears the tracking state.
-    @MainActor
     private func stopTrackingElapsedTask() {
         trackingTask?.cancel()
 

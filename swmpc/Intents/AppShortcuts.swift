@@ -8,7 +8,7 @@
 import AppIntents
 import SwiftUI
 
-struct AppShortcuts: AppShortcutsProvider {
+struct AppShortcuts: @preconcurrency AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: PlayPauseIntent(),

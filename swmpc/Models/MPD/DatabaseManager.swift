@@ -8,8 +8,7 @@
 import SwiftUI
 
 /// Manages the MPD database, handling artists, albums, and song queries.
-@Observable
-final class DatabaseManager {
+@Observable final class DatabaseManager {
     private let state: LoadingState
 
     init(state: LoadingState) {
@@ -28,7 +27,6 @@ final class DatabaseManager {
     ///   - idle: Whether to use the idle connection.
     ///   - force: Whether to force the update even if the type is unchanged.
     /// - Throws: An error if the media could not be set.
-    @MainActor
     func set(type: MediaType? = nil, idle: Bool = true, force: Bool = false) async throws {
         defer { state.isLoading = false }
 
@@ -40,11 +38,17 @@ final class DatabaseManager {
             self.type = type
         }
 
-        media = nil
+        media = try await fetchMedia(idle: idle)
+    }
 
-        switch self.type {
+    /// Fetches the media from the MPD server.
+    ///
+    /// - Parameter idle: Whether to use the idle connection.
+    /// - Returns: The media from the MPD server.
+    private func fetchMedia(idle: Bool) async throws -> [any Mediable]? {
+        switch type {
         case .album:
-            media = try await idle
+            return try await idle
                 ? ConnectionManager.idle.getDatabase()
                 : ConnectionManager.command().getDatabase()
         case .artist:
@@ -59,16 +63,16 @@ final class DatabaseManager {
                 let artists = artistDict.values.compactMap(\.first).sorted {
                     $0.name < $1.name
                 }
-                media = artists
+                return artists
             } else {
-                media = nil
+                return nil
             }
         case .song:
-            media = try await idle
+            return try await idle
                 ? ConnectionManager.idle.getSongs(from: Source.database)
                 : ConnectionManager.command().getSongs(from: Source.database)
         case .playlist:
-            break
+            return nil
         }
     }
 }

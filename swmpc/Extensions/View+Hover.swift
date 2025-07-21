@@ -7,11 +7,10 @@
 
 import SwiftUI
 
-@MainActor
 final class HoverTaskHandler {
     private var currentTask: Task<Void, Never>?
 
-    func handleHover(_ isHovering: Bool, delay: Duration = .milliseconds(50), action: @escaping @MainActor () -> Void) {
+    func handleHover(_ isHovering: Bool, delay: Duration = .milliseconds(50), action: @escaping () -> Void) {
         currentTask?.cancel()
 
         if isHovering {
@@ -36,7 +35,7 @@ extension View {
     func onHoverWithDebounce(
         delay: Duration = .milliseconds(50),
         handler: HoverTaskHandler,
-        onHover: @escaping @MainActor (Bool) -> Void,
+        onHover: @escaping (Bool) -> Void,
     ) -> some View {
         self.onHover { isHovering in
             if isHovering {

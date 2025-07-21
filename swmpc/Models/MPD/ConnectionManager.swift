@@ -15,15 +15,15 @@ import SwiftUI
 /// buffer sizes.
 protocol ConnectionMode: Sendable {
     /// A label identifying the connection mode.
-    static var label: String { get }
+    nonisolated static var label: String { get }
     /// Whether to enable TCP keepalive for this connection.
-    static var enableKeepalive: Bool { get }
+    nonisolated static var enableKeepalive: Bool { get }
     /// The buffer size to use for reading data.
-    static var bufferSize: Int { get }
+    nonisolated static var bufferSize: Int { get }
     /// The dispatch queue attributes for this connection mode.
-    static var queueAttributes: DispatchQueue.Attributes { get }
+    nonisolated static var queueAttributes: DispatchQueue.Attributes { get }
     /// The quality of service level for operations.
-    static var qos: DispatchQoS { get }
+    nonisolated static var qos: DispatchQoS { get }
 }
 
 /// Connection mode for idle operations that listen for MPD server events.
@@ -71,7 +71,7 @@ enum ConnectionManagerError: LocalizedError {
     case malformedResponse(String)
     case unsupportedOperation(String)
 
-    var errorDescription: String? {
+    nonisolated var errorDescription: String? {
         switch self {
         case .invalidPort:
             "Invalid port provided. Port must be between 1 and 65535."
@@ -95,6 +95,20 @@ enum ConnectionManagerError: LocalizedError {
     }
 }
 
+/// Helper to access main actor isolated settings from within actors
+struct ConnectionSettings {
+    static let shared = ConnectionSettings()
+
+    @AppStorage(Setting.host) var host = "localhost"
+    @AppStorage(Setting.port) var port = 6600
+
+    @KeychainStorage(Setting.password) var password: String?
+
+    @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
+
+    private init() {}
+}
+
 /// Manages TCP connections to the MPD server with support for different
 /// connection modes.
 ///
@@ -108,11 +122,6 @@ enum ConnectionManagerError: LocalizedError {
 /// - Response parsing for various MPD data types
 /// - Thread-safe operation using Swift actors
 actor ConnectionManager<Mode: ConnectionMode> {
-    @AppStorage(Setting.host) private var host = "localhost"
-    @AppStorage(Setting.port) private var port = 6600
-
-    @KeychainStorage(Setting.password) private var password: String?
-
     private var connection: NWConnection?
     private let connectionQueue = DispatchQueue(
         label: "com.camille.swmpc.connection.\(Mode.label)",
@@ -160,12 +169,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
         options.noDelay = true
         options.enableKeepalive = Mode.enableKeepalive
 
-        guard let port = NWEndpoint.Port(rawValue: UInt16(port)) else {
+        guard let port = await NWEndpoint.Port(rawValue: UInt16(ConnectionSettings.shared.port)) else {
             throw ConnectionManagerError.invalidPort
         }
 
-        connection = NWConnection(
-            host: NWEndpoint.Host(host),
+        connection = await NWConnection(
+            host: NWEndpoint.Host(ConnectionSettings.shared.host),
             port: port,
             using: NWParameters(tls: nil, tcp: options),
         )
@@ -246,7 +255,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// This function checks if a password is set and sends it to the server for
     /// authentication. If no password is set, the function returns immediately.
     func ensureAuthenticated() async throws {
-        guard let password else {
+        guard let password = await ConnectionSettings.shared.password else {
             return
         }
 
@@ -392,7 +401,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            Defaults to `"` if not provided.
     /// - Returns: A new string where special characters have been escaped and,
     ///            if a quote is provided, the string is enclosed by it.
-    private func escape(_ string: String, quote: String? = "\"") -> String {
+    private nonisolated func escape(_ string: String, quote: String? = "\"") -> String {
         var escaped = string.replacingOccurrences(of: "\\", with: "\\\\")
 
         guard let quote else {
@@ -429,7 +438,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   - quote: A Boolean value that determines whether the final clause
     ///            should be enclosed in double quotes. Defaults to `true`.
     /// - Returns: A formatted string representing the filter clause.
-    private func filter(key: String, value: String, comparator: String = "==", quote: Bool = true) -> String {
+    private nonisolated func filter(key: String, value: String, comparator: String = "==", quote: Bool = true) -> String {
         let clause = "(\(key) \(comparator) \(escape(value, quote: "'")))"
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
@@ -586,7 +595,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   - prefix: The prefix string that signifies the start of a new chunk.
     /// - Returns: An array of chunks, where each chunk is an array of strings
     ///            grouped together.
-    private func chunkLines(_ lines: [String], startingWith prefix: String) ->
+    private nonisolated func chunkLines(_ lines: [String], startingWith prefix: String) ->
         [[String]]
     {
         var chunks = [[String]]()
@@ -678,7 +687,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            second element is the value.
     /// - Throws: `ConnectionManagerError.malformedResponse` if the line does
     ///           not contain exactly one colon.
-    private func parseLine(_ line: String) throws -> (String, String) {
+    private nonisolated func parseLine(_ line: String) throws -> (String, String) {
         let parts = line.split(separator: ":", maxSplits: 1).map {
             $0.trimmingCharacters(in: .whitespaces)
         }
@@ -718,7 +727,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///           data; otherwise, it returns `nil`.
     /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
     ///           are missing or if the response is improperly formatted.
-    private func parseSongResponse(_ lines: [String], index: Int? = nil) throws
+    private nonisolated func parseSongResponse(_ lines: [String], index: Int? = nil) throws
         -> Song?
     {
         var id: UInt32?
@@ -798,6 +807,48 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 artist: Artist(name: albumArtist ?? "Unknown Artist"),
             ),
         )
+    }
+
+    private nonisolated func parseSongsResponse(_ lines: [String], index: Bool = false) async throws -> [Song] {
+        let chunks = chunkLines(lines, startingWith: "file")
+
+        if index {
+            return try chunks.enumerated().compactMap { index, chunk in
+                try parseSongResponse(chunk, index: index)
+            }
+        }
+
+        return try chunks.compactMap { chunk in
+            try parseSongResponse(chunk)
+        }
+    }
+
+    private nonisolated func parseAlbumsResponse(_ lines: [String]) async throws -> [Album] {
+        var albums: [Album] = []
+        var artist: Artist?
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let (key, value) = try parseLine(line)
+
+            switch key {
+            case "albumartist":
+                artist = Artist(name: value.isEmpty ? "Unknown Artist" : value)
+            case "album":
+                guard let artist else {
+                    throw ConnectionManagerError.malformedResponse(
+                        "Album found without associated artist")
+                }
+                albums.append(Album(title: value.isEmpty ? "Unknown Album" : value, artist: artist))
+            default:
+                continue
+            }
+        }
+
+        return albums.sorted { $0.artist.name < $1.artist.name }
     }
 }
 
@@ -904,35 +955,7 @@ extension ConnectionManager {
     func getDatabase() async throws -> [Album]? {
         let lines = try await run(["list album group albumartist"])
 
-        var albums: [Album] = []
-        var artist: Artist?
-
-        for line in lines {
-            guard line != "OK" else {
-                break
-            }
-
-            let (key, value) = try parseLine(line)
-
-            switch key {
-            case "albumartist":
-                artist = Artist(name: value.isEmpty ? "Unknown Artist" : value)
-            case "album":
-                guard let artist else {
-                    throw ConnectionManagerError.malformedResponse(
-                        "Album found without associated artist")
-                }
-
-                albums.append(Album(
-                    title: value.isEmpty ? "Unknown Album" : value,
-                    artist: artist,
-                ))
-            default:
-                continue
-            }
-        }
-
-        return albums.sorted { $0.artist.name < $1.artist.name }
+        return try await parseAlbumsResponse(lines)
     }
 
     /// Retrieves all songs from the database or queue.
@@ -952,11 +975,7 @@ extension ConnectionManager {
             try await run(["listplaylistinfo \(escape(source.playlist!.name))"])
         }
 
-        let chunks = chunkLines(lines, startingWith: "file")
-
-        return try chunks.enumerated().compactMap { index, chunk in
-            try parseSongResponse(chunk, index: index)
-        }
+        return try await parseSongsResponse(lines, index: true)
     }
 
     /// Retrieves songs from the database or queue that match a specific album.
@@ -981,11 +1000,7 @@ extension ConnectionManager {
                 "Only database and queue sources are supported for retrieving songs in an album")
         }
 
-        let chunks = chunkLines(lines, startingWith: "file")
-
-        return try chunks.compactMap { chunk in
-            try parseSongResponse(chunk)
-        }
+        return try await parseSongsResponse(lines)
     }
 
     func getAlbums(by artist: Artist, from source: Source) async throws -> [Album] {
@@ -1152,14 +1167,12 @@ extension ConnectionManager where Mode == ArtworkMode {
     /// - Throws: An error if the server response is malformed, if the read
     ///           operation fails, or if other connection related errors occur.
     func getArtworkData(for url: URL) async throws -> Data {
-        @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
-
         var data = Data()
         var offset = 0
         var totalSize: Int?
 
         loop: while true {
-            try await writeLine("\(artworkGetter.rawValue) \(escape(url.path)) \(offset)")
+            try await writeLine("\(ConnectionSettings.shared.artworkGetter.rawValue) \(escape(url.path)) \(offset)")
 
             var chunkSize: Int?
 
