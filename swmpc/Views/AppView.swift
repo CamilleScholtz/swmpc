@@ -79,8 +79,12 @@ struct AppView: View {
                                 LoadingView(),
                             )
                         } detail: {
-                            DetailView(showQueuePanel: $showQueuePanel)
-                                .padding(60)
+                            // XXX: The scrollview is a hack to hide the toolbar.
+                            ScrollView {
+                                DetailView(showQueuePanel: $showQueuePanel)
+                                    .padding(60)
+                            }
+                            .scrollDisabled(true)
                         }
                         .simultaneousGesture(
                             TapGesture()

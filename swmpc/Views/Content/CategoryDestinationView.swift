@@ -127,13 +127,19 @@ struct CategoryView: View {
             .scrollEdgeEffectStyle(.soft, for: .top)
             .safeAreaPadding(.bottom, 7.5)
             .contentMargins(.bottom, -7.5, for: .scrollIndicators)
-            .navigationTitle(isSearchFieldExpanded ? "" : destination.label)
-            .searchable(text: $searchQuery, isPresented: $isSearchFieldExpanded, prompt: "Search \(destination.label)")
+            .toolbar(removing: .title)
             .toolbar {
-                DefaultToolbarItem(kind: .search)
-                DefaultToolbarItem(kind: .title, placement: .automatic)
-
                 if !isSearchFieldExpanded {
+                    ToolbarItem {
+                        Text(destination.label)
+                            .font(.system(size: 15))
+                            .fontWeight(.semibold)
+                            .padding(.leading, 12)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+
+                    ToolbarSpacer(.flexible)
+
                     ToolbarItem {
                         Button {
                             try? scrollToCurrent(proxy: proxy, animate: true)
@@ -142,8 +148,14 @@ struct CategoryView: View {
                         }
                         .disabled(mpd.status.song == nil)
                     }
+                } else {
+                    ToolbarItem {
+                        TextField("Search", text: $searchQuery)
+                            .frame(width: 256)
+                            .autocorrectionDisabled()
+                    }
                 }
-                
+
                 ToolbarItem {
                     Button {
                         withAnimation(.spring) {

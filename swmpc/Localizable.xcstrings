@@ -2690,6 +2690,7 @@
       }
     },
     "Queue Playlist" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3177,9 +3178,6 @@
         }
       }
     },
-    "Search %@" : {
-
-    },
     "Search Library" : {
 
     },
@@ -3611,6 +3609,7 @@
       }
     },
     "This will overwrite the current queue." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

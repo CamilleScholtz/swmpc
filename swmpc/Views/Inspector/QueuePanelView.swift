@@ -13,8 +13,6 @@ struct QueuePanelView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
-
     @Binding var showQueuePanel: Bool
 
     @State private var showClearQueueAlert = false
@@ -29,39 +27,6 @@ struct QueuePanelView: View {
                 EmptyQueueView()
             } else {
                 QueueView()
-            }
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Spacer()
-                Spacer()
-
-                if showQueuePanel {
-                    if mpd.queue.songs.isEmpty, isIntelligenceEnabled {
-                        Button(action: {
-                            NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
-                        }) {
-                            Image(systemSymbol: .sparkles)
-                                .frame(width: 22, height: 22)
-                                .foregroundColor(.primary)
-                                .padding(4)
-                                .contentShape(Circle())
-                        }
-                        .styledButton()
-                    } else if !mpd.queue.songs.isEmpty {
-                        Button(action: {
-                            // showClearQueueAlert = true
-                        }) {
-                            Image(systemSymbol: .trash)
-                                .frame(width: 22, height: 22)
-                                .foregroundColor(.primary)
-                                .padding(4)
-                                .contentShape(Circle())
-                        }
-                        .styledButton()
-                        .keyboardShortcut(.delete, modifiers: [.shift, .command])
-                    }
-                }
             }
         }
         .alert("Clear Queue", isPresented: $showClearQueueAlert) {

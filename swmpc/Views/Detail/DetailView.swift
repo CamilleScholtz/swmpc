@@ -15,6 +15,8 @@ struct DetailView: View {
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+    
     #if os(iOS)
         @Binding var isPopupOpen: Bool
     #elseif os(macOS)
@@ -197,9 +199,42 @@ struct DetailView: View {
             }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Spacer()
+            ToolbarSpacer(.flexible)
 
+            if showQueuePanel {
+                ToolbarItem {
+                    Text("Queue")
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
+                        .offset(x: -140)
+                }
+                .sharedBackgroundVisibility(.hidden)
+                
+                if !mpd.queue.songs.isEmpty {
+                    ToolbarItem {
+                        Button(action: {
+                            // showClearQueueAlert = true
+                        }) {
+                            Image(systemSymbol: .trash)
+                        }
+                        .keyboardShortcut(.delete, modifiers: [.shift, .command])
+                    }
+                } else {
+                    if isIntelligenceEnabled {
+                        ToolbarItem {
+                            Button(action: {
+                                NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                            }) {
+                                Image(systemSymbol: .sparkles)
+                            }
+                        }
+                    }
+                }
+                
+                ToolbarSpacer(.fixed)
+            }
+            
+            ToolbarItem {
                 Button(action: {
                     withAnimation(.spring) {
                         showQueuePanel.toggle()
