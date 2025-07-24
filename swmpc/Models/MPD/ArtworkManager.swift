@@ -49,7 +49,7 @@ actor ArtworkManager {
         tasks[url] = task
 
         defer { tasks.removeValue(forKey: url) }
-        
+
         return try await task.value
     }
 

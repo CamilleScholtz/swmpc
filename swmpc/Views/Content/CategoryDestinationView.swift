@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftUIIntrospect
 
 struct CategoryDestinationView: View {
     let destination: CategoryDestination
@@ -84,19 +83,18 @@ struct CategoryView: View {
         }
     #endif
 
-    #if os(iOS)
-        @State private var scrollView: UIScrollView?
-    #elseif os(macOS)
-        @State private var scrollView: NSScrollView?
-    #endif
-
     @State private var offset: CGFloat = 0
 
-    @State private var showHeader = false
     @State private var isSearching = false
     @State private var searchQuery = ""
+    @State private var isSearchFieldExpanded = false
 
-    @State private var hideHeaderTask: Task<Void, Never>?
+    @FocusState private var isSearchFieldFocused: Bool
+
+    #if os(iOS)
+        @State private var showSearchButton = false
+        @State private var isGoingToSearch = false
+    #endif
 
     private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
@@ -104,231 +102,193 @@ struct CategoryView: View {
         .publisher(for: .startSearchingNotication)
 
     var body: some View {
-        List {
-            if case let .playlist(playlist) = destination {
-                MediaView(using: playlist, searchQuery: searchQuery)
-            } else {
-                MediaView(using: mpd.database, searchQuery: searchQuery)
+        ScrollViewReader { proxy in
+            List {
+                if case let .playlist(playlist) = destination {
+                    MediaView(using: playlist, searchQuery: searchQuery)
+                } else {
+                    MediaView(using: mpd.database, searchQuery: searchQuery)
+                }
             }
-        }
-        .id(destination)
-        .listStyle(.plain)
-        .task(id: destination) {
-            switch destination {
-            case .albums:
-                try? await mpd.database.set(type: .album, idle: false)
-            case .artists:
-                try? await mpd.database.set(type: .artist, idle: false)
-            case .songs:
-                try? await mpd.database.set(type: .song, idle: false)
-            default:
-                break
+            .id(destination)
+            .listStyle(.plain)
+            .task(id: destination) {
+                switch destination {
+                case .albums:
+                    try? await mpd.database.set(type: .album, idle: false)
+                case .artists:
+                    try? await mpd.database.set(type: .artist, idle: false)
+                case .songs:
+                    try? await mpd.database.set(type: .song, idle: false)
+                default:
+                    break
+                }
             }
-        }
-        .introspect(.list, on: .macOS(.v26)) { tableView in
-            DispatchQueue.main.async {
-                scrollView = tableView.enclosingScrollView
-            }
-        }
-        .safeAreaPadding(.bottom, 7.5)
-        .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-        .onScrollGeometryChange(for: CGFloat.self) { geometry in
-            geometry.contentOffset.y
-        } action: { previous, value in
-            guard !isSearching else {
-                return
-            }
+            .scrollEdgeEffectStyle(.soft, for: .top)
+            .safeAreaPadding(.bottom, 7.5)
+            .contentMargins(.bottom, -7.5, for: .scrollIndicators)
+            .navigationTitle(isSearchFieldExpanded ? "" : destination.label)
+            .searchable(text: $searchQuery, isPresented: $isSearchFieldExpanded, prompt: "Search \(destination.label)")
+            .toolbar {
+                DefaultToolbarItem(kind: .search)
+                DefaultToolbarItem(kind: .title, placement: .automatic)
 
-            guard value > 50 else {
-                offset = 0
-                showHeader = true
+                if !isSearchFieldExpanded {
+                    ToolbarItem {
+                        Button {
+                            try? scrollToCurrent(proxy: proxy, animate: true)
+                        } label: {
+                            Image(systemSymbol: .location)
+                        }
+                        .disabled(mpd.status.song == nil)
+                    }
+                }
+                
+                ToolbarItem {
+                    Button {
+                        withAnimation(.spring) {
+                            isSearchFieldExpanded.toggle()
+                            isSearching.toggle()
+                            isSearchFieldFocused.toggle()
+                        }
+                    } label: {
+                        Image(systemSymbol: .magnifyingglass)
+                    }
+                }
+            }
+            .onReceive(scrollToCurrentNotification) { notification in
+                try? scrollToCurrent(proxy: proxy, animate: notification.object as? Bool ?? true)
+            }
+            .onReceive(startSearchingNotication) { _ in
+                isSearching = true
+            }
+            .onChange(of: destination) { _, value in
+                switch value {
+                case .albums, .artists, .songs:
+                    mpd.state.isLoading = true
+                case let .playlist(playlist):
+                    mpd.state.isLoading = true
 
+                    if playlist.name == "Favorites" {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            mpd.state.isLoading = false
+                        }
+                    }
                 #if os(iOS)
-                    showSearchButton = false
+                    default:
+                        return;
                 #endif
-
-                resetHideHeaderTimer()
-
-                return
-            }
-
-            guard abs(value - offset) > 200 else {
-                if showHeader {
-                    resetHideHeaderTimer(offset: value)
                 }
-                return
+
+                Task {
+                    while true {
+                        try? await Task.sleep(for: .seconds(0.1))
+
+                        if mpd.database.media != nil {
+                            try? scrollToCurrent(proxy: proxy, animate: false)
+                            break
+                        }
+                    }
+                }
             }
+            .onChange(of: isSearching) { _, value in
+                if value {
+                } else {
+                    searchQuery = ""
+                    #if os(macOS)
+                        isSearchFieldExpanded = false
+                        isSearchFieldFocused = false
+                    #endif
+                }
+            }
+            .onChange(of: searchQuery) { _, value in
+                guard value.isEmpty else {
+                    return
+                }
 
-            offset = value
-            showHeader = previous >= value
-
-            #if os(iOS)
-                showSearchButton = true
+                try? scrollToCurrent(proxy: proxy, animate: false)
+            }
+//        .searchable(text: $query, isPresented: $isSearching)
+//        .disableAutocorrection(true)
+//        .onChange(of: isSearching) { _, value in
+//            guard !value else {
+//                return
+//            }
+//
+//            if case .playlist = navigator.category {
+//                NotificationCenter.default.post(name: .startSearchingNotication, object: "")
+//            }
+//        }
+//        .onChange(of: isGoingToSearch) { _, value in
+//            guard value else {
+//                return
+//            }
+//
+//            isSearching = true
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+//                isGoingToSearch = false
+//            }
+//        }
+//        .task(id: query) {
+//            guard isSearching else {
+//                return
+//            }
+//
+//            // For playlists, search is handled by MediaListView internally
+//            if case .playlist = navigator.category {
+//                NotificationCenter.default.post(name: .startSearchingNotication, object: query.isEmpty ? "" : query)
+//            }
+//            // For database views, search will be handled by SwiftUI's searchable with filtered views
+            // }
+            #if os(macOS)
+            .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
+//        .onKeyPress(.keyboardShortcut(.init("f", modifiers: .command))) {
+//            withAnimation(.spring(duration: 0.3)) {
+//                isSearchFieldExpanded = true
+//                isSearching = true
+//                isSearchFieldFocused = true
+//            }
+//            return .handled
+//        }
+//        .onKeyPress(.escape) {
+//            if isSearchFieldExpanded {
+//                withAnimation(.spring(duration: 0.3)) {
+//                    isSearchFieldExpanded = false
+//                    isSearching = false
+//                    searchQuery = ""
+//                }
+//                return .handled
+//            }
+//            return .ignored
+//        }
             #endif
-
-            resetHideHeaderTimer()
-        }
-        .onReceive(scrollToCurrentNotification) { notification in
-            try? scrollToCurrent(animate: notification.object as? Bool ?? true)
-        }
-        .onReceive(startSearchingNotication) { _ in
-            isSearching = true
-        }
-        .onChange(of: destination) { _, value in
-            switch value {
-            case .albums, .artists, .songs:
-                mpd.state.isLoading = true
-            case let .playlist(playlist):
-                mpd.state.isLoading = true
-
-                if playlist.name == "Favorites" {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        mpd.state.isLoading = false
-                    }
-                }
-            }
-
-            Task {
-                while true {
-                    try? await Task.sleep(for: .seconds(0.1))
-
-                    if mpd.database.media != nil {
-                        try? scrollToCurrent(animate: false)
-                        break
-                    }
-                }
-            }
-        }
-        .onChange(of: showHeader) { _, value in
-            if value {
-                resetHideHeaderTimer()
-            } else {
-                hideHeaderTask?.cancel()
-            }
-        }
-        .onChange(of: isSearching) { _, value in
-            if value {
-                showHeader = true
-                hideHeaderTask?.cancel()
-            } else {
-                searchQuery = ""
-                resetHideHeaderTimer()
-            }
-        }
-        .onChange(of: searchQuery) { _, value in
-            guard value.isEmpty else {
-                return
-            }
-
-            try? scrollToCurrent(animate: false)
-        }
-        #if os(iOS)
-        .navigationTitle(destination.label)
-        .navigationBarTitleDisplayMode(.large)
-        .toolbarVisibility(showHeader ? .visible : .hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    if isSearching {
-                        isSearching = false
-                    } else {
-                        isGoingToSearch = true
-                    }
-                } label: {
-                    Image(systemSymbol: .magnifyingglass)
-                        .padding(5)
-                }
-                .opacity(showSearchButton ? 1 : 0)
-                .animation(.spring, value: showSearchButton)
-            }
-        }
-        .searchable(text: $query, isPresented: $isSearching)
-        .disableAutocorrection(true)
-        .onChange(of: isSearching) { _, value in
-            guard !value else {
-                return
-            }
-
-            if case .playlist = navigator.category {
-                NotificationCenter.default.post(name: .startSearchingNotication, object: "")
-            }
-        }
-        .onChange(of: isGoingToSearch) { _, value in
-            guard value else {
-                return
-            }
-
-            isSearching = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                isGoingToSearch = false
-            }
-        }
-        .task(id: query) {
-            guard isSearching else {
-                return
-            }
-
-            // For playlists, search is handled by MediaListView internally
-            if case .playlist = navigator.category {
-                NotificationCenter.default.post(name: .startSearchingNotication, object: query.isEmpty ? "" : query)
-            }
-            // For database views, search will be handled by SwiftUI's searchable with filtered views
-        }
-        #elseif os(macOS)
-        .safeAreaInset(edge: .top, spacing: 7.5) {
-            Group {
-                HeaderView(destination: destination, isSearching: $isSearching, searchQuery: $searchQuery)
-                    .offset(y: showHeader ? 0 : -(50 + 7.5 + 1))
-            }
-            .frame(height: 50 + 7.5 + 1)
-        }
-        .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
-        #endif
-        .animation(.spring, value: showHeader)
-    }
-
-    private func resetHideHeaderTimer(offset: CGFloat) {
-        hideHeaderTask?.cancel()
-        guard showHeader, !isSearching, offset > 0 else {
-            return
-        }
-
-        hideHeaderTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, showHeader, !isSearching, offset > 0 else {
-                return
-            }
-
-            showHeader = false
         }
     }
 
-    private func resetHideHeaderTimer() {
-        resetHideHeaderTimer(offset: offset)
-    }
-
-    private func scrollToCurrent(animate: Bool = true) throws {
-        guard let scrollView, let song = mpd.status.song else {
+    private func scrollToCurrent(proxy: ScrollViewProxy, animate: Bool = true) throws {
+        guard let song = mpd.status.song else {
             throw ViewError.missingData
         }
 
-        var index: Int?
+        var id: AnyHashable?
         switch destination {
         case .albums:
             guard let albums = mpd.database.media as? [Album] else {
                 throw ViewError.missingData
             }
-            index = albums.firstIndex(where: { $0 == song.album })
+            id = albums.first(where: { $0 == song.album })?.id
         case .artists:
             guard let artists = mpd.database.media as? [Artist] else {
                 throw ViewError.missingData
             }
-            index = artists.firstIndex(where: { $0.name == song.artist })
+
+            id = artists.first(where: { $0.name == song.artist })?.id
         case .songs:
             guard let songs = mpd.database.media as? [Song] else {
                 throw ViewError.missingData
             }
-            index = songs.firstIndex(where: { $0.url == song.url })
+
+            id = songs.first(where: { $0.url == song.url })?.id
         case .playlist:
             break
         #if os(iOS)
@@ -337,46 +297,17 @@ struct CategoryView: View {
         #endif
         }
 
-        guard let index else {
+        guard let id else {
             throw ViewError.missingData
         }
 
-        #if os(macOS)
-            guard let tableView = scrollView.documentView as? NSTableView else {
-                throw ViewError.missingData
-            }
-
-            tableView.layoutSubtreeIfNeeded()
-            scrollView.layoutSubtreeIfNeeded()
-
-            DispatchQueue.main.async {
-                let rect = tableView.frameOfCell(atColumn: 0, row: index)
-                let y = rect.midY - (scrollView.frame.height / 2)
-                let center = NSPoint(x: 0, y: max(0, y))
-
-                if animate {
-                    scrollView.contentView.animator().setBoundsOrigin(center)
-                } else {
-                    scrollView.contentView.setBoundsOrigin(center)
-                }
-            }
-        #elseif os(iOS)
-            let rowSpacing: CGFloat = 15
-            let baseRowHeight: CGFloat = switch destination {
-            case .albums, .artists: 50
-            case .songs, .playlist: 31.5
-            default: 31.5
-            }
-            let rowHeight = baseRowHeight + rowSpacing
-
-            let rowMidY = (CGFloat(index) * rowHeight) + (rowHeight / 2)
-            let visibleHeight = scrollView.frame.height
-            let centeredOffset = rowMidY - (visibleHeight / 2)
-
-            scrollView.setContentOffset(
-                CGPoint(x: 0, y: max(0, centeredOffset)),
-                animated: animate,
-            )
-        #endif
+        if animate {
+            // TODO: Animations are very buggy at the moment.
+            // withAnimation {
+            proxy.scrollTo(id, anchor: .center)
+            // }
+        } else {
+            proxy.scrollTo(id, anchor: .center)
+        }
     }
 }

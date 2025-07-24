@@ -6,7 +6,6 @@
 //
 
 import ButtonKit
-
 import Noise
 import SFSafeSymbols
 import SwiftUI
@@ -18,6 +17,8 @@ struct DetailView: View {
 
     #if os(iOS)
         @Binding var isPopupOpen: Bool
+    #elseif os(macOS)
+        @Binding var showQueuePanel: Bool
     #endif
 
     #if os(macOS)
@@ -113,7 +114,7 @@ struct DetailView: View {
                     .monochrome()
                     // TODO: Doesn't really work on dark mode.
                     .blendMode(colorScheme == .dark ? .darken : .softLight)
-                    .opacity(0.3)
+                    .opacity(colorScheme == .dark ? 0.1 : 0.3)
 
                 ArtworkView(image: artwork)
                     .overlay(
@@ -193,6 +194,19 @@ struct DetailView: View {
                     .padding(.horizontal, 30)
                     .offset(y: -60)
                 #endif
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Spacer()
+
+                Button(action: {
+                    withAnimation(.spring) {
+                        showQueuePanel.toggle()
+                    }
+                }) {
+                    Image(systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList)
+                }
             }
         }
         .task(id: mpd.status.song) {

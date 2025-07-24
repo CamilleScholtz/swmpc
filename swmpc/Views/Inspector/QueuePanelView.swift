@@ -31,14 +31,12 @@ struct QueuePanelView: View {
                 QueueView()
             }
         }
-        .safeAreaInset(edge: .top, spacing: 7.5) {
-            HStack {
-                Text("Queue")
-                    .font(.headline)
-
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Spacer()
                 Spacer()
 
-                HStack(spacing: 4) {
+                if showQueuePanel {
                     if mpd.queue.songs.isEmpty, isIntelligenceEnabled {
                         Button(action: {
                             NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
@@ -52,7 +50,7 @@ struct QueuePanelView: View {
                         .styledButton()
                     } else if !mpd.queue.songs.isEmpty {
                         Button(action: {
-                            showClearQueueAlert = true
+                            // showClearQueueAlert = true
                         }) {
                             Image(systemSymbol: .trash)
                                 .frame(width: 22, height: 22)
@@ -63,33 +61,8 @@ struct QueuePanelView: View {
                         .styledButton()
                         .keyboardShortcut(.delete, modifiers: [.shift, .command])
                     }
-
-                    Button(role: .cancel, action: {
-                        withAnimation(.spring) {
-                            showQueuePanel = false
-                        }
-                    }) {
-                        Image(systemSymbol: .xmarkCircleFill)
-                            .frame(width: 22, height: 22)
-                            .foregroundColor(.primary)
-                            .padding(4)
-                            .contentShape(Circle())
-                    }
-                    .styledButton()
-                    .keyboardShortcut(.cancelAction)
                 }
             }
-            .padding(.leading, 15)
-            .padding(.trailing, 7.5)
-            .frame(height: 50 + 7.5)
-            .background(.background)
-            .overlay(
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-                alignment: .bottom,
-            )
-            .frame(height: 50 + 7.5 + 1)
         }
         .alert("Clear Queue", isPresented: $showClearQueueAlert) {
             Button("Cancel", role: .cancel) {}
@@ -139,6 +112,7 @@ struct QueuePanelView: View {
                 MediaView(using: mpd.queue)
             }
             .listStyle(.plain)
+            .scrollEdgeEffectStyle(.soft, for: .top)
             #if os(iOS)
                 .introspect(.list, on: .iOS(.v26)) { _ in
                     DispatchQueue.main.async {

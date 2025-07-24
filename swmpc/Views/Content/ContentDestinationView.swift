@@ -30,7 +30,6 @@ struct ContentDestinationView: View {
             }
         }
         .contentMargins(.all, 15, for: .scrollContent)
-        .scrollEdgeEffectStyle(.soft, for: .top)
         #if os(iOS)
             .navigationBarBackButtonHidden(true)
             .toolbar {

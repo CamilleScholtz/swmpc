@@ -29,9 +29,11 @@ struct Delegate: App {
     #endif
     let navigator = NavigationManager()
 
-    init() {
-        AppShortcuts.updateAppShortcutParameters()
-    }
+    #if os(macOS)
+        init() {
+            AppShortcuts.updateAppShortcutParameters()
+        }
+    #endif
 
     var body: some Scene {
         WindowGroup {
@@ -44,7 +46,6 @@ struct Delegate: App {
             #endif
         }
         #if os(macOS)
-        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandMenu("Controls") {
                 AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {

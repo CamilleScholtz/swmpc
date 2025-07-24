@@ -90,14 +90,22 @@ struct HeaderView: View {
         }
         .padding(.leading, 15)
         .padding(.trailing, 7.5)
-        .frame(height: 50 + 7.5)
-        .background(.background)
-        .overlay(
-            Rectangle()
-                .frame(height: 1)
-                .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-            alignment: .bottom,
-        )
+        .frame(height: 50)
+        .background {
+            ZStack {
+                LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: Color(.windowBackgroundColor).opacity(0), location: 0),
+
+                        .init(color: Color(.windowBackgroundColor).opacity(0.85), location: 0.6),
+                        .init(color: Color(.windowBackgroundColor).opacity(0.95), location: 1),
+                    ]),
+                    startPoint: .bottom,
+                    endPoint: .top,
+                )
+            }
+            .allowsHitTesting(false)
+        }
         .onChange(of: destination) {
             isSearching = false
             searchQuery = ""

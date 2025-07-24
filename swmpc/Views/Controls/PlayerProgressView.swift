@@ -55,7 +55,7 @@ struct PlayerProgressView: View {
                             Task(priority: .userInitiated) {
                                 try? await ConnectionManager.command().seek(min(max(value.location.x / geometry.size.width, 0), 1) * (mpd.status.song?.duration ?? 100))
                             }
-                        }
+                        },
                 )
                 .onHover { value in
                     isHovering = value

@@ -10,6 +10,7 @@ swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with
 - **Language**: Swift 6.2
 - **UI Framework**: SwiftUI with Observation framework
 - **Build System**: Xcode project (no Package.swift)
+- **Concurrency**: Uses the new Swift 6.2 Approachable Concurrency compile time setting, and the new MainActor as default actor compile time setting.
 
 ## Build Commands
 
@@ -33,8 +34,12 @@ The app follows an MVVM-style architecture using SwiftUI and the Observation fra
   - `ConnectionManager`: Lower level TCP connection to MPD
   - `MPD`: Main MPD client with command methods
   - `StatusManager`: Manages MPD status updates
-  - `LibraryManager`: Manages the media in MPD's database when `source` is set to `.database` , and the queue when `source` is set to `.queue`
-  - `MPD`: Main MPD client interface. This class initalizes `ConnectionManager`, `StatusManager`, and `LibraryManager` for both the database and queue sources.
+  - `LibraryManager`: Manages the media in MPD's database
+  - `QueueManager`: Manages the playback queue
+  - `PlaylistManager`: Manages MPD playlists
+  - `MPD`: Main MPD client interface. This class initalizes `ConnectionManager`, `StatusManager`, `LibraryManager`, `QueueManager`, and `PlaylistManager`.
+
+- **swmpc/Views/**: SwiftUI views organized by feature
 
 - **Platform Differences**: Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code
   - macOS: Menu bar app with NSStatusItem popover

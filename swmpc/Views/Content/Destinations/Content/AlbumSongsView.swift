@@ -160,17 +160,6 @@ struct AlbumSongsView: View {
         #if os(macOS)
         .frame(width: 310)
         #endif
-        .overlay(
-            Rectangle()
-            #if os(iOS)
-                .foregroundColor(Color(.secondarySystemFill))
-            #elseif os(macOS)
-                .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill))
-                .offset(x: -15)
-            #endif
-                .frame(height: 1),
-            alignment: .bottom,
-        )
 
         if let songs {
             Section {

@@ -61,13 +61,12 @@ struct AppView: View {
                         }
                         .tabBarMinimizeBehavior(.onScrollDown)
                         .tabViewBottomAccessory {
-                            HStack {}
+                            DetailMiniView()
                         }
-                        .handleQueueChange()
                     #elseif os(macOS)
                         NavigationSplitView {
                             SidebarView()
-                                .navigationSplitViewColumnWidth(min: 180, ideal: 180, max: .infinity)
+                                .navigationSplitViewColumnWidth(180)
                         } content: {
                             NavigationStack(path: $boundNavigator.path) {
                                 CategoryDestinationView(destination: navigator.category)
@@ -80,10 +79,9 @@ struct AppView: View {
                                 LoadingView(),
                             )
                         } detail: {
-                            DetailView()
+                            DetailView(showQueuePanel: $showQueuePanel)
                                 .padding(60)
                         }
-                        .background(.background)
                         .simultaneousGesture(
                             TapGesture()
                                 .onEnded {
@@ -100,7 +98,6 @@ struct AppView: View {
                             if showQueuePanel {
                                 QueuePanelView(showQueuePanel: $showQueuePanel)
                                     .frame(width: 310)
-                                    .glassEffect(in: .rect())
                                     .overlay(
                                         Rectangle()
                                             .frame(width: 1)
@@ -111,9 +108,6 @@ struct AppView: View {
                                     .transition(.move(edge: .trailing))
                             }
                         }
-//                        .toolbarVisibility(.hidden)
-                        .toolbar {}
-//                        .toolbarBackgroundVisibility(.hidden)
                     #endif
                 }
             }
