@@ -10,7 +10,7 @@ import SwiftUI
 struct ArtworkView: View {
     let image: PlatformImage?
 
-    var animationDuration: Double = 0.2
+    var animationDuration: Double = 0
     var aspectRatioMode: ContentMode = .fit
 
     var body: some View {
@@ -27,10 +27,10 @@ struct ArtworkView: View {
                 #endif
             } else {
                 Rectangle()
-                    .fill(Color(.secondarySystemFill).opacity(0.3))
+                    .fill(Color(.secondarySystemFill).opacity(0.4))
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
             }
         }
-        .animation(.easeInOut(duration: animationDuration), value: image)
+        .animation(animationDuration > 0 ? .easeInOut(duration: animationDuration) : .none, value: image)
     }
 }

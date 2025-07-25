@@ -13,28 +13,32 @@ struct MediaView: View {
     private let source: Source
     private let type: MediaType
     private let searchQuery: String
+    private let sortOption: SortOption?
 
     @State private var loadedSongs: [Song] = []
 
     private let playlistModifiedNotification = NotificationCenter.default
         .publisher(for: .playlistModifiedNotification)
 
-    init(using database: DatabaseManager, searchQuery: String = "") {
+    init(using database: DatabaseManager, searchQuery: String = "", sortOption: SortOption? = nil) {
         source = .database
         type = database.type
         self.searchQuery = searchQuery
+        self.sortOption = sortOption
     }
 
     init(using _: QueueManager, searchQuery: String = "") {
         source = .queue
         type = .song
         self.searchQuery = searchQuery
+        sortOption = nil
     }
 
     init(using playlist: Playlist, searchQuery: String = "") {
         source = playlist.name == "Favorites" ? .favorites : .playlist(playlist)
         type = .song
         self.searchQuery = searchQuery
+        sortOption = nil
     }
 
     private var isMovable: Bool {
@@ -58,11 +62,7 @@ struct MediaView: View {
             mpd.database.media ?? []
         }
 
-        guard !searchQuery.isEmpty else {
-            return baseMedia
-        }
-
-        return baseMedia.filter { mediable in
+        let filteredMedia = searchQuery.isEmpty ? baseMedia : baseMedia.filter { mediable in
             switch mediable {
             case let song as Song:
                 song.artist.range(of: searchQuery, options: .caseInsensitive) != nil ||
@@ -75,6 +75,53 @@ struct MediaView: View {
             default:
                 false
             }
+        }
+
+        // Apply sorting if we have a sort option and we're showing database content
+        guard source == .database, let sortOption else {
+            return filteredMedia
+        }
+
+        return sortedMedia(filteredMedia, by: sortOption)
+    }
+
+    private func sortedMedia(_ media: [any Mediable], by sortOption: SortOption) -> [any Mediable] {
+        media.sorted { lhs, rhs in
+            let comparison: ComparisonResult
+            
+            switch (lhs, rhs) {
+            case let (lhsAlbum as Album, rhsAlbum as Album):
+                comparison = switch sortOption.field {
+                case .title:
+                    lhsAlbum.title.localizedStandardCompare(rhsAlbum.title)
+                case .artist:
+                    lhsAlbum.artist.name.localizedStandardCompare(rhsAlbum.artist.name)
+                default:
+                    .orderedSame
+                }
+            
+            case let (lhsArtist as Artist, rhsArtist as Artist):
+                comparison = lhsArtist.name.localizedStandardCompare(rhsArtist.name)
+            
+            case let (lhsSong as Song, rhsSong as Song):
+                comparison = switch sortOption.field {
+                case .title:
+                    lhsSong.title.localizedStandardCompare(rhsSong.title)
+                case .artist:
+                    lhsSong.artist.localizedStandardCompare(rhsSong.artist)
+                case .album:
+                    lhsSong.album.title.localizedStandardCompare(rhsSong.album.title)
+                default:
+                    .orderedSame
+                }
+            
+            default:
+                comparison = .orderedSame
+            }
+            
+            return sortOption.direction == .ascending
+                ? comparison == .orderedAscending
+                : comparison == .orderedDescending
         }
     }
 

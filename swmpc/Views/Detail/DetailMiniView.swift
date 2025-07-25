@@ -30,7 +30,7 @@ struct DetailMiniView: View {
 
     var body: some View {
         HStack {
-            ArtworkView(image: artwork)
+            ArtworkView(image: artwork, animationDuration: 0.2)
 //                .frame(width: 50, height: 50)
                 .cornerRadius(4)
 

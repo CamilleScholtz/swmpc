@@ -104,11 +104,11 @@ struct AppView: View {
                                     .frame(width: 310)
                                     .overlay(
                                         Rectangle()
+                                            .ignoresSafeArea(.container, edges: .top)
                                             .frame(width: 1)
                                             .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
                                         alignment: .leading,
                                     )
-                                    .ignoresSafeArea(.container, edges: .top)
                                     .transition(.move(edge: .trailing))
                             }
                         }

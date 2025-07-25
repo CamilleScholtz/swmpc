@@ -7,7 +7,6 @@
 
 import ButtonKit
 import SwiftUI
-import SwiftUIIntrospect
 
 struct QueuePanelView: View {
     @Environment(MPD.self) private var mpd
@@ -66,85 +65,34 @@ struct QueuePanelView: View {
             mpd.queue.songs
         }
 
-        #if os(iOS)
-            @State private var scrollView: UIScrollView?
-        #elseif os(macOS)
-            @State private var scrollView: NSScrollView?
-        #endif
+        @State private var scrollProxy: ScrollViewProxy?
 
         var body: some View {
-            List {
+            ListView(rowHeight: 31.5 + 15) { proxy in
                 MediaView(using: mpd.queue)
+                    .onAppear {
+                        scrollProxy = proxy
+                        Task {
+                            try? await scrollToCurrent(proxy: proxy, animate: false)
+                        }
+                    }
             }
-            .listStyle(.plain)
-            .scrollEdgeEffectStyle(.soft, for: .top)
-            #if os(iOS)
-                .introspect(.list, on: .iOS(.v26)) { _ in
-                    DispatchQueue.main.async {
-                        // scrollView = collectionView.enclosingScrollView
-                    }
-                }
-            #elseif os(macOS)
-                .introspect(.list, on: .macOS(.v26)) { tableView in
-                    DispatchQueue.main.async {
-                        scrollView = tableView.enclosingScrollView
-                    }
-                }
-            #endif
-                .safeAreaPadding(.bottom, 7.5)
-                .contentMargins(.vertical, -7.5, for: .scrollIndicators)
-                .onChange(of: scrollView) {
-                    try? scrollToCurrent(animate: false)
-                }
-                .environment(\.defaultMinListRowHeight, min(31.5 + 15, 50))
         }
 
-        private func scrollToCurrent(animate: Bool = true) throws {
-            guard let scrollView,
-                  let song = mpd.status.song,
-                  let index = mpd.queue.songs.firstIndex(where: {
-                      $0.url == song.url
-                  })
-            else {
+        private func scrollToCurrent(proxy: ScrollViewProxy, animate: Bool = true) async throws {
+            guard let currentSong = mpd.status.song else {
                 throw ViewError.missingData
             }
 
-            #if os(iOS)
-            //                let rowSpacing: CGFloat = 15
-            //                let baseRowHeight: CGFloat = switch destination {
-            //                case .albums, .artists: 50
-            //                case .songs, .playlist, _: 31.5
-            //                }
-            //                let rowHeight = baseRowHeight + rowSpacing
-            //
-            //                let rowMidY = (CGFloat(currentIndex) * rowHeight) + (rowHeight / 2)
-            //                let visibleHeight = scrollView.frame.height
-            //                let centeredOffset = rowMidY - (visibleHeight / 2)
-            //
-            //                scrollView.setContentOffset(
-            //                    CGPoint(x: 0, y: max(0, centeredOffset)),
-            //                    animated: animate
-            //                )
-            #elseif os(macOS)
-                guard let tableView = scrollView.documentView as? NSTableView else {
-                    throw ViewError.missingData
-                }
+            guard let id = mpd.queue.songs.first(where: { $0.url == currentSong.url })?.id else {
+                throw ViewError.missingData
+            }
 
-                tableView.layoutSubtreeIfNeeded()
-                scrollView.layoutSubtreeIfNeeded()
-
-                DispatchQueue.main.async {
-                    let rect = tableView.frameOfCell(atColumn: 0, row: index)
-                    let y = rect.midY - (scrollView.frame.height / 2)
-                    let center = NSPoint(x: 0, y: max(0, y))
-
-                    if animate {
-                        scrollView.contentView.animator().setBoundsOrigin(center)
-                    } else {
-                        scrollView.contentView.setBoundsOrigin(center)
-                    }
-                }
-            #endif
+            if animate {
+                proxy.scrollTo(id, anchor: .center)
+            } else {
+                proxy.scrollTo(id, anchor: .center)
+            }
         }
     }
 }

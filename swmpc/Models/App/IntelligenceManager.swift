@@ -5,7 +5,6 @@
 //  Created by Camille Scholtz on 04/03/2025.
 //
 
-import KeychainStorageKit
 import OpenAI
 import SwiftUI
 
@@ -144,8 +143,8 @@ actor IntelligenceManager {
             throw IntelligenceManagerError.intelligenceDisabled
         }
 
-        @KeychainStorage(model.setting) var token: String?
-        guard let token, !token.isEmpty else {
+        @AppStorage(model.setting) var token = ""
+        guard !token.isEmpty else {
             throw IntelligenceManagerError.missingToken
         }
 

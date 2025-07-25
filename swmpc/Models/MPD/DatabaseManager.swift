@@ -43,7 +43,8 @@ import SwiftUI
 
     /// Fetches the media from the MPD server.
     ///
-    /// - Parameter idle: Whether to use the idle connection.
+    /// - Parameters:
+    ///   - idle: Whether to use the idle connection.
     /// - Returns: The media from the MPD server.
     private func fetchMedia(idle: Bool) async throws -> [any Mediable]? {
         switch type {
@@ -60,10 +61,7 @@ import SwiftUI
                 let artistDict = Dictionary(grouping: fetchedAlbums.compactMap(\.artist), by: {
                     $0.name
                 })
-                let artists = artistDict.values.compactMap(\.first).sorted {
-                    $0.name < $1.name
-                }
-                return artists
+                return artistDict.values.compactMap(\.first)
             } else {
                 return nil
             }

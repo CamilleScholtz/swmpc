@@ -74,6 +74,22 @@ struct CategoryView: View {
 
     let destination: CategoryDestination
 
+    @AppStorage(Setting.albumSortOption) private var albumSortOptionRaw = ""
+    @AppStorage(Setting.artistSortOption) private var artistSortOptionRaw = ""
+    @AppStorage(Setting.songSortOption) private var songSortOptionRaw = ""
+
+    private var albumSortOption: SortOption {
+        SortOption(rawValue: albumSortOptionRaw) ?? MediaType.album.defaultSortOption
+    }
+
+    private var artistSortOption: SortOption {
+        SortOption(rawValue: artistSortOptionRaw) ?? MediaType.artist.defaultSortOption
+    }
+
+    private var songSortOption: SortOption {
+        SortOption(rawValue: songSortOptionRaw) ?? MediaType.song.defaultSortOption
+    }
+
     #if os(macOS)
         private var rowHeight: CGFloat {
             switch destination {
@@ -96,130 +112,216 @@ struct CategoryView: View {
         @State private var isGoingToSearch = false
     #endif
 
-    private let scrollToCurrentNotification = NotificationCenter.default
-        .publisher(for: .scrollToCurrentNotification)
     private let startSearchingNotication = NotificationCenter.default
         .publisher(for: .startSearchingNotication)
 
+    private let scrollToCurrentNotification = NotificationCenter.default
+        .publisher(for: .scrollToCurrentNotification)
+
+    @State private var scrollProxy: ScrollViewProxy?
+
     var body: some View {
-        ScrollViewReader { proxy in
-            List {
+        ListView(rowHeight: rowHeight) { proxy in
+            Group {
                 if case let .playlist(playlist) = destination {
                     MediaView(using: playlist, searchQuery: searchQuery)
                 } else {
-                    MediaView(using: mpd.database, searchQuery: searchQuery)
-                }
-            }
-            .id(destination)
-            .listStyle(.plain)
-            .task(id: destination) {
-                switch destination {
-                case .albums:
-                    try? await mpd.database.set(type: .album, idle: false)
-                case .artists:
-                    try? await mpd.database.set(type: .artist, idle: false)
-                case .songs:
-                    try? await mpd.database.set(type: .song, idle: false)
-                default:
-                    break
-                }
-            }
-            .scrollEdgeEffectStyle(.soft, for: .top)
-            .safeAreaPadding(.bottom, 7.5)
-            .contentMargins(.bottom, -7.5, for: .scrollIndicators)
-            .toolbar(removing: .title)
-            .toolbar {
-                if !isSearchFieldExpanded {
-                    ToolbarItem {
-                        Text(destination.label)
-                            .font(.system(size: 15))
-                            .fontWeight(.semibold)
-                            .padding(.leading, 12)
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-
-                    ToolbarSpacer(.flexible)
-
-                    ToolbarItem {
-                        Button {
-                            try? scrollToCurrent(proxy: proxy, animate: true)
-                        } label: {
-                            Image(systemSymbol: .location)
-                        }
-                        .disabled(mpd.status.song == nil)
-                    }
-                } else {
-                    ToolbarItem {
-                        TextField("Search", text: $searchQuery)
-                            .frame(width: 256)
-                            .autocorrectionDisabled()
-                    }
-                }
-
-                ToolbarItem {
-                    Button {
-                        withAnimation(.spring) {
-                            isSearchFieldExpanded.toggle()
-                            isSearching.toggle()
-                            isSearchFieldFocused.toggle()
-                        }
-                    } label: {
-                        Image(systemSymbol: .magnifyingglass)
-                    }
-                }
-            }
-            .onReceive(scrollToCurrentNotification) { notification in
-                try? scrollToCurrent(proxy: proxy, animate: notification.object as? Bool ?? true)
-            }
-            .onReceive(startSearchingNotication) { _ in
-                isSearching = true
-            }
-            .onChange(of: destination) { _, value in
-                switch value {
-                case .albums, .artists, .songs:
-                    mpd.state.isLoading = true
-                case let .playlist(playlist):
-                    mpd.state.isLoading = true
-
-                    if playlist.name == "Favorites" {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            mpd.state.isLoading = false
-                        }
-                    }
-                #if os(iOS)
+                    let sortOption: SortOption = switch destination {
+                    case .albums:
+                        albumSortOption
+                    case .artists:
+                        artistSortOption
+                    case .songs:
+                        songSortOption
                     default:
-                        return;
-                #endif
+                        mpd.database.type.defaultSortOption
+                    }
+                    MediaView(using: mpd.database, searchQuery: searchQuery, sortOption: sortOption)
                 }
+            }
+            .onAppear {
+                scrollProxy = proxy
+            }
+        }
+        .id(destination)
+        .task(id: destination) {
+            switch destination {
+            case .albums:
+                try? await mpd.database.set(type: .album, idle: false)
+            case .artists:
+                try? await mpd.database.set(type: .artist, idle: false)
+            case .songs:
+                try? await mpd.database.set(type: .song, idle: false)
+            default:
+                break
+            }
+        }
+        .toolbar(removing: .title)
+        .toolbar {
+            // TODO: I want to use DefaultToolbarItem, but that seems to be broken.
+            // See: https://github.com/feedback-assistant/reports/issues/696
+            ToolbarItem {
+                Text(destination.label)
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+                    .padding(.leading, 12)
+            }
+            .sharedBackgroundVisibility(.hidden)
+            .hidden(isSearchFieldExpanded)
 
-                Task {
-                    while true {
-                        try? await Task.sleep(for: .seconds(0.1))
+            ToolbarSpacer(.flexible)
+                .hidden(isSearchFieldExpanded)
 
-                        if mpd.database.media != nil {
-                            try? scrollToCurrent(proxy: proxy, animate: false)
-                            break
+            ToolbarItem {
+                TextField("Search", text: $searchQuery)
+                    .frame(width: 244)
+                    .autocorrectionDisabled()
+            }
+            .hidden(!isSearchFieldExpanded)
+
+            ToolbarItem {
+                Button {
+                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
+                } label: {
+                    Image(systemSymbol: .dotViewfinder)
+                }
+                .disabled(mpd.status.song == nil)
+            }
+            .hidden(isSearchFieldExpanded)
+
+            ToolbarSpacer(.fixed)
+
+            ToolbarItem {
+                Menu {
+                    switch destination {
+                    case .albums:
+                        ForEach(MediaType.album.availableSortFields, id: \.self) { field in
+                            ForEach(SortDirection.allCases, id: \.self) { direction in
+                                let option = SortOption(field: field, direction: direction)
+                                Button {
+                                    albumSortOptionRaw = option.rawValue
+                                } label: {
+                                    HStack {
+                                        Text(option.label)
+                                        if albumSortOption == option {
+                                            Spacer()
+                                            Image(systemSymbol: .checkmark)
+                                        }
+                                    }
+                                }
+                            }
                         }
+                    case .artists:
+                        ForEach(MediaType.artist.availableSortFields, id: \.self) { field in
+                            ForEach(SortDirection.allCases, id: \.self) { direction in
+                                let option = SortOption(field: field, direction: direction)
+                                Button {
+                                    artistSortOptionRaw = option.rawValue
+                                } label: {
+                                    HStack {
+                                        Text(option.label)
+                                        if artistSortOption == option {
+                                            Spacer()
+                                            Image(systemSymbol: .checkmark)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    case .songs:
+                        ForEach(MediaType.song.availableSortFields, id: \.self) { field in
+                            ForEach(SortDirection.allCases, id: \.self) { direction in
+                                let option = SortOption(field: field, direction: direction)
+                                Button {
+                                    songSortOptionRaw = option.rawValue
+                                } label: {
+                                    HStack {
+                                        Text(option.label)
+                                        if songSortOption == option {
+                                            Spacer()
+                                            Image(systemSymbol: .checkmark)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    default:
+                        EmptyView()
+                    }
+                } label: {
+                    Image(systemSymbol: .line3HorizontalDecrease)
+                }
+                .disabled(destination == .playlist(Playlist(name: "")))
+            }
+            .hidden(isSearchFieldExpanded)
+
+            ToolbarItem {
+                Button {
+                    withAnimation(.spring) {
+                        isSearchFieldExpanded.toggle()
+                        isSearching.toggle()
+                        isSearchFieldFocused.toggle()
+                    }
+                } label: {
+                    Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
+                }
+            }
+        }
+        .onReceive(scrollToCurrentNotification) { notification in
+            guard let scrollProxy else { return }
+            Task {
+                try? await scrollToCurrent(proxy: scrollProxy, animate: notification.object as? Bool ?? true)
+            }
+        }
+        .onReceive(startSearchingNotication) { _ in
+            isSearching = true
+        }
+        .onChange(of: destination) { _, value in
+            switch value {
+            case .albums, .artists, .songs:
+                mpd.state.isLoading = true
+            case let .playlist(playlist):
+                mpd.state.isLoading = true
+
+                if playlist.name == "Favorites" {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        mpd.state.isLoading = false
+                    }
+                }
+            #if os(iOS)
+                default:
+                    return;
+            #endif
+            }
+
+            Task {
+                while true {
+                    try? await Task.sleep(for: .seconds(0.1))
+
+                    if mpd.database.media != nil {
+                        NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+                        break
                     }
                 }
             }
-            .onChange(of: isSearching) { _, value in
-                if value {
-                } else {
-                    searchQuery = ""
-                    #if os(macOS)
-                        isSearchFieldExpanded = false
-                        isSearchFieldFocused = false
-                    #endif
-                }
+        }
+        .onChange(of: isSearching) { _, value in
+            if value {
+            } else {
+                searchQuery = ""
+                #if os(macOS)
+                    isSearchFieldExpanded = false
+                    isSearchFieldFocused = false
+                #endif
             }
-            .onChange(of: searchQuery) { _, value in
-                guard value.isEmpty else {
-                    return
-                }
+        }
+        .onChange(of: searchQuery) { _, value in
+            guard value.isEmpty else {
+                return
+            }
 
-                try? scrollToCurrent(proxy: proxy, animate: false)
-            }
+            NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+        }
 //        .searchable(text: $query, isPresented: $isSearching)
 //        .disableAutocorrection(true)
 //        .onChange(of: isSearching) { _, value in
@@ -251,33 +353,10 @@ struct CategoryView: View {
 //                NotificationCenter.default.post(name: .startSearchingNotication, object: query.isEmpty ? "" : query)
 //            }
 //            // For database views, search will be handled by SwiftUI's searchable with filtered views
-            // }
-            #if os(macOS)
-            .environment(\.defaultMinListRowHeight, min(rowHeight, 50))
-//        .onKeyPress(.keyboardShortcut(.init("f", modifiers: .command))) {
-//            withAnimation(.spring(duration: 0.3)) {
-//                isSearchFieldExpanded = true
-//                isSearching = true
-//                isSearchFieldFocused = true
-//            }
-//            return .handled
-//        }
-//        .onKeyPress(.escape) {
-//            if isSearchFieldExpanded {
-//                withAnimation(.spring(duration: 0.3)) {
-//                    isSearchFieldExpanded = false
-//                    isSearching = false
-//                    searchQuery = ""
-//                }
-//                return .handled
-//            }
-//            return .ignored
-//        }
-            #endif
-        }
+        // }
     }
 
-    private func scrollToCurrent(proxy: ScrollViewProxy, animate: Bool = true) throws {
+    private func scrollToCurrent(proxy: ScrollViewProxy, animate: Bool = true) async throws {
         guard let song = mpd.status.song else {
             throw ViewError.missingData
         }

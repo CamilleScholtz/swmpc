@@ -32,7 +32,7 @@ struct PauseView: View {
             }
             .animation(.interactiveSpring(duration: animationDuration, extraBounce: 0.3), value: mpd.status.isPlaying)
             .frame(width: size * 2.5, height: size * 2.5)
-            .glassEffect(.clear.interactive())
+            .glassEffect(.regular)
             .contentShape(Circle())
         }
         .styledButton(hoverScale: 1.13)

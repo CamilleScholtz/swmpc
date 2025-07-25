@@ -21,7 +21,7 @@ struct RepeatView: View {
 
                 Circle()
                     .fill(Color(.accent))
-                    .frame(width: 3.5, height: 3.5)
+                    .frame(width: 4, height: 4)
                     .offset(y: 12)
                     .opacity(mpd.status.isRepeat ?? false ? 1 : 0)
             }

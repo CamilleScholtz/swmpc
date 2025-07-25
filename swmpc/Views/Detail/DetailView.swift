@@ -16,7 +16,7 @@ struct DetailView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
-    
+
     #if os(iOS)
         @Binding var isPopupOpen: Bool
     #elseif os(macOS)
@@ -118,7 +118,7 @@ struct DetailView: View {
                     .blendMode(colorScheme == .dark ? .darken : .softLight)
                     .opacity(colorScheme == .dark ? 0.1 : 0.3)
 
-                ArtworkView(image: artwork)
+                ArtworkView(image: artwork, animationDuration: 0.2)
                     .overlay(
                         RoundedRectangle(cornerRadius: 30)
                             .fill(.clear)
@@ -201,39 +201,37 @@ struct DetailView: View {
         .toolbar {
             ToolbarSpacer(.flexible)
 
-            if showQueuePanel {
-                ToolbarItem {
-                    Text("Queue")
-                        .font(.system(size: 15))
-                        .fontWeight(.semibold)
-                        .offset(x: -140)
-                }
-                .sharedBackgroundVisibility(.hidden)
-                
-                if !mpd.queue.songs.isEmpty {
-                    ToolbarItem {
-                        Button(action: {
-                            // showClearQueueAlert = true
-                        }) {
-                            Image(systemSymbol: .trash)
-                        }
-                        .keyboardShortcut(.delete, modifiers: [.shift, .command])
-                    }
-                } else {
-                    if isIntelligenceEnabled {
-                        ToolbarItem {
-                            Button(action: {
-                                NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
-                            }) {
-                                Image(systemSymbol: .sparkles)
-                            }
-                        }
-                    }
-                }
-                
-                ToolbarSpacer(.fixed)
+            ToolbarItem {
+                Text("Queue")
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
+                    .offset(x: -140)
             }
-            
+            .sharedBackgroundVisibility(.hidden)
+            .hidden(!showQueuePanel)
+
+            ToolbarItem {
+                Button(action: {
+                    // showClearQueueAlert = true
+                }) {
+                    Image(systemSymbol: .trash)
+                }
+                .keyboardShortcut(.delete, modifiers: [.shift, .command])
+            }
+            .hidden(!showQueuePanel && !mpd.queue.songs.isEmpty)
+
+            ToolbarItem {
+                Button(action: {
+                    NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                }) {
+                    Image(systemSymbol: .sparkles)
+                }
+            }
+            .hidden(!showQueuePanel || isIntelligenceEnabled || mpd.queue.songs.isEmpty)
+
+            ToolbarSpacer(.fixed)
+                .hidden(!showQueuePanel)
+
             ToolbarItem {
                 Button(action: {
                     withAnimation(.spring) {

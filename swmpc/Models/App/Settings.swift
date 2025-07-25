@@ -25,4 +25,8 @@ enum Setting {
     static let artworkGetter = "artwork_getter"
 
     static let runAsAgent = "run_as_agent"
+
+    static let albumSortOption = "album_sort_option"
+    static let artistSortOption = "artist_sort_option"
+    static let songSortOption = "song_sort_option"
 }

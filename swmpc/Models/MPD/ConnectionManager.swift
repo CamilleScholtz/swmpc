@@ -6,7 +6,6 @@
 //
 
 import DequeModule
-import KeychainStorageKit
 import Network
 import SwiftUI
 
@@ -102,7 +101,7 @@ struct ConnectionSettings {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
 
-    @KeychainStorage(Setting.password) var password: String?
+    @AppStorage(Setting.port) var password = ""
 
     @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
@@ -255,11 +254,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// This function checks if a password is set and sends it to the server for
     /// authentication. If no password is set, the function returns immediately.
     func ensureAuthenticated() async throws {
-        guard let password = await ConnectionSettings.shared.password else {
+        guard await ConnectionSettings.shared.password.isEmpty else {
             return
         }
 
-        _ = try await run(["password", password])
+        _ = try await run(["password", ConnectionSettings.shared.password])
     }
 
     /// Sends a ping command to the server.
