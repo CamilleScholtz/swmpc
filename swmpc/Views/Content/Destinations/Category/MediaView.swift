@@ -13,32 +13,33 @@ struct MediaView: View {
     private let source: Source
     private let type: MediaType
     private let searchQuery: String
-    private let sortOption: SortOption?
+    private let sortDescriptor: SortDescriptor
 
     @State private var loadedSongs: [Song] = []
+    @State private var sortedMedia: [any Mediable] = []
 
     private let playlistModifiedNotification = NotificationCenter.default
         .publisher(for: .playlistModifiedNotification)
 
-    init(using database: DatabaseManager, searchQuery: String = "", sortOption: SortOption? = nil) {
+    init(using database: DatabaseManager, searchQuery: String = "", sortDescriptor: SortDescriptor) {
         source = .database
         type = database.type
         self.searchQuery = searchQuery
-        self.sortOption = sortOption
+        self.sortDescriptor = sortDescriptor
     }
 
     init(using _: QueueManager, searchQuery: String = "") {
         source = .queue
         type = .song
         self.searchQuery = searchQuery
-        sortOption = nil
+        sortDescriptor = SortDescriptor(option: .title, direction: .ascending)
     }
 
     init(using playlist: Playlist, searchQuery: String = "") {
         source = playlist.name == "Favorites" ? .favorites : .playlist(playlist)
         type = .song
         self.searchQuery = searchQuery
-        sortOption = nil
+        sortDescriptor = SortDescriptor(option: .title, direction: .ascending)
     }
 
     private var isMovable: Bool {
@@ -50,8 +51,8 @@ struct MediaView: View {
         }
     }
 
-    private var media: [any Mediable] {
-        let baseMedia: [any Mediable] = switch source {
+    private var baseMedia: [any Mediable] {
+        switch source {
         case .queue:
             mpd.queue.songs
         case .playlist:
@@ -61,88 +62,26 @@ struct MediaView: View {
         case .database:
             mpd.database.media ?? []
         }
-
-        let filteredMedia = searchQuery.isEmpty ? baseMedia : baseMedia.filter { mediable in
-            switch mediable {
-            case let song as Song:
-                song.artist.range(of: searchQuery, options: .caseInsensitive) != nil ||
-                    song.title.range(of: searchQuery, options: .caseInsensitive) != nil
-            case let album as Album:
-                album.title.range(of: searchQuery, options: .caseInsensitive) != nil ||
-                    album.artist.name.range(of: searchQuery, options: .caseInsensitive) != nil
-            case let artist as Artist:
-                artist.name.range(of: searchQuery, options: .caseInsensitive) != nil
-            default:
-                false
-            }
-        }
-
-        // Apply sorting if we have a sort option and we're showing database content
-        guard source == .database, let sortOption else {
-            return filteredMedia
-        }
-
-        return sortedMedia(filteredMedia, by: sortOption)
-    }
-
-    private func sortedMedia(_ media: [any Mediable], by sortOption: SortOption) -> [any Mediable] {
-        media.sorted { lhs, rhs in
-            let comparison: ComparisonResult
-            
-            switch (lhs, rhs) {
-            case let (lhsAlbum as Album, rhsAlbum as Album):
-                comparison = switch sortOption.field {
-                case .title:
-                    lhsAlbum.title.localizedStandardCompare(rhsAlbum.title)
-                case .artist:
-                    lhsAlbum.artist.name.localizedStandardCompare(rhsAlbum.artist.name)
-                default:
-                    .orderedSame
-                }
-            
-            case let (lhsArtist as Artist, rhsArtist as Artist):
-                comparison = lhsArtist.name.localizedStandardCompare(rhsArtist.name)
-            
-            case let (lhsSong as Song, rhsSong as Song):
-                comparison = switch sortOption.field {
-                case .title:
-                    lhsSong.title.localizedStandardCompare(rhsSong.title)
-                case .artist:
-                    lhsSong.artist.localizedStandardCompare(rhsSong.artist)
-                case .album:
-                    lhsSong.album.title.localizedStandardCompare(rhsSong.album.title)
-                default:
-                    .orderedSame
-                }
-            
-            default:
-                comparison = .orderedSame
-            }
-            
-            return sortOption.direction == .ascending
-                ? comparison == .orderedAscending
-                : comparison == .orderedDescending
-        }
     }
 
     var body: some View {
         Group {
-            if media.isEmpty {
+            if sortedMedia.isEmpty {
                 VStack {
                     Text("No content")
                         .font(.headline)
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if isMovable, let songs = media as? [Song] {
+            } else if isMovable, let songs = sortedMedia as? [Song] {
                 ForEach(songs) { song in
                     SongView(for: song, source: source)
                 }
                 .onMove { from, to in
                     Task {
                         guard let index = from.first,
-                              index < media.count,
-                              let song = media[index] as? Song
+                              index < sortedMedia.count,
+                              let song = sortedMedia[index] as? Song
                         else {
                             return
                         }
@@ -160,15 +99,15 @@ struct MediaView: View {
             } else {
                 switch type {
                 case .album:
-                    ForEach(media.compactMap { $0 as? Album }) { album in
+                    ForEach(sortedMedia.compactMap { $0 as? Album }) { album in
                         AlbumView(for: album)
                     }
                 case .artist:
-                    ForEach(media.compactMap { $0 as? Artist }) { artist in
+                    ForEach(sortedMedia.compactMap { $0 as? Artist }) { artist in
                         ArtistView(for: artist)
                     }
                 case .song:
-                    ForEach(media.compactMap { $0 as? Song }) { song in
+                    ForEach(sortedMedia.compactMap { $0 as? Song }) { song in
                         SongView(for: song, source: source)
                     }
                 default:
@@ -201,6 +140,27 @@ struct MediaView: View {
                 if case let .playlist(playlist) = source {
                     loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
                 }
+            }
+            .task(id: baseMedia.count) {
+                sortedMedia = await SortingManager.sorted(
+                    baseMedia,
+                    by: sortDescriptor,
+                    searchQuery: searchQuery,
+                )
+            }
+            .task(id: searchQuery) {
+                sortedMedia = await SortingManager.sorted(
+                    baseMedia,
+                    by: sortDescriptor,
+                    searchQuery: searchQuery,
+                )
+            }
+            .task(id: sortDescriptor) {
+                sortedMedia = await SortingManager.sorted(
+                    baseMedia,
+                    by: sortDescriptor,
+                    searchQuery: searchQuery,
+                )
             }
     }
 }

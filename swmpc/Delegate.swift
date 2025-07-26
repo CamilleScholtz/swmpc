@@ -48,24 +48,24 @@ struct Delegate: App {
         #if os(macOS)
         .commands {
             CommandMenu("Controls") {
-                AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
+                AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play", systemImage: appDelegate.mpd.status.isPlaying == true ? "pause.fill" : "play.fill") {
                     try await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
                 }
                 .keyboardShortcut(.space)
 
-                AsyncButton("Next Song") {
+                AsyncButton("Next Song", systemImage: "forward.fill") {
                     try await ConnectionManager.command().next()
                 }
                 .keyboardShortcut(.downArrow, modifiers: [.command])
 
-                AsyncButton("Previous Song") {
+                AsyncButton("Previous Song", systemImage: "backward.fill") {
                     try await ConnectionManager.command().previous()
                 }
                 .keyboardShortcut(.upArrow, modifiers: [.command])
 
                 Divider()
 
-                AsyncButton("Add Current Song to Favorites") {
+                AsyncButton("Add Current Song to Favorites", systemImage: "heart.fill") {
                     guard let song = appDelegate.mpd.status.song else {
                         return
                     }
@@ -80,38 +80,38 @@ struct Delegate: App {
                 }
                 .keyboardShortcut("l", modifiers: [.command, .option])
 
-                Button("Go to Current Song") {
+                Button("Go to Current Song", systemSymbol: .dotViewfinder) {
                     NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
                 }
                 .keyboardShortcut("l", modifiers: [.command])
 
-                Button("Search Library") {
+                Button("Search Library", systemSymbol: .magnifyingglass) {
                     NotificationCenter.default.post(name: .startSearchingNotication, object: nil)
                 }
                 .keyboardShortcut("f", modifiers: [.command])
 
                 Divider()
 
-                AsyncButton("Toggle Repeat") {
+                AsyncButton("Toggle Repeat", systemImage: "repeat") {
                     try await ConnectionManager.command().repeat(!(appDelegate.mpd.status.isRepeat ?? false))
                 }
                 .keyboardShortcut("r", modifiers: [.command])
 
-                AsyncButton("Toggle Shuffle") {
+                AsyncButton("Toggle Shuffle", systemImage: "shuffle") {
                     try await ConnectionManager.command().random(!(appDelegate.mpd.status.isRandom ?? false))
                 }
                 .keyboardShortcut("s", modifiers: [.command])
 
                 Divider()
 
-                AsyncButton("Clear Queue") {
+                AsyncButton("Clear Queue", systemImage: "trash") {
                     try await ConnectionManager.command().clearQueue()
                 }
                 .keyboardShortcut(.delete, modifiers: [.command, .option])
 
                 Divider()
 
-                AsyncButton("Reload Library") {
+                AsyncButton("Reload Library", systemImage: "arrow.clockwise") {
                     try await ConnectionManager.command().update()
                     try await appDelegate.mpd.database.set(force: true)
                 }
@@ -120,7 +120,7 @@ struct Delegate: App {
 
             if let playlists = appDelegate.mpd.playlists.playlists {
                 CommandMenu("Playlists") {
-                    Menu("Load Playlist") {
+                    Menu("Load Playlist", systemImage: "music.note.list") {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
                                 try await ConnectionManager.command().loadPlaylist(playlist)
@@ -199,6 +199,7 @@ struct Delegate: App {
                 keyEquivalent: "",
             )
             playPauseItem.tag = mpd.status.isPlaying == true ? MenuAction.pause.rawValue : MenuAction.play.rawValue
+            playPauseItem.image = NSImage(systemSymbol: mpd.status.isPlaying == true ? .pauseFill : .playFill)
             menu.addItem(playPauseItem)
 
             let nextItem = NSMenuItem(
@@ -207,6 +208,7 @@ struct Delegate: App {
                 keyEquivalent: "",
             )
             nextItem.tag = MenuAction.nextSong.rawValue
+            nextItem.image = NSImage(systemSymbol: .forwardFill)
             menu.addItem(nextItem)
 
             let previousItem = NSMenuItem(
@@ -215,6 +217,7 @@ struct Delegate: App {
                 keyEquivalent: "",
             )
             previousItem.tag = MenuAction.previousSong.rawValue
+            previousItem.image = NSImage(systemSymbol: .backwardFill)
             menu.addItem(previousItem)
 
             menu.addItem(NSMenuItem.separator())
@@ -225,6 +228,7 @@ struct Delegate: App {
                 keyEquivalent: "",
             )
             favoritesItem.tag = MenuAction.addToFavorites.rawValue
+            favoritesItem.image = NSImage(systemSymbol: .heartFill)
             menu.addItem(favoritesItem)
 
             return menu

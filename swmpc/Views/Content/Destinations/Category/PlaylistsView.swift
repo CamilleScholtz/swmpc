@@ -72,14 +72,14 @@ struct PlaylistsView: View {
                         .buttonStyle(.plain)
                         .contextMenu {
                             if playlist.name != "Favorites" {
-                                Button("Rename Playlist") {
+                                Button("Rename Playlist", systemSymbol: .pencil) {
                                     isRenamingPlaylist = true
                                     playlistName = playlist.name
                                     playlistToRename = playlist
                                     isFocused = true
                                 }
 
-                                Button("Delete Playlist") {
+                                Button("Delete Playlist", systemSymbol: .trash) {
                                     playlistToDelete = playlist
                                     showDeleteAlert = true
                                 }

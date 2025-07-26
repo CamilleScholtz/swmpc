@@ -74,21 +74,9 @@ struct CategoryView: View {
 
     let destination: CategoryDestination
 
-    @AppStorage(Setting.albumSortOption) private var albumSortOptionRaw = ""
-    @AppStorage(Setting.artistSortOption) private var artistSortOptionRaw = ""
-    @AppStorage(Setting.songSortOption) private var songSortOptionRaw = ""
-
-    private var albumSortOption: SortOption {
-        SortOption(rawValue: albumSortOptionRaw) ?? MediaType.album.defaultSortOption
-    }
-
-    private var artistSortOption: SortOption {
-        SortOption(rawValue: artistSortOptionRaw) ?? MediaType.artist.defaultSortOption
-    }
-
-    private var songSortOption: SortOption {
-        SortOption(rawValue: songSortOptionRaw) ?? MediaType.song.defaultSortOption
-    }
+    @AppStorage(Setting.albumSortOption) private var albumSort = SortDescriptor(option: .artist, direction: .ascending).rawValue
+    @AppStorage(Setting.artistSortOption) private var artistSort = SortDescriptor(option: .name, direction: .ascending).rawValue
+    @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor(option: .album, direction: .ascending).rawValue
 
     #if os(macOS)
         private var rowHeight: CGFloat {
@@ -126,24 +114,23 @@ struct CategoryView: View {
                 if case let .playlist(playlist) = destination {
                     MediaView(using: playlist, searchQuery: searchQuery)
                 } else {
-                    let sortOption: SortOption = switch destination {
+                    let sortDescriptor = switch destination {
                     case .albums:
-                        albumSortOption
+                        SortDescriptor(rawValue: albumSort) ?? SortDescriptor(option: .artist, direction: .ascending)
                     case .artists:
-                        artistSortOption
-                    case .songs:
-                        songSortOption
+                        SortDescriptor(rawValue: artistSort) ?? SortDescriptor(option: .name, direction: .ascending)
                     default:
-                        mpd.database.type.defaultSortOption
+                        SortDescriptor(rawValue: songSort) ?? SortDescriptor(option: .album, direction: .ascending)
                     }
-                    MediaView(using: mpd.database, searchQuery: searchQuery, sortOption: sortOption)
+
+                    MediaView(using: mpd.database, searchQuery: searchQuery, sortDescriptor: sortDescriptor)
                 }
             }
             .onAppear {
                 scrollProxy = proxy
             }
         }
-        .id(destination)
+        .id("\(destination)_\(destination == .albums ? albumSort : destination == .artists ? artistSort : destination == .songs ? songSort : "")")
         .task(id: destination) {
             switch destination {
             case .albums:
@@ -195,53 +182,75 @@ struct CategoryView: View {
                 Menu {
                     switch destination {
                     case .albums:
-                        ForEach(MediaType.album.availableSortFields, id: \.self) { field in
-                            ForEach(SortDirection.allCases, id: \.self) { direction in
-                                let option = SortOption(field: field, direction: direction)
-                                Button {
-                                    albumSortOptionRaw = option.rawValue
-                                } label: {
-                                    HStack {
-                                        Text(option.label)
-                                        if albumSortOption == option {
-                                            Spacer()
-                                            Image(systemSymbol: .checkmark)
-                                        }
-                                    }
+                        let currentSort = SortDescriptor(rawValue: albumSort)!
+                        ForEach(SortingManager.availableSortOptions(for: .album), id: \.self) { option in
+                            Button {
+                                if currentSort.option == option {
+                                    // Toggle direction if same option
+                                    let newDirection: SortDirection = currentSort.direction == .ascending ? .descending : .ascending
+                                    albumSort = SortDescriptor(option: option, direction: newDirection).rawValue
+                                } else {
+                                    // Default to ascending for new option
+                                    albumSort = SortDescriptor(option: option, direction: .ascending).rawValue
+                                }
+                            } label: {
+                                if currentSort.option == option {
+                                    Image(systemSymbol: .checkmark)
+                                }
+
+                                if currentSort.option == option {
+                                    Text(option.label)
+                                    Text(currentSort.direction.label)
+                                } else {
+                                    Text(option.label)
                                 }
                             }
                         }
                     case .artists:
-                        ForEach(MediaType.artist.availableSortFields, id: \.self) { field in
-                            ForEach(SortDirection.allCases, id: \.self) { direction in
-                                let option = SortOption(field: field, direction: direction)
-                                Button {
-                                    artistSortOptionRaw = option.rawValue
-                                } label: {
-                                    HStack {
-                                        Text(option.label)
-                                        if artistSortOption == option {
-                                            Spacer()
-                                            Image(systemSymbol: .checkmark)
-                                        }
-                                    }
+                        let currentSort = SortDescriptor(rawValue: artistSort)!
+                        ForEach(SortingManager.availableSortOptions(for: .artist), id: \.self) { option in
+                            Button {
+                                if currentSort.option == option {
+                                    // Toggle direction if same option
+                                    let newDirection: SortDirection = currentSort.direction == .ascending ? .descending : .ascending
+                                    artistSort = SortDescriptor(option: option, direction: newDirection).rawValue
+                                } else {
+                                    // Default to ascending for new option
+                                    artistSort = SortDescriptor(option: option, direction: .ascending).rawValue
+                                }
+                            } label: {
+                                if currentSort.option == option {
+                                    Image(systemSymbol: .checkmark)
+                                }
+
+                                if currentSort.option == option {
+                                    Text(option.label)
+                                    Text(currentSort.direction.label)
+                                } else {
+                                    Text(option.label)
                                 }
                             }
                         }
                     case .songs:
-                        ForEach(MediaType.song.availableSortFields, id: \.self) { field in
-                            ForEach(SortDirection.allCases, id: \.self) { direction in
-                                let option = SortOption(field: field, direction: direction)
-                                Button {
-                                    songSortOptionRaw = option.rawValue
-                                } label: {
-                                    HStack {
-                                        Text(option.label)
-                                        if songSortOption == option {
-                                            Spacer()
-                                            Image(systemSymbol: .checkmark)
-                                        }
-                                    }
+                        let currentSort = SortDescriptor(rawValue: songSort)!
+                        ForEach(SortingManager.availableSortOptions(for: .song), id: \.self) { option in
+                            Button {
+                                if currentSort.option == option {
+                                    let newDirection: SortDirection = currentSort.direction == .ascending ? .descending : .ascending
+                                    songSort = SortDescriptor(option: option, direction: newDirection).rawValue
+                                } else {
+                                    songSort = SortDescriptor(option: option, direction: .ascending).rawValue
+                                }
+                            } label: {
+                                if currentSort.option == option {
+                                    Image(systemSymbol: .checkmark)
+                                }
+
+                                if currentSort.option == option {
+                                    Text(option.label)
+                                    Text(currentSort.direction.label)
+                                } else {
+                                    Text(option.label)
                                 }
                             }
                         }
@@ -251,6 +260,7 @@ struct CategoryView: View {
                 } label: {
                     Image(systemSymbol: .line3HorizontalDecrease)
                 }
+                .menuIndicator(.hidden)
                 .disabled(destination == .playlist(Playlist(name: "")))
             }
             .hidden(isSearchFieldExpanded)
