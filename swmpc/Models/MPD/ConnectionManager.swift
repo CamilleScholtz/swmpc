@@ -813,6 +813,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            for commands that do not provide it.
     /// - Returns: An array of `Song` objects.
     /// - Throws: An error if parsing fails.
+    @concurrent
     private nonisolated func parseSongsResponse(_ lines: [String], index: Bool
         = false) async throws -> [Song]
     {
@@ -838,6 +839,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Returns: An array of `Album` objects, sorted by artist name.
     /// - Throws: An error if parsing fails, such as an album appearin before
     ///           its artist.
+    @concurrent
     private nonisolated func parseAlbumsResponse(_ lines: [String]) async throws
         -> [Album]
     {

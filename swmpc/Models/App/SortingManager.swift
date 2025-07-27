@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// Defines the properties by which media items can be sorted.
-enum SortOption: String, CaseIterable, Codable {
+nonisolated enum SortOption: String, CaseIterable, Codable {
     case artist
     case album
     case title
@@ -26,7 +26,7 @@ enum SortOption: String, CaseIterable, Codable {
 }
 
 /// Defines the direction of a sort operation.
-enum SortDirection: String, CaseIterable, Codable {
+nonisolated enum SortDirection: String, CaseIterable, Codable {
     /// Sorts items in ascending order (e.g., A-Z, 0-9).
     case ascending
     /// Sorts items in descending order (e.g., Z-A, 9-0).
@@ -47,7 +47,7 @@ enum SortDirection: String, CaseIterable, Codable {
 /// This descriptor is `Codable` and can be initialized from a raw string
 /// representation (e.g., "artist_ascending"), making it easy to store in
 /// user defaults or other persistent storage.
-struct SortDescriptor: Codable, Hashable {
+nonisolated struct SortDescriptor: Codable, Hashable {
     /// The property to sort by (e.g., `.artist`, `.album`).
     var option: SortOption
 
@@ -101,9 +101,9 @@ struct SortDescriptor: Codable, Hashable {
 /// the requested order matches the natural order provided by the MPD server.
 enum SortingManager {
     // Default sorts that match MPD's natural order
-    static let defaultAlbumSort = SortDescriptor(option: .artist, direction: .ascending)
-    static let defaultArtistSort = SortDescriptor(option: .name, direction: .ascending)
-    static let defaultSongSort = SortDescriptor(option: .album, direction: .ascending)
+    nonisolated static let defaultAlbumSort = SortDescriptor(option: .artist, direction: .ascending)
+    nonisolated static let defaultArtistSort = SortDescriptor(option: .name, direction: .ascending)
+    nonisolated static let defaultSongSort = SortDescriptor(option: .album, direction: .ascending)
 
     /// Filters and sorts an array of media items.
     ///
@@ -124,7 +124,8 @@ enum SortingManager {
     ///   - mediaType: The type of media being sorted, used for optimization.
     /// - Returns: A new array of `Mediable` items, filtered and sorted as
     ///            specified.
-    static func sorted(
+    @concurrent
+    nonisolated static func sorted(
         _ media: [any Mediable],
         by sortDescriptor: SortDescriptor,
         searchQuery: String = "",

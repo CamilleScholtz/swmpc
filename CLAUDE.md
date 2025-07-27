@@ -12,6 +12,42 @@ swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with
 - **Build System**: Xcode project (no Package.swift)
 - **Concurrency**: Uses the modern Swift 6.2 model (Main Actor by default, Approachable Concurrency). See the Concurrency Model section for detailed guidance.
 
+## Concurrency Model
+
+This project adopts Swift 6.2's modern concurrency settings. This fundamentally shifts the project to a "safer-by-default" model where code runs on the main actor unless you explicitly opt-out. Here's what that means in practice:
+
+**1. Default Execution Context: Main Actor by Default**
+
+- **Before**: In older Swift versions, code was non-isolated by default. An `async` function on a plain class would run on a background thread, often leading to unexpected concurrency and data race warnings that required manual `@MainActor` annotations.
+- **Now**: Code is **`@MainActor` isolated by default**. Most types and functions will implicitly run on the main thread, eliminating many common data races with the UI. Concurrency is now something you **opt-in** to, not opt-out of.
+
+**2. Offloading Work to a Background Thread**
+
+- **Before**: You would write a `nonisolated async func` to run work on a background thread.
+- **Now**: A plain `nonisolated async func` now runs on the *caller's* actor due to "Approachable Concurrency". To explicitly run code on a background thread (the global executor), you must now use the **`@concurrent`** attribute.
+  ```swift
+  @concurrent
+  func performHeavyComputation() async -> Result {
+    // This code runs on a background thread.
+  }
+  ```
+  **Guidance**: Use `@concurrent` only for CPU-intensive tasks. Standard `await` calls for network requests do not block the main thread and do not need `@concurrent`.
+
+**3. Handling Protocol Conformances (e.g., `Codable`)**
+
+- **Before**: This was less of an issue because types were not `@MainActor` by default.
+- **Now**: Since most types are implicitly `@MainActor`, you may get compiler errors when conforming to protocols like `Codable` that have `nonisolated` requirements. You have two primary solutions:
+  - **For background processing**: If you intend to encode/decode on a background thread, make the entire type `nonisolated`.
+    ```swift
+    // This model can be used on any thread.
+    nonisolated struct MyData: Codable { ... }
+    ```
+  - **For main-thread processing**: If encoding/decoding on the main thread is acceptable, isolate the *conformance* to the main actor.
+    ```swift
+    // This model is on the MainActor, and its Codable conformance is too.
+    struct MyData: @MainActor Codable { ... }
+    ```
+
 ## Build Commands
 
 ```bash
@@ -44,63 +80,6 @@ The app follows an MVVM-style architecture using SwiftUI and the Observation fra
 - **Platform Differences**: Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code
   - macOS: Menu bar app with NSStatusItem popover
   - iOS: Tab-based navigation with LNPopupUI for now playing
-
-## Concurrency Model
-
-This project uses the modern Swift 6.2 concurrency model enabled in Xcode 26. This fundamentally changes how we write and reason about concurrent code.
-
-The two key settings enabled are:
-1.  **Default Actor Isolation:** `MainActor`
-2.  **Approachable Concurrency:** `Yes`
-
-Here’s what this means:
-
-### 1. Code is Main Actor by Default
-
-All code is now implicitly isolated to the main actor. This makes our app behave like a single-threaded application by default, reducing complexity and data races.
-
--   **Previously:** You had to explicitly mark classes and structs with `@MainActor` to ensure UI-related code ran on the main thread.
--   **Now:** Everything is automatically on the main actor. If you need a type to be usable from any thread (e.g., for background processing), you must explicitly mark it as `nonisolated`.
-
-    ```swift
-    // This model needs to be decoded on a background thread.
-    nonisolated struct MyAPIModel: Codable {
-      // ...
-    }
-    ```
-
--   **Common Refactor:** When conforming a main-actor type to a protocol like `Codable` or `PersistentModel`, you will face a choice:
-    -   Make the entire type `nonisolated` if it needs to be created/used off the main actor.
-    -   Isolate only the conformance `struct MyModel: @MainActor Codable` if encoding/decoding is fast and can stay on main.
-
-### 2. `async` Functions Run on the Caller's Actor
-
-The "Approachable Concurrency" setting changes the behavior of `nonisolated async` functions.
-
--   **Previously:** A `nonisolated async` function would automatically run on a background thread (the global executor).
--   **Now:** A `nonisolated async` function runs on the *caller's* actor. If you call it from the main actor, it stays on the main actor. This is the new `nonisolated(nonsending)` default.
-
-To get the old behavior and explicitly run a function on a background thread, you must now use the `@concurrent` macro.
-
--   **Use `@concurrent` to offload work:** If you have a long-running, CPU-intensive task (like decoding large JSON), mark that function as `@concurrent` to force it onto a background thread.
-
-    ```swift
-    @MainActor
-    class MyViewModel {
-      func processData() async {
-        let data = await fetchData()
-        // This decoding is slow, so we make it @concurrent.
-        let model = await decode(data)
-        // ... update UI with model ...
-      }
-
-      // This function now explicitly runs on a background thread.
-      @concurrent
-      func decode(_ data: Data) async -> MyModel {
-        // Heavy decoding logic here
-      }
-    }
-    ```
 
 ## Key Dependencies
 
