@@ -74,44 +74,24 @@ struct MediaView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if isMovable, let songs = sortedMedia as? [Song] {
+                // Movable songs (queue/playlist)
                 ForEach(songs) { song in
                     SongView(for: song, source: source)
                 }
-                .onMove { from, to in
-                    Task {
-                        guard let index = from.first,
-                              index < sortedMedia.count,
-                              let song = sortedMedia[index] as? Song
-                        else {
-                            return
-                        }
-
-                        let adjustedTo = index < to ? to - 1 : to
-                        try? await ConnectionManager.command().move(song, to: adjustedTo, in: source)
-
-                        if case .playlist = source {
-                            NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
-                        } else if case .favorites = source {
-                            NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
-                        }
-                    }
-                }
+                .onMove(perform: move)
             } else {
-                switch type {
-                case .album:
-                    ForEach(sortedMedia.compactMap { $0 as? Album }) { album in
+                // Non-movable media
+                ForEach(sortedMedia, id: \.id) { item in
+                    switch item {
+                    case let album as Album:
                         AlbumView(for: album)
-                    }
-                case .artist:
-                    ForEach(sortedMedia.compactMap { $0 as? Artist }) { artist in
+                    case let artist as Artist:
                         ArtistView(for: artist)
-                    }
-                case .song:
-                    ForEach(sortedMedia.compactMap { $0 as? Song }) { song in
+                    case let song as Song:
                         SongView(for: song, source: source)
+                    default:
+                        EmptyView()
                     }
-                default:
-                    EmptyView()
                 }
             }
         }
@@ -123,44 +103,62 @@ struct MediaView: View {
         #endif
             .onReceive(playlistModifiedNotification) { _ in
                 Task {
-                    if case let .playlist(playlist) = source {
-                        if playlist.name == "Favorites" {
-                            try? await mpd.playlists.set()
-                        } else {
-                            loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
-                        }
-                    }
+                    await refreshPlaylistSongs()
                 }
             }
             .task {
-                guard loadedSongs.isEmpty else {
-                    return
-                }
+                await loadPlaylistSongs()
+            }
+            .task(id: "\(baseMedia.count)-\(searchQuery.hashValue)-\(sortDescriptor.hashValue)") {
+                await updateSortedMedia()
+            }
+    }
+    
+    private func move(from source: IndexSet, to destination: Int) {
+        Task {
+            guard let index = source.first,
+                  index < sortedMedia.count,
+                  let song = sortedMedia[index] as? Song
+            else {
+                return
+            }
 
-                if case let .playlist(playlist) = source {
-                    loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
-                }
+            let adjustedTo = index < destination ? destination - 1 : destination
+            try? await ConnectionManager.command().move(song, to: adjustedTo, in: self.source)
+
+            if case .playlist = self.source {
+                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
+            } else if case .favorites = self.source {
+                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
             }
-            .task(id: baseMedia.count) {
-                sortedMedia = await SortingManager.sorted(
-                    baseMedia,
-                    by: sortDescriptor,
-                    searchQuery: searchQuery,
-                )
+        }
+    }
+    
+    private func loadPlaylistSongs() async {
+        guard loadedSongs.isEmpty,
+              case let .playlist(playlist) = source else {
+            return
+        }
+        
+        loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
+    }
+    
+    private func refreshPlaylistSongs() async {
+        if case let .playlist(playlist) = source {
+            if playlist.name == "Favorites" {
+                try? await mpd.playlists.set()
+            } else {
+                loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
             }
-            .task(id: searchQuery) {
-                sortedMedia = await SortingManager.sorted(
-                    baseMedia,
-                    by: sortDescriptor,
-                    searchQuery: searchQuery,
-                )
-            }
-            .task(id: sortDescriptor) {
-                sortedMedia = await SortingManager.sorted(
-                    baseMedia,
-                    by: sortDescriptor,
-                    searchQuery: searchQuery,
-                )
-            }
+        }
+    }
+    
+    private func updateSortedMedia() async {
+        sortedMedia = await SortingManager.sorted(
+            baseMedia,
+            by: sortDescriptor,
+            searchQuery: searchQuery,
+            mediaType: type
+        )
     }
 }

@@ -26,13 +26,20 @@ actor ArtworkManager {
         cache.totalCostLimit = 64 * 1024 * 1024
     }
 
-    /// Fetches the artwork data for a given media.
+    /// Fetches artwork data for a given URL, handling caching and request
+    /// deduplication.
+    ///
+    /// This function first checks the in-memory cache for the artwork. If not
+    /// found, it checks if a fetch task for the same URL is already in
+    /// progress. If so, it awaits the result of that task. Otherwise, it
+    /// creates a new task to fetch the data from the network.
     ///
     /// - Parameters:
-    ///     - media: The media for which to fetch the artwork.
-    ///     - shouldCache: Whether or not to cache the fetched data.
+    ///   - url: The URL of the artwork to fetch.
+    ///   - shouldCache: A Boolean indicating whether to store the fetched data
+    ///                  in he in-memory cache. Defaults to `true`.
     /// - Returns: The artwork data.
-    /// - Throws: An error if the artwork data could not be fetched.
+    /// - Throws: An error if the artwork data cannot be fetched.
     func get(for url: URL, shouldCache: Bool = true) async throws ->
         Data
     {
@@ -53,13 +60,22 @@ actor ArtworkManager {
         return try await task.value
     }
 
-    /// Creates a new Task responsible for fetching artwork data.
-    /// Handles connection pooling, data fetching, caching, and task removal.
+    /// Creates and returns a new `Task` to fetch artwork data for a specific
+    /// URL.
+    ///
+    /// The created task encapsulates the entire network operation, including:
+    /// 1. Acquiring a connection from the `ArtworkConnectionPool`.
+    /// 2. Fetching the artwork data using the connection.
+    /// 3. Releasing or discarding the connection based on the outcome.
+    /// 4. Caching the data if `shouldCache` is true.
     ///
     /// - Parameters:
-    ///     - url: The URL of the artwork to fetch.
-    ///     - priority: The priority of the task.
-    ///     - shouldCache: Whether or not to cache the fetched data.
+    ///   - url: The URL of the artwork to fetch.
+    ///   - priority: The `TaskPriority` for the fetch operation.
+    ///   - shouldCache: A Boolean indicating whether to cache the fetched data
+    ///                  upon successful completion.
+    /// - Returns: A `Task` that will produce the artwork `Data` or throw an
+    ///            `Error`.
     private func createFetchTask(for url: URL, priority: TaskPriority,
                                  shouldCache: Bool) -> Task<Data, Error>
     {

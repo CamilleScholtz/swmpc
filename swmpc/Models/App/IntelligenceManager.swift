@@ -183,7 +183,8 @@ actor IntelligenceManager {
 
                     The description for the playlist your should create is: \(prompt)
                     """)!,
-                    .init(role: .user, content: albums.map(\.description))!,
+                    .init(role: .user, content: albums.map(\.description)
+                        .joined(separator: "\n"))!,
                 ],
                 model: model.model,
                 responseFormat: .jsonSchema(
@@ -209,7 +210,7 @@ actor IntelligenceManager {
             var songs: [Song] = []
 
             for row in data.playlist {
-                guard let album = albums?.first(where: {
+                guard let album = albums.first(where: {
                     $0.description == row
                 }) else {
                     continue

@@ -32,7 +32,7 @@ enum IdleMode: ConnectionMode {
     static let enableKeepalive = true
     static let bufferSize = 4096
     static let queueAttributes: DispatchQueue.Attributes = []
-    static let qos: DispatchQoS = .userInteractive
+    static let qos: DispatchQoS = .utility
 }
 
 /// Connection mode for artwork retrieval operations.
@@ -101,7 +101,7 @@ struct ConnectionSettings {
     @AppStorage(Setting.host) var host = "localhost"
     @AppStorage(Setting.port) var port = 6600
 
-    @AppStorage(Setting.port) var password = ""
+    @AppStorage(Setting.password) var password = ""
 
     @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
@@ -168,7 +168,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
         options.noDelay = true
         options.enableKeepalive = Mode.enableKeepalive
 
-        guard let port = await NWEndpoint.Port(rawValue: UInt16(ConnectionSettings.shared.port)) else {
+        guard let port = await NWEndpoint.Port(rawValue: UInt16(
+            ConnectionSettings.shared.port))
+        else {
             throw ConnectionManagerError.invalidPort
         }
 
@@ -253,8 +255,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// This function checks if a password is set and sends it to the server for
     /// authentication. If no password is set, the function returns immediately.
+    ///
+    /// - Throws: An error if the authentication command fails.
     func ensureAuthenticated() async throws {
-        guard await ConnectionSettings.shared.password.isEmpty else {
+        guard await !ConnectionSettings.shared.password.isEmpty else {
             return
         }
 
@@ -262,6 +266,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     }
 
     /// Sends a ping command to the server.
+    ///
+    /// - Throws: An error if the command fails.
     func ping() async throws {
         _ = try await run(["ping"])
     }
@@ -379,7 +385,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         try await withCheckedThrowingContinuation { (continuation:
             CheckedContinuation<Void, Error>) in
-            connection.send(content: data, completion: .contentProcessed { error in
+            connection.send(content: data, completion: .contentProcessed {
+                error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
@@ -400,7 +407,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            Defaults to `"` if not provided.
     /// - Returns: A new string where special characters have been escaped and,
     ///            if a quote is provided, the string is enclosed by it.
-    private nonisolated func escape(_ string: String, quote: String? = "\"") -> String {
+    private nonisolated func escape(_ string: String, quote: String? = "\"")
+        -> String
+    {
         var escaped = string.replacingOccurrences(of: "\\", with: "\\\\")
 
         guard let quote else {
@@ -421,23 +430,23 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     /// Constructs a filter clause for query commands.
     ///
-    /// This function builds a filter clause of the form
-    /// `(key comparator 'escapedValue')`. The provided `value` is first escaped
-    /// using single quotes (via the `escape` function) to safely handle special
-    /// characters. Afterwards, any backslashes in the resulting clause are
-    /// further escaped. Finally, if the `quote` parameter is `true` (default),
-    /// the entire clause is wrapped in double quotes.
+    /// This function builds a filter clause suitable for MPD commands like
+    /// `find` or `search`. The provided `value` is escaped to handle special
+    /// characters. The resulting clause is typically of the form
+    /// `"(key 'escapedValue')"`.
     ///
     /// - Parameters:
     ///   - key: The field or attribute name to filter on.
-    ///   - value: The value used in the comparison; it will be escaped for safe
-    ///            insertion.
-    ///   - comparator: The comparison operator (e.g., `==`, `!=`) used in the
-    ///                 filter.
-    ///   - quote: A Boolean value that determines whether the final clause
-    ///            should be enclosed in double quotes. Defaults to `true`.
+    ///   - value: The value used in the comparison; it will be escaped for
+    ///            safety.
+    ///   - comparator: The comparison operator (e.g., `==`, `!=`). Defaults to
+    ///                  `==`.
+    ///   - quote: A Boolean indicating whether to enclose the final clause in
+    ///            double quotes. Defaults to `true`.
     /// - Returns: A formatted string representing the filter clause.
-    private nonisolated func filter(key: String, value: String, comparator: String = "==", quote: Bool = true) -> String {
+    private nonisolated func filter(key: String, value: String, comparator:
+        String = "==", quote: Bool = true) -> String
+    {
         let clause = "(\(key) \(comparator) \(escape(value, quote: "'")))"
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
@@ -450,19 +459,16 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Asynchronously reads a complete line from the connection buffer.
     ///
     /// This function continuously attempts to extract a complete line by
-    /// calling `extractLineFromBuffer()`.
-    /// - If a complete line is available:
-    ///   - If the line starts with `ACK`, it indicates a protocol error and
-    ///     throws `ConnectionManagerError.protocolViolation` with the offending
-    ///     line.
-    ///   - Otherwise, it returns the line.
-    /// - If no complete line is present, the function awaits additional data by
-    ///   calling `receiveDataChunk()` and repeats the process.
+    /// calling `extractLineFromBuffer()`. If no complete line is present, it
+    /// awaits additional data by calling `receiveDataChunk()` and repeats the
+    /// process.
     ///
-    /// - Returns: An optional string representing the next complete line from
-    ///            the buffer.
-    /// - Throws: An error if a protocol error is encountered (i.e., a line
-    ///           starting with `ACK`) or if underlying operations fail.
+    /// If a line starts with `ACK`, it indicates a protocol error, and the
+    /// function throws `ConnectionManagerError.protocolViolation`.
+    ///
+    /// - Returns: A string representing the next complete line from the buffer.
+    /// - Throws: An error if a protocol error is encountered or if underlying
+    ///           I/O operations fail.
     private func readLine() async throws -> String? {
         while true {
             if let line = try extractLineFromBuffer() {
@@ -541,22 +547,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
         return string
     }
 
-    /// Asynchronously receives a chunk of data from the network connection and
-    /// appends it to the internal buffer.
+    /// Asynchronously receives a chunk of data from the network connection.
     ///
-    /// This function first ensures that the connection is ready by calling
-    /// `ensureConnectionReady()`. It then initiates an asynchronous receive
-    /// operation with a minimum of 1 byte and a maximum of `Mode.bufferSize`
-    /// bytes. A checked continuation is used to await the result of the receive
-    /// operation:
-    /// - If data is received successfully, it is appended to the internal
-    ///   `buffer`.
-    /// - If the connection returns `nil` (indicating it is closed) or an error
-    ///   occurs, an appropriate error is thrown.
+    /// This function first ensures that the connection is ready. It then initiates
+    /// an asynchronous receive operation.
     ///
-    /// - Throws: An error if the connection is closed, if the receive operation
-    ///           encounters an error, or if the connection is not in a ready
-    ///           state.
+    /// - Throws: An error if the connection is not ready or if the receive
+    ///           operation encounters an error.
     private func receiveDataChunk() async throws {
         let connection = try ensureConnectionReady()
 
@@ -594,8 +591,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   - prefix: The prefix string that signifies the start of a new chunk.
     /// - Returns: An array of chunks, where each chunk is an array of strings
     ///            grouped together.
-    private nonisolated func chunkLines(_ lines: [String], startingWith prefix: String) ->
-        [[String]]
+    private nonisolated func chunkLines(_ lines: [String], startingWith prefix:
+        String) -> [[String]]
     {
         var chunks = [[String]]()
         var currentChunk: [String]?
@@ -624,19 +621,14 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// This function continuously calls `readLine()` to accumulate lines from
     /// the connection. Each line is appended to an array, and once a line
-    /// satisfies the provided condition (as determined by the `condition`
-    /// closure), the function returns the array of all collected lines,
-    /// including the line that met the condition. If the stream ends without
-    /// meeting the condition, the function throws a
-    /// `ConnectionManagerError.readUntilConditionNotMet` error.
+    /// satisfies the provided `condition` closure, the function returns all
+    /// collected lines.
     ///
     /// - Parameter condition: A closure that receives a line of text and
     ///                        returns `true` when the desired condition is met.
     /// - Returns: An array of strings containing all lines read up to and
     ///            including the line that satisfies the condition.
-    /// - Throws: `ConnectionManagerError.readUntilConditionNotMet` if the
-    ///           condition is never met, or any error encountered by
-    ///           `readLine()`.
+    /// - Throws: An error if any underlying `readLine()` call fails.
     private func readUntil(_ condition: @escaping (String) -> Bool) async throws
         -> [String]
     {
@@ -686,7 +678,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            second element is the value.
     /// - Throws: `ConnectionManagerError.malformedResponse` if the line does
     ///           not contain exactly one colon.
-    private nonisolated func parseLine(_ line: String) throws -> (String, String) {
+    private nonisolated func parseLine(_ line: String) throws -> (String,
+                                                                  String)
+    {
         let parts = line.split(separator: ":", maxSplits: 1).map {
             $0.trimmingCharacters(in: .whitespaces)
         }
@@ -722,12 +716,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   - album: An optional `Album` object to associate with the song. If
     ///            provided, it will be set as the album property of the song.
     ///   - index: An optional index value to use as the `position`.
-    /// - Returns: An optional `Song` object if the response contains valid song
-    ///           data; otherwise, it returns `nil`.
+    /// - Returns: A `Song` object populated with the parsed data from the
+    ///            response.
     /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
     ///           are missing or if the response is improperly formatted.
-    private nonisolated func parseSongResponse(_ lines: [String], index: Int? = nil) throws
-        -> Song?
+    private nonisolated func parseSongResponse(_ lines: [String], index: Int?
+        = nil) throws -> Song
     {
         var id: UInt32?
         var position: UInt32?
@@ -808,7 +802,20 @@ actor ConnectionManager<Mode: ConnectionMode> {
         )
     }
 
-    private nonisolated func parseSongsResponse(_ lines: [String], index: Bool = false) async throws -> [Song] {
+    /// Parses response lines into an array of `Song` objects.
+    ///
+    /// This function chunks the lines by the "file:" prefix and parses each
+    /// chunk into a `Song` object.
+    ///
+    /// - Parameters:
+    ///   - lines: An array of strings from an MPD response.
+    ///   - index: If true, uses the enumeration index as the song's position,
+    ///            for commands that do not provide it.
+    /// - Returns: An array of `Song` objects.
+    /// - Throws: An error if parsing fails.
+    private nonisolated func parseSongsResponse(_ lines: [String], index: Bool
+        = false) async throws -> [Song]
+    {
         let chunks = chunkLines(lines, startingWith: "file")
 
         if index {
@@ -822,7 +829,18 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
     }
 
-    private nonisolated func parseAlbumsResponse(_ lines: [String]) async throws -> [Album] {
+    /// Parses response lines into an array of `Album` objects.
+    ///
+    /// This function processes lines from commands like `list album` and groups
+    /// them into `Album` objects, associating each album with its artist.
+    ///
+    /// - Parameter lines: An array of strings from an MPD response.
+    /// - Returns: An array of `Album` objects, sorted by artist name.
+    /// - Throws: An error if parsing fails, such as an album appearin before
+    ///           its artist.
+    private nonisolated func parseAlbumsResponse(_ lines: [String]) async throws
+        -> [Album]
+    {
         var albums: [Album] = []
         var artist: Artist?
 
@@ -841,7 +859,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
                     throw ConnectionManagerError.malformedResponse(
                         "Album found without associated artist")
                 }
-                albums.append(Album(title: value.isEmpty ? "Unknown Album" : value, artist: artist))
+                albums.append(Album(
+                    title: value.isEmpty ? "Unknown Album" : value,
+                    artist: artist
+                ))
             default:
                 continue
             }
@@ -857,33 +878,20 @@ extension ConnectionManager {
     /// Retrieves the current status of the media player from the server.
     ///
     /// This asynchronous function sends a "status" command to the media server
-    /// and parses the response to extract various status parameters:
-    /// - `state`: The current player state, determined by the "state" key
-    ///            (values "play", "pause", or "stop").
-    /// - `isRandom`: A Boolean value indicating whether random playback is
-    ///               enabled.
-    /// - `isRepeat`: A Boolean value indicating whether repeat playback is
-    ///               enabled.
-    /// - `elapsed`: The elapsed playback time in seconds.
-    /// - `playlist`: The last loaded playlist, identified by its name.
-    /// - `song`: The currently playing song, identified by its song ID. For
-    ///           this, an additional command ("playlistid") is executed to
-    ///           retrieve song details.
+    /// and parses the response to extract various status parameters. To get
+    /// full details for the currently playing song, it may issue a secondary
+    /// command.
     ///
     /// - Returns: A tuple containing:
-    ///   - `state`: An optional `PlayerState` representing the current state of
-    ///              the player.
-    ///   - `isRandom`: An optional `Bool` indicating if random playback is
-    ///                 enabled.
-    ///   - `isRepeat`: An optional `Bool` indicating if repeat playback is
-    ///                 enabled.
-    ///   - `elapsed`: An optional `Double` representing the elapsed playback
-    ///                time in seconds.
-    ///   - `playlist`: An optional `Playlist` representing the last loaded
-    ///                 playlist.
-    ///   - `song`: An optional `Song` representing the currently playing song.
-    /// - Throws: An error if the response from the media server is malformed or
-    ///           if any underlying command execution fails.
+    ///   - `state`: The current player state (`play`, `pause`, or `stop`).
+    ///   - `isRandom`: A Boolean indicating if random playback is enabled.
+    ///   - `isRepeat`: A Boolean indicating if repeat playback is enabled.
+    ///   - `elapsed`: The elapsed playback time in seconds.
+    ///   - `playlist`: The last loaded playlist.
+    ///   - `song`: The currently playing song.
+    ///   - `volume`: The current volume level (0-100).
+    /// - Throws: An error if the response is malformed or if any underlying
+    ///           command execution fails.
     func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?,
                                           isRepeat: Bool?, elapsed: Double?,
                                           playlist: Playlist?, song: Song?, volume: Int?)
@@ -947,21 +955,21 @@ extension ConnectionManager {
     /// objects. Each `Album` object contains the album title and its associated
     /// artist.
     ///
-    /// - Returns: An optional array of `Album` objects representing the albums
-    ///            in the database. If no albums are found, it returns `nil`.
+    /// - Returns: An array of `Album` objects representing the albums in the
+    ///            database. If no albums are found, it returns an empty array.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getDatabase() async throws -> [Album]? {
+    func getDatabase() async throws -> [Album] {
         let lines = try await run(["list album group albumartist"])
 
         return try await parseAlbumsResponse(lines)
     }
 
-    /// Retrieves all songs from the database or queue.
+    /// Retrieves all songs from a specified source.
     ///
-    /// - Parameter source: The source from which to retrieve the songs.
-    /// - Returns: An array of `Song` objects representing all songs in the
-    ///            database.
+    /// - Parameter source: The source (`.database`, `.queue`, or a specific
+    ///                     `.playlist`) from which to retrieve the songs.
+    /// - Returns: An array of `Song` objects from the specified source.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(from source: Source) async throws -> [Song] {
@@ -1002,6 +1010,15 @@ extension ConnectionManager {
         return try await parseSongsResponse(lines)
     }
 
+    /// Retrieves all albums by a specific artist from the given source.
+    ///
+    /// - Parameters:
+    ///   - artist: The `Artist` to find albums for.
+    ///   - source: The source to search within (either `.database` or
+    ///             `.queue`).
+    /// - Returns: An array of `Album` objects by the specified artist.
+    /// - Throws: `ConnectionManagerError.unsupportedOperation` if the source is
+    ///           not the database or queue.
     func getAlbums(by artist: Artist, from source: Source) async throws -> [Album] {
         let lines: [String]
 
@@ -1220,6 +1237,13 @@ extension ConnectionManager where Mode == ArtworkMode {
 // MARK: - Command mode commands
 
 extension ConnectionManager where Mode == CommandMode {
+    /// Creates and connects a new `ConnectionManager` for command execution.
+    ///
+    /// This factory method provides a convenient way to get a ready-to-use
+    /// connection manager instance pre-configured for sending commands.
+    ///
+    /// - Returns: A connected `ConnectionManager<CommandMode>` instance.
+    /// - Throws: An error if the connection fails.
     static func command() async throws -> ConnectionManager<CommandMode> {
         let manager = ConnectionManager<CommandMode>()
         try await manager.connect()
@@ -1494,7 +1518,7 @@ extension ConnectionManager where Mode == CommandMode {
         _ = try await run(["playid \(id)"])
     }
 
-    /// Toggle playback.
+    /// Sets the pause state of the player.
     ///
     /// - Parameter value: A Boolean value indicating whether to pause (`true`)
     ///                    or resume (`false`) playback.
@@ -1517,7 +1541,7 @@ extension ConnectionManager where Mode == CommandMode {
         _ = try await run(["next"])
     }
 
-    /// Toggle repeat mode.
+    /// Sets the repeat mode.
     ///
     /// - Parameter value: A Boolean value indicating whether to enable (`true`)
     ///                    or disable (`false`) repeat mode.
@@ -1526,7 +1550,7 @@ extension ConnectionManager where Mode == CommandMode {
         _ = try await run([value ? "repeat 1" : "repeat 0"])
     }
 
-    /// Toggle random mode.
+    /// Sets the random mode.
     ///
     /// - Parameter value: A Boolean value indicating whether to enable (`true`)
     ///                    or disable (`false`) random mode.
@@ -1537,8 +1561,8 @@ extension ConnectionManager where Mode == CommandMode {
 
     /// Seek to a specific position in the currently playing song.
     ///
-    /// - Parameter value: The position to seek to, represented as a percentage
-    ///                    of the song's total duration.
+    /// - Parameter value: The position to seek to, represented as a `Double` in
+    ///                    seconds.
     /// - Throws: An error if the underlying command execution fails.
     func seek(_ value: Double) async throws {
         _ = try await run(["seekcur \(value)"])

@@ -180,7 +180,7 @@ struct SourceToggleButton<Media: Mediable>: View {
             case let album as Album:
                 songs = try await album.getSongs()
             case let artist as Artist:
-                let allAlbums = try await ConnectionManager.command().getDatabase() ?? []
+                let allAlbums = try await ConnectionManager.command().getDatabase()
                 let artistAlbums = allAlbums.filter { $0.artist.name == artist.name }
 
                 var artistSongs: [Song] = []

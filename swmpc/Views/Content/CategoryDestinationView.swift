@@ -74,9 +74,9 @@ struct CategoryView: View {
 
     let destination: CategoryDestination
 
-    @AppStorage(Setting.albumSortOption) private var albumSort = SortDescriptor(option: .artist, direction: .ascending).rawValue
-    @AppStorage(Setting.artistSortOption) private var artistSort = SortDescriptor(option: .name, direction: .ascending).rawValue
-    @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor(option: .album, direction: .ascending).rawValue
+    @AppStorage(Setting.albumSortOption) private var albumSort = SortingManager.defaultAlbumSort.rawValue
+    @AppStorage(Setting.artistSortOption) private var artistSort = SortingManager.defaultArtistSort.rawValue
+    @AppStorage(Setting.songSortOption) private var songSort = SortingManager.defaultSongSort.rawValue
 
     #if os(macOS)
         private var rowHeight: CGFloat {
@@ -108,29 +108,52 @@ struct CategoryView: View {
 
     @State private var scrollProxy: ScrollViewProxy?
 
+    // Computed properties for cleaner code
+    private var currentSortDescriptor: SortDescriptor {
+        switch destination {
+        case .albums:
+            SortDescriptor(rawValue: albumSort) ?? SortingManager.defaultAlbumSort
+        case .artists:
+            SortDescriptor(rawValue: artistSort) ?? SortingManager.defaultArtistSort
+        case .songs:
+            SortDescriptor(rawValue: songSort) ?? SortingManager.defaultSongSort
+        default:
+            SortDescriptor(option: .title, direction: .ascending)
+        }
+    }
+    
+    private var sortBinding: Binding<String> {
+        switch destination {
+        case .albums: $albumSort
+        case .artists: $artistSort
+        case .songs: $songSort
+        default: .constant("")
+        }
+    }
+    
+    private var availableSortOptions: [SortOption] {
+        switch destination {
+        case .albums: SortingManager.availableSortOptions(for: .album)
+        case .artists: SortingManager.availableSortOptions(for: .artist)
+        case .songs: SortingManager.availableSortOptions(for: .song)
+        default: []
+        }
+    }
+
     var body: some View {
         ListView(rowHeight: rowHeight) { proxy in
             Group {
                 if case let .playlist(playlist) = destination {
                     MediaView(using: playlist, searchQuery: searchQuery)
                 } else {
-                    let sortDescriptor = switch destination {
-                    case .albums:
-                        SortDescriptor(rawValue: albumSort) ?? SortDescriptor(option: .artist, direction: .ascending)
-                    case .artists:
-                        SortDescriptor(rawValue: artistSort) ?? SortDescriptor(option: .name, direction: .ascending)
-                    default:
-                        SortDescriptor(rawValue: songSort) ?? SortDescriptor(option: .album, direction: .ascending)
-                    }
-
-                    MediaView(using: mpd.database, searchQuery: searchQuery, sortDescriptor: sortDescriptor)
+                    MediaView(using: mpd.database, searchQuery: searchQuery, sortDescriptor: currentSortDescriptor)
                 }
             }
             .onAppear {
                 scrollProxy = proxy
             }
         }
-        .id("\(destination)_\(destination == .albums ? albumSort : destination == .artists ? artistSort : destination == .songs ? songSort : "")")
+        .id("\(destination)_\(sortBinding.wrappedValue)")
         .task(id: destination) {
             switch destination {
             case .albums:
@@ -179,91 +202,9 @@ struct CategoryView: View {
             ToolbarSpacer(.fixed)
 
             ToolbarItem {
-                Menu {
-                    switch destination {
-                    case .albums:
-                        let currentSort = SortDescriptor(rawValue: albumSort)!
-                        ForEach(SortingManager.availableSortOptions(for: .album), id: \.self) { option in
-                            Button {
-                                if currentSort.option == option {
-                                    // Toggle direction if same option
-                                    let newDirection: SortDirection = currentSort.direction == .ascending ? .descending : .ascending
-                                    albumSort = SortDescriptor(option: option, direction: newDirection).rawValue
-                                } else {
-                                    // Default to ascending for new option
-                                    albumSort = SortDescriptor(option: option, direction: .ascending).rawValue
-                                }
-                            } label: {
-                                if currentSort.option == option {
-                                    Image(systemSymbol: .checkmark)
-                                }
-
-                                if currentSort.option == option {
-                                    Text(option.label)
-                                    Text(currentSort.direction.label)
-                                } else {
-                                    Text(option.label)
-                                }
-                            }
-                        }
-                    case .artists:
-                        let currentSort = SortDescriptor(rawValue: artistSort)!
-                        ForEach(SortingManager.availableSortOptions(for: .artist), id: \.self) { option in
-                            Button {
-                                if currentSort.option == option {
-                                    // Toggle direction if same option
-                                    let newDirection: SortDirection = currentSort.direction == .ascending ? .descending : .ascending
-                                    artistSort = SortDescriptor(option: option, direction: newDirection).rawValue
-                                } else {
-                                    // Default to ascending for new option
-                                    artistSort = SortDescriptor(option: option, direction: .ascending).rawValue
-                                }
-                            } label: {
-                                if currentSort.option == option {
-                                    Image(systemSymbol: .checkmark)
-                                }
-
-                                if currentSort.option == option {
-                                    Text(option.label)
-                                    Text(currentSort.direction.label)
-                                } else {
-                                    Text(option.label)
-                                }
-                            }
-                        }
-                    case .songs:
-                        let currentSort = SortDescriptor(rawValue: songSort)!
-                        ForEach(SortingManager.availableSortOptions(for: .song), id: \.self) { option in
-                            Button {
-                                if currentSort.option == option {
-                                    let newDirection: SortDirection = currentSort.direction == .ascending ? .descending : .ascending
-                                    songSort = SortDescriptor(option: option, direction: newDirection).rawValue
-                                } else {
-                                    songSort = SortDescriptor(option: option, direction: .ascending).rawValue
-                                }
-                            } label: {
-                                if currentSort.option == option {
-                                    Image(systemSymbol: .checkmark)
-                                }
-
-                                if currentSort.option == option {
-                                    Text(option.label)
-                                    Text(currentSort.direction.label)
-                                } else {
-                                    Text(option.label)
-                                }
-                            }
-                        }
-                    default:
-                        EmptyView()
-                    }
-                } label: {
-                    Image(systemSymbol: .line3HorizontalDecrease)
-                }
-                .menuIndicator(.hidden)
-                .disabled(destination == .playlist(Playlist(name: "")))
+                sortMenu
             }
-            .hidden(isSearchFieldExpanded)
+            .hidden(isSearchFieldExpanded || destination == .playlist(Playlist(name: "")))
 
             ToolbarItem {
                 Button {
@@ -364,6 +305,37 @@ struct CategoryView: View {
 //            }
 //            // For database views, search will be handled by SwiftUI's searchable with filtered views
         // }
+    }
+    
+    @ViewBuilder
+    private var sortMenu: some View {
+        Menu {
+            ForEach(availableSortOptions, id: \.self) { option in
+                Button {
+                    if currentSortDescriptor.option == option {
+                        // Toggle direction
+                        let newDirection: SortDirection = currentSortDescriptor.direction == .ascending ? .descending : .ascending
+                        sortBinding.wrappedValue = SortDescriptor(option: option, direction: newDirection).rawValue
+                    } else {
+                        // New option, default to ascending
+                        sortBinding.wrappedValue = SortDescriptor(option: option, direction: .ascending).rawValue
+                    }
+                } label: {
+                    if currentSortDescriptor.option == option {
+                        Image(systemSymbol: .checkmark)
+                    }
+                    
+                    Text(option.label)
+                    
+                    if currentSortDescriptor.option == option {
+                        Text(currentSortDescriptor.direction.label)
+                    }
+                }
+            }
+        } label: {
+            Image(systemSymbol: .line3HorizontalDecrease)
+        }
+        .menuIndicator(.hidden)
     }
 
     private func scrollToCurrent(proxy: ScrollViewProxy, animate: Bool = true) async throws {

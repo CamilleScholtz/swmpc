@@ -7,12 +7,14 @@
 
 import SwiftUI
 
+/// Defines the properties by which media items can be sorted.
 enum SortOption: String, CaseIterable, Codable {
     case artist
     case album
     case title
     case name
 
+    /// A user-facing label for the sort option.
     var label: String {
         switch self {
         case .artist: "Artist"
@@ -23,10 +25,14 @@ enum SortOption: String, CaseIterable, Codable {
     }
 }
 
+/// Defines the direction of a sort operation.
 enum SortDirection: String, CaseIterable, Codable {
+    /// Sorts items in ascending order (e.g., A-Z, 0-9).
     case ascending
+    /// Sorts items in descending order (e.g., Z-A, 9-0).
     case descending
 
+    /// A user-facing label for the sort direction.
     var label: String {
         switch self {
         case .ascending: "Ascending"
@@ -35,23 +41,44 @@ enum SortDirection: String, CaseIterable, Codable {
     }
 }
 
+/// A structure that combines a sort option and a direction to describe how a
+/// collection should be sorted.
+///
+/// This descriptor is `Codable` and can be initialized from a raw string
+/// representation (e.g., "artist_ascending"), making it easy to store in
+/// user defaults or other persistent storage.
 struct SortDescriptor: Codable, Hashable {
+    /// The property to sort by (e.g., `.artist`, `.album`).
     var option: SortOption
+
+    /// The direction of the sort (e.g., `.ascending`).
     var direction: SortDirection
 
+    /// A user-facing label for the sort descriptor's option.
     var label: String {
         option.label
     }
 
+    /// A string representation of the descriptor, combining option and
+    /// direction.
     var rawValue: String {
         "\(option.rawValue)_\(direction.rawValue)"
     }
 
+    /// Creates a new sort descriptor.
+    ///
+    /// - Parameters:
+    ///   - option: The property to sort by.
+    ///   - direction: The direction of the sort. Defaults to `.ascending`.
     init(option: SortOption, direction: SortDirection = .ascending) {
         self.option = option
         self.direction = direction
     }
 
+    /// Creates a sort descriptor from a raw string value.
+    ///
+    /// - Parameter rawValue: A string in the format "option_direction"
+    ///   (e.g., "artist_ascending").
     init?(rawValue: String) {
         let components = rawValue.split(separator: "_")
         guard components.count == 2,
@@ -66,34 +93,110 @@ struct SortDescriptor: Codable, Hashable {
     }
 }
 
+/// A namespace for static methods that handle filtering and sorting of media
+/// items.
+///
+/// The manager provides a centralized way to apply consistent sorting logic
+/// across the application. It includes optimizations to avoid re-sorting when
+/// the requested order matches the natural order provided by the MPD server.
 enum SortingManager {
-    /// Sorts and optionally filters an array of media items.
+    // Default sorts that match MPD's natural order
+    static let defaultAlbumSort = SortDescriptor(option: .artist, direction: .ascending)
+    static let defaultArtistSort = SortDescriptor(option: .name, direction: .ascending)
+    static let defaultSongSort = SortDescriptor(option: .album, direction: .ascending)
+
+    /// Filters and sorts an array of media items.
     ///
-    /// This function first filters the media array based on the `searchQuery`. If the query is empty,
-    /// all items are kept. It then sorts the resulting array using the provided `sortDescriptor`.
+    /// This function first filters the array based on the `searchQuery`. Then,
+    /// it sorts the filtered results according to the provided
+    /// `sortDescriptor`.
+    ///
+    /// An optimization is included: if the `mediaType` is provided and the
+    /// `sortDescriptor` matches the default sort order for that type, the
+    /// expensive sorting step is skipped, and the filtered array is returned
+    /// directly.
     ///
     /// - Parameters:
-    ///   - media: The array of `Mediable` items to be sorted and filtered.
-    ///   - sortDescriptor: The `SortDescriptor` that defines the sorting key (e.g., artist, title) and direction (ascending, descending).
-    ///   - searchQuery: An optional string to filter the media. The filter is case-insensitive and checks relevant properties of each media item.
-    /// - Returns: A new array of `Mediable` items, filtered and sorted according to the specified criteria.
+    ///   - media: The array of `Mediable` items to process.
+    ///   - sortDescriptor: The `SortDescriptor` that defines the sorting order.
+    ///   - searchQuery: A string to filter items by. If empty, no filtering is
+    ///                  applied. The search is case-insensitive.
+    ///   - mediaType: The type of media being sorted, used for optimization.
+    /// - Returns: A new array of `Mediable` items, filtered and sorted as
+    ///            specified.
     static func sorted(
         _ media: [any Mediable],
         by sortDescriptor: SortDescriptor,
         searchQuery: String = "",
+        mediaType: MediaType? = nil
     ) async -> [any Mediable] {
-        let filtered = filter(media, by: searchQuery)
+        // Filter first if needed
+        let filtered = searchQuery.isEmpty ? media : media.filter { item in
+            let query = searchQuery.lowercased()
+            switch item {
+            case let song as Song:
+                return song.artist.lowercased().contains(query) ||
+                    song.title.lowercased().contains(query)
+            case let album as Album:
+                return album.title.lowercased().contains(query) ||
+                    album.artist.name.lowercased().contains(query)
+            case let artist as Artist:
+                return artist.name.lowercased().contains(query)
+            default:
+                return false
+            }
+        }
 
-        return await performSort(filtered, by: sortDescriptor)
+        if let mediaType = mediaType {
+            let isDefaultSort = switch mediaType {
+            case .album: sortDescriptor == defaultAlbumSort
+            case .artist: sortDescriptor == defaultArtistSort
+            case .song: sortDescriptor == defaultSongSort
+            case .playlist: true // Playlists don't sort
+            }
+
+            if isDefaultSort {
+                return filtered
+            }
+        }
+
+        return filtered.sorted { lhs, rhs in
+            let lhsValue: String?
+            let rhsValue: String?
+
+            switch sortDescriptor.option {
+            case .artist:
+                lhsValue = (lhs as? Song)?.artist ?? (lhs as? Album)?.artist.name ?? (lhs as? Artist)?.name
+                rhsValue = (rhs as? Song)?.artist ?? (rhs as? Album)?.artist.name ?? (rhs as? Artist)?.name
+            case .album:
+                lhsValue = (lhs as? Song)?.album.title ?? (lhs as? Album)?.title
+                rhsValue = (rhs as? Song)?.album.title ?? (rhs as? Album)?.title
+            case .title:
+                lhsValue = (lhs as? Song)?.title ?? (lhs as? Album)?.title
+                rhsValue = (rhs as? Song)?.title ?? (rhs as? Album)?.title
+            case .name:
+                lhsValue = (lhs as? Artist)?.name
+                rhsValue = (rhs as? Artist)?.name
+            }
+
+            guard let lhs = lhsValue, let rhs = rhsValue else { return false }
+
+            let comparison = lhs.localizedStandardCompare(rhs)
+            return sortDescriptor.direction == .ascending
+                ? comparison == .orderedAscending
+                : comparison == .orderedDescending
+        }
     }
 
-    /// Generates a list of available sort options for a specific media type.
+    /// Returns the available sort options for a given media type.
     ///
-    /// Different media types have different sortable properties. For example, an `Album` can be sorted by artist or title,
-    /// while an `Artist` can only be sorted by name. This method provides all valid `SortOption`s for the given type.
+    /// Use this to populate UI elements, ensuring that only relevant sorting
+    /// options are presented to the user for a specific context (e.g.,
+    /// albums, songs).
     ///
-    /// - Parameter mediaType: The `MediaType` (e.g., `.album`, `.song`) for which to get the available sort options.
-    /// - Returns: An array of `SortOption`s that can be applied to a collection of the specified media type.
+    /// - Parameter mediaType: The type of media (e.g., `.album`, `.song`).
+    /// - Returns: An array of `SortOption` values applicable to that media
+    ///            type.
     static func availableSortOptions(for mediaType: MediaType) -> [SortOption] {
         switch mediaType {
         case .album:
@@ -104,149 +207,6 @@ enum SortingManager {
             [.album, .title, .artist]
         case .playlist:
             []
-        }
-    }
-
-    /// Filters an array of media items based on a search query.
-    ///
-    /// The function performs a case-insensitive search. It checks different properties depending on the
-    /// concrete type of the `Mediable` item (e.g., title and artist for a `Song`, name for an `Artist`).
-    /// If the search query is empty, the original array is returned unmodified.
-    ///
-    /// - Parameters:
-    ///   - media: The array of `Mediable` items to filter.
-    ///   - searchQuery: The string to search for within the media items.
-    /// - Returns: A new, filtered array of `Mediable` items that match the search query.
-    private static func filter(_ media: [any Mediable], by searchQuery: String) -> [any Mediable] {
-        guard !searchQuery.isEmpty else {
-            return media
-        }
-
-        let lowercasedQuery = searchQuery.lowercased()
-
-        return media.filter { mediable in
-            switch mediable {
-            case let song as Song:
-                song.artist.lowercased().contains(lowercasedQuery) ||
-                    song.title.lowercased().contains(lowercasedQuery)
-            case let album as Album:
-                album.title.lowercased().contains(lowercasedQuery) ||
-                    album.artist.name.lowercased().contains(lowercasedQuery)
-            case let artist as Artist:
-                artist.name.lowercased().contains(lowercasedQuery)
-            default:
-                false
-            }
-        }
-    }
-
-    /// Sorts an array of media items using a specific sort descriptor.
-    ///
-    /// This function uses `localizedStandardCompare` for sorting, which provides natural sorting
-    /// for strings containing numbers (e.g., "Song 2" comes before "Song 10").
-    ///
-    /// - Parameters:
-    ///   - media: The array of `Mediable` items to sort.
-    ///   - sortDescriptor: The `SortDescriptor` defining the sort key and direction.
-    /// - Returns: A new, sorted array of `Mediable` items.
-    private static func performSort(
-        _ media: [any Mediable],
-        by sortDescriptor: SortDescriptor,
-    ) async -> [any Mediable] {
-        media.sorted { lhs, rhs in
-            let (lhsValue, rhsValue) = getSortValues(lhs, rhs, for: sortDescriptor.option)
-
-            guard let lhsValue, let rhsValue else {
-                return false
-            }
-
-            let comparison = lhsValue.localizedStandardCompare(rhsValue)
-
-            return sortDescriptor.direction == .ascending
-                ? comparison == .orderedAscending
-                : comparison == .orderedDescending
-        }
-    }
-
-    /// Extracts the string values to be used for comparison from two media items.
-    ///
-    /// Based on the `SortOption`, this helper function calls the appropriate getter (e.g., `getArtist`, `getAlbum`)
-    /// to retrieve the comparable string properties from the left-hand side (lhs) and right-hand side (rhs) items.
-    ///
-    /// - Parameters:
-    ///   - lhs: The left-hand side `Mediable` item in the comparison.
-    ///   - rhs: The right-hand side `Mediable` item in the comparison.
-    ///   - option: The `SortOption` specifying which property to extract.
-    /// - Returns: A tuple containing the optional string values from the `lhs` and `rhs` items, respectively.
-    private nonisolated static func getSortValues(_ lhs: any Mediable, _ rhs: any Mediable, for option: SortOption) -> (String?, String?) {
-        switch option {
-        case .artist:
-            (getArtist(from: lhs), getArtist(from: rhs))
-        case .album:
-            (getAlbum(from: lhs), getAlbum(from: rhs))
-        case .title:
-            (getTitle(from: lhs), getTitle(from: rhs))
-        case .name:
-            (getName(from: lhs), getName(from: rhs))
-        }
-    }
-
-    /// Retrieves the artist name from a media item.
-    ///
-    /// This helper handles different `Mediable` types, extracting the artist name
-    /// from a `Song`, `Album`, or `Artist` object.
-    ///
-    /// - Parameter item: The `Mediable` item from which to extract the artist name.
-    /// - Returns: The artist name as a `String`, or `nil` if the item type doesn't have an artist property.
-    private nonisolated static func getArtist(from item: any Mediable) -> String? {
-        switch item {
-        case let song as Song: song.artist
-        case let album as Album: album.artist.name
-        case let artist as Artist: artist.name
-        default: nil
-        }
-    }
-
-    /// Retrieves the album title from a media item.
-    ///
-    /// This helper handles different `Mediable` types, extracting the album title
-    /// from a `Song` or `Album` object.
-    ///
-    /// - Parameter item: The `Mediable` item from which to extract the album title.
-    /// - Returns: The album title as a `String`, or `nil` if the item type doesn't have an album property.
-    private nonisolated static func getAlbum(from item: any Mediable) -> String? {
-        switch item {
-        case let song as Song: song.album.title
-        case let album as Album: album.title
-        default: nil
-        }
-    }
-
-    /// Retrieves the title from a media item.
-    ///
-    /// This helper handles different `Mediable` types, extracting the title
-    /// from a `Song` or `Album` object.
-    ///
-    /// - Parameter item: The `Mediable` item from which to extract the title.
-    /// - Returns: The title as a `String`, or `nil` if the item type doesn't have a title property.
-    private nonisolated static func getTitle(from item: any Mediable) -> String? {
-        switch item {
-        case let song as Song: song.title
-        case let album as Album: album.title
-        default: nil
-        }
-    }
-
-    /// Retrieves the name from a media item.
-    ///
-    /// This helper is specifically designed to extract the name from an `Artist` object.
-    ///
-    /// - Parameter item: The `Mediable` item from which to extract the name.
-    /// - Returns: The name as a `String` if the item is an `Artist`, otherwise `nil`.
-    private nonisolated static func getName(from item: any Mediable) -> String? {
-        switch item {
-        case let artist as Artist: artist.name
-        default: nil
         }
     }
 }
