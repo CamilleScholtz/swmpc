@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
+import SearchBar
 import SwiftUI
 
 struct CategoryDestinationView: View {
@@ -74,9 +75,32 @@ struct CategoryView: View {
 
     let destination: CategoryDestination
 
-    @AppStorage(Setting.albumSortOption) private var albumSort = SortingManager.defaultAlbumSort.rawValue
-    @AppStorage(Setting.artistSortOption) private var artistSort = SortingManager.defaultArtistSort.rawValue
-    @AppStorage(Setting.songSortOption) private var songSort = SortingManager.defaultSongSort.rawValue
+    @AppStorage(Setting.albumSortOption) private var albumSort = SortDescriptor(option: .artist)
+    @AppStorage(Setting.artistSortOption) private var artistSort = SortDescriptor(option: .artist)
+    @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor(option: .album)
+
+    @State private var scrollProxy: ScrollViewProxy?
+
+    @State private var searchQuery = ""
+    @State private var isSearchFieldExpanded = false
+
+    @FocusState private var isSearchFieldFocused: Bool
+
+    private let scrollToCurrentNotification = NotificationCenter.default
+        .publisher(for: .scrollToCurrentNotification)
+
+    private var source: Source {
+        switch destination {
+        case .albums, .artists, .songs:
+            .database
+        case let .playlist(playlist):
+            playlist.name == "Favorites" ? .favorites : .playlist(playlist)
+        #if os(iOS)
+            default:
+                .database
+        #endif
+        }
+    }
 
     #if os(macOS)
         private var rowHeight: CGFloat {
@@ -87,55 +111,20 @@ struct CategoryView: View {
         }
     #endif
 
-    @State private var offset: CGFloat = 0
-
-    @State private var isSearching = false
-    @State private var searchQuery = ""
-    @State private var isSearchFieldExpanded = false
-
-    @FocusState private var isSearchFieldFocused: Bool
-
-    #if os(iOS)
-        @State private var showSearchButton = false
-        @State private var isGoingToSearch = false
-    #endif
-
-    private let startSearchingNotication = NotificationCenter.default
-        .publisher(for: .startSearchingNotication)
-
-    private let scrollToCurrentNotification = NotificationCenter.default
-        .publisher(for: .scrollToCurrentNotification)
-
-    @State private var scrollProxy: ScrollViewProxy?
-
-    // Computed properties for cleaner code
-    private var currentSortDescriptor: SortDescriptor {
+    private var currentSort: SortDescriptor {
         switch destination {
-        case .albums:
-            SortDescriptor(rawValue: albumSort) ?? SortingManager.defaultAlbumSort
-        case .artists:
-            SortDescriptor(rawValue: artistSort) ?? SortingManager.defaultArtistSort
-        case .songs:
-            SortDescriptor(rawValue: songSort) ?? SortingManager.defaultSongSort
-        default:
-            SortDescriptor(option: .title, direction: .ascending)
+        case .albums: albumSort
+        case .artists: artistSort
+        case .songs: songSort
+        default: SortDescriptor(option: .artist)
         }
     }
-    
-    private var sortBinding: Binding<String> {
-        switch destination {
-        case .albums: $albumSort
-        case .artists: $artistSort
-        case .songs: $songSort
-        default: .constant("")
-        }
-    }
-    
+
     private var availableSortOptions: [SortOption] {
         switch destination {
-        case .albums: SortingManager.availableSortOptions(for: .album)
-        case .artists: SortingManager.availableSortOptions(for: .artist)
-        case .songs: SortingManager.availableSortOptions(for: .song)
+        case .albums: Album.availableSortOptions
+        case .artists: Artist.availableSortOptions
+        case .songs: Song.availableSortOptions
         default: []
         }
     }
@@ -146,25 +135,29 @@ struct CategoryView: View {
                 if case let .playlist(playlist) = destination {
                     MediaView(using: playlist, searchQuery: searchQuery)
                 } else {
-                    MediaView(using: mpd.database, searchQuery: searchQuery, sortDescriptor: currentSortDescriptor)
+                    MediaView(using: mpd.database, searchQuery: searchQuery)
                 }
             }
             .onAppear {
                 scrollProxy = proxy
             }
         }
-        .id("\(destination)_\(sortBinding.wrappedValue)")
-        .task(id: destination) {
+        .id("\(destination)_\(currentSort.rawValue)")
+        .onChange(of: destination) { _, value in
             switch destination {
             case .albums:
-                try? await mpd.database.set(type: .album, idle: false)
+                mpd.database.type = .album
             case .artists:
-                try? await mpd.database.set(type: .artist, idle: false)
+                mpd.database.type = .artist
             case .songs:
-                try? await mpd.database.set(type: .song, idle: false)
+                mpd.database.type = .song
             default:
                 break
             }
+        }
+        .onChange(of: currentSort) { _, value in
+            mpd.database.sortOption = value.option
+            mpd.database.sortDirection = value.direction
         }
         .toolbar(removing: .title)
         .toolbar {
@@ -202,16 +195,48 @@ struct CategoryView: View {
             ToolbarSpacer(.fixed)
 
             ToolbarItem {
-                sortMenu
+                Menu {
+                    ForEach(availableSortOptions, id: \.self) { option in
+                        Button {
+                            let newSort = if currentSort.option == option {
+                                SortDescriptor(option: option, direction: currentSort.direction == .ascending ? .descending : .ascending)
+                            } else {
+                                SortDescriptor(option: option)
+                            }
+
+                            switch destination {
+                            case .albums: albumSort = newSort
+                            case .artists: artistSort = newSort
+                            case .songs: songSort = newSort
+                            default: break
+                            }
+                        } label: {
+                            if currentSort.option == option {
+                                Image(systemSymbol: .checkmark)
+                            }
+
+                            Text(option.label)
+
+                            if currentSort.option == option {
+                                Text(currentSort.direction.label)
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemSymbol: .line3HorizontalDecrease)
+                }
+                .menuIndicator(.hidden)
             }
-            .hidden(isSearchFieldExpanded || destination == .playlist(Playlist(name: "")))
+            .hidden(isSearchFieldExpanded || !source.isSortable)
 
             ToolbarItem {
                 Button {
                     withAnimation(.spring) {
                         isSearchFieldExpanded.toggle()
-                        isSearching.toggle()
-                        isSearchFieldFocused.toggle()
+                        isSearchFieldFocused = isSearchFieldExpanded
+                        if !isSearchFieldExpanded {
+                            searchQuery = ""
+                        }
                     }
                 } label: {
                     Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
@@ -223,9 +248,6 @@ struct CategoryView: View {
             Task {
                 try? await scrollToCurrent(proxy: scrollProxy, animate: notification.object as? Bool ?? true)
             }
-        }
-        .onReceive(startSearchingNotication) { _ in
-            isSearching = true
         }
         .onChange(of: destination) { _, value in
             switch value {
@@ -256,16 +278,6 @@ struct CategoryView: View {
                 }
             }
         }
-        .onChange(of: isSearching) { _, value in
-            if value {
-            } else {
-                searchQuery = ""
-                #if os(macOS)
-                    isSearchFieldExpanded = false
-                    isSearchFieldFocused = false
-                #endif
-            }
-        }
         .onChange(of: searchQuery) { _, value in
             guard value.isEmpty else {
                 return
@@ -273,69 +285,6 @@ struct CategoryView: View {
 
             NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
         }
-//        .searchable(text: $query, isPresented: $isSearching)
-//        .disableAutocorrection(true)
-//        .onChange(of: isSearching) { _, value in
-//            guard !value else {
-//                return
-//            }
-//
-//            if case .playlist = navigator.category {
-//                NotificationCenter.default.post(name: .startSearchingNotication, object: "")
-//            }
-//        }
-//        .onChange(of: isGoingToSearch) { _, value in
-//            guard value else {
-//                return
-//            }
-//
-//            isSearching = true
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-//                isGoingToSearch = false
-//            }
-//        }
-//        .task(id: query) {
-//            guard isSearching else {
-//                return
-//            }
-//
-//            // For playlists, search is handled by MediaListView internally
-//            if case .playlist = navigator.category {
-//                NotificationCenter.default.post(name: .startSearchingNotication, object: query.isEmpty ? "" : query)
-//            }
-//            // For database views, search will be handled by SwiftUI's searchable with filtered views
-        // }
-    }
-    
-    @ViewBuilder
-    private var sortMenu: some View {
-        Menu {
-            ForEach(availableSortOptions, id: \.self) { option in
-                Button {
-                    if currentSortDescriptor.option == option {
-                        // Toggle direction
-                        let newDirection: SortDirection = currentSortDescriptor.direction == .ascending ? .descending : .ascending
-                        sortBinding.wrappedValue = SortDescriptor(option: option, direction: newDirection).rawValue
-                    } else {
-                        // New option, default to ascending
-                        sortBinding.wrappedValue = SortDescriptor(option: option, direction: .ascending).rawValue
-                    }
-                } label: {
-                    if currentSortDescriptor.option == option {
-                        Image(systemSymbol: .checkmark)
-                    }
-                    
-                    Text(option.label)
-                    
-                    if currentSortDescriptor.option == option {
-                        Text(currentSortDescriptor.direction.label)
-                    }
-                }
-            }
-        } label: {
-            Image(systemSymbol: .line3HorizontalDecrease)
-        }
-        .menuIndicator(.hidden)
     }
 
     private func scrollToCurrent(proxy: ScrollViewProxy, animate: Bool = true) async throws {

@@ -60,6 +60,15 @@ enum Source: Equatable, Hashable {
             false
         }
     }
+
+    nonisolated var isSortable: Bool {
+        switch self {
+        case .queue, .playlist, .favorites:
+            false
+        case .database:
+            true
+        }
+    }
 }
 
 /// Represents the different subsystems that MPD monitors for changes.
@@ -78,6 +87,44 @@ enum IdleEvent: String {
     case player
     /// The mixer volume has changed.
     case mixer
+}
+
+/// Represents a sort descriptor for media items.
+enum SortOption: String {
+    /// Sort by album artist.
+    case artist = "albumartistsort"
+    /// Sort by album title.
+    case album = "albumsort"
+    /// Sort by song title.
+    case song = "titlesort"
+
+    var label: String {
+        switch self {
+        case .artist:
+            "Artist"
+        case .album:
+            "Album"
+        case .song:
+            "Song"
+        }
+    }
+}
+
+/// Represents the direction of sorting for media items.
+enum SortDirection: String {
+    /// Sort in ascending order.
+    case ascending = ""
+    /// Sort in descending order.
+    case descending = "-"
+
+    var label: String {
+        switch self {
+        case .ascending:
+            "Ascending"
+        case .descending:
+            "Descending"
+        }
+    }
 }
 
 /// Specifies the method for retrieving artwork from MPD.

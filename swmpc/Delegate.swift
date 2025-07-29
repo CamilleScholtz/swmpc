@@ -113,7 +113,7 @@ struct Delegate: App {
 
                 AsyncButton("Reload Library", systemImage: "arrow.clockwise") {
                     try await ConnectionManager.command().update()
-                    try await appDelegate.mpd.database.set(force: true)
+                    try await appDelegate.mpd.database.set()
                 }
                 .keyboardShortcut("r", modifiers: [.command, .option])
             }

@@ -13,46 +13,32 @@ struct MediaView: View {
     private let source: Source
     private let type: MediaType
     private let searchQuery: String
-    private let sortDescriptor: SortDescriptor
 
     @State private var loadedSongs: [Song] = []
-    @State private var sortedMedia: [any Mediable] = []
 
     private let playlistModifiedNotification = NotificationCenter.default
         .publisher(for: .playlistModifiedNotification)
 
-    init(using database: DatabaseManager, searchQuery: String = "", sortDescriptor: SortDescriptor) {
+    init(using database: DatabaseManager, searchQuery: String = "") {
         source = .database
         type = database.type
         self.searchQuery = searchQuery
-        self.sortDescriptor = sortDescriptor
     }
 
     init(using _: QueueManager, searchQuery: String = "") {
         source = .queue
         type = .song
         self.searchQuery = searchQuery
-        sortDescriptor = SortDescriptor(option: .title, direction: .ascending)
     }
 
     init(using playlist: Playlist, searchQuery: String = "") {
         source = playlist.name == "Favorites" ? .favorites : .playlist(playlist)
         type = .song
         self.searchQuery = searchQuery
-        sortDescriptor = SortDescriptor(option: .title, direction: .ascending)
     }
 
-    private var isMovable: Bool {
-        switch source {
-        case .queue, .playlist:
-            true
-        default:
-            false
-        }
-    }
-
-    private var baseMedia: [any Mediable] {
-        switch source {
+    private var media: [any Mediable] {
+        let baseMedia = switch source {
         case .queue:
             mpd.queue.songs
         case .playlist:
@@ -62,26 +48,46 @@ struct MediaView: View {
         case .database:
             mpd.database.media ?? []
         }
+        
+        // Apply search filter if needed
+        guard !searchQuery.isEmpty else {
+            return baseMedia
+        }
+        
+        return baseMedia.filter { item in
+            switch item {
+            case let album as Album:
+                return album.title.localizedCaseInsensitiveContains(searchQuery) ||
+                       album.artist.name.localizedCaseInsensitiveContains(searchQuery)
+            case let artist as Artist:
+                return artist.name.localizedCaseInsensitiveContains(searchQuery)
+            case let song as Song:
+                return song.title.localizedCaseInsensitiveContains(searchQuery) ||
+                       song.artist.localizedCaseInsensitiveContains(searchQuery) ||
+                       song.album.title.localizedCaseInsensitiveContains(searchQuery)
+            default:
+                return false
+            }
+        }
     }
 
     var body: some View {
         Group {
-            if sortedMedia.isEmpty {
+            if media.isEmpty {
                 VStack {
                     Text("No content")
                         .font(.headline)
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if isMovable, let songs = sortedMedia as? [Song] {
-                // Movable songs (queue/playlist)
+            } else if source.isMovable, let songs = media as? [Song] {
                 ForEach(songs) { song in
                     SongView(for: song, source: source)
                 }
                 .onMove(perform: move)
             } else {
                 // Non-movable media
-                ForEach(sortedMedia, id: \.id) { item in
+                ForEach(media, id: \.id) { item in
                     switch item {
                     case let album as Album:
                         AlbumView(for: album)
@@ -109,16 +115,13 @@ struct MediaView: View {
             .task {
                 await loadPlaylistSongs()
             }
-            .task(id: "\(baseMedia.count)-\(searchQuery.hashValue)-\(sortDescriptor.hashValue)") {
-                await updateSortedMedia()
-            }
     }
-    
+
     private func move(from source: IndexSet, to destination: Int) {
         Task {
             guard let index = source.first,
-                  index < sortedMedia.count,
-                  let song = sortedMedia[index] as? Song
+                  index < media.count,
+                  let song = media[index] as? Song
             else {
                 return
             }
@@ -133,16 +136,17 @@ struct MediaView: View {
             }
         }
     }
-    
+
     private func loadPlaylistSongs() async {
         guard loadedSongs.isEmpty,
-              case let .playlist(playlist) = source else {
+              case let .playlist(playlist) = source
+        else {
             return
         }
-        
+
         loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
     }
-    
+
     private func refreshPlaylistSongs() async {
         if case let .playlist(playlist) = source {
             if playlist.name == "Favorites" {
@@ -151,14 +155,5 @@ struct MediaView: View {
                 loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
             }
         }
-    }
-    
-    private func updateSortedMedia() async {
-        sortedMedia = await SortingManager.sorted(
-            baseMedia,
-            by: sortDescriptor,
-            searchQuery: searchQuery,
-            mediaType: type
-        )
-    }
+    } 
 }

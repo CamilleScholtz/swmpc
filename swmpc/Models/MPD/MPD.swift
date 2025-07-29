@@ -53,10 +53,6 @@ import SwiftUI
         updateLoopTask = nil
     }
 
-    deinit {
-        // The task will be automatically cancelled when the MPD instance is deallocated
-    }
-
     /// Establishes a connection to the MPD server.
     ///
     /// This method attempts to connect to the MPD server repeatedly until
@@ -126,7 +122,7 @@ import SwiftUI
         case .playlists:
             try await playlists.set()
         case .database:
-            try await database.set(force: true)
+            try await database.set()
         case .queue:
             try await queue.set(force: true)
             try await status.set()

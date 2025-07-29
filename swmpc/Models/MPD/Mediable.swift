@@ -10,6 +10,12 @@ import SwiftUI
 protocol Mediable: Identifiable, Equatable, Hashable, Sendable {
     /// Returns a unique identifier for the media item.
     nonisolated var id: String { get }
+
+    /// Returns the location of the media item.
+    var url: URL { get }
+
+    /// Returns the available sort options for this media type.
+    static var availableSortOptions: [SortOption] { get }
 }
 
 extension Mediable {
@@ -45,25 +51,10 @@ extension Artworkable where Self: Mediable {
     ///           if no artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
     func artwork() async throws -> PlatformImage? {
-        let url: URL?
-        let shouldCache: Bool
-
-        switch self {
-        case let song as Song:
-            url = song.url
-            shouldCache = false
-        case let album as Album:
-            url = try await album.getURL()
-            shouldCache = true
-        default:
-            return nil
-        }
-
-        guard let url else {
-            throw ViewError.missingData
-        }
-
-        let data = try await ArtworkManager.shared.get(for: url, shouldCache: shouldCache)
+        let data = try await ArtworkManager.shared.get(
+            for: url,
+            shouldCache: self is Album || self is Artist,
+        )
 
         return PlatformImage(data: data)
     }
@@ -73,10 +64,18 @@ extension Artworkable where Self: Mediable {
 nonisolated struct Artist: Mediable {
     nonisolated var id: String { name }
 
+    let url: URL
+
     let name: String
+
+    let added: Date?
 
     func getAlbums() async throws -> [Album] {
         try await ConnectionManager.command().getAlbums(by: self, from: .database)
+    }
+
+    static var availableSortOptions: [SortOption] {
+        [.artist]
     }
 }
 
@@ -84,9 +83,15 @@ nonisolated struct Artist: Mediable {
 nonisolated struct Album: Mediable, Artworkable {
     nonisolated var id: String { description }
 
-    let title: String
+    let url: URL
 
+    let title: String
     let artist: Artist
+
+    let date: String?
+    let genre: String?
+
+    let added: Date?
 
     nonisolated var description: String {
         "\(artist.name) - \(title)"
@@ -100,12 +105,8 @@ nonisolated struct Album: Mediable, Artworkable {
         try await ConnectionManager.command().getSongs(in: self, from: .database)
     }
 
-    /// Fetches the URL of the first song in this album.
-    ///
-    /// - Returns: The URL of the first song in this album.
-    /// - Throws: An error if the command execution fails or no songs are found.
-    func getURL() async throws -> URL {
-        try await ConnectionManager.command().getURL(of: self)
+    static var availableSortOptions: [SortOption] {
+        [.artist, .album]
     }
 }
 
@@ -116,9 +117,10 @@ nonisolated struct Album: Mediable, Artworkable {
 nonisolated struct Song: Mediable, Artworkable {
     nonisolated var id: String { url.absoluteString }
 
+    let url: URL
+
     let identifier: UInt32?
     let position: UInt32?
-    let url: URL
 
     let artist: String
     let title: String
@@ -128,6 +130,11 @@ nonisolated struct Song: Mediable, Artworkable {
     let track: Int
 
     let album: Album
+
+    let date: String?
+    let genre: String?
+
+    let added: Date?
 
     nonisolated var description: String {
         "\(artist) - \(title)"
@@ -148,6 +155,10 @@ nonisolated struct Song: Mediable, Artworkable {
     func isBy(_ artist: Artist) -> Bool {
         album.artist == artist
     }
+
+    static var availableSortOptions: [SortOption] {
+        [.album, .song, .artist]
+    }
 }
 
 /// Represents a playlist in the MPD database.
@@ -157,4 +168,31 @@ nonisolated struct Playlist: Identifiable, Equatable, Hashable, Codable, Sendabl
     nonisolated var id: String { name }
 
     let name: String
+}
+
+/// Represents a complete sort descriptor combining option and direction.
+nonisolated struct SortDescriptor: RawRepresentable, Equatable {
+    let option: SortOption
+    let direction: SortDirection
+
+    init(option: SortOption, direction: SortDirection = .ascending) {
+        self.option = option
+        self.direction = direction
+    }
+
+    init?(rawValue: String) {
+        let components = rawValue.split(separator: "_")
+        guard let first = components.first,
+              let option = SortOption(rawValue: String(first))
+        else {
+            return nil
+        }
+
+        self.option = option
+        direction = components.count == 2 && components[1] == "descending" ? .descending : .ascending
+    }
+
+    var rawValue: String {
+        "\(option.rawValue)_\(direction == .ascending ? "ascending" : "descending")"
+    }
 }

@@ -621,6 +621,9 @@
         }
       }
     },
+    "Ascending" : {
+
+    },
     "Asian Music" : {
       "localizations" : {
         "de" : {
@@ -1327,6 +1330,9 @@
           }
         }
       }
+    },
+    "Descending" : {
+
     },
     "Disc %@" : {
       "localizations" : {

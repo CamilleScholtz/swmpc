@@ -1,5 +1,5 @@
 {
-  "originHash" : "56b5fa27635e0f59a894c23eb2fa73a7730a912b54eb22a79bc18bdd8055385d",
+  "originHash" : "40d4d0de64a6589e985f9948665b242f051bd7c615ffba74eba93981c6a726cb",
   "pins" : [
     {
       "identity" : "buttonkit",
@@ -29,21 +29,21 @@
       }
     },
     {
-      "identity" : "observabledefaults",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/fatbobman/ObservableDefaults",
-      "state" : {
-        "revision" : "1ea5e5c220686cddf5584e861e8347fa941e1888",
-        "version" : "1.5.8"
-      }
-    },
-    {
       "identity" : "openai",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MacPaw/OpenAI",
       "state" : {
         "revision" : "bb283b2ac48c1e90121d73d6bfb45f961dc0b7a3",
         "version" : "0.4.5"
+      }
+    },
+    {
+      "identity" : "searchbar",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SzpakKamil/SearchBar",
+      "state" : {
+        "revision" : "97fcbefafb57fdd48e7d7636a37da101af5b7c4e",
+        "version" : "2.1.1"
       }
     },
     {
@@ -89,15 +89,6 @@
       "state" : {
         "revision" : "8f33cc5dfe81169fb167da73584b9c72c3e8bc23",
         "version" : "1.8.2"
-      }
-    },
-    {
-      "identity" : "swift-syntax",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-syntax",
-      "state" : {
-        "revision" : "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
-        "version" : "601.0.1"
       }
     },
     {
