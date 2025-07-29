@@ -89,19 +89,6 @@ struct CategoryView: View {
     private let scrollToCurrentNotification = NotificationCenter.default
         .publisher(for: .scrollToCurrentNotification)
 
-    private var source: Source {
-        switch destination {
-        case .albums, .artists, .songs:
-            .database
-        case let .playlist(playlist):
-            playlist.name == "Favorites" ? .favorites : .playlist(playlist)
-        #if os(iOS)
-            default:
-                .database
-        #endif
-        }
-    }
-
     #if os(macOS)
         private var rowHeight: CGFloat {
             switch destination {
@@ -143,25 +130,6 @@ struct CategoryView: View {
             }
         }
         .id("\(destination)_\(currentSort.rawValue)")
-        .onChange(of: destination) { _, value in
-            mpd.state.isLoading = true
-
-            switch value {
-            case .albums:
-                mpd.database.type = .album
-            case .artists:
-                mpd.database.type = .artist
-            case .songs:
-                mpd.database.type = .song
-            default:
-                break
-            }
-        }
-        .onChange(of: currentSort) { _, value in
-            mpd.state.isLoading = true
-
-            mpd.database.sort = value
-        }
         .toolbar(removing: .title)
         .toolbar {
             // TODO: I want to use DefaultToolbarItem, but that seems to be broken.
@@ -179,9 +147,15 @@ struct CategoryView: View {
                 .hidden(isSearchFieldExpanded)
 
             ToolbarItem {
-                TextField("Search", text: $searchQuery)
-                    .frame(width: 244)
-                    .autocorrectionDisabled()
+                SearchBar(text: $searchQuery)
+                    .searchBarMaterial(.glass)
+                    .searchBarScale(.large)
+                    .searchBarStyle(cornerRadius: 100, backgroundColor: .clear)
+                    .frame(width: 200)
+                    .glassEffect(.regular)
+                // TextField("Search", text: $searchQuery)
+                //     .frame(width: 244)
+                //     .autocorrectionDisabled()
             }
             .hidden(!isSearchFieldExpanded)
 
@@ -230,7 +204,7 @@ struct CategoryView: View {
                 }
                 .menuIndicator(.hidden)
             }
-            .hidden(isSearchFieldExpanded || !source.isSortable)
+            .hidden(isSearchFieldExpanded || !destination.source.isSortable)
 
             ToolbarItem {
                 Button {
@@ -269,17 +243,35 @@ struct CategoryView: View {
                     return;
             #endif
             }
-
-            Task {
-                while true {
-                    try? await Task.sleep(for: .seconds(0.1))
-
-                    if mpd.database.media != nil {
-                        NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
-                        break
-                    }
-                }
+                        
+            switch value {
+            case .albums:
+                mpd.database.type = .album
+            case .artists:
+                mpd.database.type = .artist
+            case .songs:
+                mpd.database.type = .song
+            default:
+                break
             }
+            
+            // TODO: Does not work!
+//            Task {
+//                while true {
+//                    try? await Task.sleep(for: .seconds(0.1))
+//
+//                    if mpd.database.media != nil {
+//                        NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+//                        break
+//                    }
+//                }
+//            }
+        }
+        .onChange(of: currentSort) { _, value in
+            mpd.state.isLoading = true
+            mpd.database.sort = value
+            
+            NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
         }
         .onChange(of: searchQuery) { _, value in
             guard value.isEmpty else {

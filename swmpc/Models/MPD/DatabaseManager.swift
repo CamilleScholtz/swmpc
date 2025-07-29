@@ -66,7 +66,7 @@ import SwiftUI
         async throws
     {
         defer { state.isLoading = false }
-
+        
         media = switch type {
         case .album:
             try await idle

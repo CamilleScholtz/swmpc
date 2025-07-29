@@ -8,8 +8,6 @@
 import SFSafeSymbols
 import SwiftUI
 
-// TODO: `content` and `path` feel a duplicate, but I really cant figure out how
-// to get the "contents" of the `path`.
 @Observable final class NavigationManager {
     var path = NavigationPath()
 
@@ -25,21 +23,8 @@ import SwiftUI
         }
     }
 
-    var content: [ContentDestination] = []
-
     func navigate(to content: ContentDestination) {
-        guard content != self.content.last else {
-            return
-        }
-
-        if self.content.contains(content) {
-            while self.content.last != content {
-                goBack()
-            }
-        } else {
-            path.append(content)
-            self.content.append(content)
-        }
+        path.append(content)
     }
 
     func goBack() {
@@ -48,12 +33,10 @@ import SwiftUI
         }
 
         path.removeLast()
-        content.removeLast()
     }
 
     func reset() {
         path = NavigationPath()
-        content = []
     }
 }
 
@@ -78,15 +61,21 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         #endif
     }
 
-    var type: MediaType? {
+    var type: MediaType {
         switch self {
         case .albums: .album
         case .artists: .artist
         case .songs: .song
         case .playlist: .playlist
-        #if os(iOS)
-            default: nil
-        #endif
+        }
+    }
+    
+    var source: Source {
+        switch self {
+        case .albums, .artists, .songs:
+            .database
+        case let .playlist(playlist):
+            playlist.name == "Favorites" ? .favorites : .playlist(playlist)
         }
     }
 
