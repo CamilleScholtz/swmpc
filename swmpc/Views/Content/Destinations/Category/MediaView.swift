@@ -48,25 +48,25 @@ struct MediaView: View {
         case .database:
             mpd.database.media ?? []
         }
-        
+
         // Apply search filter if needed
         guard !searchQuery.isEmpty else {
             return baseMedia
         }
-        
+
         return baseMedia.filter { item in
             switch item {
             case let album as Album:
-                return album.title.localizedCaseInsensitiveContains(searchQuery) ||
-                       album.artist.name.localizedCaseInsensitiveContains(searchQuery)
+                album.title.localizedCaseInsensitiveContains(searchQuery) ||
+                    album.artist.name.localizedCaseInsensitiveContains(searchQuery)
             case let artist as Artist:
-                return artist.name.localizedCaseInsensitiveContains(searchQuery)
+                artist.name.localizedCaseInsensitiveContains(searchQuery)
             case let song as Song:
-                return song.title.localizedCaseInsensitiveContains(searchQuery) ||
-                       song.artist.localizedCaseInsensitiveContains(searchQuery) ||
-                       song.album.title.localizedCaseInsensitiveContains(searchQuery)
+                song.title.localizedCaseInsensitiveContains(searchQuery) ||
+                    song.artist.localizedCaseInsensitiveContains(searchQuery) ||
+                    song.album.title.localizedCaseInsensitiveContains(searchQuery)
             default:
-                return false
+                false
             }
         }
     }
@@ -155,5 +155,5 @@ struct MediaView: View {
                 loadedSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
             }
         }
-    } 
+    }
 }

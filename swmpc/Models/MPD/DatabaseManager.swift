@@ -40,23 +40,9 @@ import SwiftUI
 
     /// The current sort option being used.
     /// Changing this property will automatically trigger a data refresh.
-    var sortOption: SortOption = .artist {
+    var sort: SortDescriptor = .init(option: .artist) {
         didSet {
-            guard oldValue != sortOption else {
-                return
-            }
-
-            Task(priority: .userInitiated) {
-                try? await set(idle: false)
-            }
-        }
-    }
-
-    /// The current sort direction being used.
-    /// Changing this property will automatically trigger a data refresh.
-    var sortDirection: SortDirection = .ascending {
-        didSet {
-            guard oldValue != sortDirection else {
+            guard oldValue != sort else {
                 return
             }
 
@@ -84,16 +70,16 @@ import SwiftUI
         media = switch type {
         case .album:
             try await idle
-                ? ConnectionManager.idle.getAlbums(sortBy: sortOption, direction: sortDirection)
-                : ConnectionManager.command().getAlbums(sortBy: sortOption, direction: sortDirection)
+            ? ConnectionManager.idle.getAlbums(sortBy: sort.option, direction: sort.direction)
+            : ConnectionManager.command().getAlbums(sortBy: sort.option, direction: sort.direction)
         case .artist:
             try await idle
-                ? ConnectionManager.idle.getArtists(sortBy: sortOption, direction: sortDirection)
-                : ConnectionManager.command().getArtists(sortBy: sortOption, direction: sortDirection)
+                ? ConnectionManager.idle.getArtists(sortBy: sort.option, direction: sort.direction)
+                : ConnectionManager.command().getArtists(sortBy: sort.option, direction: sort.direction)
         case .song:
             try await idle
-                ? ConnectionManager.idle.getSongs(from: Source.database, sortBy: sortOption, direction: sortDirection)
-                : ConnectionManager.command().getSongs(from: Source.database, sortBy: sortOption, direction: sortDirection)
+                ? ConnectionManager.idle.getSongs(from: Source.database, sortBy: sort.option, direction: sort.direction)
+                : ConnectionManager.command().getSongs(from: Source.database, sortBy: sort.option, direction: sort.direction)
         case .playlist:
             nil
         }

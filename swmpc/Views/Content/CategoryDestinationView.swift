@@ -144,7 +144,9 @@ struct CategoryView: View {
         }
         .id("\(destination)_\(currentSort.rawValue)")
         .onChange(of: destination) { _, value in
-            switch destination {
+            mpd.state.isLoading = true
+
+            switch value {
             case .albums:
                 mpd.database.type = .album
             case .artists:
@@ -156,8 +158,9 @@ struct CategoryView: View {
             }
         }
         .onChange(of: currentSort) { _, value in
-            mpd.database.sortOption = value.option
-            mpd.database.sortDirection = value.direction
+            mpd.state.isLoading = true
+
+            mpd.database.sort = value
         }
         .toolbar(removing: .title)
         .toolbar {

@@ -22,20 +22,11 @@ import SwiftUI
     ///
     /// - Parameters:
     ///   - idle: Whether to use the idle connection.
-    ///   - force: Whether to force the update.
     /// - Throws: An error if the queue could not be loaded.
-    func set(idle: Bool = false, force _: Bool = false) async throws {
+    func set(idle: Bool = false) async throws {
         defer { state.isLoading = false }
 
-        songs = try await fetchSongs(idle: idle)
-    }
-
-    /// Fetches the songs from the MPD server.
-    ///
-    /// - Parameter idle: Whether to use the idle connection.
-    /// - Returns: The songs from the MPD server.
-    private func fetchSongs(idle: Bool) async throws -> [Song] {
-        try await idle
+        songs = try await idle
             ? ConnectionManager.idle.getSongs(from: .queue)
             : ConnectionManager.command().getSongs(from: .queue)
     }

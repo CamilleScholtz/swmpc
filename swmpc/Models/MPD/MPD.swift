@@ -124,7 +124,7 @@ import SwiftUI
         case .database:
             try await database.set()
         case .queue:
-            try await queue.set(force: true)
+            try await queue.set()
             try await status.set()
         case .player:
             try await status.set()

@@ -903,13 +903,12 @@ extension ConnectionManager {
             name.isEmpty ? nil : Playlist(name: name)
         }
 
-        let song: Song?
-        if fields["file"] != nil {
-            song = try parseMediaResponse(fields.map {
+        let song: Song? = if fields["file"] != nil {
+            try parseMediaResponse(fields.map {
                 "\($0.key): \($0.value)"
             }, as: .song)
         } else {
-            song = nil
+            nil
         }
 
         return (state, isRandom, isRepeat, elapsed, playlist, song, volume)
