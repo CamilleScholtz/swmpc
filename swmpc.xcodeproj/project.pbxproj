@@ -12,7 +12,6 @@
 		91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91489B852D6A6C6C0038092A /* SFSafeSymbols */; };
 		91775F5E2D93729F002589C5 /* Noise in Frameworks */ = {isa = PBXBuildFile; productRef = 91775F5D2D93729F002589C5 /* Noise */; };
 		9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 9182FEF32D97757000FED9D4 /* OpenAI */; };
-		91896BA22E38E0380091D007 /* SearchBar in Frameworks */ = {isa = PBXBuildFile; productRef = 91896BA12E38E0380091D007 /* SearchBar */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
@@ -78,7 +77,6 @@
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
 				9114DB422DB11A8500DD5E6E /* ButtonKit in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
-				91896BA22E38E0380091D007 /* SearchBar in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -135,7 +133,6 @@
 				9182FEF32D97757000FED9D4 /* OpenAI */,
 				9114DB412DB11A8500DD5E6E /* ButtonKit */,
 				9131261B2E0ADB2200D86527 /* SwiftUIIntrospect */,
-				91896BA12E38E0380091D007 /* SearchBar */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -177,7 +174,6 @@
 				91775F5C2D93729F002589C5 /* XCRemoteSwiftPackageReference "Noise" */,
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
 				9131261A2E0ADB2200D86527 /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
-				91896BA02E38E0380091D007 /* XCRemoteSwiftPackageReference "SearchBar" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -490,14 +486,6 @@
 				minimumVersion = 2.0.5;
 			};
 		};
-		91896BA02E38E0380091D007 /* XCRemoteSwiftPackageReference "SearchBar" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SzpakKamil/SearchBar";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.1.1;
-			};
-		};
 		91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
@@ -541,11 +529,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */;
 			productName = OpenAI;
-		};
-		91896BA12E38E0380091D007 /* SearchBar */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91896BA02E38E0380091D007 /* XCRemoteSwiftPackageReference "SearchBar" */;
-			productName = SearchBar;
 		};
 		91A142142CDEA27E000A74BC /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;

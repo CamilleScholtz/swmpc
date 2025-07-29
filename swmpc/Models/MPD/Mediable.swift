@@ -7,15 +7,12 @@
 
 import SwiftUI
 
-protocol Mediable: Identifiable, Equatable, Hashable, Sendable {
+protocol Mediable: Identifiable, Equatable, Codable, Hashable, Sendable {
     /// Returns a unique identifier for the media item.
     nonisolated var id: String { get }
 
     /// Returns the location of the media item.
     var url: URL { get }
-
-    /// Returns the available sort options for this media type.
-    static var availableSortOptions: [SortOption] { get }
 }
 
 extension Mediable {
@@ -73,10 +70,6 @@ nonisolated struct Artist: Mediable {
     func getAlbums() async throws -> [Album] {
         try await ConnectionManager.command().getAlbums(by: self, from: .database)
     }
-
-    static var availableSortOptions: [SortOption] {
-        [.artist]
-    }
 }
 
 /// Represents an album in the MPD database.
@@ -103,10 +96,6 @@ nonisolated struct Album: Mediable, Artworkable {
     /// - Throws: An error if the command execution fails.
     func getSongs() async throws -> [Song] {
         try await ConnectionManager.command().getSongs(in: self, from: .database)
-    }
-
-    static var availableSortOptions: [SortOption] {
-        [.artist, .album]
     }
 }
 
@@ -154,10 +143,6 @@ nonisolated struct Song: Mediable, Artworkable {
     /// - Returns: `true` if the song is by the artist, `false` otherwise.
     func isBy(_ artist: Artist) -> Bool {
         album.artist == artist
-    }
-
-    static var availableSortOptions: [SortOption] {
-        [.album, .song, .artist]
     }
 }
 

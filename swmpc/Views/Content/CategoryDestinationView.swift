@@ -5,7 +5,6 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import SearchBar
 import SwiftUI
 
 struct CategoryDestinationView: View {
@@ -108,12 +107,7 @@ struct CategoryView: View {
     }
 
     private var availableSortOptions: [SortOption] {
-        switch destination {
-        case .albums: Album.availableSortOptions
-        case .artists: Artist.availableSortOptions
-        case .songs: Song.availableSortOptions
-        default: []
-        }
+        destination.type.availableSortOptions
     }
 
     var body: some View {
@@ -147,15 +141,31 @@ struct CategoryView: View {
                 .hidden(isSearchFieldExpanded)
 
             ToolbarItem {
-                SearchBar(text: $searchQuery)
-                    .searchBarMaterial(.glass)
-                    .searchBarScale(.large)
-                    .searchBarStyle(cornerRadius: 100, backgroundColor: .clear)
-                    .frame(width: 200)
-                    .glassEffect(.regular)
-                // TextField("Search", text: $searchQuery)
-                //     .frame(width: 244)
-                //     .autocorrectionDisabled()
+                TextField("Search", text: $searchQuery)
+                    .frame(width: 244)
+                    .autocorrectionDisabled()
+            }
+            .hidden(!isSearchFieldExpanded)
+
+            ToolbarItem {
+                Menu {
+                    ForEach(SearchManager.SearchField.allCases) { field in
+                        Button {
+                            mpd.search.toggle(field)
+                        } label: {
+                            HStack {
+                                if mpd.search.enabledFields.contains(field) {
+                                    Image(systemSymbol: .checkmark)
+                                }
+                                field.systemImage
+                                Text(field.rawValue)
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemSymbol: .sliderHorizontal3)
+                }
+                .menuIndicator(.hidden)
             }
             .hidden(!isSearchFieldExpanded)
 
@@ -208,12 +218,10 @@ struct CategoryView: View {
 
             ToolbarItem {
                 Button {
-                    withAnimation(.spring) {
-                        isSearchFieldExpanded.toggle()
-                        isSearchFieldFocused = isSearchFieldExpanded
-                        if !isSearchFieldExpanded {
-                            searchQuery = ""
-                        }
+                    isSearchFieldExpanded.toggle()
+                    isSearchFieldFocused = isSearchFieldExpanded
+                    if !isSearchFieldExpanded {
+                        searchQuery = ""
                     }
                 } label: {
                     Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
@@ -243,7 +251,7 @@ struct CategoryView: View {
                     return;
             #endif
             }
-                        
+
             switch value {
             case .albums:
                 mpd.database.type = .album
@@ -254,7 +262,7 @@ struct CategoryView: View {
             default:
                 break
             }
-            
+
             // TODO: Does not work!
 //            Task {
 //                while true {
@@ -271,13 +279,6 @@ struct CategoryView: View {
             mpd.state.isLoading = true
             mpd.database.sort = value
             
-            NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
-        }
-        .onChange(of: searchQuery) { _, value in
-            guard value.isEmpty else {
-                return
-            }
-
             NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
         }
     }

@@ -27,6 +27,34 @@ enum MediaType {
     case song
     /// A user-created playlist of songs.
     case playlist
+
+    /// Returns the default search fields for this media type.
+    var defaultSearchFields: Set<SearchManager.SearchField> {
+        switch self {
+        case .album:
+            [.title, .artist]
+        case .artist:
+            [.artist]
+        case .song:
+            [.title, .artist]
+        case .playlist:
+            [.title, .artist]
+        }
+    }
+
+    /// Returns the available sort options for this media type.
+    var availableSortOptions: [SortOption] {
+        switch self {
+        case .album:
+            [.artist, .album]
+        case .artist:
+            [.artist]
+        case .song:
+            [.album, .song, .artist]
+        case .playlist:
+            []
+        }
+    }
 }
 
 /// Specifies the source of media items.

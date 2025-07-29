@@ -1,5 +1,5 @@
 {
-  "originHash" : "40d4d0de64a6589e985f9948665b242f051bd7c615ffba74eba93981c6a726cb",
+  "originHash" : "47a8e333c0695768834ff4519958742c18cfb6c147897c6fcb19420e2b8e82b6",
   "pins" : [
     {
       "identity" : "buttonkit",
@@ -35,15 +35,6 @@
       "state" : {
         "revision" : "bb283b2ac48c1e90121d73d6bfb45f961dc0b7a3",
         "version" : "0.4.5"
-      }
-    },
-    {
-      "identity" : "searchbar",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SzpakKamil/SearchBar",
-      "state" : {
-        "revision" : "97fcbefafb57fdd48e7d7636a37da101af5b7c4e",
-        "version" : "2.1.1"
       }
     },
     {

@@ -54,21 +54,7 @@ struct MediaView: View {
             return baseMedia
         }
 
-        return baseMedia.filter { item in
-            switch item {
-            case let album as Album:
-                album.title.localizedCaseInsensitiveContains(searchQuery) ||
-                    album.artist.name.localizedCaseInsensitiveContains(searchQuery)
-            case let artist as Artist:
-                artist.name.localizedCaseInsensitiveContains(searchQuery)
-            case let song as Song:
-                song.title.localizedCaseInsensitiveContains(searchQuery) ||
-                    song.artist.localizedCaseInsensitiveContains(searchQuery) ||
-                    song.album.title.localizedCaseInsensitiveContains(searchQuery)
-            default:
-                false
-            }
-        }
+        return mpd.search.filter(baseMedia, query: searchQuery)
     }
 
     var body: some View {
@@ -108,9 +94,9 @@ struct MediaView: View {
             .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
         #endif
             .onReceive(playlistModifiedNotification) { _ in
-                Task {
-                    await refreshPlaylistSongs()
-                }
+//                Task {
+//                    await refreshPlaylistSongs()
+//                }
             }
             .task {
                 await loadPlaylistSongs()
@@ -120,8 +106,12 @@ struct MediaView: View {
     private func move(from source: IndexSet, to destination: Int) {
         Task {
             guard let index = source.first,
+                  index >= 0,
                   index < media.count,
-                  let song = media[index] as? Song
+                  destination >= 0,
+                  destination <= media.count,
+                  let song = media[index] as? Song,
+                  searchQuery.isEmpty  // Prevent moves during search
             else {
                 return
             }
