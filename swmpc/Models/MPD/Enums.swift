@@ -29,7 +29,7 @@ enum MediaType {
     case playlist
 
     /// Returns the default search fields for this media type.
-    var defaultSearchFields: Set<SearchManager.SearchField> {
+    var defaultSearchFields: Set<CategoryView.SearchField> {
         switch self {
         case .album:
             [.title, .artist]
@@ -151,6 +151,16 @@ enum SortDirection: String {
             "Ascending"
         case .descending:
             "Descending"
+        }
+    }
+
+    /// Helper to apply the sort direction to a ComparisonResult.
+    nonisolated func isOrderedBefore(_ result: ComparisonResult) -> Bool {
+        switch self {
+        case .ascending:
+            return result == .orderedAscending
+        case .descending:
+            return result == .orderedDescending
         }
     }
 }

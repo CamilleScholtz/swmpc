@@ -72,9 +72,24 @@ struct EmptyCategoryView: View {
 struct CategoryView: View {
     @Environment(MPD.self) private var mpd
     @Environment(ScrollManager.self) private var scrollManager
-    @Environment(SearchManager.self) private var searchManager
 
     let destination: CategoryDestination
+    
+    enum SearchField: String, CaseIterable, Identifiable {
+        case title = "Title"
+        case artist = "Artist"
+        case album = "Album"
+        
+        var id: String { rawValue }
+        
+        var systemImage: Image {
+            switch self {
+            case .title: Image(systemSymbol: .musicNote)
+            case .artist: Image(systemSymbol: .person)
+            case .album: Image(systemSymbol: .squareStack)
+            }
+        }
+    }
 
     @AppStorage(Setting.albumSortOption) private var albumSort = SortDescriptor(option: .artist)
     @AppStorage(Setting.artistSortOption) private var artistSort = SortDescriptor(option: .artist)
@@ -85,6 +100,7 @@ struct CategoryView: View {
 
     @State private var searchQuery = ""
     @State private var isSearchFieldExpanded = false
+    @State private var enabledSearchFields: Set<SearchField> = [.title, .artist, .album]
 
     @FocusState private var isSearchFieldFocused: Bool
 
@@ -117,9 +133,9 @@ struct CategoryView: View {
         ListView(rowHeight: rowHeight) { proxy in
             Group {
                 if case let .playlist(playlist) = destination {
-                    MediaView(using: playlist, searchQuery: searchQuery)
+                    MediaView(using: playlist, searchQuery: searchQuery, searchFields: enabledSearchFields)
                 } else {
-                    MediaView(using: mpd.database, searchQuery: searchQuery)
+                    MediaView(using: mpd.database, searchQuery: searchQuery, searchFields: enabledSearchFields)
                 }
             }
             .onAppear {
@@ -167,12 +183,16 @@ struct CategoryView: View {
 
             ToolbarItem {
                 Menu {
-                    ForEach(SearchManager.SearchField.allCases) { field in
+                    ForEach(SearchField.allCases) { field in
                         Button {
-                            searchManager.toggle(field)
+                            if enabledSearchFields.contains(field) {
+                                enabledSearchFields.remove(field)
+                            } else {
+                                enabledSearchFields.insert(field)
+                            }
                         } label: {
                             HStack {
-                                if searchManager.enabledFields.contains(field) {
+                                if enabledSearchFields.contains(field) {
                                     Image(systemSymbol: .checkmark)
                                 }
                                 field.systemImage

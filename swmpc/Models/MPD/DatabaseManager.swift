@@ -66,22 +66,28 @@ import SwiftUI
         async throws
     {
         defer { state.isLoading = false }
-        
-        media = switch type {
+
+        switch type {
         case .album:
-            try await idle
-            ? ConnectionManager.idle.getAlbums(sortBy: sort.option, direction: sort.direction)
-            : ConnectionManager.command().getAlbums(sortBy: sort.option, direction: sort.direction)
+            let albums = try await idle
+                ? ConnectionManager.idle.getAlbums()
+                : ConnectionManager.command().getAlbums()
+
+            media = albums.sorted { Album.compare($0, $1, using: sort) }
         case .artist:
-            try await idle
-                ? ConnectionManager.idle.getArtists(sortBy: sort.option, direction: sort.direction)
-                : ConnectionManager.command().getArtists(sortBy: sort.option, direction: sort.direction)
+            let artists = try await idle
+                ? ConnectionManager.idle.getArtists()
+                : ConnectionManager.command().getArtists()
+
+            media = artists.sorted { Artist.compare($0, $1, using: sort) }
         case .song:
-            try await idle
-                ? ConnectionManager.idle.getSongs(from: Source.database, sortBy: sort.option, direction: sort.direction)
-                : ConnectionManager.command().getSongs(from: Source.database, sortBy: sort.option, direction: sort.direction)
+            let songs = try await idle
+                ? ConnectionManager.idle.getSongs(from: Source.database)
+                : ConnectionManager.command().getSongs(from: Source.database)
+
+            media = songs.sorted { Song.compare($0, $1, using: sort) }
         case .playlist:
-            nil
+            media = nil
         }
     }
 }

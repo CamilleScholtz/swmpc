@@ -10,15 +10,6 @@ import SwiftUI
 protocol Mediable: Identifiable, Equatable, Codable, Hashable, Sendable {
     /// Returns a unique identifier for the media item.
     nonisolated var id: String { get }
-
-    /// Returns the location of the media item.
-    var url: URL { get }
-}
-
-/// A protocol that enables types to be searchable based on different fields.
-protocol Searchable {
-    /// Returns the value for a specific search field, or nil if the field doesn't apply.
-    func search(for field: SearchManager.SearchField) -> String?
 }
 
 extension Mediable {
@@ -41,6 +32,11 @@ extension Mediable {
 }
 
 protocol Artworkable {
+    /// Determines if the fetched artwork should be cached.
+    var shouldCacheArtwork: Bool { get }
+
+    func getArtworkURL() async throws -> URL?
+
     func artwork() async throws -> PlatformImage?
 }
 
@@ -54,52 +50,54 @@ extension Artworkable where Self: Mediable {
     ///           if no artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
     func artwork() async throws -> PlatformImage? {
+        guard let url = try await getArtworkURL() else {
+            return nil
+        }
+
         let data = try await ArtworkManager.shared.get(
             for: url,
-            shouldCache: self is Album || self is Artist,
+            shouldCache: shouldCacheArtwork
         )
 
         return PlatformImage(data: data)
     }
 }
 
-/// Represents an artist in the MPD database.
-nonisolated struct Artist: Mediable, Searchable {
-    nonisolated var id: String { name }
+protocol Sortable {
+    /// Compares two items based on the specified sort descriptor.
+    static func compare(_ lhs: Self, _ rhs: Self, using descriptor:
+        SortDescriptor) -> Bool
+}
 
-    let url: URL
+/// Represents an artist in the MPD database.
+nonisolated struct Artist: Mediable, Sortable {
+    nonisolated var id: String { name }
 
     let name: String
 
-    let added: Date?
+    /// Shared instance for unknown artists.
+    static let unknown = Artist(name: "Unknown Artist")
 
     func getAlbums() async throws -> [Album] {
         try await ConnectionManager.command().getAlbums(by: self, from: .database)
     }
-    
-    func search(for field: SearchManager.SearchField) -> String? {
-        switch field {
-        case .artist:
-            return name
-        case .title, .album, .genre:
-            return nil
-        }
+
+    static func compare(_ lhs: Artist, _ rhs: Artist, using descriptor: SortDescriptor) -> Bool {
+        let result = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
+
+        return descriptor.direction.isOrderedBefore(result)
     }
 }
 
 /// Represents an album in the MPD database.
-nonisolated struct Album: Mediable, Artworkable, Searchable {
+nonisolated struct Album: Mediable, Artworkable, Sortable {
     nonisolated var id: String { description }
-
-    let url: URL
 
     let title: String
     let artist: Artist
 
-    let date: String?
-    let genre: String?
-
-    let added: Date?
+    /// Shared instance for unknown albums.
+    static let unknown = Album(title: "Unknown Album", artist: Artist.unknown)
 
     nonisolated var description: String {
         "\(artist.name) - \(title)"
@@ -112,18 +110,25 @@ nonisolated struct Album: Mediable, Artworkable, Searchable {
     func getSongs() async throws -> [Song] {
         try await ConnectionManager.command().getSongs(in: self, from: .database)
     }
-    
-    func search(for field: SearchManager.SearchField) -> String? {
-        switch field {
-        case .title:
-            return title
+
+    var shouldCacheArtwork: Bool { true }
+
+    func getArtworkURL() async throws -> URL? {
+        try await ConnectionManager.command().getURL(of: self)
+    }
+
+    static func compare(_ lhs: Album, _ rhs: Album, using descriptor: SortDescriptor) -> Bool {
+        let result: ComparisonResult
+
+        switch descriptor.option {
         case .artist:
-            return artist.name
-        case .genre:
-            return genre
-        case .album:
-            return nil
+            result = lhs.artist.name.localizedCaseInsensitiveCompare(rhs.artist.name)
+                .then(lhs.title.localizedCaseInsensitiveCompare(rhs.title))
+        case .album, .song: // Fallback for irrelevant sort options
+            result = lhs.title.localizedCaseInsensitiveCompare(rhs.title)
         }
+
+        return descriptor.direction.isOrderedBefore(result)
     }
 }
 
@@ -131,7 +136,7 @@ nonisolated struct Album: Mediable, Artworkable, Searchable {
 ///
 /// Songs contain detailed metadata including title, artist, album, duration,
 /// and more.
-nonisolated struct Song: Mediable, Artworkable, Searchable {
+nonisolated struct Song: Mediable, Artworkable, Sortable {
     nonisolated var id: String { url.absoluteString }
 
     let url: URL
@@ -147,11 +152,6 @@ nonisolated struct Song: Mediable, Artworkable, Searchable {
     let track: Int
 
     let album: Album
-
-    let date: String?
-    let genre: String?
-
-    let added: Date?
 
     nonisolated var description: String {
         "\(artist) - \(title)"
@@ -172,18 +172,33 @@ nonisolated struct Song: Mediable, Artworkable, Searchable {
     func isBy(_ artist: Artist) -> Bool {
         album.artist == artist
     }
-    
-    func search(for field: SearchManager.SearchField) -> String? {
-        switch field {
-        case .title:
-            return title
+
+    var shouldCacheArtwork: Bool { false }
+
+    func getArtworkURL() async throws -> URL? {
+        return url
+    }
+
+    static func compare(_ lhs: Song, _ rhs: Song, using descriptor: SortDescriptor) -> Bool {
+        let result: ComparisonResult
+
+        switch descriptor.option {
         case .artist:
-            return artist
+            result = lhs.album.artist.name.localizedCaseInsensitiveCompare(rhs.album.artist.name)
+                .then(lhs.album.title.localizedCaseInsensitiveCompare(rhs.album.title))
+                .then(lhs.disc, isLessThan: rhs.disc)
+                .then(lhs.track, isLessThan: rhs.track)
+                .then(lhs.title.localizedCaseInsensitiveCompare(rhs.title))
         case .album:
-            return album.title
-        case .genre:
-            return genre
+            result = lhs.album.title.localizedCaseInsensitiveCompare(rhs.album.title)
+                .then(lhs.disc, isLessThan: rhs.disc)
+                .then(lhs.track, isLessThan: rhs.track)
+                .then(lhs.title.localizedCaseInsensitiveCompare(rhs.title))
+        case .song:
+            result = lhs.title.localizedCaseInsensitiveCompare(rhs.title)
         }
+
+        return descriptor.direction.isOrderedBefore(result)
     }
 }
 

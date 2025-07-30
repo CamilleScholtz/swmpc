@@ -30,7 +30,6 @@ struct Delegate: App {
 
     let navigationManager = NavigationManager()
     let scrollManager = ScrollManager()
-    let searchManager = SearchManager()
 
     #if os(macOS)
         init() {
@@ -43,7 +42,6 @@ struct Delegate: App {
             AppView()
                 .environment(navigationManager)
                 .environment(scrollManager)
-                .environment(searchManager)
             #if os(iOS)
                 .environment(Delegate.mpd)
             #elseif os(macOS)

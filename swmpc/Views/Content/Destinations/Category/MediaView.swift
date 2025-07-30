@@ -9,53 +9,57 @@ import SwiftUI
 
 struct MediaView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(SearchManager.self) private var searchManager
 
     private let source: Source
     private let type: MediaType
     private let searchQuery: String
+    private let searchFields: Set<CategoryView.SearchField>
 
     @State private var loadedSongs: [Song] = []
+    @State private var searchResults: [any Mediable] = []
+    @State private var isSearching = false
 
     private let playlistModifiedNotification = NotificationCenter.default
         .publisher(for: .playlistModifiedNotification)
 
-    init(using database: DatabaseManager, searchQuery: String = "") {
+    init(using database: DatabaseManager, searchQuery: String = "", searchFields: Set<CategoryView.SearchField> = [.title, .artist, .album]) {
         source = .database
         type = database.type
         self.searchQuery = searchQuery
+        self.searchFields = searchFields
     }
 
-    init(using _: QueueManager, searchQuery: String = "") {
+    init(using _: QueueManager, searchQuery: String = "", searchFields: Set<CategoryView.SearchField> = [.title, .artist, .album]) {
         source = .queue
         type = .song
         self.searchQuery = searchQuery
+        self.searchFields = searchFields
     }
 
-    init(using playlist: Playlist, searchQuery: String = "") {
+    init(using playlist: Playlist, searchQuery: String = "", searchFields: Set<CategoryView.SearchField> = [.title, .artist, .album]) {
         source = playlist.name == "Favorites" ? .favorites : .playlist(playlist)
         type = .song
         self.searchQuery = searchQuery
+        self.searchFields = searchFields
     }
 
     private var media: [any Mediable] {
-        let baseMedia = switch source {
+        // If searching, return search results
+        if !searchQuery.isEmpty {
+            return searchResults
+        }
+        
+        // Otherwise return base media
+        switch source {
         case .queue:
-            mpd.queue.songs
+            return mpd.queue.songs
         case .playlist:
-            loadedSongs
+            return loadedSongs
         case .favorites:
-            mpd.playlists.favorites
+            return mpd.playlists.favorites
         case .database:
-            mpd.database.media ?? []
+            return mpd.database.media ?? []
         }
-
-        // Apply search filter if needed
-        guard !searchQuery.isEmpty else {
-            return baseMedia
-        }
-
-        return searchManager.filter(baseMedia, query: searchQuery)
     }
 
     var body: some View {
@@ -102,6 +106,62 @@ struct MediaView: View {
             .task {
                 await loadPlaylistSongs()
             }
+            .onChange(of: searchQuery) { _, newValue in
+                Task {
+                    await performSearch(query: newValue)
+                }
+            }
+    }
+    
+    private func performSearch(query: String) async {
+        guard !query.isEmpty, source == .database else {
+            searchResults = []
+            isSearching = false
+            return
+        }
+        
+        isSearching = true
+        
+        // Convert SearchField to MPD field names
+        let mpdFields = searchFields.compactMap { field -> String in
+            switch field {
+            case .title: return "title"
+            case .artist: return "artist"
+            case .album: return "album"
+            }
+        }
+        
+        do {
+            switch type {
+            case .song:
+                let results = try await ConnectionManager.command().search(
+                    query: query,
+                    fields: Set(mpdFields),
+                    returning: Song.self
+                )
+                searchResults = results
+            case .album:
+                let results = try await ConnectionManager.command().search(
+                    query: query,
+                    fields: Set(mpdFields),
+                    returning: Album.self
+                )
+                searchResults = results
+            case .artist:
+                let results = try await ConnectionManager.command().search(
+                    query: query,
+                    fields: Set(mpdFields),
+                    returning: Artist.self
+                )
+                searchResults = results
+            case .playlist:
+                searchResults = []
+            }
+        } catch {
+            searchResults = []
+        }
+        
+        isSearching = false
     }
 
     private func move(from source: IndexSet, to destination: Int) {

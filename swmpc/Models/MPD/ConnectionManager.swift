@@ -134,9 +134,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The version of the MPD server.
     private(set) var version: String?
 
-    /// Cached ISO8601DateFormatter for efficient date parsing
-    private nonisolated(unsafe) let dateFormatter = ISO8601DateFormatter()
-
     // TODO: I want to just use `disconnect()` here, but that gives me an `Call
     // to actor-isolated instance method 'disconnect()' in a synchronous
     // nonisolated context` error. The existing approach is reasonable.
@@ -751,10 +748,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         let artistName = fields["albumartist"] ?? fields["artist"] ?? "Unknown Artist"
 
-        let added = fields["added"].flatMap {
-            self.dateFormatter.date(from: $0)
-        }
-
         switch type {
         case .song:
             let song = Song(
@@ -768,43 +761,26 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 disc: fields["disc"].flatMap { Int($0) } ?? 1,
                 track: fields["track"].flatMap { Int($0) } ?? 1,
                 album: Album(
-                    url: url,
                     title: fields["album"] ?? "Unknown Album",
                     artist: Artist(
-                        url: url,
                         name: artistName,
-                        added: added,
                     ),
-                    date: fields["date"],
-                    genre: fields["genre"],
-                    added: added,
                 ),
-                date: fields["date"],
-                genre: fields["genre"],
-                added: added,
             )
 
             return try castResult(song)
         case .album:
             let album = Album(
-                url: url,
                 title: fields["album"] ?? "Unknown Album",
                 artist: Artist(
-                    url: url,
                     name: artistName,
-                    added: added,
                 ),
-                date: fields["date"],
-                genre: fields["genre"],
-                added: added,
             )
 
             return try castResult(album)
         case .artist:
             let artist = Artist(
-                url: url,
                 name: artistName,
-                added: added,
             )
 
             return try castResult(artist)
@@ -914,35 +890,38 @@ extension ConnectionManager {
         return (state, isRandom, isRepeat, elapsed, playlist, song, volume)
     }
 
-    /// Retrieves all unique albums from the database, sorted as specified.
-    ///
-    /// This method fetches a list of songs (specifically, the first track of
-    /// each album) and then extracts the unique albums from that list.
-    ///
-    /// - Parameters:
-    ///   - sortBy: The sorting option for the albums (e.g., `.album`,
-    ///             `.artist`).
-    ///   - direction: The sorting direction (`.ascending` or `.descending`).
-    /// - Returns: An array of unique `Album` objects.
-    /// - Throws: An error if the command fails or the response is malformed.
-    func getAlbums(sortBy: SortOption = .album, direction: SortDirection =
-        .ascending) async throws -> [Album]
-    {
-        let lines = try await run(["find \(filter(key: "track", value: "1")) sort \(direction.rawValue)\(sortBy.rawValue)"])
+    func getAlbums() async throws -> [Album] {
+        let lines = try await run(["list album group albumartist"])
 
-        let albums: [Album] = try await parseMediaResponse(lines, as: .album)
+        var albums: [Album] = []
+        var artist: Artist?
 
-        var seen: Set<String> = []
-        var unique: [Album] = []
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
 
-        for album in albums {
-            if !seen.contains(album.description) {
-                unique.append(album)
-                seen.insert(album.description)
+            let (key, value) = try parseLine(line)
+
+            switch key {
+            case "albumartist":
+                artist = Artist(name: value.isEmpty ? "Unknown Artist" : value)
+            case "album":
+                guard let artist else {
+                    throw ConnectionManagerError.malformedResponse(
+                        "Album found without associated artist")
+                }
+
+                albums.append(Album(
+                    title: value.isEmpty ? "Unknown Album" : value,
+                    artist: artist
+                ))
+            default:
+                continue
             }
         }
 
-        return unique
+        return albums
     }
 
     /// Retrieves all albums by a specific artist from the given source.
@@ -959,7 +938,7 @@ extension ConnectionManager {
 
         switch source {
         case .database:
-            lines = try await run(["find \(filter(key: "albumartist", value: artist.name)) sort album"])
+            lines = try await run(["find \(filter(key: "albumartist", value: artist.name))"])
         case .queue:
             lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))"])
         default:
@@ -982,35 +961,24 @@ extension ConnectionManager {
         return unique
     }
 
-    /// Retrieves all unique artists from the database.
-    ///
-    /// This method first retrieves all unique albums and then extracts the
-    /// unique artists from that list.
-    ///
-    /// - Parameters:
-    ///   - sortBy: The sorting option used to retrieve albums, which indirectly
-    ///             affects the artist order.
-    ///   - direction: The sorting direction.
-    /// - Returns: An array of unique `Artist` objects.
-    /// - Throws: An error if the underlying album lookup fails.
-    func getArtists(sortBy: SortOption = .album, direction: SortDirection =
-        .ascending) async throws -> [Artist]
-    {
-        let albums = try await getAlbums(sortBy: sortBy, direction: direction)
+    func getArtists() async throws -> [Artist] {
+        let lines = try await run(["list albumartist"])
 
-        var seen: Set<String> = []
-        var unique: [Artist] = []
+        var artists: [Artist] = []
 
-        for album in albums {
-            let artist = album.artist
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
 
-            if !seen.contains(artist.name) {
-                unique.append(artist)
-                seen.insert(artist.name)
+            let (key, value) = try parseLine(line)
+
+            if key == "artist" {
+                artists.append(Artist(name: value.isEmpty ? "Unknown Artist" : value))
             }
         }
 
-        return unique
+        return artists
     }
 
     /// Retrieves all songs from a specified source.
@@ -1020,12 +988,10 @@ extension ConnectionManager {
     /// - Returns: An array of `Song` objects from the specified source.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(from source: Source, sortBy: SortOption = .artist, direction:
-        SortDirection = .ascending) async throws -> [Song]
-    {
+    func getSongs(from source: Source) async throws -> [Song] {
         let lines = switch source {
         case .database:
-            try await run(["find \"(title != '')\" sort \(direction.rawValue)\(sortBy.rawValue)"])
+            try await run(["find \"(title != '')\""])
         case .queue:
             try await run(["playlistinfo"])
         case .playlist, .favorites:
@@ -1086,6 +1052,107 @@ extension ConnectionManager {
         }
 
         return playlists
+    }
+
+    /// Retrieves the URL of the first song in an album.
+    ///
+    /// This is a more efficient method than fetching all songs when only the first
+    /// song's URL is needed (e.g., for artwork retrieval).
+    ///
+    /// - Parameter album: The album to retrieve the first song URL from.
+    /// - Returns: The URL of the first song in the album.
+    /// - Throws: An error if the command execution fails, if the album's artist is
+    ///           not set, or if no songs are found in the album.
+    func getURL(of album: Album) async throws -> URL {
+        let filters = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist.name, quote: false)))\""
+
+        let lines = try await run(["find \(filters) window 0:1"])
+        guard !lines.isEmpty, lines.first != "OK" else {
+            throw ConnectionManagerError.malformedResponse(
+                "No songs found in album: \(album.title)")
+        }
+
+        for line in lines {
+            guard line != "OK" else {
+                break
+            }
+
+            let (key, value) = try parseLine(line)
+
+            if key == "file" {
+                guard let encoded = value.addingPercentEncoding(
+                    withAllowedCharacters: .urlPathAllowed),
+                    let formatted = URL(string: encoded)
+                else {
+                    throw ConnectionManagerError.malformedResponse(
+                        "Failed to parse URL")
+                }
+
+                return formatted
+            }
+        }
+
+        throw ConnectionManagerError.malformedResponse(
+            "No file URL found in response for album: \(album.title)")
+    }
+
+    /// Performs a server-side search across the MPD database.
+    ///
+    /// This function dynamically builds an MPD filter expression that ORs together
+    /// search conditions for the specified fields. Results are filtered and returned
+    /// according to the specified media type.
+    ///
+    /// - Parameters:
+    ///   - query: The search query string to match against the specified fields.
+    ///   - fields: A set of field names to search within (e.g., "title", "artist", "album").
+    ///   - mediaType: The type of media to return (song, album, or artist).
+    ///   - sortDescriptor: Optional sort descriptor for ordering results.
+    /// - Returns: An array of media items matching the search criteria.
+    /// - Throws: An error if the command execution fails or if the response is malformed.
+    func search<T: Mediable>(
+        query: String,
+        fields: Set<String>,
+        returning mediaType: T.Type
+    ) async throws -> [T] {
+        guard !query.isEmpty else {
+            return []
+        }
+
+        // Build the filter expression by ORing all field conditions
+        let conditions = fields.map { field in
+            filter(key: field, value: query, quote: false)
+        }.joined(separator: " OR ")
+
+        let filterExpression = "\"(\(conditions))\""
+
+        // Build the command
+        let command = "find \(filterExpression)"
+
+        let lines = try await run([command])
+
+        // Parse response based on media type
+        if mediaType == Song.self {
+            return try await parseMediaResponse(lines, as: .song)
+        } else if mediaType == Album.self {
+            let songs: [Song] = try await parseMediaResponse(lines, as: .song)
+            // Extract unique albums from songs
+            var albumsDict: [String: Album] = [:]
+            for song in songs {
+                albumsDict[song.album.id] = song.album
+            }
+            return Array(albumsDict.values) as! [T]
+        } else if mediaType == Artist.self {
+            let songs: [Song] = try await parseMediaResponse(lines, as: .song)
+            // Extract unique artists from songs
+            var artistsDict: [String: Artist] = [:]
+            for song in songs {
+                artistsDict[song.album.artist.id] = song.album.artist
+            }
+            return Array(artistsDict.values) as! [T]
+        } else {
+            throw ConnectionManagerError.unsupportedOperation(
+                "Search only supports Song, Album, and Artist types")
+        }
     }
 }
 

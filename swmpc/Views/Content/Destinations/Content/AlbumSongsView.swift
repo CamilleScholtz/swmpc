@@ -154,7 +154,8 @@ struct AlbumSongsView: View {
             #endif
                 .task {
                     artwork = try? await album.artwork()
-                    songs = await Dictionary(grouping: (try? album.getSongs()) ?? [], by: { $0.disc })
+                    let fetchedSongs = await (try? album.getSongs()) ?? []
+                    songs = Dictionary(grouping: fetchedSongs, by: { $0.disc })
                 }
         }
         #if os(macOS)
