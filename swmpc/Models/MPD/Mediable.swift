@@ -10,6 +10,8 @@ import SwiftUI
 protocol Mediable: Identifiable, Equatable, Codable, Hashable, Sendable {
     /// Returns a unique identifier for the media item.
     nonisolated var id: String { get }
+
+    nonisolated var url: URL { get }
 }
 
 extension Mediable {
@@ -35,8 +37,6 @@ protocol Artworkable {
     /// Determines if the fetched artwork should be cached.
     var shouldCacheArtwork: Bool { get }
 
-    func getArtworkURL() async throws -> URL?
-
     func artwork() async throws -> PlatformImage?
 }
 
@@ -50,54 +50,40 @@ extension Artworkable where Self: Mediable {
     ///           if no artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
     func artwork() async throws -> PlatformImage? {
-        guard let url = try await getArtworkURL() else {
-            return nil
-        }
-
         let data = try await ArtworkManager.shared.get(
             for: url,
-            shouldCache: shouldCacheArtwork
+            shouldCache: shouldCacheArtwork,
         )
 
         return PlatformImage(data: data)
     }
 }
 
-protocol Sortable {
-    /// Compares two items based on the specified sort descriptor.
-    static func compare(_ lhs: Self, _ rhs: Self, using descriptor:
-        SortDescriptor) -> Bool
-}
-
 /// Represents an artist in the MPD database.
-nonisolated struct Artist: Mediable, Sortable {
+nonisolated struct Artist: Mediable {
     nonisolated var id: String { name }
+
+    let url: URL
 
     let name: String
 
-    /// Shared instance for unknown artists.
-    static let unknown = Artist(name: "Unknown Artist")
+    let added: Date?
 
     func getAlbums() async throws -> [Album] {
         try await ConnectionManager.command().getAlbums(by: self, from: .database)
     }
-
-    static func compare(_ lhs: Artist, _ rhs: Artist, using descriptor: SortDescriptor) -> Bool {
-        let result = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
-
-        return descriptor.direction.isOrderedBefore(result)
-    }
 }
 
 /// Represents an album in the MPD database.
-nonisolated struct Album: Mediable, Artworkable, Sortable {
+nonisolated struct Album: Mediable, Artworkable {
     nonisolated var id: String { description }
+
+    let url: URL
 
     let title: String
     let artist: Artist
 
-    /// Shared instance for unknown albums.
-    static let unknown = Album(title: "Unknown Album", artist: Artist.unknown)
+    let added: Date?
 
     nonisolated var description: String {
         "\(artist.name) - \(title)"
@@ -112,31 +98,13 @@ nonisolated struct Album: Mediable, Artworkable, Sortable {
     }
 
     var shouldCacheArtwork: Bool { true }
-
-    func getArtworkURL() async throws -> URL? {
-        try await ConnectionManager.command().getURL(of: self)
-    }
-
-    static func compare(_ lhs: Album, _ rhs: Album, using descriptor: SortDescriptor) -> Bool {
-        let result: ComparisonResult
-
-        switch descriptor.option {
-        case .artist:
-            result = lhs.artist.name.localizedCaseInsensitiveCompare(rhs.artist.name)
-                .then(lhs.title.localizedCaseInsensitiveCompare(rhs.title))
-        case .album, .song: // Fallback for irrelevant sort options
-            result = lhs.title.localizedCaseInsensitiveCompare(rhs.title)
-        }
-
-        return descriptor.direction.isOrderedBefore(result)
-    }
 }
 
 /// Represents a song in the MPD database.
 ///
 /// Songs contain detailed metadata including title, artist, album, duration,
 /// and more.
-nonisolated struct Song: Mediable, Artworkable, Sortable {
+nonisolated struct Song: Mediable, Artworkable {
     nonisolated var id: String { url.absoluteString }
 
     let url: URL
@@ -152,6 +120,8 @@ nonisolated struct Song: Mediable, Artworkable, Sortable {
     let track: Int
 
     let album: Album
+
+    let added: Date?
 
     nonisolated var description: String {
         "\(artist) - \(title)"
@@ -174,32 +144,6 @@ nonisolated struct Song: Mediable, Artworkable, Sortable {
     }
 
     var shouldCacheArtwork: Bool { false }
-
-    func getArtworkURL() async throws -> URL? {
-        return url
-    }
-
-    static func compare(_ lhs: Song, _ rhs: Song, using descriptor: SortDescriptor) -> Bool {
-        let result: ComparisonResult
-
-        switch descriptor.option {
-        case .artist:
-            result = lhs.album.artist.name.localizedCaseInsensitiveCompare(rhs.album.artist.name)
-                .then(lhs.album.title.localizedCaseInsensitiveCompare(rhs.album.title))
-                .then(lhs.disc, isLessThan: rhs.disc)
-                .then(lhs.track, isLessThan: rhs.track)
-                .then(lhs.title.localizedCaseInsensitiveCompare(rhs.title))
-        case .album:
-            result = lhs.album.title.localizedCaseInsensitiveCompare(rhs.album.title)
-                .then(lhs.disc, isLessThan: rhs.disc)
-                .then(lhs.track, isLessThan: rhs.track)
-                .then(lhs.title.localizedCaseInsensitiveCompare(rhs.title))
-        case .song:
-            result = lhs.title.localizedCaseInsensitiveCompare(rhs.title)
-        }
-
-        return descriptor.direction.isOrderedBefore(result)
-    }
 }
 
 /// Represents a playlist in the MPD database.

@@ -77,7 +77,7 @@ struct QueuePanelView: View {
                 MediaView(using: mpd.queue)
                     .onAppear {
                         scrollProxy = proxy
-                        
+
                         // Scroll to current song on initial appearance
                         if !hasScrolledToInitial {
                             hasScrolledToInitial = true
@@ -92,7 +92,7 @@ struct QueuePanelView: View {
             .onReceive(performScrollNotification) { notification in
                 guard let scrollProxy else { return }
                 guard let request = notification.object as? ScrollManager.ScrollRequest else { return }
-                
+
                 Task {
                     switch request.destination {
                     case .currentMedia:

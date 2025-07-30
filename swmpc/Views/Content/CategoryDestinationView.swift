@@ -74,14 +74,14 @@ struct CategoryView: View {
     @Environment(ScrollManager.self) private var scrollManager
 
     let destination: CategoryDestination
-    
+
     enum SearchField: String, CaseIterable, Identifiable {
         case title = "Title"
         case artist = "Artist"
         case album = "Album"
-        
+
         var id: String { rawValue }
-        
+
         var systemImage: Image {
             switch self {
             case .title: Image(systemSymbol: .musicNote)
@@ -324,7 +324,7 @@ struct CategoryView: View {
                         scrollManager.requestScroll(to: .currentMedia, animate: false, context: "destination-change")
                         break
                     }
-                    
+
                     attempts += 1
                 }
             }

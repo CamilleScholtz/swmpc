@@ -48,7 +48,7 @@ struct MediaView: View {
         if !searchQuery.isEmpty {
             return searchResults
         }
-        
+
         // Otherwise return base media
         switch source {
         case .queue:
@@ -112,16 +112,16 @@ struct MediaView: View {
                 }
             }
     }
-    
+
     private func performSearch(query: String) async {
         guard !query.isEmpty, source == .database else {
             searchResults = []
             isSearching = false
             return
         }
-        
+
         isSearching = true
-        
+
         // Convert SearchField to MPD field names
         let mpdFields = searchFields.compactMap { field -> String in
             switch field {
@@ -130,28 +130,28 @@ struct MediaView: View {
             case .album: return "album"
             }
         }
-        
+
         do {
             switch type {
             case .song:
                 let results = try await ConnectionManager.command().search(
                     query: query,
                     fields: Set(mpdFields),
-                    returning: Song.self
+                    returning: Song.self,
                 )
                 searchResults = results
             case .album:
                 let results = try await ConnectionManager.command().search(
                     query: query,
                     fields: Set(mpdFields),
-                    returning: Album.self
+                    returning: Album.self,
                 )
                 searchResults = results
             case .artist:
                 let results = try await ConnectionManager.command().search(
                     query: query,
                     fields: Set(mpdFields),
-                    returning: Artist.self
+                    returning: Artist.self,
                 )
                 searchResults = results
             case .playlist:
@@ -160,7 +160,7 @@ struct MediaView: View {
         } catch {
             searchResults = []
         }
-        
+
         isSearching = false
     }
 

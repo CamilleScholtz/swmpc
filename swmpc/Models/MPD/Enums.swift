@@ -153,16 +153,6 @@ enum SortDirection: String {
             "Descending"
         }
     }
-
-    /// Helper to apply the sort direction to a ComparisonResult.
-    nonisolated func isOrderedBefore(_ result: ComparisonResult) -> Bool {
-        switch self {
-        case .ascending:
-            return result == .orderedAscending
-        case .descending:
-            return result == .orderedDescending
-        }
-    }
 }
 
 /// Specifies the method for retrieving artwork from MPD.
