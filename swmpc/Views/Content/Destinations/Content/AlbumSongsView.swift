@@ -10,7 +10,7 @@ import SwiftUI
 
 struct AlbumSongsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigator
+    @Environment(NavigationManager.self) private var navigationManager
     @Environment(\.colorScheme) private var colorScheme
 
     init(for album: Album) {
@@ -118,7 +118,7 @@ struct AlbumSongsView: View {
                         .lineLimit(3)
 
                     Button {
-                        navigator.navigate(to: ContentDestination.artist(album.artist))
+                        navigationManager.navigate(to: ContentDestination.artist(album.artist))
                     } label: {
                         Text(album.artist.name)
                             .font(.system(size: 12))

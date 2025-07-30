@@ -10,7 +10,7 @@ import SwiftUI
 
 struct ArtistView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigator
+    @Environment(NavigationManager.self) private var navigationManager
 
     private let artist: Artist
 
@@ -63,7 +63,7 @@ struct ArtistView: View {
             albumCount = await (try? artist.getAlbums().count) ?? 0
         }
         .onTapGesture {
-            navigator.navigate(to: ContentDestination.artist(artist))
+            navigationManager.navigate(to: ContentDestination.artist(artist))
         }
         .contextMenu {
             ContextMenuView(for: artist)

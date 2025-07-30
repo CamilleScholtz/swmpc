@@ -27,7 +27,10 @@ struct Delegate: App {
     #if os(iOS)
         static let mpd = MPD()
     #endif
-    let navigator = NavigationManager()
+
+    let navigationManager = NavigationManager()
+    let scrollManager = ScrollManager()
+    let searchManager = SearchManager()
 
     #if os(macOS)
         init() {
@@ -38,7 +41,9 @@ struct Delegate: App {
     var body: some Scene {
         WindowGroup {
             AppView()
-                .environment(navigator)
+                .environment(navigationManager)
+                .environment(scrollManager)
+                .environment(searchManager)
             #if os(iOS)
                 .environment(Delegate.mpd)
             #elseif os(macOS)
@@ -81,7 +86,7 @@ struct Delegate: App {
                 .keyboardShortcut("l", modifiers: [.command, .option])
 
                 Button("Go to Current Song", systemSymbol: .dotViewfinder) {
-                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
+                    scrollManager.requestScroll(to: .currentMedia, animate: true, context: "menu-command")
                 }
                 .keyboardShortcut("l", modifiers: [.command])
 

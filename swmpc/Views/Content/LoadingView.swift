@@ -9,10 +9,10 @@ import SwiftUI
 
 struct LoadingView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigator
+    @Environment(NavigationManager.self) private var navigationManager
 
     private var shouldShowLoading: Bool {
-        switch navigator.category {
+        switch navigationManager.category {
         case .albums, .artists, .songs, .playlist:
             return mpd.state.isLoading
         #if os(iOS)

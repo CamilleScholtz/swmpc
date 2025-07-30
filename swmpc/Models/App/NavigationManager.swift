@@ -15,10 +15,6 @@ import SwiftUI
         didSet {
             if oldValue != category {
                 reset()
-            } else {
-                #if os(iOS)
-                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
-                #endif
             }
         }
     }
@@ -69,7 +65,7 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case .playlist: .playlist
         }
     }
-    
+
     var source: Source {
         switch self {
         case .albums, .artists, .songs:

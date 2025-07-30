@@ -10,7 +10,7 @@ import SwiftUI
 
 struct PlaylistsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigator
+    @Environment(NavigationManager.self) private var navigationManager
 
     @State private var showDeleteAlert = false
     @State private var playlistToDelete: Playlist?
@@ -60,7 +60,7 @@ struct PlaylistsView: View {
                             }
                     } else {
                         Button {
-                            navigator.category = CategoryDestination.playlist(playlist)
+                            navigationManager.category = CategoryDestination.playlist(playlist)
                         } label: {
                             HStack(spacing: 15) {
                                 Label(playlist.name, systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)

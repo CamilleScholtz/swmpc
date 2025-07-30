@@ -15,6 +15,12 @@ protocol Mediable: Identifiable, Equatable, Codable, Hashable, Sendable {
     var url: URL { get }
 }
 
+/// A protocol that enables types to be searchable based on different fields.
+protocol Searchable {
+    /// Returns the value for a specific search field, or nil if the field doesn't apply.
+    func search(for field: SearchManager.SearchField) -> String?
+}
+
 extension Mediable {
     /// Checks if two media items are equal based on their identifiers.
     ///
@@ -58,7 +64,7 @@ extension Artworkable where Self: Mediable {
 }
 
 /// Represents an artist in the MPD database.
-nonisolated struct Artist: Mediable {
+nonisolated struct Artist: Mediable, Searchable {
     nonisolated var id: String { name }
 
     let url: URL
@@ -70,10 +76,19 @@ nonisolated struct Artist: Mediable {
     func getAlbums() async throws -> [Album] {
         try await ConnectionManager.command().getAlbums(by: self, from: .database)
     }
+    
+    func search(for field: SearchManager.SearchField) -> String? {
+        switch field {
+        case .artist:
+            return name
+        case .title, .album, .genre:
+            return nil
+        }
+    }
 }
 
 /// Represents an album in the MPD database.
-nonisolated struct Album: Mediable, Artworkable {
+nonisolated struct Album: Mediable, Artworkable, Searchable {
     nonisolated var id: String { description }
 
     let url: URL
@@ -97,13 +112,26 @@ nonisolated struct Album: Mediable, Artworkable {
     func getSongs() async throws -> [Song] {
         try await ConnectionManager.command().getSongs(in: self, from: .database)
     }
+    
+    func search(for field: SearchManager.SearchField) -> String? {
+        switch field {
+        case .title:
+            return title
+        case .artist:
+            return artist.name
+        case .genre:
+            return genre
+        case .album:
+            return nil
+        }
+    }
 }
 
 /// Represents a song in the MPD database.
 ///
 /// Songs contain detailed metadata including title, artist, album, duration,
 /// and more.
-nonisolated struct Song: Mediable, Artworkable {
+nonisolated struct Song: Mediable, Artworkable, Searchable {
     nonisolated var id: String { url.absoluteString }
 
     let url: URL
@@ -143,6 +171,19 @@ nonisolated struct Song: Mediable, Artworkable {
     /// - Returns: `true` if the song is by the artist, `false` otherwise.
     func isBy(_ artist: Artist) -> Bool {
         album.artist == artist
+    }
+    
+    func search(for field: SearchManager.SearchField) -> String? {
+        switch field {
+        case .title:
+            return title
+        case .artist:
+            return artist
+        case .album:
+            return album.title
+        case .genre:
+            return genre
+        }
     }
 }
 

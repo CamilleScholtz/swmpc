@@ -11,7 +11,7 @@ import SwiftUI
 
 struct AlbumView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigator
+    @Environment(NavigationManager.self) private var navigationManager
 
     private let album: Album
 
@@ -84,7 +84,7 @@ struct AlbumView: View {
             }
         #endif
             .onTapGesture {
-                navigator.navigate(to: ContentDestination.album(album))
+                navigationManager.navigate(to: ContentDestination.album(album))
             }
             .contextMenu {
                 ContextMenuView(for: album)

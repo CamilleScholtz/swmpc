@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MediaView: View {
     @Environment(MPD.self) private var mpd
+    @Environment(SearchManager.self) private var searchManager
 
     private let source: Source
     private let type: MediaType
@@ -54,7 +55,7 @@ struct MediaView: View {
             return baseMedia
         }
 
-        return mpd.search.filter(baseMedia, query: searchQuery)
+        return searchManager.filter(baseMedia, query: searchQuery)
     }
 
     var body: some View {
@@ -111,7 +112,7 @@ struct MediaView: View {
                   destination >= 0,
                   destination <= media.count,
                   let song = media[index] as? Song,
-                  searchQuery.isEmpty  // Prevent moves during search
+                  searchQuery.isEmpty // Prevent moves during search
             else {
                 return
             }

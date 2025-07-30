@@ -26,9 +26,6 @@ import SwiftUI
 
     /// The playlist manager, handling playlist operations.
     let playlists: PlaylistManager
-    
-    /// The search manager, handling search field preferences.
-    let search = SearchManager()
 
     /// The loading state of the MPD client.
     let state = LoadingState()

@@ -59,6 +59,7 @@ struct QueuePanelView: View {
 
     struct QueueView: View {
         @Environment(MPD.self) private var mpd
+        @Environment(ScrollManager.self) private var scrollManager
         @Environment(\.colorScheme) private var colorScheme
 
         private var songs: [Song] {
@@ -66,16 +67,44 @@ struct QueuePanelView: View {
         }
 
         @State private var scrollProxy: ScrollViewProxy?
+        @State private var hasScrolledToInitial = false
+
+        private let performScrollNotification = NotificationCenter.default
+            .publisher(for: .performScrollNotification)
 
         var body: some View {
             ListView(rowHeight: 31.5 + 15) { proxy in
                 MediaView(using: mpd.queue)
                     .onAppear {
                         scrollProxy = proxy
-                        Task {
-                            try? await scrollToCurrent(proxy: proxy, animate: false)
+                        
+                        // Scroll to current song on initial appearance
+                        if !hasScrolledToInitial {
+                            hasScrolledToInitial = true
+                            Task {
+                                // Wait a moment for the view to settle
+                                try? await Task.sleep(for: .milliseconds(100))
+                                scrollManager.requestScroll(to: .currentMedia, animate: false, context: "queue-initial")
+                            }
                         }
                     }
+            }
+            .onReceive(performScrollNotification) { notification in
+                guard let scrollProxy else { return }
+                guard let request = notification.object as? ScrollManager.ScrollRequest else { return }
+                
+                Task {
+                    switch request.destination {
+                    case .currentMedia:
+                        try? await scrollToCurrent(proxy: scrollProxy, animate: request.animate)
+                    case let .specificItem(id):
+                        if request.animate {
+                            scrollProxy.scrollTo(id, anchor: .center)
+                        } else {
+                            scrollProxy.scrollTo(id, anchor: .center)
+                        }
+                    }
+                }
             }
         }
 

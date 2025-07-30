@@ -42,16 +42,16 @@ struct ContentDestinationView: View {
 }
 
 struct BackButtonView: View {
-    @Environment(NavigationManager.self) private var navigator
+    @Environment(NavigationManager.self) private var navigationManager
 
     var body: some View {
         Button(action: {
-            navigator.goBack()
+            navigationManager.goBack()
         }) {
             #if os(iOS)
                 HStack(spacing: 5) {
                     Image(systemName: "chevron.left")
-                    Text(navigator.category.label)
+                    Text(navigationManager.category.label)
                 }
             #elseif os(macOS)
                 Image(systemSymbol: .chevronBackward)

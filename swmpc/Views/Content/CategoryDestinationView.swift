@@ -71,6 +71,8 @@ struct EmptyCategoryView: View {
 
 struct CategoryView: View {
     @Environment(MPD.self) private var mpd
+    @Environment(ScrollManager.self) private var scrollManager
+    @Environment(SearchManager.self) private var searchManager
 
     let destination: CategoryDestination
 
@@ -79,14 +81,15 @@ struct CategoryView: View {
     @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor(option: .album)
 
     @State private var scrollProxy: ScrollViewProxy?
+    @State private var isDataLoaded = false
 
     @State private var searchQuery = ""
     @State private var isSearchFieldExpanded = false
 
     @FocusState private var isSearchFieldFocused: Bool
 
-    private let scrollToCurrentNotification = NotificationCenter.default
-        .publisher(for: .scrollToCurrentNotification)
+    private let performScrollNotification = NotificationCenter.default
+        .publisher(for: .performScrollNotification)
 
     #if os(macOS)
         private var rowHeight: CGFloat {
@@ -121,6 +124,21 @@ struct CategoryView: View {
             }
             .onAppear {
                 scrollProxy = proxy
+
+                // Check if data is loaded and scroll if needed
+                Task {
+                    // Wait a bit for data to load
+                    try? await Task.sleep(for: .milliseconds(200))
+
+                    if !isDataLoaded {
+                        isDataLoaded = true
+
+                        // Only scroll on initial load if we have data
+                        if hasData {
+                            scrollManager.requestScroll(to: .currentMedia, animate: false, context: "initial-load")
+                        }
+                    }
+                }
             }
         }
         .id("\(destination)_\(currentSort.rawValue)")
@@ -151,10 +169,10 @@ struct CategoryView: View {
                 Menu {
                     ForEach(SearchManager.SearchField.allCases) { field in
                         Button {
-                            mpd.search.toggle(field)
+                            searchManager.toggle(field)
                         } label: {
                             HStack {
-                                if mpd.search.enabledFields.contains(field) {
+                                if searchManager.enabledFields.contains(field) {
                                     Image(systemSymbol: .checkmark)
                                 }
                                 field.systemImage
@@ -171,7 +189,7 @@ struct CategoryView: View {
 
             ToolbarItem {
                 Button {
-                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
+                    scrollManager.requestScroll(to: .currentMedia, context: "toolbar")
                 } label: {
                     Image(systemSymbol: .dotViewfinder)
                 }
@@ -228,10 +246,21 @@ struct CategoryView: View {
                 }
             }
         }
-        .onReceive(scrollToCurrentNotification) { notification in
+        .onReceive(performScrollNotification) { notification in
             guard let scrollProxy else { return }
+            guard let request = notification.object as? ScrollManager.ScrollRequest else { return }
+
             Task {
-                try? await scrollToCurrent(proxy: scrollProxy, animate: notification.object as? Bool ?? true)
+                switch request.destination {
+                case .currentMedia:
+                    try? await scrollToCurrent(proxy: scrollProxy, animate: request.animate)
+                case let .specificItem(id):
+                    if request.animate {
+                        scrollProxy.scrollTo(id, anchor: .center)
+                    } else {
+                        scrollProxy.scrollTo(id, anchor: .center)
+                    }
+                }
             }
         }
         .onChange(of: destination) { _, value in
@@ -263,23 +292,45 @@ struct CategoryView: View {
                 break
             }
 
-            // TODO: Does not work!
-//            Task {
-//                while true {
-//                    try? await Task.sleep(for: .seconds(0.1))
-//
-//                    if mpd.database.media != nil {
-//                        NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
-//                        break
-//                    }
-//                }
-//            }
+            isDataLoaded = false
+
+            Task {
+                var attempts = 0
+
+                while attempts < 10 {
+                    try? await Task.sleep(for: .milliseconds(100))
+
+                    if hasData {
+                        scrollManager.requestScroll(to: .currentMedia, animate: false, context: "destination-change")
+                        break
+                    }
+                    
+                    attempts += 1
+                }
+            }
         }
         .onChange(of: currentSort) { _, value in
             mpd.state.isLoading = true
             mpd.database.sort = value
-            
-            NotificationCenter.default.post(name: .scrollToCurrentNotification, object: false)
+
+            // Scroll after sort changes
+            Task {
+                try? await Task.sleep(for: .milliseconds(200))
+                scrollManager.requestScroll(to: .currentMedia, animate: false, context: "sort-change")
+            }
+        }
+    }
+
+    private var hasData: Bool {
+        switch destination {
+        case .albums, .artists, .songs:
+            return mpd.database.media != nil && !mpd.database.media!.isEmpty
+        case let .playlist(playlist):
+            return playlist.name == "Favorites" ? !mpd.playlists.favorites.isEmpty : true
+        #if os(iOS)
+            default:
+                return false
+        #endif
         }
     }
 

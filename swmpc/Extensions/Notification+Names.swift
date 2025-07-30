@@ -8,8 +8,8 @@
 import SwiftUI
 
 extension Notification.Name {
-    static let scrollToCurrentNotification = Notification.Name(
-        "scroll_to_current")
+    static let performScrollNotification = Notification.Name(
+        "perform_scroll_notification")
     static let startSearchingNotication = Notification.Name(
         "start_searching")
     static let fillIntelligencePlaylistNotification = Notification.Name(

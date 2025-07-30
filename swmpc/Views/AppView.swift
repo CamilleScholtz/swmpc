@@ -14,7 +14,7 @@ enum ViewError: Error {
 
 struct AppView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigator
+    @Environment(NavigationManager.self) private var navigationManager
     @Environment(\.colorScheme) private var colorScheme
 
     #if os(iOS)
@@ -34,16 +34,16 @@ struct AppView: View {
                 ErrorView()
             } else {
                 Group {
-                    @Bindable var boundNavigator = navigator
+                    @Bindable var boundNavigationManager = navigationManager
 
                     #if os(iOS)
-                        TabView(selection: $boundNavigator.category) {
+                        TabView(selection: $boundNavigationManager.category) {
                             ForEach(CategoryDestination.categories) { category in
                                 // NOTE: Use SFSafeSymbols version when it is available.
                                 // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
                                 Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
                                     ZStack {
-                                        NavigationStack(path: $boundNavigator.path) {
+                                        NavigationStack(path: $boundNavigationManager.path) {
                                             CategoryDestinationView(destination: category)
                                                 .navigationDestination(for: ContentDestination.self) { destination in
                                                     ContentDestinationView(destination: destination)
@@ -68,8 +68,8 @@ struct AppView: View {
                             SidebarView()
                                 .navigationSplitViewColumnWidth(180)
                         } content: {
-                            NavigationStack(path: $boundNavigator.path) {
-                                CategoryDestinationView(destination: navigator.category)
+                            NavigationStack(path: $boundNavigationManager.path) {
+                                CategoryDestinationView(destination: navigationManager.category)
                                     .navigationDestination(for: ContentDestination.self) { destination in
                                         ContentDestinationView(destination: destination)
                                     }
