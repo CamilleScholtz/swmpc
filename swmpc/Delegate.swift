@@ -53,7 +53,7 @@ struct Delegate: App {
         #if os(macOS)
         .commands {
             CommandMenu("Controls") {
-                AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play", systemImage: appDelegate.mpd.status.isPlaying == true ? "pause.fill" : "play.fill") {
+                AsyncButton(appDelegate.mpd.status.isPlaying ? "Pause" : "Play", systemImage: appDelegate.mpd.status.isPlaying == true ? "pause.fill" : "play.fill") {
                     try await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
                 }
                 .keyboardShortcut(.space)
@@ -199,12 +199,12 @@ struct Delegate: App {
             let menu = NSMenu()
 
             let playPauseItem = NSMenuItem(
-                title: mpd.status.isPlaying == true ? "Pause" : "Play",
+                title: mpd.status.isPlaying ? "Pause" : "Play",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: "",
             )
-            playPauseItem.tag = mpd.status.isPlaying == true ? MenuAction.pause.rawValue : MenuAction.play.rawValue
-            playPauseItem.image = NSImage(systemSymbol: mpd.status.isPlaying == true ? .pauseFill : .playFill)
+            playPauseItem.tag = mpd.status.isPlaying ? MenuAction.pause.rawValue : MenuAction.play.rawValue
+            playPauseItem.image = NSImage(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
             menu.addItem(playPauseItem)
 
             let nextItem = NSMenuItem(
