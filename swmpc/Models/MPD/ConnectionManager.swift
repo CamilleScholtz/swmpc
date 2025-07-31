@@ -913,14 +913,17 @@ extension ConnectionManager {
     /// This method fetches a list of songs (specifically, the first track of
     /// each album) and then extracts the unique albums from that list.
     ///
+    /// - Note: We currently use the `find` commands to retrieve albums. I'd
+    ///         rather use `list`, but that has no sort option.
+    ///
     /// - Parameters:
     ///   - sortBy: The sorting option for the albums (e.g., `.album`,
     ///             `.artist`).
     ///   - direction: The sorting direction (`.ascending` or `.descending`).
     /// - Returns: An array of unique `Album` objects.
     /// - Throws: An error if the command fails or the response is malformed.
-    func getAlbums(sortDescriptor: SortDescriptor = SortDescriptor(option: .album)) async throws -> [Album] {
-        let lines = try await run(["find \(filter(key: "track", value: "1")) sort \(sortDescriptor.direction.rawValue)\(sortDescriptor.option.rawValue)"])
+    func getAlbums(sort: SortDescriptor = SortDescriptor(option: .artist)) async throws -> [Album] {
+        let lines = try await run(["find \(filter(key: "track", value: "1")) sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
 
         let albums: [Album] = try await parseMediaResponse(lines, as: .album)
 
@@ -951,7 +954,7 @@ extension ConnectionManager {
 
         switch source {
         case .database:
-            lines = try await run(["find \(filter(key: "albumartist", value: artist.name)) sort album"])
+            lines = try await run(["find \(filter(key: "albumartist", value: artist.name))"])
         case .queue:
             lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))"])
         default:
@@ -979,14 +982,15 @@ extension ConnectionManager {
     /// This method first retrieves all unique albums and then extracts the
     /// unique artists from that list.
     ///
+    ///
     /// - Parameters:
     ///   - sortBy: The sorting option used to retrieve albums, which indirectly
     ///             affects the artist order.
     ///   - direction: The sorting direction.
     /// - Returns: An array of unique `Artist` objects.
     /// - Throws: An error if the underlying album lookup fails.
-    func getArtists(sortDescriptor: SortDescriptor = SortDescriptor(option: .album)) async throws -> [Artist] {
-        let albums = try await getAlbums(sortDescriptor: sortDescriptor)
+    func getArtists(sort: SortDescriptor = SortDescriptor(option: .artist)) async throws -> [Artist] {
+        let albums = try await getAlbums(sort: sort)
 
         var seen: Set<String> = []
         var unique: [Artist] = []
@@ -1010,10 +1014,10 @@ extension ConnectionManager {
     /// - Returns: An array of `Song` objects from the specified source.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(from source: Source, sortDescriptor: SortDescriptor = SortDescriptor(option: .artist)) async throws -> [Song] {
+    func getSongs(from source: Source, sort: SortDescriptor = SortDescriptor(option: .artist)) async throws -> [Song] {
         let lines = switch source {
         case .database:
-            try await run(["find \"(title != '')\" sort \(sortDescriptor.direction.rawValue)\(sortDescriptor.option.rawValue)"])
+            try await run(["find \"(title != '')\" sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
         case .queue:
             try await run(["playlistinfo"])
         case .playlist, .favorites:
@@ -1098,38 +1102,31 @@ extension ConnectionManager {
             return []
         }
 
-        // Build the filter expression by ORing all field conditions
-        let conditions = fields.map { field in
-            filter(key: field, value: query, quote: false)
-        }.joined(separator: " OR ")
+        let commands = fields.map { field in
+            "search \(filter(key: field, value: query, comparator: "contains"))"
+        }
 
-        let filterExpression = "\"(\(conditions))\""
-
-        // Build the command
-        let command = "find \(filterExpression)"
-
-        let lines = try await run([command])
+        let lines = try await run(commands)
 
         // Parse response based on media type
-        if mediaType == Song.self {
+        switch mediaType {
+        case is Song.Type:
             return try await parseMediaResponse(lines, as: .song)
-        } else if mediaType == Album.self {
-            let songs: [Song] = try await parseMediaResponse(lines, as: .song)
-            // Extract unique albums from songs
-            var albumsDict: [String: Album] = [:]
-            for song in songs {
-                albumsDict[song.album.id] = song.album
+        case is Album.Type:
+            let albums: [Album] = try await parseMediaResponse(lines, as: .album)
+            var uniqueAlbums: [String: Album] = [:]
+            for album in albums {
+                uniqueAlbums[album.id] = album
             }
-            return Array(albumsDict.values) as! [T]
-        } else if mediaType == Artist.self {
-            let songs: [Song] = try await parseMediaResponse(lines, as: .song)
-            // Extract unique artists from songs
-            var artistsDict: [String: Artist] = [:]
-            for song in songs {
-                artistsDict[song.album.artist.id] = song.album.artist
+            return Array(uniqueAlbums.values) as! [T]
+        case is Artist.Type:
+            let artists: [Artist] = try await parseMediaResponse(lines, as: .artist)
+            var uniqueArtists: [String: Artist] = [:]
+            for artist in artists {
+                uniqueArtists[artist.id] = artist
             }
-            return Array(artistsDict.values) as! [T]
-        } else {
+            return Array(uniqueArtists.values) as! [T]
+        default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Search only supports Song, Album, and Artist types")
         }

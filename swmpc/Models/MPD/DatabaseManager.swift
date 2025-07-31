@@ -70,16 +70,16 @@ import SwiftUI
         media = switch type {
         case .album:
             try await idle
-                ? ConnectionManager.idle.getAlbums(sortDescriptor: sort)
-                : ConnectionManager.command().getAlbums(sortDescriptor: sort)
+                ? ConnectionManager.idle.getAlbums(sort: sort)
+                : ConnectionManager.command().getAlbums(sort: sort)
         case .artist:
             try await idle
-                ? ConnectionManager.idle.getArtists(sortDescriptor: sort)
-                : ConnectionManager.command().getArtists(sortDescriptor: sort)
+                ? ConnectionManager.idle.getArtists(sort: sort)
+                : ConnectionManager.command().getArtists(sort: sort)
         case .song:
             try await idle
-                ? ConnectionManager.idle.getSongs(from: Source.database, sortDescriptor: sort)
-                : ConnectionManager.command().getSongs(from: Source.database, sortDescriptor: sort)
+                ? ConnectionManager.idle.getSongs(from: Source.database, sort: sort)
+                : ConnectionManager.command().getSongs(from: Source.database, sort: sort)
         case .playlist:
             nil
         }
