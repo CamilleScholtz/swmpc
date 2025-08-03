@@ -95,6 +95,13 @@ struct SongView: View {
                 .contextMenu {
                     ContextMenuView(for: song, source: source)
                 }
+                .onChange(of: song) { oldSong, newSong in
+                    // Reset state when song changes (row is recycled)
+                    #if os(macOS)
+                        isHovering = false
+                        isHoveringHandle = false
+                    #endif
+                }
 
             #if os(macOS)
                 if source?.isMovable ?? false {

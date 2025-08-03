@@ -65,57 +65,26 @@ struct QueuePanelView: View {
             mpd.queue.songs
         }
 
-        @State private var scrollProxy: ScrollViewProxy?
+        
         @State private var hasScrolledToInitial = false
 
         private let performScrollNotification = NotificationCenter.default
             .publisher(for: .performScrollNotification)
+        
+        private var songsLookup: [String: Song] {
+            Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
+        }
 
         var body: some View {
-            ListView(rowHeight: 31.5 + 15) { proxy in
-                List {
-                    ForEach(songs, id: \.id) { song in
-                        RowView(media: song)
-                    }
-                    .onMove { source, destination in
-                        move(from: source, to: destination)
-                    }
-                }
-                .listRowSeparator(.hidden)
-                .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
-                .onAppear {
-                    scrollProxy = proxy
-
-                    // Scroll to current song on initial appearance
-                    if !hasScrolledToInitial {
-                        hasScrolledToInitial = true
-                        Task {
-                            // Wait a moment for the view to settle
-                            try? await Task.sleep(for: .milliseconds(100))
-                            requestScroll(to: .currentMedia, animate: false)
-                        }
-                    }
-                }
-            }
-            .onReceive(performScrollNotification) { notification in
-                guard let scrollProxy else { return }
-                guard let request = notification.object as? ScrollManager.ScrollRequest else { return }
-
-                Task {
-                    switch request.destination {
-                    case .currentMedia:
-                        try? await scrollToCurrent(proxy: scrollProxy, animate: request.animate)
-                    case let .specificItem(id):
-                        scrollProxy.scrollTo(id, anchor: .center)
-                    }
+            let lookup = songsLookup
+            RecyclingScrollView(rowIDs: songs.map(\.id), rowHeight: 31.5 + 15) { id in
+                if let song = lookup[id] {
+                    RowView(media: song)
                 }
             }
         }
 
-        private func requestScroll(to destination: ScrollManager.ScrollDestination, animate: Bool = true) {
-            let request = ScrollManager.ScrollRequest(destination: destination, animate: animate)
-            NotificationCenter.default.post(name: .performScrollNotification, object: request)
-        }
+        
 
         private func move(from source: IndexSet, to destination: Int) {
             Task {
@@ -134,16 +103,6 @@ struct QueuePanelView: View {
             }
         }
 
-        private func scrollToCurrent(proxy: ScrollViewProxy, animate _: Bool = true) async throws {
-            guard let currentSong = mpd.status.song else {
-                throw ViewError.missingData
-            }
-
-            guard let id = mpd.queue.songs.first(where: { $0.url == currentSong.url })?.id else {
-                throw ViewError.missingData
-            }
-
-            proxy.scrollTo(id, anchor: .center)
-        }
+        
     }
 }

@@ -59,6 +59,7 @@ struct ArtistView: View {
                             )
                     }
                 )
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
             VStack(alignment: .leading) {
                 Text(artist.name)
@@ -75,8 +76,17 @@ struct ArtistView: View {
             Spacer()
         }
         .contentShape(Rectangle())
-        .task {
+        .task(id: artist) {
             albumCount = await (try? artist.getAlbums().count) ?? 0
+        }
+        .onChange(of: artist) { oldArtist, newArtist in
+            // Reset state when artist changes (row is recycled)
+            albumCount = 0
+            
+            // Fetch album count for new artist
+            Task {
+                albumCount = await (try? newArtist.getAlbums().count) ?? 0
+            }
         }
         .onTapGesture {
             navigator.navigate(to: ContentDestination.artist(artist))

@@ -23,11 +23,6 @@ struct RowView: View {
                 EmptyView()
             }
         }
-        .listRowSeparator(.hidden)
-        #if os(iOS)
-            .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-        #elseif os(macOS)
-            .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
-        #endif
+   
     }
 }

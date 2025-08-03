@@ -81,11 +81,7 @@ struct Delegate: App {
                 }
                 .keyboardShortcut("l", modifiers: [.command, .option])
 
-                Button("Go to Current Song", systemSymbol: .dotViewfinder) {
-                    let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: true)
-                    NotificationCenter.default.post(name: .performScrollNotification, object: request)
-                }
-                .keyboardShortcut("l", modifiers: [.command])
+                
 
                 Button("Search Library", systemSymbol: .magnifyingglass) {
                     NotificationCenter.default.post(name: .startSearchingNotication, object: nil)

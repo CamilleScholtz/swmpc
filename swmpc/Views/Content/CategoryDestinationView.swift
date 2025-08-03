@@ -74,30 +74,31 @@ struct CategoryDatabaseView: View {
         }
     }
 
-    // TODO: Get actual heights.
     private var rowHeight: CGFloat {
         switch navigator.category {
-        case .albums, .artists: 65 + 15
+        case .albums: 65 + 15
+        case .artists: 50 + 15
         default: 31.5 + 15
         }
+    }
+    
+    private var mediaLookup: [String: any Mediable] {
+        guard let media = mpd.database.media else {
+            return [:]
+        }
+        
+        return Dictionary(uniqueKeysWithValues: media.map { ($0.id, $0) })
     }
 
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
-                 ListView(rowHeight: rowHeight) { proxy in
-                     ForEach(media, id: \.id) { row in
-                         RowView(media: row)
-                     }
-                     .onAppear {
-                         scrollProxy = proxy
-
-                         if let currentSong = mpd.status.song {
-                             let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
-                             NotificationCenter.default.post(name: .performScrollNotification, object: request)
-                         }
-                     }
-                 }
+                let lookup = mediaLookup
+                RecyclingScrollView(rowIDs: media.map(\.id), rowHeight: rowHeight) { id in
+                    if let row = lookup[id] {
+                        RowView(media: row)
+                    }
+                }
                  .id(navigator.category)
             } else {
                 EmptyCategoryView(destination: navigator.category)
@@ -139,10 +140,7 @@ struct CategoryDatabaseView: View {
 
             ToolbarItem {
                 Button {
-                    if let currentSong = mpd.status.song {
-                        let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: true)
-                        NotificationCenter.default.post(name: .performScrollNotification, object: request)
-                    }
+                  
                 } label: {
                     Image(systemSymbol: .dotViewfinder)
                 }
@@ -206,10 +204,10 @@ struct CategoryDatabaseView: View {
             Task(priority: .userInitiated) {
                 try? await mpd.database.set(idle: false, type: value.type)
 
-                if let currentSong = mpd.status.song {
-                    let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
-                    NotificationCenter.default.post(name: .performScrollNotification, object: request)
-                }
+//                if let currentSong = mpd.status.song {
+//                    let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
+//                    NotificationCenter.default.post(name: .performScrollNotification, object: request)
+//                }
             }
         }
         .onChange(of: sort) { _, value in
@@ -218,10 +216,10 @@ struct CategoryDatabaseView: View {
             Task(priority: .userInitiated) {
                 try? await mpd.database.set(idle: false, sort: value)
 
-                if let currentSong = mpd.status.song {
-                    let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
-                    NotificationCenter.default.post(name: .performScrollNotification, object: request)
-                }
+//                if let currentSong = mpd.status.song {
+//                    let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
+//                    NotificationCenter.default.post(name: .performScrollNotification, object: request)
+//                }
             }
         }
     }
@@ -233,48 +231,23 @@ struct CategoryPlaylistView: View {
 
     let playlist: Playlist
 
-    @State private var scrollProxy: ScrollViewProxy?
-
     @State private var media: [Song]?
 
     // TODO: Get actual heights.
     private let rowHeight: CGFloat = 31.5 + 15
+    
+    private var mediaLookup: [String: Song] {
+        guard let media else { return [:] }
+        return Dictionary(uniqueKeysWithValues: media.map { ($0.id, $0) })
+    }
 
     var body: some View {
         Group {
             if let media, !media.isEmpty {
-                ListView(rowHeight: rowHeight) { proxy in
-                    ForEach(media, id: \.id) { row in
+                let lookup = mediaLookup
+                RecyclingScrollView(rowIDs: media.map(\.id), rowHeight: rowHeight) { id in
+                    if let row = lookup[id] {
                         RowView(media: row)
-                    }
-                    .onMove(perform: { source, destination in
-                        Task {
-                            guard let index = source.first,
-                                  index >= 0,
-                                  index < media.count,
-                                  destination >= 0,
-                                  destination <= media.count
-                            else {
-                                return
-                            }
-
-                            let adjustedTo = index < destination ? destination - 1 : destination
-                            try? await ConnectionManager.command().move(media[index], to: adjustedTo, in: navigator.category.source)
-
-                            if case .playlist = navigator.category.source {
-                                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
-                            } else if case .favorites = navigator.category.source {
-                                NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
-                            }
-                        }
-                    })
-                    .onAppear {
-                        scrollProxy = proxy
-
-                        if let currentSong = mpd.status.song {
-                            let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
-                            NotificationCenter.default.post(name: .performScrollNotification, object: request)
-                        }
                     }
                 }
                 .id(playlist)
@@ -283,17 +256,6 @@ struct CategoryPlaylistView: View {
             }
         }
         .toolbar {
-            ToolbarItem {
-                Button {
-                    if let currentSong = mpd.status.song {
-                        let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: true)
-                        NotificationCenter.default.post(name: .performScrollNotification, object: request)
-                    }
-                } label: {
-                    Image(systemSymbol: .dotViewfinder)
-                }
-                .disabled(mpd.status.song == nil)
-            }
 
             ToolbarSpacer(.fixed)
 
@@ -309,11 +271,6 @@ struct CategoryPlaylistView: View {
             mpd.state.isLoading = true
 
             media = try? await mpd.playlists.getSongs(for: playlist)
-
-            if let currentSong = mpd.status.song {
-                let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
-                NotificationCenter.default.post(name: .performScrollNotification, object: request)
-            }
         }
     }
 }
@@ -362,76 +319,3 @@ struct EmptyCategoryView: View {
         }
     }
 }
-
-// struct CategoryDestinationView: View {
-
-//     enum SearchField: String, CaseIterable, Identifiable {
-//         case title = "Title"
-//         case artist = "Artist"
-//         case album = "Album"
-
-//         var id: String { rawValue }
-
-//         var systemImage: Image {
-//             switch self {
-//             case .title: Image(systemSymbol: .musicNote)
-//             case .artist: Image(systemSymbol: .person)
-//             case .album: Image(systemSymbol: .squareStack)
-//             }
-//         }
-//     }
-
-//         .onReceive(performScrollNotification) { notification in
-//             guard let request = notification.object as? ScrollManager.ScrollRequest else { return }
-
-//             Task {
-//                 switch request.destination {
-//                 case .currentMedia:
-//                     try? await scrollToCurrent(animate: request.animate)
-//                 case let .specificItem(id):
-//                     scrollProxy?.scrollTo(id, anchor: .center)
-//                 }
-//             }
-//         }
-//         .onReceive(playlistModifiedNotification) { _ in
-//             Task {
-//                 await refreshPlaylistSongs()
-//             }
-//         }
-//         .task(id: searchQuery, priority: .high) {
-//             await performSearch(query: searchQuery)
-//         }
-//     }
-
-//     private func performSearch(query: String) async {
-//         guard !query.isEmpty, navigator.category.source == .database else {
-//             searchResults = nil
-//             return
-//         }
-
-//         searchResults = []
-
-//         let mpdFields = enabledSearchFields.compactMap { field -> String in
-//             switch field {
-//             case .title: return "title"
-//             case .artist: return "artist"
-//             case .album: return "album"
-//             }
-//         }
-
-//         searchResults = await mpd.database.search(
-//             query: query,
-//             fields: Set(mpdFields),
-//         )
-//     }
-
-//     private func refreshPlaylistSongs() async {
-//         if case let .playlist(playlist) = navigator.category.source {
-//             if playlist.name == "Favorites" {
-//                 try? await mpd.playlists.set()
-//             } else {
-//                 loadedPlaylistSongs = await (try? mpd.playlists.getSongs(for: playlist)) ?? []
-//             }
-//         }
-//     }
-// }

@@ -54,7 +54,7 @@ struct AlbumView: View {
                                     )
                             )
                     )
-                    .shadow(color: .black.opacity(0.15), radius: 7, y: 1)
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
                 #if os(macOS)
                     Image(systemSymbol: .playFill)
@@ -108,7 +108,7 @@ struct AlbumView: View {
                 ContextMenuView(for: album)
             }
             .task(id: album, priority: .high) {
-                guard artwork == nil else {
+                guard !Task.isCancelled else {
                     return
                 }
 
