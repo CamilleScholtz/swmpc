@@ -102,10 +102,12 @@ struct CategoryDatabaseView: View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
                 let wrappedMedia = media.map { AnyMediable(base: $0) }
+
                 CollectionView(data: wrappedMedia, content: {
                     RowView(media: $0.base)
                 }, scrollTo: $scrollToID, rowHeight: rowHeight)
                     .id(navigator.category)
+                    .ignoresSafeArea(edges: .top)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }

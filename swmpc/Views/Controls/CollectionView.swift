@@ -1,97 +1,120 @@
 import AppKit
 import SwiftUI
 
-class HostingCollectionViewItem: NSCollectionViewItem {
-    var hostingView: NSHostingView<AnyView>?
-
+final class HostingCollectionViewItem: NSCollectionViewItem {
+    private(set) var hostingView: NSHostingView<AnyView>?
+    
     override func loadView() {
         view = NSView()
     }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        hostingView?.rootView = AnyView(EmptyView())
+    
+    func updateContent(_ content: AnyView) {
+        if let hostingView {
+            hostingView.rootView = content
+        } else {
+            let hostingView = NSHostingView(rootView: content)
+            hostingView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(hostingView)
+            
+            NSLayoutConstraint.activate([
+                hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                hostingView.topAnchor.constraint(equalTo: view.topAnchor),
+                hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
+            
+            self.hostingView = hostingView
+        }
     }
 }
 
-struct CollectionView<Content: View, Data: RandomAccessCollection>:
-    NSViewRepresentable where Data.Element: Identifiable, Data.Element: Hashable
-{
-    var data: Data
-    var content: (Data.Element) -> Content
+struct CollectionView<Data: RandomAccessCollection, Content: View>: NSViewRepresentable 
+where Data.Element: Identifiable & Hashable {
+    let data: Data
+    let content: (Data.Element) -> Content
     @Binding var scrollTo: Data.Element.ID?
-    var rowHeight: CGFloat?
-
+    let rowHeight: CGFloat?
+    
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
-
+    
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
-
         scrollView.hasVerticalScroller = true
         scrollView.documentView = context.coordinator.collectionView
-
         return scrollView
     }
-
-    func updateNSView(_: NSScrollView, context: Context) {
-        let oldData = context.coordinator.data
-
-        context.coordinator.data = data
-        context.coordinator.content = content
-        context.coordinator.mpd = mpd
-        context.coordinator.navigator = navigator
-        context.coordinator.rowHeight = rowHeight
-
-        // Smart update: only reload if data actually changed
-        if !oldData.elementsEqual(data, by: { $0.id == $1.id }) {
-            context.coordinator.collectionView.reloadData()
+    
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        let coordinator = context.coordinator
+        let hasDataChanged = !coordinator.data.elementsEqual(data) { $0.id == $1.id }
+        
+        coordinator.data = data
+        coordinator.content = content
+        coordinator.mpd = mpd
+        coordinator.navigator = navigator
+        coordinator.rowHeight = rowHeight
+        
+        if hasDataChanged {
+            coordinator.collectionView.reloadData()
         }
-
-        if let id = scrollTo, let index = data.firstIndex(where: { $0.id == id }) {
-            let indexPath = IndexPath(item: data.distance(from: data.startIndex, to: index), section: 0)
-            context.coordinator.collectionView.scrollToItems(at: [indexPath], scrollPosition: .top)
-
-            // Debounce scroll resets
-            context.coordinator.scrollDebouncer?.cancel()
-            context.coordinator.scrollDebouncer = DispatchWorkItem {
-                scrollTo = nil
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: context.coordinator.scrollDebouncer!)
-        }
+        
+        handleScrollToItem(coordinator: coordinator)
     }
-
-    func makeCoordinator() -> Coordinator<Content, Data> {
+    
+    func makeCoordinator() -> Coordinator {
         Coordinator(data: data, content: content, mpd: mpd, navigator: navigator, rowHeight: rowHeight)
     }
-
-    class Coordinator<InnerContent: View, InnerData: RandomAccessCollection>: NSObject, NSCollectionViewDataSource, NSCollectionViewDelegateFlowLayout where InnerData.Element: Identifiable, InnerData.Element: Hashable {
-        var data: InnerData
-        var content: (InnerData.Element) -> InnerContent
+    
+    private func handleScrollToItem(coordinator: Coordinator) {
+        guard let id = scrollTo,
+              let index = data.firstIndex(where: { $0.id == id }) else { return }
+        
+        let itemIndex = data.distance(from: data.startIndex, to: index)
+        let indexPath = IndexPath(item: itemIndex, section: 0)
+        
+        coordinator.collectionView.scrollToItems(at: [indexPath], scrollPosition: .top)
+        
+        coordinator.scrollDebouncer?.cancel()
+        coordinator.scrollDebouncer = DispatchWorkItem {
+            scrollTo = nil
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: coordinator.scrollDebouncer!)
+    }
+    
+    final class Coordinator: NSObject, NSCollectionViewDataSource, NSCollectionViewDelegateFlowLayout {
+        var data: Data
+        var content: (Data.Element) -> Content
         var mpd: MPD
         var navigator: NavigationManager
         let collectionView: NSCollectionView
         var scrollDebouncer: DispatchWorkItem?
         var rowHeight: CGFloat?
-
-        // Cache for cell sizes
-        private var sizeCache: [InnerData.Element.ID: NSSize] = [:]
-
-        init(data: InnerData, content: @escaping (InnerData.Element) -> InnerContent, mpd: MPD, navigator: NavigationManager, rowHeight: CGFloat?) {
+        
+        private var sizeCache: [Data.Element.ID: NSSize] = [:]
+        private let cellIdentifier = NSUserInterfaceItemIdentifier("Cell")
+        
+        init(data: Data, content: @escaping (Data.Element) -> Content, mpd: MPD, navigator: NavigationManager, rowHeight: CGFloat?) {
             self.data = data
             self.content = content
             self.mpd = mpd
             self.navigator = navigator
             self.rowHeight = rowHeight
+            
             collectionView = NSCollectionView()
             super.init()
-
+            
+            setupCollectionView()
+        }
+        
+        private func setupCollectionView() {
             let layout = NSCollectionViewFlowLayout()
             layout.minimumLineSpacing = 0
             layout.minimumInteritemSpacing = 0
             collectionView.collectionViewLayout = layout
-
-            collectionView.register(HostingCollectionViewItem.self, forItemWithIdentifier: NSUserInterfaceItemIdentifier("Cell"))
+            
+            collectionView.register(HostingCollectionViewItem.self, forItemWithIdentifier: cellIdentifier)
             collectionView.dataSource = self
             collectionView.delegate = self
         }
@@ -99,73 +122,47 @@ struct CollectionView<Content: View, Data: RandomAccessCollection>:
         func collectionView(_: NSCollectionView, numberOfItemsInSection _: Int) -> Int {
             data.count
         }
-
+        
         func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
-            let item = collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier("Cell"), for: indexPath) as! HostingCollectionViewItem
+            let item = collectionView.makeItem(withIdentifier: cellIdentifier, for: indexPath) as! HostingCollectionViewItem
             let element = data[data.index(data.startIndex, offsetBy: indexPath.item)]
-
+            
             let contentView = AnyView(
                 content(element)
                     .environment(mpd)
-                    .environment(navigator),
+                    .environment(navigator)
             )
-
-            // Reuse existing hosting view if available
-            if let hostingView = item.hostingView {
-                hostingView.rootView = contentView
-            } else {
-                // Create new hosting view only if needed
-                let hostingView = NSHostingView(rootView: contentView)
-                hostingView.translatesAutoresizingMaskIntoConstraints = false
-                item.view.addSubview(hostingView)
-
-                NSLayoutConstraint.activate([
-                    hostingView.leadingAnchor.constraint(equalTo: item.view.leadingAnchor),
-                    hostingView.trailingAnchor.constraint(equalTo: item.view.trailingAnchor),
-                    hostingView.topAnchor.constraint(equalTo: item.view.topAnchor),
-                    hostingView.bottomAnchor.constraint(equalTo: item.view.bottomAnchor),
-                ])
-
-                item.hostingView = hostingView
-            }
-
+            
+            item.updateContent(contentView)
             return item
         }
 
         func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
             let width = collectionView.bounds.width
-
-            // Use fixed height if provided for better performance
+            
             if let fixedHeight = rowHeight {
                 return NSSize(width: width, height: fixedHeight)
             }
-
-            // Otherwise use dynamic height calculation
+            
             let element = data[data.index(data.startIndex, offsetBy: indexPath.item)]
-
-            // Check cache first
-            let cacheKey = element.id
-            if let cachedSize = sizeCache[cacheKey], cachedSize.width == width {
+            let elementID = element.id
+            
+            if let cachedSize = sizeCache[elementID], cachedSize.width == width {
                 return cachedSize
             }
-
-            // Calculate size only if not cached
+            
             let contentView = content(element)
                 .environment(mpd)
                 .environment(navigator)
                 .frame(width: width)
-
+            
             let hostingView = NSHostingView(rootView: contentView)
-            hostingView.translatesAutoresizingMaskIntoConstraints = false
-            let fittingSize = hostingView.fittingSize
-
-            let size = NSSize(width: width, height: fittingSize.height)
-            sizeCache[cacheKey] = size
-
+            let size = NSSize(width: width, height: hostingView.fittingSize.height)
+            sizeCache[elementID] = size
+            
             return size
         }
-
-        // Clear cache when bounds change
+        
         func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, shouldInvalidateLayoutForBoundsChange newBounds: NSRect) -> Bool {
             if collectionView.bounds.width != newBounds.width {
                 sizeCache.removeAll()

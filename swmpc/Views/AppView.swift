@@ -79,6 +79,7 @@ struct AppView: View {
                             .overlay(
                                 LoadingView(),
                             )
+                            .scrollEdgeEffectStyle(.soft, for: .top)
                         } detail: {
                             // XXX: The scrollview is a hack to hide the toolbar.
                             ScrollView {
@@ -86,6 +87,7 @@ struct AppView: View {
                                     .padding(60)
                             }
                             .scrollDisabled(true)
+                            .scrollEdgeEffectStyle(.soft, for: .top)
                         }
                         .simultaneousGesture(
                             TapGesture()
