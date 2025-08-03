@@ -10,7 +10,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigationManager
+    @Environment(NavigationManager.self) private var navigator
 
     @State private var showDeleteAlert = false
     @State private var playlistToDelete: Playlist?
@@ -32,9 +32,9 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        @Bindable var boundNavigationManager = navigationManager
+        @Bindable var boundNavigator = navigator
 
-        List(selection: $boundNavigationManager.category) {
+        List(selection: $boundNavigator.category) {
             Text("swmpc")
                 .font(.system(size: 18))
                 .foregroundStyle(.secondary)

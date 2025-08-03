@@ -10,7 +10,7 @@ import SwiftUI
 
 struct AlbumSongsView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigationManager
+    @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
     init(for album: Album) {
@@ -39,41 +39,57 @@ struct AlbumSongsView: View {
                             .opacity(0.5)
 
                         ArtworkView(image: artwork)
-                            .cornerRadius(10)
+                            .cornerRadius(18)
                             .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                             .frame(width: 100)
                             .overlay(
-                                ZStack(alignment: .bottomLeading) {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(.ultraThinMaterial)
-                                        .frame(width: 100)
-                                        .mask(
-                                            LinearGradient(
-                                                gradient: Gradient(stops: [
-                                                    .init(color: .black, location: 0.3),
-                                                    .init(color: .black.opacity(0), location: 1.0),
-                                                ]),
-                                                startPoint: .bottom,
-                                                endPoint: .top,
-                                            ),
-                                        )
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(.clear)
+                                    .glassEffect(.clear, in: .rect(cornerRadius: 18))
+                                    .mask(
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 18)
 
-                                    HStack(spacing: 5) {
-                                        Image(systemSymbol: .playFill)
-                                        Text("Playing")
-                                    }
-                                    .font(.caption2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.black)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(.white)
-                                    .cornerRadius(100)
-                                    .padding(10)
-                                }
-                                .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
+                                            RoundedRectangle(cornerRadius: 18)
+                                                .scale(0.8)
+                                                .blur(radius: 8)
+                                                .blendMode(.destinationOut)
+                                        },
+                                    ),
                             )
+
+                        // .overlay(
+                        //     ZStack(alignment: .bottomLeading) {
+                        //         RoundedRectangle(cornerRadius: 10)
+                        //             .fill(.ultraThinMaterial)
+                        //             .frame(width: 100)
+                        //             .mask(
+                        //                 LinearGradient(
+                        //                     gradient: Gradient(stops: [
+                        //                         .init(color: .black, location: 0.3),
+                        //                         .init(color: .black.opacity(0), location: 1.0),
+                        //                     ]),
+                        //                     startPoint: .bottom,
+                        //                     endPoint: .top,
+                        //                 ),
+                        //             )
+
+                        //         HStack(spacing: 5) {
+                        //             Image(systemSymbol: .playFill)
+                        //             Text("Playing")
+                        //         }
+                        //         .font(.caption2)
+                        //         .fontWeight(.semibold)
+                        //         .foregroundStyle(.black)
+                        //         .padding(.horizontal, 10)
+                        //         .padding(.vertical, 4)
+                        //         .background(.white)
+                        //         .cornerRadius(100)
+                        //         .padding(10)
+                        //     }
+                        //     .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
+                        //     .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
+                        // )
                     }
 
                     #if os(macOS)
@@ -118,7 +134,7 @@ struct AlbumSongsView: View {
                         .lineLimit(3)
 
                     Button {
-                        navigationManager.navigate(to: ContentDestination.artist(album.artist))
+                        navigator.navigate(to: ContentDestination.artist(album.artist))
                     } label: {
                         Text(album.artist.name)
                             .font(.system(size: 12))
@@ -172,7 +188,7 @@ struct AlbumSongsView: View {
                     }
 
                     ForEach(songs[disc] ?? []) { song in
-                        SongView(for: song)
+                        RowView(media: song)
                     }
                 }
             }

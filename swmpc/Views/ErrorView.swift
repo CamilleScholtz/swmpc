@@ -10,7 +10,7 @@ import SwiftUI
 struct ErrorView: View {
     @Environment(MPD.self) private var mpd
     #if os(iOS)
-        @Environment(NavigationManager.self) private var navigationManager
+        @Environment(NavigationManager.self) private var navigator
     #elseif os(macOS)
         @Environment(\.openSettings) private var openSettings
     #endif
@@ -33,7 +33,7 @@ struct ErrorView: View {
                         .foregroundColor(.secondary)
                     Button {
                         #if os(iOS)
-                            navigationManager.category = .settings
+                            navigator.category = .settings
                         #elseif os(macOS)
                             openSettings()
                         #endif

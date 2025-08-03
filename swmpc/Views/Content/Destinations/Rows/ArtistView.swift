@@ -10,7 +10,7 @@ import SwiftUI
 
 struct ArtistView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigationManager
+    @Environment(NavigationManager.self) private var navigator
 
     private let artist: Artist
 
@@ -37,11 +37,27 @@ struct ArtistView: View {
                 .frame(width: 50, height: 50)
             #endif
                 .overlay(
-                    Text(artist.name.initials)
-                        .font(.system(size: 18))
-                        .fontDesign(.rounded)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary),
+                    ZStack {
+                        Text(artist.name.initials)
+                            .font(.system(size: 18))
+                            .fontDesign(.rounded)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+
+                        Color.clear
+                            .glassEffect(.clear, in: Circle())
+                            .mask(
+                                RadialGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0.0),
+                                        .init(color: .black, location: 1.0),
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 45
+                                )
+                            )
+                    }
                 )
 
             VStack(alignment: .leading) {
@@ -63,7 +79,7 @@ struct ArtistView: View {
             albumCount = await (try? artist.getAlbums().count) ?? 0
         }
         .onTapGesture {
-            navigationManager.navigate(to: ContentDestination.artist(artist))
+            navigator.navigate(to: ContentDestination.artist(artist))
         }
         .contextMenu {
             ContextMenuView(for: artist)

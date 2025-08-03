@@ -11,7 +11,7 @@ import SwiftUI
 
 struct AlbumView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigationManager
+    @Environment(NavigationManager.self) private var navigator
 
     private let album: Album
 
@@ -33,16 +33,34 @@ struct AlbumView: View {
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
-                ArtworkView(image: artwork)
-                    .frame(width: 65)
+                ArtworkView(image: artwork, aspectRatioMode: .fill)
+                    .frame(width: 65, height: 65)
                     .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
+                    .overlay(
+                        Color.clear
+                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 12))
+                            .mask(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(
+                                        RadialGradient(
+                                            gradient: Gradient(stops: [
+                                                .init(color: .clear, location: 0.0),
+                                                .init(color: .black, location: 1.0),
+                                            ]),
+                                            center: .center,
+                                            startRadius: 0,
+                                            endRadius: 55
+                                        )
+                                    )
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.15), radius: 7, y: 1)
 
                 #if os(macOS)
                     Image(systemSymbol: .playFill)
                         .font(.title2)
                         .padding(12)
-                        .glassEffect(.clear.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
+                        .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
                         .opacity(isHovering ? 1 : 0)
                         .animation(.interactiveSpring, value: isHovering)
                         .animation(.interactiveSpring, value: isHoveringArtwork)
@@ -84,7 +102,7 @@ struct AlbumView: View {
             }
         #endif
             .onTapGesture {
-                navigationManager.navigate(to: ContentDestination.album(album))
+                navigator.navigate(to: ContentDestination.album(album))
             }
             .contextMenu {
                 ContextMenuView(for: album)

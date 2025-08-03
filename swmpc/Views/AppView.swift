@@ -14,7 +14,7 @@ enum ViewError: Error {
 
 struct AppView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigationManager
+    @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
     #if os(iOS)
@@ -34,17 +34,17 @@ struct AppView: View {
                 ErrorView()
             } else {
                 Group {
-                    @Bindable var boundNavigationManager = navigationManager
+                    @Bindable var boundNavigator = navigator
 
                     #if os(iOS)
-                        TabView(selection: $boundNavigationManager.category) {
+                        TabView(selection: $boundNavigator.category) {
                             ForEach(CategoryDestination.categories) { category in
                                 // NOTE: Use SFSafeSymbols version when it is available.
                                 // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
                                 Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
                                     ZStack {
-                                        NavigationStack(path: $boundNavigationManager.path) {
-                                            CategoryDestinationView(destination: category)
+                                        NavigationStack(path: $boundNavigator.path) {
+                                            MainContentView()
                                                 .navigationDestination(for: ContentDestination.self) { destination in
                                                     ContentDestinationView(destination: destination)
                                                 }
@@ -68,10 +68,11 @@ struct AppView: View {
                             SidebarView()
                                 .navigationSplitViewColumnWidth(180)
                         } content: {
-                            NavigationStack(path: $boundNavigationManager.path) {
-                                CategoryDestinationView(destination: navigationManager.category)
+                            NavigationStack(path: $boundNavigator.path) {
+                                CategoryDestinationView()
                                     .navigationDestination(for: ContentDestination.self) { destination in
                                         ContentDestinationView(destination: destination)
+                                            .navigationTitle(navigator.category.label)
                                     }
                             }
                             .navigationSplitViewColumnWidth(310)

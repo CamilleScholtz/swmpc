@@ -28,9 +28,7 @@ struct ListView<Content: View>: View {
             .scrollEdgeEffectStyle(.soft, for: .top)
             .safeAreaPadding(.bottom, 7.5)
             .contentMargins(.bottom, -7.5, for: .scrollIndicators)
-            #if os(macOS)
-                .environment(\.defaultMinListRowHeight, min(rowHeight ?? 50, 50))
-            #endif
+            .environment(\.defaultMinListRowHeight, rowHeight ?? 0)
         }
     }
 }

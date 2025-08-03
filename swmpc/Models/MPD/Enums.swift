@@ -28,29 +28,15 @@ enum MediaType {
     /// A user-created playlist of songs.
     case playlist
 
-    /// Returns the default search fields for this media type.
-    var defaultSearchFields: Set<CategoryView.SearchField> {
-        switch self {
-        case .album:
-            [.title, .artist]
-        case .artist:
-            [.artist]
-        case .song:
-            [.title, .artist]
-        case .playlist:
-            [.title, .artist]
-        }
-    }
-
     /// Returns the available sort options for this media type.
     var availableSortOptions: [SortOption] {
         switch self {
         case .album:
-            [.artist, .album]
+            [.artist, .album, .modified]
         case .artist:
-            [.artist]
+            [.artist, .modified]
         case .song:
-            [.album, .song, .artist]
+            [.album, .song, .artist, .modified]
         case .playlist:
             []
         }
@@ -125,8 +111,10 @@ enum SortOption: String {
     case album = "albumsort"
     /// Sort by song title.
     case song = "titlesort"
+    /// Sort by the last modified date.
+    case modified = "Last-Modified"
 
-    var label: String {
+    var label: LocalizedStringResource {
         switch self {
         case .artist:
             "Artist"
@@ -134,6 +122,8 @@ enum SortOption: String {
             "Album"
         case .song:
             "Song"
+        case .modified:
+            "Last Modified"
         }
     }
 }
@@ -145,7 +135,7 @@ enum SortDirection: String {
     /// Sort in descending order.
     case descending = "-"
 
-    var label: String {
+    var label: LocalizedStringResource {
         switch self {
         case .ascending:
             "Ascending"

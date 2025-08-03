@@ -11,7 +11,7 @@ protocol Mediable: Identifiable, Equatable, Codable, Hashable, Sendable {
     /// Returns a unique identifier for the media item.
     nonisolated var id: String { get }
 
-    nonisolated var url: URL { get }
+    var url: URL { get }
 }
 
 extension Mediable {
@@ -67,8 +67,6 @@ nonisolated struct Artist: Mediable {
 
     let name: String
 
-    let added: Date?
-
     func getAlbums() async throws -> [Album] {
         try await ConnectionManager.command().getAlbums(by: self, from: .database)
     }
@@ -82,8 +80,6 @@ nonisolated struct Album: Mediable, Artworkable {
 
     let title: String
     let artist: Artist
-
-    let added: Date?
 
     nonisolated var description: String {
         "\(artist.name) - \(title)"
@@ -121,8 +117,6 @@ nonisolated struct Song: Mediable, Artworkable {
 
     let album: Album
 
-    let added: Date?
-
     nonisolated var description: String {
         "\(artist) - \(title)"
     }
@@ -156,7 +150,7 @@ nonisolated struct Playlist: Identifiable, Equatable, Hashable, Codable, Sendabl
 }
 
 /// Represents a complete sort descriptor combining option and direction.
-nonisolated struct SortDescriptor: RawRepresentable, Equatable {
+nonisolated struct SortDescriptor: RawRepresentable, Equatable, Hashable {
     let option: SortOption
     let direction: SortDirection
 

@@ -13,54 +13,23 @@ struct ContentDestinationView: View {
     let destination: ContentDestination
 
     var body: some View {
-        ScrollView {
-//            #if os(macOS)
-//                BackButtonView()
-//                    .listRowSeparator(.hidden)
-//                    .listRowInsets(.init(top: 15, leading: 7.5, bottom: 0, trailing: 7.5))
-//            #endif
-
-            LazyVStack {
-                switch destination {
-                case let .album(album):
-                    AlbumSongsView(for: album)
-                case let .artist(artist):
-                    ArtistAlbumsView(for: artist)
-                }
+        List {
+            switch destination {
+            case let .album(album):
+                AlbumSongsView(for: album)
+            case let .artist(artist):
+                ArtistAlbumsView(for: artist)
             }
         }
-        .contentMargins(.all, 15, for: .scrollContent)
+        .listRowSeparator(.hidden)
         #if os(iOS)
-            .navigationBarBackButtonHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    BackButtonView()
-                }
-            }
+            .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
+        #elseif os(macOS)
+            .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
         #endif
-    }
-}
-
-struct BackButtonView: View {
-    @Environment(NavigationManager.self) private var navigationManager
-
-    var body: some View {
-        Button(action: {
-            navigationManager.goBack()
-        }) {
-            #if os(iOS)
-                HStack(spacing: 5) {
-                    Image(systemName: "chevron.left")
-                    Text(navigationManager.category.label)
-                }
-            #elseif os(macOS)
-                Image(systemSymbol: .chevronBackward)
-                    .frame(width: 22, height: 22)
-                    .contentShape(Circle())
-            #endif
-        }
-        #if os(macOS)
-        .styledButton()
-        #endif
+            .listStyle(.plain)
+            .scrollEdgeEffectStyle(.soft, for: .top)
+            .safeAreaPadding(.bottom, 7.5)
+            .contentMargins(.bottom, -7.5, for: .scrollIndicators)
     }
 }

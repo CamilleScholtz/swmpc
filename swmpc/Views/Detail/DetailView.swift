@@ -12,7 +12,7 @@ import SwiftUI
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigationManager
+    @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
     @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
@@ -173,11 +173,11 @@ struct DetailView: View {
                             }
 
                             #if os(iOS)
-                                if navigationManager.category != .albums {
-                                    navigationManager.category = .albums
+                                if navigator.category != .albums {
+                                    navigator.category = .albums
                                 }
                             #endif
-                            navigationManager.navigate(to: ContentDestination.album(song.album))
+                            navigator.navigate(to: ContentDestination.album(song.album))
 
                             #if os(iOS)
                                 isPopupOpen = false

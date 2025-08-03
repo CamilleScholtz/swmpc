@@ -134,9 +134,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The version of the MPD server.
     private(set) var version: String?
 
-    /// Cached ISO8601DateFormatter for efficient date parsing
-    private nonisolated(unsafe) let dateFormatter = ISO8601DateFormatter()
-
     // TODO: I want to just use `disconnect()` here, but that gives me an `Call
     // to actor-isolated instance method 'disconnect()' in a synchronous
     // nonisolated context` error. The existing approach is reasonable.
@@ -751,10 +748,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         let artistName = fields["albumartist"] ?? fields["artist"] ?? "Unknown Artist"
 
-        let added = fields["added"].flatMap {
-            self.dateFormatter.date(from: $0)
-        }
-
         switch type {
         case .song:
             let song = Song(
@@ -773,11 +766,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
                     artist: Artist(
                         url: url,
                         name: artistName,
-                        added: added,
                     ),
-                    added: added,
                 ),
-                added: added,
             )
 
             return try castResult(song)
@@ -788,9 +778,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 artist: Artist(
                     url: url,
                     name: artistName,
-                    added: added,
                 ),
-                added: added,
             )
 
             return try castResult(album)
@@ -798,7 +786,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let artist = Artist(
                 url: url,
                 name: artistName,
-                added: added,
             )
 
             return try castResult(artist)
@@ -931,9 +918,9 @@ extension ConnectionManager {
         var unique: [Album] = []
 
         for album in albums {
-            if !seen.contains(album.description) {
+            if !seen.contains(album.id) {
                 unique.append(album)
-                seen.insert(album.description)
+                seen.insert(album.id)
             }
         }
 
@@ -968,9 +955,9 @@ extension ConnectionManager {
         var unique: [Album] = []
 
         for album in albums {
-            if !seen.contains(album.title) {
+            if !seen.contains(album.id) {
                 unique.append(album)
-                seen.insert(album.title)
+                seen.insert(album.id)
             }
         }
 
@@ -998,9 +985,9 @@ extension ConnectionManager {
         for album in albums {
             let artist = album.artist
 
-            if !seen.contains(artist.name) {
+            if !seen.contains(artist.id) {
                 unique.append(artist)
-                seen.insert(artist.name)
+                seen.insert(artist.id)
             }
         }
 
@@ -1078,58 +1065,6 @@ extension ConnectionManager {
         }
 
         return playlists
-    }
-
-    /// Performs a server-side search across the MPD database.
-    ///
-    /// This function dynamically builds an MPD filter expression that ORs together
-    /// search conditions for the specified fields. Results are filtered and returned
-    /// according to the specified media type.
-    ///
-    /// - Parameters:
-    ///   - query: The search query string to match against the specified fields.
-    ///   - fields: A set of field names to search within (e.g., "title", "artist", "album").
-    ///   - mediaType: The type of media to return (song, album, or artist).
-    ///   - sortDescriptor: Optional sort descriptor for ordering results.
-    /// - Returns: An array of media items matching the search criteria.
-    /// - Throws: An error if the command execution fails or if the response is malformed.
-    func search<T: Mediable>(
-        query: String,
-        fields: Set<String>,
-        returning mediaType: T.Type
-    ) async throws -> [T] {
-        guard !query.isEmpty else {
-            return []
-        }
-
-        let commands = fields.map { field in
-            "search \(filter(key: field, value: query, comparator: "contains"))"
-        }
-
-        let lines = try await run(commands)
-
-        // Parse response based on media type
-        switch mediaType {
-        case is Song.Type:
-            return try await parseMediaResponse(lines, as: .song)
-        case is Album.Type:
-            let albums: [Album] = try await parseMediaResponse(lines, as: .album)
-            var uniqueAlbums: [String: Album] = [:]
-            for album in albums {
-                uniqueAlbums[album.id] = album
-            }
-            return Array(uniqueAlbums.values) as! [T]
-        case is Artist.Type:
-            let artists: [Artist] = try await parseMediaResponse(lines, as: .artist)
-            var uniqueArtists: [String: Artist] = [:]
-            for artist in artists {
-                uniqueArtists[artist.id] = artist
-            }
-            return Array(uniqueArtists.values) as! [T]
-        default:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Search only supports Song, Album, and Artist types")
-        }
     }
 }
 

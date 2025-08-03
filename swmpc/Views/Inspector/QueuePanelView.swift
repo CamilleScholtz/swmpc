@@ -59,7 +59,6 @@ struct QueuePanelView: View {
 
     struct QueueView: View {
         @Environment(MPD.self) private var mpd
-        @Environment(ScrollManager.self) private var scrollManager
         @Environment(\.colorScheme) private var colorScheme
 
         private var songs: [Song] {
@@ -74,20 +73,29 @@ struct QueuePanelView: View {
 
         var body: some View {
             ListView(rowHeight: 31.5 + 15) { proxy in
-                MediaView(using: mpd.queue)
-                    .onAppear {
-                        scrollProxy = proxy
+                List {
+                    ForEach(songs, id: \.id) { song in
+                        RowView(media: song)
+                    }
+                    .onMove { source, destination in
+                        move(from: source, to: destination)
+                    }
+                }
+                .listRowSeparator(.hidden)
+                .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
+                .onAppear {
+                    scrollProxy = proxy
 
-                        // Scroll to current song on initial appearance
-                        if !hasScrolledToInitial {
-                            hasScrolledToInitial = true
-                            Task {
-                                // Wait a moment for the view to settle
-                                try? await Task.sleep(for: .milliseconds(100))
-                                scrollManager.requestScroll(to: .currentMedia, animate: false, context: "queue-initial")
-                            }
+                    // Scroll to current song on initial appearance
+                    if !hasScrolledToInitial {
+                        hasScrolledToInitial = true
+                        Task {
+                            // Wait a moment for the view to settle
+                            try? await Task.sleep(for: .milliseconds(100))
+                            requestScroll(to: .currentMedia, animate: false)
                         }
                     }
+                }
             }
             .onReceive(performScrollNotification) { notification in
                 guard let scrollProxy else { return }
@@ -98,17 +106,35 @@ struct QueuePanelView: View {
                     case .currentMedia:
                         try? await scrollToCurrent(proxy: scrollProxy, animate: request.animate)
                     case let .specificItem(id):
-                        if request.animate {
-                            scrollProxy.scrollTo(id, anchor: .center)
-                        } else {
-                            scrollProxy.scrollTo(id, anchor: .center)
-                        }
+                        scrollProxy.scrollTo(id, anchor: .center)
                     }
                 }
             }
         }
 
-        private func scrollToCurrent(proxy: ScrollViewProxy, animate: Bool = true) async throws {
+        private func requestScroll(to destination: ScrollManager.ScrollDestination, animate: Bool = true) {
+            let request = ScrollManager.ScrollRequest(destination: destination, animate: animate)
+            NotificationCenter.default.post(name: .performScrollNotification, object: request)
+        }
+
+        private func move(from source: IndexSet, to destination: Int) {
+            Task {
+                guard let index = source.first,
+                      index >= 0,
+                      index < songs.count,
+                      destination >= 0,
+                      destination <= songs.count
+                else {
+                    return
+                }
+
+                let song = songs[index]
+                let adjustedTo = index < destination ? destination - 1 : destination
+                try? await ConnectionManager.command().move(song, to: adjustedTo, in: .queue)
+            }
+        }
+
+        private func scrollToCurrent(proxy: ScrollViewProxy, animate _: Bool = true) async throws {
             guard let currentSong = mpd.status.song else {
                 throw ViewError.missingData
             }
@@ -117,11 +143,7 @@ struct QueuePanelView: View {
                 throw ViewError.missingData
             }
 
-            if animate {
-                proxy.scrollTo(id, anchor: .center)
-            } else {
-                proxy.scrollTo(id, anchor: .center)
-            }
+            proxy.scrollTo(id, anchor: .center)
         }
     }
 }

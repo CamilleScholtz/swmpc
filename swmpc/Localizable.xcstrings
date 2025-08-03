@@ -1785,6 +1785,9 @@
         }
       }
     },
+    "Last Modified" : {
+
+    },
     "Leave empty if no password is set." : {
       "localizations" : {
         "de" : {
@@ -2152,9 +2155,6 @@
         }
       }
     },
-    "No content" : {
-
-    },
     "No songs in playlist." : {
       "localizations" : {
         "de" : {
@@ -2415,6 +2415,7 @@
       }
     },
     "Playing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
