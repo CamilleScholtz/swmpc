@@ -42,6 +42,34 @@ import SwiftUI
     /// The current volume level (0-100).
     var volume: Int?
 
+    /// Gets the media ID for the current song based on the specified media type.
+    ///
+    /// This method finds the appropriate media item (album, artist, or song) that
+    /// corresponds to the currently playing song.
+    ///
+    /// - Parameters:
+    ///   - type: The type of media to search for.
+    ///   - media: The collection of media items to search within.
+    /// - Returns: The ID of the found media item, or nil if not found.
+    func getMediaID(for type: MediaType, in media: [any Mediable]) -> String? {
+        guard let currentSong = song else { return nil }
+
+        switch type {
+        case .album:
+            // Find the album that contains the current song
+            return (media as? [Album])?.first(where: { currentSong.isIn($0) })?.id
+        case .artist:
+            // Find the artist that performed the current song
+            return (media as? [Artist])?.first(where: { currentSong.isBy($0) })?.id
+        case .song:
+            // For songs, just use the song's ID directly
+            return currentSong.id
+        case .playlist:
+            // Playlists don't apply here
+            return nil
+        }
+    }
+
     /// Whether elapsed time tracking is currently active.
     @ObservationIgnored private(set) var trackElapsed = false {
         didSet {

@@ -54,10 +54,10 @@ struct ArtistView: View {
                                     ],
                                     center: .center,
                                     startRadius: 0,
-                                    endRadius: 45
-                                )
+                                    endRadius: 45,
+                                ),
                             )
-                    }
+                    },
                 )
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
@@ -79,10 +79,10 @@ struct ArtistView: View {
         .task(id: artist) {
             albumCount = await (try? artist.getAlbums().count) ?? 0
         }
-        .onChange(of: artist) { oldArtist, newArtist in
+        .onChange(of: artist) { _, newArtist in
             // Reset state when artist changes (row is recycled)
             albumCount = 0
-            
+
             // Fetch album count for new artist
             Task {
                 albumCount = await (try? newArtist.getAlbums().count) ?? 0

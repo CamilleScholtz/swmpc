@@ -81,8 +81,6 @@ struct Delegate: App {
                 }
                 .keyboardShortcut("l", modifiers: [.command, .option])
 
-                
-
                 Button("Search Library", systemSymbol: .magnifyingglass) {
                     NotificationCenter.default.post(name: .startSearchingNotication, object: nil)
                 }

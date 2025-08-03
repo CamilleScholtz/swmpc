@@ -23,6 +23,6 @@ struct RowView: View {
                 EmptyView()
             }
         }
-   
+        .id(media.id)
     }
 }

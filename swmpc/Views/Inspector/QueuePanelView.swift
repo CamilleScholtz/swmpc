@@ -65,12 +65,11 @@ struct QueuePanelView: View {
             mpd.queue.songs
         }
 
-        
         @State private var hasScrolledToInitial = false
 
         private let performScrollNotification = NotificationCenter.default
             .publisher(for: .performScrollNotification)
-        
+
         private var songsLookup: [String: Song] {
             Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
         }
@@ -83,8 +82,6 @@ struct QueuePanelView: View {
                 }
             }
         }
-
-        
 
         private func move(from source: IndexSet, to destination: Int) {
             Task {
@@ -102,7 +99,5 @@ struct QueuePanelView: View {
                 try? await ConnectionManager.command().move(song, to: adjustedTo, in: .queue)
             }
         }
-
-        
     }
 }

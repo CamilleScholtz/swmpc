@@ -46,6 +46,20 @@ struct CategoryDestinationView: View {
     }
 }
 
+struct AnyMediable: Identifiable, Hashable {
+    let base: any Mediable
+
+    var id: String { base.id }
+
+    static func == (lhs: AnyMediable, rhs: AnyMediable) -> Bool {
+        lhs.base.id == rhs.base.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(base.id)
+    }
+}
+
 struct CategoryDatabaseView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
@@ -81,25 +95,17 @@ struct CategoryDatabaseView: View {
         default: 31.5 + 15
         }
     }
-    
-    private var mediaLookup: [String: any Mediable] {
-        guard let media = mpd.database.media else {
-            return [:]
-        }
-        
-        return Dictionary(uniqueKeysWithValues: media.map { ($0.id, $0) })
-    }
+
+    @State private var scrollToID: String?
 
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
-                let lookup = mediaLookup
-                RecyclingScrollView(rowIDs: media.map(\.id), rowHeight: rowHeight) { id in
-                    if let row = lookup[id] {
-                        RowView(media: row)
-                    }
-                }
-                 .id(navigator.category)
+                let wrappedMedia = media.map { AnyMediable(base: $0) }
+                CollectionView(data: wrappedMedia, content: {
+                    RowView(media: $0.base)
+                }, scrollTo: $scrollToID, rowHeight: rowHeight)
+                    .id(navigator.category)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -140,7 +146,9 @@ struct CategoryDatabaseView: View {
 
             ToolbarItem {
                 Button {
-                  
+                    if let media = mpd.database.media {
+                        scrollToID = mpd.status.getMediaID(for: navigator.category.type, in: media)
+                    }
                 } label: {
                     Image(systemSymbol: .dotViewfinder)
                 }
@@ -204,10 +212,9 @@ struct CategoryDatabaseView: View {
             Task(priority: .userInitiated) {
                 try? await mpd.database.set(idle: false, type: value.type)
 
-//                if let currentSong = mpd.status.song {
-//                    let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
-//                    NotificationCenter.default.post(name: .performScrollNotification, object: request)
-//                }
+                if let media = mpd.database.media {
+                    scrollToID = mpd.status.getMediaID(for: value.type, in: media)
+                }
             }
         }
         .onChange(of: sort) { _, value in
@@ -216,10 +223,9 @@ struct CategoryDatabaseView: View {
             Task(priority: .userInitiated) {
                 try? await mpd.database.set(idle: false, sort: value)
 
-//                if let currentSong = mpd.status.song {
-//                    let request = ScrollManager.ScrollRequest(destination: .currentMedia, animate: false)
-//                    NotificationCenter.default.post(name: .performScrollNotification, object: request)
-//                }
+                if let media = mpd.database.media {
+                    scrollToID = mpd.status.getMediaID(for: navigator.category.type, in: media)
+                }
             }
         }
     }
@@ -235,7 +241,7 @@ struct CategoryPlaylistView: View {
 
     // TODO: Get actual heights.
     private let rowHeight: CGFloat = 31.5 + 15
-    
+
     private var mediaLookup: [String: Song] {
         guard let media else { return [:] }
         return Dictionary(uniqueKeysWithValues: media.map { ($0.id, $0) })
@@ -256,7 +262,6 @@ struct CategoryPlaylistView: View {
             }
         }
         .toolbar {
-
             ToolbarSpacer(.fixed)
 
             ToolbarItem {

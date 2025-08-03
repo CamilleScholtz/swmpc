@@ -49,10 +49,10 @@ struct AlbumView: View {
                                             ]),
                                             center: .center,
                                             startRadius: 0,
-                                            endRadius: 55
-                                        )
-                                    )
-                            )
+                                            endRadius: 55,
+                                        ),
+                                    ),
+                            ),
                     )
                     .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
