@@ -70,8 +70,7 @@ struct CategoryDatabaseView: View {
 
     @Binding var isSearchFieldExpanded: Bool
 
-    @State private var scrollProxy: ScrollViewProxy?
-    @State private var currentCategoryID = UUID()
+    @State private var scrollTo: String?
 
     // @State private var enabledSearchFields: Set<SearchField> = [.title, .artist, .album]
     @State private var searchQuery = ""
@@ -96,8 +95,6 @@ struct CategoryDatabaseView: View {
         }
     }
 
-    @State private var scrollToID: String?
-
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
@@ -105,9 +102,15 @@ struct CategoryDatabaseView: View {
 
                 CollectionView(data: wrappedMedia, content: {
                     RowView(media: $0.base)
-                }, scrollTo: $scrollToID, rowHeight: rowHeight)
+                }, scrollTo: $scrollTo, rowHeight: rowHeight)
                     .id(navigator.category)
                     .ignoresSafeArea(edges: .top)
+                    .task {
+                        scrollToCurrentMedia()
+
+                        try? await Task.sleep(for: .milliseconds(100))
+                        scrollToCurrentMedia()
+                    }
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -148,9 +151,7 @@ struct CategoryDatabaseView: View {
 
             ToolbarItem {
                 Button {
-                    if let media = mpd.database.media {
-                        scrollToID = mpd.status.getMediaID(for: navigator.category.type, in: media)
-                    }
+                    scrollToCurrentMedia()
                 } label: {
                     Image(systemSymbol: .dotViewfinder)
                 }
@@ -214,9 +215,10 @@ struct CategoryDatabaseView: View {
             Task(priority: .userInitiated) {
                 try? await mpd.database.set(idle: false, type: value.type)
 
-                if let media = mpd.database.media {
-                    scrollToID = mpd.status.getMediaID(for: value.type, in: media)
-                }
+                scrollToCurrentMedia()
+                
+                try? await Task.sleep(for: .milliseconds(100))
+                scrollToCurrentMedia()
             }
         }
         .onChange(of: sort) { _, value in
@@ -225,10 +227,34 @@ struct CategoryDatabaseView: View {
             Task(priority: .userInitiated) {
                 try? await mpd.database.set(idle: false, sort: value)
 
-                if let media = mpd.database.media {
-                    scrollToID = mpd.status.getMediaID(for: navigator.category.type, in: media)
+                guard let song = mpd.status.song else {
+                    return
+                }
+
+                switch navigator.category.type {
+                case .album:
+                    scrollTo = song.album.id
+                case .artist:
+                    scrollTo = song.album.artist.id
+                default:
+                    scrollTo = song.id
                 }
             }
+        }
+    }
+    
+    private func scrollToCurrentMedia() {
+        guard let song = mpd.status.song else {
+            return
+        }
+
+        switch navigator.category.type {
+        case .album:
+            scrollTo = song.album.id
+        case .artist:
+            scrollTo = song.album.artist.id
+        default:
+            scrollTo = song.id
         }
     }
 }
@@ -240,25 +266,21 @@ struct CategoryPlaylistView: View {
     let playlist: Playlist
 
     @State private var media: [Song]?
+    @State private var scrollTo: String?
 
     // TODO: Get actual heights.
     private let rowHeight: CGFloat = 31.5 + 15
 
-    private var mediaLookup: [String: Song] {
-        guard let media else { return [:] }
-        return Dictionary(uniqueKeysWithValues: media.map { ($0.id, $0) })
-    }
-
     var body: some View {
         Group {
             if let media, !media.isEmpty {
-                let lookup = mediaLookup
-                RecyclingScrollView(rowIDs: media.map(\.id), rowHeight: rowHeight) { id in
-                    if let row = lookup[id] {
-                        RowView(media: row)
-                    }
-                }
-                .id(playlist)
+                let wrappedMedia = media.map { AnyMediable(base: $0) }
+                
+                CollectionView(data: wrappedMedia, content: {
+                    RowView(media: $0.base)
+                }, scrollTo: $scrollTo, rowHeight: rowHeight)
+                    .id(playlist)
+                    .ignoresSafeArea(edges: .top)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }

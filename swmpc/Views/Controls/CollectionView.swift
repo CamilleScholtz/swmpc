@@ -73,14 +73,11 @@ where Data.Element: Identifiable & Hashable {
         let itemIndex = data.distance(from: data.startIndex, to: index)
         let indexPath = IndexPath(item: itemIndex, section: 0)
         
-        coordinator.collectionView.scrollToItems(at: [indexPath], scrollPosition: .top)
+        coordinator.collectionView.scrollToItems(at: [indexPath], scrollPosition: .centeredVertically)
         
-        coordinator.scrollDebouncer?.cancel()
-        coordinator.scrollDebouncer = DispatchWorkItem {
+        DispatchQueue.main.async {
             scrollTo = nil
         }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: coordinator.scrollDebouncer!)
     }
     
     final class Coordinator: NSObject, NSCollectionViewDataSource, NSCollectionViewDelegateFlowLayout {
@@ -89,7 +86,6 @@ where Data.Element: Identifiable & Hashable {
         var mpd: MPD
         var navigator: NavigationManager
         let collectionView: NSCollectionView
-        var scrollDebouncer: DispatchWorkItem?
         var rowHeight: CGFloat?
         
         private var sizeCache: [Data.Element.ID: NSSize] = [:]
