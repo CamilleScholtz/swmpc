@@ -8,12 +8,10 @@
 import SwiftUI
 
 struct ContentDestinationView: View {
-    @Environment(\.dismiss) private var dismiss
-
     let destination: ContentDestination
 
     var body: some View {
-        List {
+        ScrollView {
             switch destination {
             case let .album(album):
                 AlbumSongsView(for: album)
@@ -21,15 +19,5 @@ struct ContentDestinationView: View {
                 ArtistAlbumsView(for: artist)
             }
         }
-        .listRowSeparator(.hidden)
-        #if os(iOS)
-            .listRowInsets(.init(top: 7.5, leading: 15, bottom: 7.5, trailing: 15))
-        #elseif os(macOS)
-            .listRowInsets(.init(top: 7.5, leading: 7.5, bottom: 7.5, trailing: 7.5))
-        #endif
-            .listStyle(.plain)
-            .scrollEdgeEffectStyle(.soft, for: .top)
-            .safeAreaPadding(.bottom, 7.5)
-            .contentMargins(.bottom, -7.5, for: .scrollIndicators)
     }
 }

@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 10/11/2024.
 //
 
+import SFSafeSymbols
 import SwiftUI
 
 /// Represents the current playback state of the MPD player.
@@ -151,4 +152,90 @@ enum ArtworkGetter: String {
     case library = "albumart"
     /// Retrieve artwork embedded in the audio file.
     case embedded = "readpicture"
+}
+
+/// Represents individual search fields that can be selected.
+enum SearchField: String, CaseIterable {
+    case title = "Title"
+    case artist = "Artist"
+    case album = "Album"
+
+    var label: LocalizedStringResource {
+        switch self {
+        case .title:
+            "Title"
+        case .artist:
+            "Artist"
+        case .album:
+            "Album"
+        }
+    }
+
+    var symbol: SFSymbol {
+        switch self {
+        case .title:
+            .textformatCharacters
+        case .artist:
+            .person
+        case .album:
+            .squareStack
+        }
+    }
+}
+
+/// Manages the selected search fields for searching media.
+struct SearchFields: Equatable {
+    private var selectedFields: Set<SearchField>
+
+    init(fields: Set<SearchField> = []) {
+        selectedFields = fields
+    }
+
+    /// Creates default search fields based on the media type.
+    static func defaultFields(for mediaType: MediaType) -> SearchFields {
+        switch mediaType {
+        case .album:
+            SearchFields(fields: [.title, .artist])
+        case .artist:
+            SearchFields(fields: [.artist])
+        case .song:
+            SearchFields(fields: [.title])
+        case .playlist:
+            SearchFields(fields: [.title, .artist])
+        }
+    }
+
+    /// Returns available search fields for the given media type.
+    static func availableFields(for mediaType: MediaType) -> [SearchField] {
+        switch mediaType {
+        case .album:
+            [.title, .artist]
+        case .artist:
+            [.artist]
+        case .song:
+            [.title, .artist, .album]
+        case .playlist:
+            [.title, .artist, .album]
+        }
+    }
+
+    mutating func toggle(_ field: SearchField) {
+        if selectedFields.contains(field) {
+            selectedFields.remove(field)
+        } else {
+            selectedFields.insert(field)
+        }
+    }
+
+    func contains(_ field: SearchField) -> Bool {
+        selectedFields.contains(field)
+    }
+
+    var isEmpty: Bool {
+        selectedFields.isEmpty
+    }
+
+    var fields: Set<String> {
+        Set(selectedFields.map { $0.rawValue.lowercased() })
+    }
 }

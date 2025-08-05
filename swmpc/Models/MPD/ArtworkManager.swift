@@ -43,6 +43,8 @@ actor ArtworkManager {
     func get(for url: URL, shouldCache: Bool = true) async throws ->
         Data
     {
+        try Task.checkCancellation()
+        
         if shouldCache, let data = cache.object(forKey: url as NSURL) {
             return data as Data
         }

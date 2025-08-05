@@ -29,7 +29,8 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ArtworkView(image: artwork, animationDuration: 0.2, aspectRatioMode: .fill)
+            ArtworkView(image: artwork, aspectRatioMode: .fill)
+                .animation(.easeInOut(duration: 0.2), value: artwork)
                 .frame(width: 250)
                 .cornerRadius(10)
                 .scaleEffect(showInfo ? 0.7 : 1)

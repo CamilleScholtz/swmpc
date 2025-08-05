@@ -18,7 +18,7 @@ struct AlbumView: View {
     init(for album: Album) {
         self.album = album
     }
-
+    
     @State private var artwork: PlatformImage?
     @State private var artworkTask: Task<Void, Never>?
 
@@ -36,24 +36,7 @@ struct AlbumView: View {
                 ArtworkView(image: artwork, aspectRatioMode: .fill)
                     .frame(width: 65, height: 65)
                     .cornerRadius(12)
-                    .overlay(
-                        Color.clear
-                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 12))
-                            .mask(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(
-                                        RadialGradient(
-                                            gradient: Gradient(stops: [
-                                                .init(color: .clear, location: 0.0),
-                                                .init(color: .black, location: 1.0),
-                                            ]),
-                                            center: .center,
-                                            startRadius: 0,
-                                            endRadius: 55,
-                                        ),
-                                    ),
-                            ),
-                    )
+                    .animation(.easeInOut(duration: 0.15), value: artwork != nil)
                     .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
                 #if os(macOS)
@@ -108,11 +91,23 @@ struct AlbumView: View {
                 ContextMenuView(for: album)
             }
             .task(id: album, priority: .high) {
-                guard !Task.isCancelled else {
-                    return
+                artworkTask?.cancel()
+                
+                artworkTask = Task {
+                    guard !Task.isCancelled else {
+                        return
+                    }
+                    
+                    do {
+                        artwork = try await album.artwork()
+                    } catch {
+                        if !Task.isCancelled {
+                            artwork = nil
+                        }
+                    }
                 }
-
-                artwork = try? await album.artwork()
+                
+                await artworkTask?.value
             }
     }
 }

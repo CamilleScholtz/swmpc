@@ -46,8 +46,9 @@ struct DetailView: View {
         ZStack {
             ZStack {
                 ZStack {
-                    ArtworkView(image: artwork, animationDuration: 0.6)
+                    ArtworkView(image: artwork)
                         .scaledToFit()
+                        .animation(.easeInOut(duration: 0.6), value: artwork)
                     #if os(iOS)
                         .mask(
                             RadialGradient(
@@ -73,7 +74,8 @@ struct DetailView: View {
                         .drawingGroup()
 
                     ZStack {
-                        ArtworkView(image: artwork, animationDuration: 0.6)
+                        ArtworkView(image: artwork)
+                            .animation(.easeInOut(duration: 0.6), value: artwork)
 
                         Rectangle()
                             .opacity(0)
@@ -118,7 +120,8 @@ struct DetailView: View {
                     .blendMode(colorScheme == .dark ? .darken : .softLight)
                     .opacity(colorScheme == .dark ? 0.1 : 0.3)
 
-                ArtworkView(image: artwork, animationDuration: 0.2)
+                ArtworkView(image: artwork)
+                    .animation(.easeInOut(duration: 0.2), value: artwork)
                     .overlay(
                         RoundedRectangle(cornerRadius: 30)
                             .fill(.clear)

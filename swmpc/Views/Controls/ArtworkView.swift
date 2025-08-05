@@ -9,12 +9,10 @@ import SwiftUI
 
 struct ArtworkView: View {
     let image: PlatformImage?
-
-    var animationDuration: Double = 0
     var aspectRatioMode: ContentMode = .fit
 
     var body: some View {
-        Group {
+        ZStack {
             if let image {
                 #if os(iOS)
                     Image(uiImage: image)
@@ -31,6 +29,5 @@ struct ArtworkView: View {
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
             }
         }
-        .animation(animationDuration > 0 ? .easeInOut(duration: animationDuration) : .none, value: image)
     }
 }

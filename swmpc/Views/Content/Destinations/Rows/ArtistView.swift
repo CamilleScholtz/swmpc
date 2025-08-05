@@ -77,16 +77,11 @@ struct ArtistView: View {
         }
         .contentShape(Rectangle())
         .task(id: artist) {
-            albumCount = await (try? artist.getAlbums().count) ?? 0
-        }
-        .onChange(of: artist) { _, newArtist in
-            // Reset state when artist changes (row is recycled)
-            albumCount = 0
-
-            // Fetch album count for new artist
-            Task {
-                albumCount = await (try? newArtist.getAlbums().count) ?? 0
+            guard !Task.isCancelled else {
+                return
             }
+
+            albumCount = await (try? artist.getAlbums().count) ?? 0
         }
         .onTapGesture {
             navigator.navigate(to: ContentDestination.artist(artist))

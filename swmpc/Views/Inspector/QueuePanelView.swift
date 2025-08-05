@@ -59,44 +59,24 @@ struct QueuePanelView: View {
 
     struct QueueView: View {
         @Environment(MPD.self) private var mpd
-        @Environment(\.colorScheme) private var colorScheme
 
-        private var songs: [Song] {
-            mpd.queue.songs
-        }
-
-        @State private var hasScrolledToInitial = false
-
-        private let performScrollNotification = NotificationCenter.default
-            .publisher(for: .performScrollNotification)
-
-        private var songsLookup: [String: Song] {
-            Dictionary(uniqueKeysWithValues: songs.map { ($0.id, $0) })
-        }
+        @State private var scrollTo: String?
 
         var body: some View {
-            let lookup = songsLookup
-            RecyclingScrollView(rowIDs: songs.map(\.id), rowHeight: 31.5 + 15) { id in
-                if let song = lookup[id] {
-                    RowView(media: song)
-                }
+            CollectionView(data: mpd.queue.songs, rowHeight: 31.5 + 15, scrollTo: $scrollTo) { song in
+                RowView(media: song)
             }
-        }
-
-        private func move(from source: IndexSet, to destination: Int) {
-            Task {
-                guard let index = source.first,
-                      index >= 0,
-                      index < songs.count,
-                      destination >= 0,
-                      destination <= songs.count
-                else {
+            .ignoresSafeArea(edges: .top)
+            .onAppear {
+                guard let song = mpd.status.song else {
                     return
                 }
 
-                let song = songs[index]
-                let adjustedTo = index < destination ? destination - 1 : destination
-                try? await ConnectionManager.command().move(song, to: adjustedTo, in: .queue)
+                Task {
+                    scrollTo = song.id
+                    try? await Task.sleep(for: .milliseconds(100))
+                    scrollTo = song.id
+                }
             }
         }
     }
