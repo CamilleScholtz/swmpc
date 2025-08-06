@@ -100,8 +100,8 @@ struct Delegate: App {
 
                 Divider()
 
-                AsyncButton("Clear Queue", systemImage: "trash") {
-                    try await ConnectionManager.command().clearQueue()
+                Button("Clear Queue", systemSymbol: .trash) {
+                    NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
                 }
                 .keyboardShortcut(.delete, modifiers: [.command, .option])
 

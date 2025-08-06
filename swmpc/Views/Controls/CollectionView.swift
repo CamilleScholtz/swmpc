@@ -68,6 +68,7 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 {
     let data: Data
     let rowHeight: CGFloat?
+    let contentMargin: EdgeInsets?
     @Binding var scrollTo: Data.Element.ID?
     @ViewBuilder let content: (Data.Element) -> Content
 
@@ -91,6 +92,7 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             coordinator.mpd = mpd
             coordinator.navigator = navigator
             coordinator.rowHeight = rowHeight
+            coordinator.contentMargin = contentMargin
 
             if hasDataChanged {
                 coordinator.collectionView.reloadData()
@@ -113,6 +115,7 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             coordinator.mpd = mpd
             coordinator.navigator = navigator
             coordinator.rowHeight = rowHeight
+            coordinator.contentMargin = contentMargin
 
             if hasDataChanged {
                 coordinator.collectionView.reloadData()
@@ -123,7 +126,7 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
     #endif
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(data: data, content: content, mpd: mpd, navigator: navigator, rowHeight: rowHeight)
+        Coordinator(data: data, content: content, mpd: mpd, navigator: navigator, rowHeight: rowHeight, contentMargin: contentMargin)
     }
 
     private func handleScrollToItem(coordinator: Coordinator) {
@@ -154,13 +157,15 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             private var sizeCache: [Data.Element.ID: NSSize] = [:]
             private let cellIdentifier = NSUserInterfaceItemIdentifier("Cell")
             var rowHeight: CGFloat?
+            var contentMargin: EdgeInsets?
 
-            init(data: Data, content: @escaping (Data.Element) -> Content, mpd: MPD, navigator: NavigationManager, rowHeight: CGFloat?) {
+            init(data: Data, content: @escaping (Data.Element) -> Content, mpd: MPD, navigator: NavigationManager, rowHeight: CGFloat?, contentMargin: EdgeInsets?) {
                 self.data = data
                 self.content = content
                 self.mpd = mpd
                 self.navigator = navigator
                 self.rowHeight = rowHeight
+                self.contentMargin = contentMargin
                 collectionView = NSCollectionView()
 
                 super.init()
@@ -172,6 +177,14 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
                 let layout = NSCollectionViewFlowLayout()
                 layout.minimumLineSpacing = 0
                 layout.minimumInteritemSpacing = 0
+                if let contentMargin {
+                    layout.sectionInset = NSEdgeInsets(
+                        top: contentMargin.top,
+                        left: contentMargin.leading,
+                        bottom: contentMargin.bottom,
+                        right: contentMargin.trailing
+                    )
+                }
                 collectionView.collectionViewLayout = layout
 
                 collectionView.register(HostingCollectionViewItem.self, forItemWithIdentifier: cellIdentifier)
@@ -198,7 +211,8 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             }
 
             func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
-                let width = collectionView.bounds.width
+                let horizontalMargins = (contentMargin?.leading ?? 0) + (contentMargin?.trailing ?? 0)
+                let width = collectionView.bounds.width - horizontalMargins
 
                 if let fixedHeight = rowHeight {
                     return NSSize(width: width, height: fixedHeight)
@@ -242,17 +256,27 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             private var sizeCache: [Data.Element.ID: CGSize] = [:]
             private let cellIdentifier = String(describing: HostingCollectionViewCell.self)
             var rowHeight: CGFloat?
+            var contentMargin: EdgeInsets?
 
-            init(data: Data, content: @escaping (Data.Element) -> Content, mpd: MPD, navigator: NavigationManager, rowHeight: CGFloat?) {
+            init(data: Data, content: @escaping (Data.Element) -> Content, mpd: MPD, navigator: NavigationManager, rowHeight: CGFloat?, contentMargin: EdgeInsets?) {
                 self.data = data
                 self.content = content
                 self.mpd = mpd
                 self.navigator = navigator
                 self.rowHeight = rowHeight
+                self.contentMargin = contentMargin
 
                 let layout = UICollectionViewFlowLayout()
                 layout.minimumLineSpacing = 0
                 layout.minimumInteritemSpacing = 0
+                if let contentMargin {
+                    layout.sectionInset = UIEdgeInsets(
+                        top: contentMargin.top,
+                        left: contentMargin.leading,
+                        bottom: contentMargin.bottom,
+                        right: contentMargin.trailing
+                    )
+                }
                 collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 
                 super.init()
@@ -286,7 +310,8 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             }
 
             func collectionView(_ collectionView: UICollectionView, layout _: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-                let width = collectionView.bounds.width
+                let horizontalMargins = (contentMargin?.leading ?? 0) + (contentMargin?.trailing ?? 0)
+                let width = collectionView.bounds.width - horizontalMargins
 
                 if let fixedHeight = rowHeight {
                     return CGSize(width: width, height: fixedHeight)

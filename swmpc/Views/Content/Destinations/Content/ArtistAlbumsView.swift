@@ -9,9 +9,6 @@ import SwiftUI
 
 struct ArtistAlbumsView: View {
     @Environment(MPD.self) private var mpd
-    #if os(macOS)
-        @Environment(\.colorScheme) private var colorScheme
-    #endif
 
     private var artist: Artist
 
@@ -45,29 +42,15 @@ struct ArtistAlbumsView: View {
 
                 Spacer()
             }
-            .padding(.bottom, 15)
+            .padding(15)
         }
-        #if os(macOS)
-        .frame(width: 310)
-        #endif
-        .overlay(
-            Rectangle()
-            #if os(iOS)
-                .foregroundColor(Color(.secondarySystemFill))
-            #elseif os(macOS)
-                .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill))
-                .offset(x: -15)
-            #endif
-                .frame(height: 1),
-            alignment: .bottom,
-        )
         .task {
             albums = await (try? artist.getAlbums()) ?? []
         }
 
         Section {
             ForEach(albums) { album in
-                AlbumView(for: album)
+                RowView(media: album)
             }
         }
     }

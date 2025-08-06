@@ -20,6 +20,15 @@ enum IntelligenceTarget {
     case queue
 }
 
+struct ModelConfig {
+    let name: String
+    let model: String
+    let host: String
+    let path: String
+    let setting: String
+    let isEnabled: Bool
+}
+
 enum IntelligenceModel: String, Identifiable, CaseIterable {
     var id: String { rawValue }
 
@@ -29,87 +38,59 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
     case grok
     case claude
 
-    var name: String {
-        switch self {
-        case .openAI:
-            "OpenAI"
-        case .deepSeek:
-            "DeepSeek"
-        case .gemini:
-            "Gemini"
-        case .grok:
-            "Grok"
-        case .claude:
-            "Claude"
-        }
+    private static let configs: [IntelligenceModel: ModelConfig] = [
+        .openAI: ModelConfig(
+            name: "OpenAI",
+            model: "gpt-4.1-mini",
+            host: "api.openai.com",
+            path: "/v1",
+            setting: Setting.openAIToken,
+            isEnabled: true,
+        ),
+        .deepSeek: ModelConfig(
+            name: "DeepSeek",
+            model: "deepseek-chat",
+            host: "api.deepseek.com",
+            path: "/v1",
+            setting: Setting.deepSeekToken,
+            isEnabled: false, // NOTE: Doesn't support structured output
+        ),
+        .gemini: ModelConfig(
+            name: "Gemini",
+            model: "gemini-2.5-flash-lite",
+            host: "generativelanguage.googleapis.com",
+            path: "/v1beta/openai",
+            setting: Setting.geminiToken,
+            isEnabled: true,
+        ),
+        .grok: ModelConfig(
+            name: "Grok",
+            model: "grok-3-mini-latest",
+            host: "api.x.ai",
+            path: "/v1",
+            setting: Setting.grokToken,
+            isEnabled: true,
+        ),
+        .claude: ModelConfig(
+            name: "Claude",
+            model: "claude-3-5-haiku-latest",
+            host: "api.anthropic.com",
+            path: "/v1/messages",
+            setting: Setting.claudeToken,
+            isEnabled: true,
+        ),
+    ]
+
+    private var config: ModelConfig {
+        Self.configs[self]!
     }
 
-    var model: String {
-        switch self {
-        case .openAI:
-            "gpt-4.1-mini"
-        case .deepSeek:
-            "deepseek-chat"
-        case .gemini:
-            "gemini-2.5-flash-lite-preview-06-17"
-        case .grok:
-            "grok-3-mini-latest"
-        case .claude:
-            "claude-3-5-haiku-latest"
-        }
-    }
-
-    var host: String {
-        switch self {
-        case .openAI:
-            "api.openai.com"
-        case .deepSeek:
-            "api.deepseek.com"
-        case .gemini:
-            "generativelanguage.googleapis.com"
-        case .grok:
-            "api.x.ai"
-        case .claude:
-            "api.anthropic.com"
-        }
-    }
-
-    var path: String {
-        switch self {
-        case .gemini:
-            "/v1beta/openai"
-        case .claude:
-            "/v1/messages"
-        default:
-            "/v1"
-        }
-    }
-
-    var setting: String {
-        switch self {
-        case .openAI:
-            Setting.openAIToken
-        case .deepSeek:
-            Setting.deepSeekToken
-        case .gemini:
-            Setting.geminiToken
-        case .grok:
-            Setting.grokToken
-        case .claude:
-            Setting.claudeToken
-        }
-    }
-
-    // NOTE: DeepSeek is currently disabled because it does not support
-    // structured output.
-    var isEnabled: Bool {
-        switch self {
-        case .deepSeek:
-            false
-        default:
-            true
-        }
-    }
+    var name: String { config.name }
+    var model: String { config.model }
+    var host: String { config.host }
+    var path: String { config.path }
+    var setting: String { config.setting }
+    var isEnabled: Bool { config.isEnabled }
 }
 
 nonisolated struct IntelligenceResponse: JSONSchemaConvertible {
@@ -133,22 +114,22 @@ actor IntelligenceManager {
     ///     - model: The model to use.
     /// - Returns: The connected intelligence API.
     /// - Throws: An error if the connection could not be established.
-    @MainActor
-    private func connect(using model: IntelligenceModel) async throws ->
-        OpenAI
-    {
-        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled =
-            false
-        guard isIntelligenceEnabled else {
+    private func connect(using model: IntelligenceModel) async throws -> OpenAI {
+        let (isEnabled, token) = await MainActor.run {
+            let isEnabled = UserDefaults.standard.bool(forKey: Setting.isIntelligenceEnabled)
+            let token = UserDefaults.standard.string(forKey: model.setting) ?? ""
+            return (isEnabled, token)
+        }
+
+        guard isEnabled else {
             throw IntelligenceManagerError.intelligenceDisabled
         }
 
-        @AppStorage(model.setting) var token = ""
         guard !token.isEmpty else {
             throw IntelligenceManagerError.missingToken
         }
 
-        return OpenAI(configuration: .init(
+        return await OpenAI(configuration: OpenAI.Configuration(
             token: token,
             host: model.host,
             basePath: model.path,
@@ -163,7 +144,7 @@ actor IntelligenceManager {
     ///     - prompt: The prompt to use.
     /// - Throws: An error if the target could not be filled
     func fill(target: IntelligenceTarget, prompt: String) async throws {
-        try await withThrowingTimeout(seconds: 30) {
+        try await withTimeout(seconds: 30) {
             let model = await MainActor.run {
                 UserDefaults.standard.string(forKey: Setting.intelligenceModel)
                     .flatMap { IntelligenceModel(rawValue: $0) } ?? .openAI
@@ -174,7 +155,9 @@ actor IntelligenceManager {
             if case .playlist = target {
                 try await ConnectionManager.command().loadPlaylist()
             }
+
             let albums = try await ConnectionManager.command().getAlbums()
+            let albumDescriptions = albums.map(\.description).joined(separator: "\n")
 
             let result = try await client.chats(query: ChatQuery(
                 messages: [
@@ -183,8 +166,7 @@ actor IntelligenceManager {
 
                     The description for the playlist your should create is: \(prompt)
                     """)!,
-                    .init(role: .user, content: albums.map(\.description)
-                        .joined(separator: "\n"))!,
+                    .init(role: .user, content: albumDescriptions)!,
                 ],
                 model: model.model,
                 responseFormat: .jsonSchema(
@@ -197,41 +179,49 @@ actor IntelligenceManager {
                 ),
             ))
 
-            guard let response = result.choices.first?.message.content else {
+            guard let content = result.choices.first?.message.content,
+                  let data = content.data(using: .utf8)
+            else {
                 throw IntelligenceManagerError.noResponse
             }
 
-            struct PlaylistResponse: Decodable {
-                let playlist: [String]
+            let response = try JSONDecoder().decode(IntelligenceResponse.self, from: data)
+
+            let songs = try await self.collectSongs(from: response.playlist, albums: albums)
+
+            try await self.addSongs(songs, to: target)
+        }
+    }
+
+    /// Collects songs from the playlist response
+    private func collectSongs(from playlist: [String], albums: [Album]) async throws -> [Song] {
+        var songs: [Song] = []
+
+        for albumName in playlist {
+            guard let album = albums.first(where: { $0.description == albumName }) else {
+                continue
             }
-            let data = try JSONDecoder().decode(PlaylistResponse.self, from: Data(
-                response.utf8))
 
-            var songs: [Song] = []
+            try await songs.append(contentsOf: album.getSongs())
+        }
 
-            for row in data.playlist {
-                guard let album = albums.first(where: {
-                    $0.description == row
-                }) else {
-                    continue
-                }
+        return songs
+    }
 
-                try await songs.append(contentsOf: album.getSongs())
-            }
-
-            switch target {
-            case let .playlist(playlist):
-                guard let playlist = playlist.wrappedValue else { return }
-                try await ConnectionManager.command().add(songs: songs, to: .playlist(playlist))
-                try await ConnectionManager.command().loadPlaylist(playlist)
-            case .queue:
-                try await ConnectionManager.command().add(songs: songs, to: .queue)
-            }
+    /// Adds songs to the specified target
+    private func addSongs(_ songs: [Song], to target: IntelligenceTarget) async throws {
+        switch target {
+        case let .playlist(playlist):
+            guard let playlist = playlist.wrappedValue else { return }
+            try await ConnectionManager.command().add(songs: songs, to: .playlist(playlist))
+            try await ConnectionManager.command().loadPlaylist(playlist)
+        case .queue:
+            try await ConnectionManager.command().add(songs: songs, to: .queue)
         }
     }
 
     /// Executes an async operation with a timeout.
-    private func withThrowingTimeout<T: Sendable>(
+    private func withTimeout<T: Sendable>(
         seconds: TimeInterval,
         operation: @escaping @Sendable () async throws -> T
     ) async throws -> T {
@@ -247,7 +237,6 @@ actor IntelligenceManager {
 
             let result = try await group.next()!
             group.cancelAll()
-
             return result
         }
     }

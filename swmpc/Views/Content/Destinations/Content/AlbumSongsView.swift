@@ -57,39 +57,38 @@ struct AlbumSongsView: View {
                                         },
                                     ),
                             )
+                             .overlay(
+                                 ZStack(alignment: .bottomLeading) {
+                                     Color.clear
+                                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+                                         .frame(width: 100)
+                                         .mask(
+                                             LinearGradient(
+                                                 gradient: Gradient(stops: [
+                                                     .init(color: .black, location: 0.3),
+                                                     .init(color: .black.opacity(0), location: 1.0),
+                                                 ]),
+                                                 startPoint: .bottom,
+                                                 endPoint: .top,
+                                             ),
+                                         )
 
-                        // .overlay(
-                        //     ZStack(alignment: .bottomLeading) {
-                        //         RoundedRectangle(cornerRadius: 10)
-                        //             .fill(.ultraThinMaterial)
-                        //             .frame(width: 100)
-                        //             .mask(
-                        //                 LinearGradient(
-                        //                     gradient: Gradient(stops: [
-                        //                         .init(color: .black, location: 0.3),
-                        //                         .init(color: .black.opacity(0), location: 1.0),
-                        //                     ]),
-                        //                     startPoint: .bottom,
-                        //                     endPoint: .top,
-                        //                 ),
-                        //             )
-
-                        //         HStack(spacing: 5) {
-                        //             Image(systemSymbol: .playFill)
-                        //             Text("Playing")
-                        //         }
-                        //         .font(.caption2)
-                        //         .fontWeight(.semibold)
-                        //         .foregroundStyle(.black)
-                        //         .padding(.horizontal, 10)
-                        //         .padding(.vertical, 4)
-                        //         .background(.white)
-                        //         .cornerRadius(100)
-                        //         .padding(10)
-                        //     }
-                        //     .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                        //     .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
-                        // )
+                                     HStack(spacing: 5) {
+                                         Image(systemSymbol: .playFill)
+                                         Text("Playing")
+                                     }
+                                     .font(.caption2)
+                                     .fontWeight(.semibold)
+                                     .foregroundStyle(.black)
+                                     .padding(.horizontal, 10)
+                                     .padding(.vertical, 4)
+                                     .background(.white)
+                                     .cornerRadius(100)
+                                     .padding(10)
+                                 }
+                                 .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
+                                 .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
+                             )
                     }
 
                     #if os(macOS)
@@ -97,20 +96,14 @@ struct AlbumSongsView: View {
                             AsyncButton {
                                 try await ConnectionManager.command().play(album)
                             } label: {
-                                ZStack {
-                                    Circle()
-                                        .fill(.accent)
-                                        .frame(width: 60, height: 60)
-                                    Circle()
-                                        .fill(.ultraThinMaterial)
-                                        .frame(width: 60, height: 60)
-
-                                    Image(systemSymbol: .playFill)
-                                        .font(.title)
-                                        .foregroundColor(.white)
-                                }
+                                Image(systemSymbol: .playFill)
+                                    .font(.title)
+                                    .foregroundStyle(.foreground)
+                                    .padding(18)
+                                    .glassEffect(.regular.tint(.accent.opacity(0.5)))
+                                    .contentShape(Circle())
                             }
-                            .styledButton(hoverScale: 1.05)
+                            .styledButton()
                             .asyncButtonStyle(.pulse)
                         }
                     #endif
@@ -162,8 +155,7 @@ struct AlbumSongsView: View {
 
                 Spacer()
             }
-            .padding(.vertical, 7.5)
-            .padding(.horizontal, 15)
+            .padding(15)
             .task {
                 artwork = try? await album.artwork()
 

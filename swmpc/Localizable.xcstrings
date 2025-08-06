@@ -247,6 +247,9 @@
         }
       }
     },
+    "Add media from the library" : {
+
+    },
     "Add or Remove" : {
 
     },
@@ -280,6 +283,7 @@
       }
     },
     "Add songs from the library to play them" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2419,7 +2423,6 @@
       }
     },
     "Playing" : {
-      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

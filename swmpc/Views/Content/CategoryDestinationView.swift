@@ -89,90 +89,23 @@ struct CategoryDatabaseView: View {
     }
 
     @ViewBuilder
-    private var searchFieldsMenu: some View {
-        Menu {
-            ForEach(SearchFields.availableFields(for: mpd.database.type), id: \.self) { field in
-                Button {
-                    searchFields.toggle(field)
-                } label: {
-                    HStack {
-                        if searchFields.contains(field) {
-                            Image(systemSymbol: .checkmark)
-                        }
-                        Image(systemSymbol: field.symbol)
-                        // Show appropriate label based on media type
-                        switch field {
-                        case .title:
-                            Text("Title")
-                        case .artist:
-                            Text("Artist")
-                        case .album:
-                            Text("Album")
-                        case .genre:
-                            Text("Genre")
-                        }
-                    }
-                }
-            }
-        } label: {
-            Image(systemSymbol: .sliderHorizontal3)
-        }
-        .menuIndicator(.hidden)
-    }
-
-    @ViewBuilder
-    private var sortMenu: some View {
-        Menu {
-            ForEach(navigator.category.type.availableSortOptions, id: \.self) { option in
-                Button {
-                    let newSort = if sort.option == option {
-                        SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)
-                    } else {
-                        SortDescriptor(option: option)
-                    }
-
-                    switch navigator.category {
-                    case .albums: albumSort = newSort
-                    case .artists: artistSort = newSort
-                    case .songs: songSort = newSort
-                    default: break
-                    }
-                } label: {
-                    if sort.option == option {
-                        Image(systemSymbol: .checkmark)
-                    }
-
-                    Text(option.label)
-
-                    if sort.option == option {
-                        Text(sort.direction.label)
-                    }
-                }
-            }
-        } label: {
-            Image(systemSymbol: .line3HorizontalDecrease)
-        }
-        .menuIndicator(.hidden)
-    }
-
-    @ViewBuilder
     private var searchResultsView: some View {
         switch mpd.database.type {
         case .album:
             if let albums = searchResults as? [Album] {
-                CollectionView(data: albums, rowHeight: 65 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: albums, rowHeight: 65 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
             }
         case .artist:
             if let artists = searchResults as? [Artist] {
-                CollectionView(data: artists, rowHeight: 50 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: artists, rowHeight: 50 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
             }
         default:
             if let songs = searchResults as? [Song] {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
             }
@@ -184,19 +117,19 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = mpd.database.media as? [Album] {
-                CollectionView(data: albums, rowHeight: 65 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: albums, rowHeight: 65 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
             }
         case .artist:
             if let artists = mpd.database.media as? [Artist] {
-                CollectionView(data: artists, rowHeight: 50 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: artists, rowHeight: 50 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
             }
         default:
             if let songs = mpd.database.media as? [Song] {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
             }
@@ -287,7 +220,7 @@ struct CategoryDatabaseView: View {
             // Reset search when changing categories
             searchQuery = ""
             searchResults = nil
-            
+
             // Set default search fields based on the new media type
             searchFields = SearchFields.defaultFields(for: navigator.category.type)
 
@@ -321,6 +254,73 @@ struct CategoryDatabaseView: View {
             }
         }
     }
+    
+    @ViewBuilder
+    private var searchFieldsMenu: some View {
+        Menu {
+            ForEach(SearchFields.availableFields(for: mpd.database.type), id: \.self) { field in
+                Button {
+                    searchFields.toggle(field)
+                } label: {
+                    HStack {
+                        if searchFields.contains(field) {
+                            Image(systemSymbol: .checkmark)
+                        }
+                        Image(systemSymbol: field.symbol)
+                        // Show appropriate label based on media type
+                        switch field {
+                        case .title:
+                            Text("Title")
+                        case .artist:
+                            Text("Artist")
+                        case .album:
+                            Text("Album")
+                        case .genre:
+                            Text("Genre")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemSymbol: .sliderHorizontal3)
+        }
+        .menuIndicator(.hidden)
+    }
+
+    @ViewBuilder
+    private var sortMenu: some View {
+        Menu {
+            ForEach(navigator.category.type.availableSortOptions, id: \.self) { option in
+                Button {
+                    let newSort = if sort.option == option {
+                        SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)
+                    } else {
+                        SortDescriptor(option: option)
+                    }
+
+                    switch navigator.category {
+                    case .albums: albumSort = newSort
+                    case .artists: artistSort = newSort
+                    case .songs: songSort = newSort
+                    default: break
+                    }
+                } label: {
+                    if sort.option == option {
+                        Image(systemSymbol: .checkmark)
+                    }
+
+                    Text(option.label)
+
+                    if sort.option == option {
+                        Text(sort.direction.label)
+                    }
+                }
+            }
+        } label: {
+            Image(systemSymbol: .line3HorizontalDecrease)
+        }
+        .menuIndicator(.hidden)
+    }
 
     private func scrollToCurrentMedia() {
         guard let song = mpd.status.song else {
@@ -350,7 +350,7 @@ struct CategoryPlaylistView: View {
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
                 .id(playlist)

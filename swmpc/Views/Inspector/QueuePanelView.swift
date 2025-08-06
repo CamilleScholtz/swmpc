@@ -19,6 +19,8 @@ struct QueuePanelView: View {
 
     private let fillIntelligenceQueueNotification = NotificationCenter.default
         .publisher(for: .fillIntelligenceQueueNotification)
+    private let showClearQueueAlertNotification = NotificationCenter.default
+        .publisher(for: .showClearQueueAlertNotification)
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,6 +30,7 @@ struct QueuePanelView: View {
                 QueueView()
             }
         }
+        .background(.background)
         .alert("Clear Queue", isPresented: $showClearQueueAlert) {
             Button("Cancel", role: .cancel) {}
 
@@ -40,20 +43,11 @@ struct QueuePanelView: View {
         .onReceive(fillIntelligenceQueueNotification) { _ in
             showIntelligenceQueueSheet = true
         }
+        .onReceive(showClearQueueAlertNotification) { _ in
+            showClearQueueAlert = true
+        }
         .sheet(isPresented: $showIntelligenceQueueSheet) {
             IntelligenceView(target: .queue, showSheet: $showIntelligenceQueueSheet)
-        }
-    }
-
-    struct EmptyQueueView: View {
-        var body: some View {
-            VStack(spacing: 10) {
-                Text("Queue is empty")
-                    .font(.headline)
-                Text("Add songs from the library to play them")
-                    .font(.subheadline)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -63,10 +57,11 @@ struct QueuePanelView: View {
         @State private var scrollTo: String?
 
         var body: some View {
-            CollectionView(data: mpd.queue.songs, rowHeight: 31.5 + 15, scrollTo: $scrollTo) { song in
+            CollectionView(data: mpd.queue.songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) { song in
                 RowView(media: song)
             }
             .ignoresSafeArea(edges: .top)
+            .contentMargins(.bottom, 7.5)
             .onAppear {
                 guard let song = mpd.status.song else {
                     return
@@ -78,6 +73,18 @@ struct QueuePanelView: View {
                     scrollTo = song.id
                 }
             }
+        }
+    }
+
+    struct EmptyQueueView: View {
+        var body: some View {
+            VStack(spacing: 10) {
+                Text("Queue is empty")
+                    .font(.headline)
+                Text("Add media from the library")
+                    .font(.subheadline)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

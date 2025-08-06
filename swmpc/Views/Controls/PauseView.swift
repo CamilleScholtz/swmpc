@@ -21,15 +21,15 @@ struct PauseView: View {
         } label: {
             ZStack {
                 Image(systemSymbol: .pauseFill)
-                    .font(.system(size: size))
                     .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
                     .opacity(mpd.status.isPlaying ? 1 : 0.1)
 
                 Image(systemSymbol: .playFill)
-                    .font(.system(size: size))
                     .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
                     .opacity(mpd.status.isPlaying ? 0.1 : 1)
             }
+            .font(.system(size: size))
+            .foregroundStyle(.foreground)
             .animation(.interactiveSpring(duration: animationDuration, extraBounce: 0.3), value: mpd.status.isPlaying)
             .frame(width: size * 2.5, height: size * 2.5)
             .glassEffect(.regular)

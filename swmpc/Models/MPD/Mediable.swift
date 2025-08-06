@@ -117,7 +117,7 @@ nonisolated struct Album: Mediable, Artworkable {
 
     /// The title of the album.
     let title: String
-    
+
     /// The genre of the album.
     let genre: String?
 
@@ -173,7 +173,7 @@ nonisolated struct Song: Mediable, Artworkable {
 
     /// The track number within the disc.
     let track: Int
-    
+
     /// The genre of the song.
     let genre: String?
 

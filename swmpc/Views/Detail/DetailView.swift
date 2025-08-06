@@ -216,13 +216,13 @@ struct DetailView: View {
 
                 ToolbarItem {
                     Button(action: {
-                        // showClearQueueAlert = true
+                        NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
                     }) {
                         Image(systemSymbol: .trash)
                     }
                     .keyboardShortcut(.delete, modifiers: [.shift, .command])
                 }
-                .hidden(!showQueuePanel && !mpd.queue.songs.isEmpty)
+                .hidden(!showQueuePanel || mpd.queue.songs.isEmpty)
 
                 ToolbarItem {
                     Button(action: {
@@ -230,8 +230,9 @@ struct DetailView: View {
                     }) {
                         Image(systemSymbol: .sparkles)
                     }
+                    .disabled(!isIntelligenceEnabled)
                 }
-                .hidden(!showQueuePanel || isIntelligenceEnabled || mpd.queue.songs.isEmpty)
+                .hidden(!showQueuePanel || !mpd.queue.songs.isEmpty)
 
                 ToolbarSpacer(.fixed)
                     .hidden(!showQueuePanel)
