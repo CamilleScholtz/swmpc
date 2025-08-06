@@ -8,6 +8,11 @@
 import AppIntents
 
 extension AppIntent {
+    /// Provides access to the shared MPD instance appropriate for the current
+    /// platform.
+    ///
+    /// On iOS, accesses the MPD instance from the global Delegate.
+    /// On macOS, accesses the MPD instance from the shared AppDelegate.
     @MainActor
     var mpd: MPD {
         #if os(iOS)

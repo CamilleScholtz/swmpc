@@ -8,7 +8,8 @@
 import SwiftUI
 
 extension Double {
-    /// Returns a string formatted as a time in the format "MM:SS".
+    /// Returns a string formatted as a time in the format "M:SS" or "MM:SS".
+    /// Assumes the value represents time in seconds.
     ///
     /// - Returns: A string representing the time in minutes and seconds.
     var timeString: String {
@@ -19,9 +20,13 @@ extension Double {
         return String(format: "%01d:%02d", Int(minutes), Int(seconds))
     }
 
-    /// Returns a string formatted as a time in the format "HH:MM".
+    /// Returns a human-readable string representation of time duration.
     ///
-    /// - Returns: A string representing the time in hours and minutes.
+    /// For durations less than 60 seconds, shows as abbreviated minutes (e.g.,
+    /// "1m"). For longer durations, shows hours and minutes (e.g., "2h 30m").
+    /// Assumes the value represents time in seconds.
+    ///
+    /// - Returns: A localized, abbreviated string representing the duration.
     var humanTimeString: String {
         if self < 60 {
             let minuteFormatter = DateComponentsFormatter()

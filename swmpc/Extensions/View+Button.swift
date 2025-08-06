@@ -15,9 +15,10 @@ extension View {
     /// - Parameters:
     ///   - hoverScale: The scale factor to apply on hover (macOS only,
     ///                 default: 1.2)
-    ///   - pressScale: The scale factor to apply when pressed (default: 0.9)
+    ///   - pressScale: The scale factor to apply when pressed (default: 0.9,
+    ///                 automatically adjusted by -0.05 on iOS)
     ///   - minimumPressDuration: The minimum time the press effect should
-    ///                           visually last (default: 0.1)
+    ///                           visually last (default: 0.1 seconds)
     /// - Returns: A view with hover and press effects applied.
     func styledButton(
         hoverScale: CGFloat = 1.2,
@@ -36,6 +37,9 @@ extension View {
     }
 }
 
+/// Custom button style that provides visual press feedback with a minimum duration.
+/// Ensures the press effect is visible for at least the specified duration,
+/// even for quick taps.
 struct PressedButtonStyle: ButtonStyle {
     let scale: CGFloat
     let minimumDuration: TimeInterval
@@ -87,6 +91,9 @@ struct PressedButtonStyle: ButtonStyle {
     }
 }
 
+/// View modifier that combines hover and press effects for buttons.
+/// On macOS: Applies hover scale effect.
+/// On iOS: Adds additional press handling for drag gestures.
 private struct StyledButtonModifier: ViewModifier {
     let hoverScale: CGFloat
     let pressScale: CGFloat

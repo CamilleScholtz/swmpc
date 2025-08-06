@@ -27,6 +27,8 @@ extension View {
     }
 }
 
+/// View modifier implementing interactive swipe gestures with visual feedback.
+/// Provides offset, rotation, and haptic feedback when crossing thresholds.
 struct SwipeModifier: ViewModifier {
     let onSwipeLeft: () -> Void
     let onSwipeRight: () -> Void
@@ -43,7 +45,8 @@ struct SwipeModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .offset(x: dragOffset.width)
-            .rotationEffect(.degrees(dragOffset.width * rotationAngleMultiplier))
+            .rotationEffect(.degrees(dragOffset.width *
+                    rotationAngleMultiplier))
             .simultaneousGesture(dragGesture)
             .animation(
                 isDragging
