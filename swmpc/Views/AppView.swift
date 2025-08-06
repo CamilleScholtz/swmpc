@@ -44,7 +44,7 @@ struct AppView: View {
                                 Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
                                     ZStack {
                                         NavigationStack(path: $boundNavigator.path) {
-                                            MainContentView()
+                                            CategoryDestinationView()
                                                 .navigationDestination(for: ContentDestination.self) { destination in
                                                     ContentDestinationView(destination: destination)
                                                 }
@@ -82,11 +82,13 @@ struct AppView: View {
                             .scrollEdgeEffectStyle(.soft, for: .top)
                         } detail: {
                             // XXX: The scrollview is a hack to hide the toolbar.
-                            ScrollView {
+                            ZStack {
+                                ScrollView {}
+                                    .scrollDisabled(true)
+
                                 DetailView(showQueuePanel: $showQueuePanel)
                                     .padding(60)
                             }
-                            .scrollDisabled(true)
                             .scrollEdgeEffectStyle(.soft, for: .top)
                         }
                         .simultaneousGesture(

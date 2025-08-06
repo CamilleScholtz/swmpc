@@ -24,24 +24,29 @@ import SwiftUI
     /// or songs) based on the active `type`.
     private(set) var media: [any Mediable]?
 
-    /// The current type of media being displayed or managed (e.g., albums, artists).
+    /// The current type of media being displayed or managed (e.g., albums,
+    /// artists).
     private(set) var type: MediaType = .album
 
     /// The current sort option being used.
     private(set) var sort: SortDescriptor = .init(option: .artist)
 
-    /// Sets the media type and reloads the media data from the server.
+    /// Sets the media type and/or sort descriptor and fetches corresponding
+    /// media from MPD.
     ///
-    /// This method updates the `type` property and then calls `fetchMedia` to
-    /// repopulate the `media` collection. It can be forced to reload even if
-    /// the media type has not changed.
+    /// This method only fetches new data if the type or sort has changed. It
+    /// uses either the idle connection (more efficient for background updates)
+    /// or creates a new command connection based on the `idle` parameter.
     ///
     /// - Parameters:
-    ///   - type: The new media type to set. If nil, uses the current type.
-    ///   - sort: The new sort descriptor to use. If nil, uses the current sort.
-    ///   - idle: A Boolean indicating whether to use the long-lived idle
-    ///           connection for the fetch, which is more efficient.
-    /// - Throws: An error if fetching the media from the server fails.
+    ///   - idle: Whether to use the long-lived idle connection (default: true).
+    ///           Set to false for immediate user-initiated fetches.
+    ///   - type: The media type to fetch (album, artist, song, or playlist).
+    ///           If `nil`, retains the current type.
+    ///   - sort: The sort descriptor for ordering results.
+    ///           If `nil`, retains the current sort.
+    /// - Throws: An error if the MPD connection fails or the fetch is
+    ///           cancelled.
     func set(idle: Bool = true, type: MediaType? = nil, sort: SortDescriptor?
         = nil)
         async throws
@@ -83,68 +88,66 @@ import SwiftUI
         media = newMedia
     }
 
-    /// Searches through the locally cached media library in parallel.
+    /// Searches through the locally cached media library.
     ///
-    /// This function performs a case-insensitive search through the already fetched media,
-    /// matching the query against fields determined by the search fields. It parallelizes
-    /// the search by dividing the media collection into chunks and processing them concurrently.
+    /// This function performs a localized case-insensitive search through the
+    /// cached media, matching the query against fields determined by the search
+    /// fields.
     ///
     /// - Parameters:
     ///   - query: The search query string to match against the selected fields.
     ///   - fields: The search fields that determine which fields to search.
     /// - Returns: An array of media items matching the search criteria.
-    func search(query: String, fields: SearchFields) async -> [any Mediable] {
+    func search(query: String, fields: SearchFields) -> [any Mediable] {
         guard !query.isEmpty, !fields.isEmpty, let media else {
             return []
         }
 
-        let lowercasedQuery = query.lowercased()
         let searchFields = fields.fields
-
-        return await withTaskGroup(of: [any Mediable].self) { group in
-            // Divide the media array into chunks to be processed in parallel.
-            // The number of chunks is based on the number of active processor cores.
-            let chunks = media.chunked(into: max(1, media.count / ProcessInfo.processInfo.activeProcessorCount))
-
-            for chunk in chunks {
-                group.addTask {
-                    chunk.filter { item in
-                        // By switching on the item's type first, we avoid redundant type-casting.
-                        switch item {
-                        case let song as Song:
-                            // Use short-circuiting boolean logic for efficient checking.
-                            (searchFields.contains("title") && song.title.lowercased().contains(lowercasedQuery)) ||
-                                (searchFields.contains("artist") && song.artist.lowercased().contains(lowercasedQuery)) ||
-                                (searchFields.contains("album") && song.album.title.lowercased().contains(lowercasedQuery))
-
-                        case let album as Album:
-                            (searchFields.contains("title") && album.title.lowercased().contains(lowercasedQuery)) ||
-                                (searchFields.contains("artist") && album.artist.name.lowercased().contains(lowercasedQuery))
-
-                        case let artist as Artist:
-                            searchFields.contains("artist") && artist.name.lowercased().contains(lowercasedQuery)
-
-                        default:
-                            // If the item is not a known type, it cannot match.
-                            false
-                        }
-                    }
-                }
-            }
-
-            var results: [any Mediable] = []
-            for await chunkResults in group {
-                results.append(contentsOf: chunkResults)
-            }
-            return results
+        return media.filter { item in
+            matches(item: item, query: query, fields: searchFields)
         }
     }
-}
 
-extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        stride(from: 0, to: count, by: size).map {
-            Array(self[$0 ..< Swift.min($0 + size, count)])
+    /// Checks if a media item matches the search query against specified fields.
+    ///
+    /// Performs case-insensitive matching based on the media item type and fields.
+    ///
+    /// - Parameters:
+    ///   - item: The media item to check (Song, Album, or Artist).
+    ///   - query: The search query string.
+    ///   - fields: Set of field names to search ("title", "artist", "album").
+    /// - Returns: `true` if the item matches the query in any of the specified
+    ///            fields.
+    private func matches(item: any Mediable, query: String, fields: Set<String>)
+        -> Bool
+    {
+        switch item {
+        case let song as Song:
+            (fields.contains("title") && contains(song.title, query)) ||
+                (fields.contains("artist") && contains(song.artist, query)) ||
+                (fields.contains("album") && contains(song.album.title, query)) ||
+                (fields.contains("genre") && song.genre != nil && contains(song.genre!, query))
+        case let album as Album:
+            (fields.contains("title") && contains(album.title, query)) ||
+                (fields.contains("artist") && contains(album.artist.name,
+                                                       query)) ||
+                (fields.contains("genre") && album.genre != nil && contains(album.genre!, query))
+        case let artist as Artist:
+            fields.contains("artist") && contains(artist.name, query)
+        default:
+            false
         }
+    }
+
+    /// Performs a localized case-insensitive comparison to check if text
+    /// contains query.
+    ///
+    /// - Parameters:
+    ///   - text: The text to search within.
+    ///   - query: The query string to search for.
+    /// - Returns: `true` if the text contains the query (case-insensitive).
+    private func contains(_ text: String, _ query: String) -> Bool {
+        text.localizedCaseInsensitiveContains(query)
     }
 }

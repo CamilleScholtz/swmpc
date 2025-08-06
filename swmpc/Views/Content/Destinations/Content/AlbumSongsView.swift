@@ -143,7 +143,7 @@ struct AlbumSongsView: View {
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
-                        Button("Copy Artist Name") {
+                        Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
                             album.artist.name.copyToClipboard()
                         }
                     }
@@ -162,21 +162,15 @@ struct AlbumSongsView: View {
 
                 Spacer()
             }
-            .padding(.bottom, 15 + 7.5)
-            #if os(iOS)
-                .listRowInsets(.init(top: 7.5, leading: 15, bottom: 15 + 7.5, trailing: 15))
-            #elseif os(macOS)
-                .listRowInsets(.init(top: 15, leading: 7.5, bottom: 7.5, trailing: 7.5))
-            #endif
-                .task {
-                    artwork = try? await album.artwork()
-                    let fetchedSongs = await (try? album.getSongs()) ?? []
-                    songs = Dictionary(grouping: fetchedSongs, by: { $0.disc })
-                }
+            .padding(.vertical, 7.5)
+            .padding(.horizontal, 15)
+            .task {
+                artwork = try? await album.artwork()
+
+                let fetchedSongs = await (try? album.getSongs()) ?? []
+                songs = Dictionary(grouping: fetchedSongs, by: { $0.disc })
+            }
         }
-        #if os(macOS)
-        .frame(width: 310)
-        #endif
 
         if let songs {
             Section {

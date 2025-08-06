@@ -23,7 +23,6 @@ struct RowView: View {
                 EmptyView()
             }
         }
-        .id(media.id)
         .padding(.horizontal, 15)
         .padding(.vertical, 7.5)
     }

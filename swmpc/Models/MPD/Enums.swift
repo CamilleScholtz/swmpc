@@ -67,6 +67,7 @@ enum Source: Equatable, Hashable {
         }
     }
 
+    /// Indicates whether items from this source can be moved (reordered).
     nonisolated var isMovable: Bool {
         switch self {
         case .queue, .playlist, .favorites:
@@ -76,6 +77,7 @@ enum Source: Equatable, Hashable {
         }
     }
 
+    /// Indicates whether items from this source can be sorted.
     nonisolated var isSortable: Bool {
         switch self {
         case .queue, .playlist, .favorites:
@@ -115,6 +117,7 @@ enum SortOption: String {
     /// Sort by the last modified date.
     case modified = "Last-Modified"
 
+    /// Returns the localized display label for this sort option.
     var label: LocalizedStringResource {
         switch self {
         case .artist:
@@ -136,6 +139,7 @@ enum SortDirection: String {
     /// Sort in descending order.
     case descending = "-"
 
+    /// Returns the localized display label for this sort direction.
     var label: LocalizedStringResource {
         switch self {
         case .ascending:
@@ -159,7 +163,9 @@ enum SearchField: String, CaseIterable {
     case title = "Title"
     case artist = "Artist"
     case album = "Album"
+    case genre = "Genre"
 
+    /// Returns the localized display label for this search field.
     var label: LocalizedStringResource {
         switch self {
         case .title:
@@ -168,9 +174,12 @@ enum SearchField: String, CaseIterable {
             "Artist"
         case .album:
             "Album"
+        case .genre:
+            "Genre"
         }
     }
 
+    /// Returns the SF Symbol icon associated with this search field.
     var symbol: SFSymbol {
         switch self {
         case .title:
@@ -179,6 +188,8 @@ enum SearchField: String, CaseIterable {
             .person
         case .album:
             .squareStack
+        case .genre:
+            .musicNote
         }
     }
 }
@@ -187,6 +198,8 @@ enum SearchField: String, CaseIterable {
 struct SearchFields: Equatable {
     private var selectedFields: Set<SearchField>
 
+    /// Initializes search fields with an optional set of pre-selected fields.
+    /// - Parameter fields: The set of search fields to initially select.
     init(fields: Set<SearchField> = []) {
         selectedFields = fields
     }
@@ -199,7 +212,7 @@ struct SearchFields: Equatable {
         case .artist:
             SearchFields(fields: [.artist])
         case .song:
-            SearchFields(fields: [.title])
+            SearchFields(fields: [.title, .artist])
         case .playlist:
             SearchFields(fields: [.title, .artist])
         }
@@ -209,16 +222,18 @@ struct SearchFields: Equatable {
     static func availableFields(for mediaType: MediaType) -> [SearchField] {
         switch mediaType {
         case .album:
-            [.title, .artist]
+            [.title, .artist, .genre]
         case .artist:
             [.artist]
         case .song:
-            [.title, .artist, .album]
+            [.title, .artist, .genre]
         case .playlist:
-            [.title, .artist, .album]
+            [.title, .artist, .genre]
         }
     }
 
+    /// Toggles the selection state of a search field.
+    /// - Parameter field: The search field to toggle.
     mutating func toggle(_ field: SearchField) {
         if selectedFields.contains(field) {
             selectedFields.remove(field)
@@ -227,14 +242,19 @@ struct SearchFields: Equatable {
         }
     }
 
+    /// Checks if a specific search field is selected.
+    /// - Parameter field: The search field to check.
+    /// - Returns: `true` if the field is selected, `false` otherwise.
     func contains(_ field: SearchField) -> Bool {
         selectedFields.contains(field)
     }
 
+    /// Indicates whether no search fields are selected.
     var isEmpty: Bool {
         selectedFields.isEmpty
     }
 
+    /// Returns the selected fields as a set of lowercase string values for MPD queries.
     var fields: Set<String> {
         Set(selectedFields.map { $0.rawValue.lowercased() })
     }

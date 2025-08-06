@@ -29,17 +29,31 @@ struct CategoryDestinationView: View {
         }
         .toolbar(removing: .title)
         .toolbar {
-            ToolbarItem {
-                Text(navigator.category.label)
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                    .padding(.leading, 12)
-            }
-            .sharedBackgroundVisibility(.hidden)
-            .hidden(isSearchFieldExpanded)
-
-            ToolbarSpacer(.flexible)
+            #if os(macOS)
+                ToolbarItem {
+                    Text(navigator.category.label)
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
+                        .padding(.leading, 12)
+                }
+                .sharedBackgroundVisibility(.hidden)
                 .hidden(isSearchFieldExpanded)
+
+                ToolbarSpacer(.flexible)
+                    .hidden(isSearchFieldExpanded)
+            #else
+                if !isSearchFieldExpanded {
+                    ToolbarItem {
+                        Text(navigator.category.label)
+                            .font(.system(size: 15))
+                            .fontWeight(.semibold)
+                            .padding(.leading, 12)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+
+                    ToolbarSpacer(.flexible)
+                }
+            #endif
         }
         .onChange(of: navigator.category) {
             isSearchFieldExpanded = false
@@ -86,7 +100,17 @@ struct CategoryDatabaseView: View {
                             Image(systemSymbol: .checkmark)
                         }
                         Image(systemSymbol: field.symbol)
-                        Text(field.label)
+                        // Show appropriate label based on media type
+                        switch field {
+                        case .title:
+                            Text("Title")
+                        case .artist:
+                            Text("Artist")
+                        case .album:
+                            Text("Album")
+                        case .genre:
+                            Text("Genre")
+                        }
                     }
                 }
             }
@@ -142,7 +166,7 @@ struct CategoryDatabaseView: View {
             }
         case .artist:
             if let artists = searchResults as? [Artist] {
-                CollectionView(data: artists, rowHeight: 45 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: artists, rowHeight: 50 + 15, scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
             }
@@ -166,7 +190,7 @@ struct CategoryDatabaseView: View {
             }
         case .artist:
             if let artists = mpd.database.media as? [Artist] {
-                CollectionView(data: artists, rowHeight: 45 + 15, scrollTo: $scrollTo) {
+                CollectionView(data: artists, rowHeight: 50 + 15, scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
             }
@@ -181,7 +205,7 @@ struct CategoryDatabaseView: View {
 
     var body: some View {
         ZStack {
-            if let searchResults {
+            if searchResults != nil {
                 searchResultsView
                     .id(mpd.database.type)
                     .ignoresSafeArea(edges: .top)
@@ -260,6 +284,10 @@ struct CategoryDatabaseView: View {
             mpd.state.isLoading = true
             try? await mpd.database.set(idle: false, type: navigator.category.type)
 
+            // Reset search when changing categories
+            searchQuery = ""
+            searchResults = nil
+            
             // Set default search fields based on the new media type
             searchFields = SearchFields.defaultFields(for: navigator.category.type)
 
@@ -279,21 +307,17 @@ struct CategoryDatabaseView: View {
             }
         }
         .onChange(of: searchQuery) { _, query in
-            Task {
-                if query.isEmpty {
-                    searchResults = nil
-                } else if !searchFields.isEmpty {
-                    searchResults = await mpd.database.search(query: query, fields: searchFields)
-                }
+            if query.isEmpty {
+                searchResults = nil
+            } else if !searchFields.isEmpty {
+                searchResults = mpd.database.search(query: query, fields: searchFields)
             }
         }
         .onChange(of: searchFields) { _, _ in
-            Task {
-                if !searchQuery.isEmpty, !searchFields.isEmpty {
-                    searchResults = await mpd.database.search(query: searchQuery, fields: searchFields)
-                } else if searchFields.isEmpty {
-                    searchResults = nil
-                }
+            if !searchQuery.isEmpty, !searchFields.isEmpty {
+                searchResults = mpd.database.search(query: searchQuery, fields: searchFields)
+            } else if searchFields.isEmpty {
+                searchResults = nil
             }
         }
     }

@@ -8,12 +8,12 @@
 import AppIntents
 import SwiftUI
 
-struct CurrentSongIntent: @preconcurrency AppIntent {
+struct CurrentSongIntent: AppIntent {
     static let title: LocalizedStringResource = "What's Playing"
     static let description = IntentDescription("Get information about the currently playing song")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        guard let song = mpd.status.song else {
+        guard let song = await mpd.status.song else {
             return .result(dialog: IntentDialog("Nothing is currently playing"))
         }
 

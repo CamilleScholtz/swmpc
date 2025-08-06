@@ -1586,6 +1586,9 @@
         }
       }
     },
+    "Genre" : {
+
+    },
     "Get information about the currently playing song" : {
       "localizations" : {
         "de" : {

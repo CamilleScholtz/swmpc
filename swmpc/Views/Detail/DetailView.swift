@@ -202,48 +202,50 @@ struct DetailView: View {
             }
         }
         .toolbar {
-            ToolbarSpacer(.flexible)
+            #if os(macOS)
+                ToolbarSpacer(.flexible)
 
-            ToolbarItem {
-                Text("Queue")
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                    .offset(x: -140)
-            }
-            .sharedBackgroundVisibility(.hidden)
-            .hidden(!showQueuePanel)
-
-            ToolbarItem {
-                Button(action: {
-                    // showClearQueueAlert = true
-                }) {
-                    Image(systemSymbol: .trash)
+                ToolbarItem {
+                    Text("Queue")
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
+                        .offset(x: -140)
                 }
-                .keyboardShortcut(.delete, modifiers: [.shift, .command])
-            }
-            .hidden(!showQueuePanel && !mpd.queue.songs.isEmpty)
-
-            ToolbarItem {
-                Button(action: {
-                    NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
-                }) {
-                    Image(systemSymbol: .sparkles)
-                }
-            }
-            .hidden(!showQueuePanel || isIntelligenceEnabled || mpd.queue.songs.isEmpty)
-
-            ToolbarSpacer(.fixed)
+                .sharedBackgroundVisibility(.hidden)
                 .hidden(!showQueuePanel)
 
-            ToolbarItem {
-                Button(action: {
-                    withAnimation(.spring) {
-                        showQueuePanel.toggle()
+                ToolbarItem {
+                    Button(action: {
+                        // showClearQueueAlert = true
+                    }) {
+                        Image(systemSymbol: .trash)
                     }
-                }) {
-                    Image(systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList)
+                    .keyboardShortcut(.delete, modifiers: [.shift, .command])
                 }
-            }
+                .hidden(!showQueuePanel && !mpd.queue.songs.isEmpty)
+
+                ToolbarItem {
+                    Button(action: {
+                        NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                    }) {
+                        Image(systemSymbol: .sparkles)
+                    }
+                }
+                .hidden(!showQueuePanel || isIntelligenceEnabled || mpd.queue.songs.isEmpty)
+
+                ToolbarSpacer(.fixed)
+                    .hidden(!showQueuePanel)
+
+                ToolbarItem {
+                    Button(action: {
+                        withAnimation(.spring) {
+                            showQueuePanel.toggle()
+                        }
+                    }) {
+                        Image(systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList)
+                    }
+                }
+            #endif
         }
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {

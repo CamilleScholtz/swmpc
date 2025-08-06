@@ -91,7 +91,7 @@ struct ContextMenuView<Media: Mediable>: View {
 
         Divider()
 
-        Button(copyTitle, systemSymbol: .documentOnDocumentFill) {
+        Button(copyTitle, systemSymbol: .documentOnDocument) {
             textToCopy.copyToClipboard()
         }
     }

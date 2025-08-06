@@ -31,11 +31,7 @@ struct ArtistView: View {
                     startPoint: .top,
                     endPoint: .bottom,
                 ))
-            #if os(iOS)
-                .frame(width: 60, height: 60)
-            #elseif os(macOS)
                 .frame(width: 50, height: 50)
-            #endif
                 .overlay(
                     ZStack {
                         Text(artist.name.initials)
@@ -76,18 +72,14 @@ struct ArtistView: View {
             Spacer()
         }
         .contentShape(Rectangle())
-        .task(id: artist) {
-            guard !Task.isCancelled else {
-                return
-            }
-
-            albumCount = await (try? artist.getAlbums().count) ?? 0
-        }
         .onTapGesture {
             navigator.navigate(to: ContentDestination.artist(artist))
         }
         .contextMenu {
             ContextMenuView(for: artist)
+        }
+        .task(id: artist, priority: .high) {
+            albumCount = await (try? artist.getAlbums().count) ?? 0
         }
     }
 }

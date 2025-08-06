@@ -48,15 +48,6 @@ This project adopts Swift 6.2's modern concurrency settings. This fundamentally 
     struct MyData: @MainActor Codable { ... }
     ```
 
-## Build Commands
-
-```bash
-# Build for debug
-xcodebuild -project swmpc.xcodeproj -scheme swmpc -configuration Debug
-```
-
-**Note**: Most development is done through Xcode IDE. Dependencies are managed through Xcode's Swift Package Manager integration.
-
 ## Architecture
 
 The app follows an MVVM-style architecture using SwiftUI and the Observation framework:

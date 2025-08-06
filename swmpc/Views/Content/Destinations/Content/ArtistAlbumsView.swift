@@ -46,11 +46,6 @@ struct ArtistAlbumsView: View {
                 Spacer()
             }
             .padding(.bottom, 15)
-            #if os(iOS)
-                .listRowInsets(.init(top: 7.5, leading: 15, bottom: 15 + 7.5, trailing: 15))
-            #elseif os(macOS)
-                .listRowInsets(.init(top: 15, leading: 7.5, bottom: 7.5, trailing: 7.5))
-            #endif
         }
         #if os(macOS)
         .frame(width: 310)

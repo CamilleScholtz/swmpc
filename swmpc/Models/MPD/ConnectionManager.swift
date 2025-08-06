@@ -94,7 +94,9 @@ enum ConnectionManagerError: LocalizedError {
     }
 }
 
-/// Helper to access main actor isolated settings from within actors
+/// Helper structure providing access to main actor isolated app settings from
+/// within actors. This allows connection managers to read user preferences
+/// without blocking the main thread.
 struct ConnectionSettings {
     static let shared = ConnectionSettings()
 
@@ -121,7 +123,11 @@ struct ConnectionSettings {
 /// - Response parsing for various MPD data types
 /// - Thread-safe operation using Swift actors
 actor ConnectionManager<Mode: ConnectionMode> {
+    /// The underlying network connection to the MPD server.
     private var connection: NWConnection?
+
+    /// Dispatch queue for network operations configured based on the connection
+    /// mode.
     private let connectionQueue = DispatchQueue(
         label: "com.camille.swmpc.connection.\(Mode.label)",
         qos: Mode.qos,
@@ -129,9 +135,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
         target: .global(qos: Mode.qos.qosClass),
     )
 
+    /// Buffer for accumulating incoming data from the network connection.
     private var buffer = Deque<UInt8>()
 
-    /// The version of the MPD server.
+    /// The version of the MPD server obtained during connection handshake.
     private(set) var version: String?
 
     // TODO: I want to just use `disconnect()` here, but that gives me an `Call
@@ -400,10 +407,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
     }
 
-    /// Escapes a given string for safe inclusion in a quoted context.
+    /// Escapes a given string for safe inclusion in MPD commands.
     ///
     /// This function escapes special characters in a string, such as
-    /// backslashes, and optionally encloses the string in a quote character.
+    /// backslashes and quotes, and optionally encloses the string in a quote character.
     ///
     /// - Parameters:
     ///   - string: The string to be escaped.
@@ -554,8 +561,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     /// Asynchronously receives a chunk of data from the network connection.
     ///
-    /// This function first ensures that the connection is ready. It then initiates
-    /// an asynchronous receive operation.
+    /// This function first ensures that the connection is ready. It then
+    /// initiates an asynchronous receive operation.
     ///
     /// - Throws: An error if the connection is not ready or if the receive
     ///           operation encounters an error.
@@ -654,7 +661,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// encountered.
     ///
     /// This function is a convenience wrapper around `readUntil`, using a
-    /// condition that checks if a line begin with `OK`. It returns all lines
+    /// condition that checks if a line begins with `OK`. It returns all lines
     /// read up to and including the `OK` line. If the condition is never met or
     /// an error occurs during reading, the function will throw an error.
     ///
@@ -716,9 +723,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// type.
     ///
     /// This function processes key-value pairs from MPD response lines and uses
-    /// them
-    /// to initialize a `Song`, `Album`, or `Artist` object, which is then cast
-    /// to the requested generic type `T`.
+    /// them to initialize a `Song`, `Album`, or `Artist` object, which is then
+    /// cast to the requested generic type `T`.
     ///
     /// - Parameters:
     ///   - lines: An array of strings representing the response lines from MPD.
@@ -760,9 +766,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 duration: fields["duration"].flatMap { Double($0) } ?? 0,
                 disc: fields["disc"].flatMap { Int($0) } ?? 1,
                 track: fields["track"].flatMap { Int($0) } ?? 1,
+                genre: fields["genre"],
                 album: Album(
                     url: url,
                     title: fields["album"] ?? "Unknown Album",
+                    genre: fields["genre"],
                     artist: Artist(
                         url: url,
                         name: artistName,
@@ -775,6 +783,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let album = Album(
                 url: url,
                 title: fields["album"] ?? "Unknown Album",
+                genre: fields["genre"],
                 artist: Artist(
                     url: url,
                     name: artistName,
@@ -900,16 +909,16 @@ extension ConnectionManager {
     /// This method fetches a list of songs (specifically, the first track of
     /// each album) and then extracts the unique albums from that list.
     ///
-    /// - Note: We currently use the `find` commands to retrieve albums. I'd
+    /// - Note: We currently use the `find` command to retrieve albums. I'd
     ///         rather use `list`, but that has no sort option.
     ///
-    /// - Parameters:
-    ///   - sortBy: The sorting option for the albums (e.g., `.album`,
-    ///             `.artist`).
-    ///   - direction: The sorting direction (`.ascending` or `.descending`).
+    /// - Parameter sort: The sorting descriptor containing the option and
+    ///                   direction for sorting albums.
     /// - Returns: An array of unique `Album` objects.
     /// - Throws: An error if the command fails or the response is malformed.
-    func getAlbums(sort: SortDescriptor = SortDescriptor(option: .artist)) async throws -> [Album] {
+    func getAlbums(sort: SortDescriptor = SortDescriptor(option: .artist)) async
+        throws -> [Album]
+    {
         let lines = try await run(["find \(filter(key: "track", value: "1")) sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
 
         let albums: [Album] = try await parseMediaResponse(lines, as: .album)
@@ -936,7 +945,9 @@ extension ConnectionManager {
     /// - Returns: An array of `Album` objects by the specified artist.
     /// - Throws: `ConnectionManagerError.unsupportedOperation` if the source is
     ///           not the database or queue.
-    func getAlbums(by artist: Artist, from source: Source) async throws -> [Album] {
+    func getAlbums(by artist: Artist, from source: Source) async throws ->
+        [Album]
+    {
         let lines: [String]
 
         switch source {
@@ -969,14 +980,13 @@ extension ConnectionManager {
     /// This method first retrieves all unique albums and then extracts the
     /// unique artists from that list.
     ///
-    ///
-    /// - Parameters:
-    ///   - sortBy: The sorting option used to retrieve albums, which indirectly
-    ///             affects the artist order.
-    ///   - direction: The sorting direction.
+    /// - Parameter sort: The sorting descriptor used to retrieve albums, which
+    ///                   indirectly affects the artist order.
     /// - Returns: An array of unique `Artist` objects.
     /// - Throws: An error if the underlying album lookup fails.
-    func getArtists(sort: SortDescriptor = SortDescriptor(option: .artist)) async throws -> [Artist] {
+    func getArtists(sort: SortDescriptor = SortDescriptor(option: .artist))
+        async throws -> [Artist]
+    {
         let albums = try await getAlbums(sort: sort)
 
         var seen: Set<String> = []
@@ -996,12 +1006,17 @@ extension ConnectionManager {
 
     /// Retrieves all songs from a specified source.
     ///
-    /// - Parameter source: The source (`.database`, `.queue`, or a specific
-    ///                     `.playlist`) from which to retrieve the songs.
+    /// - Parameters:
+    ///   - source: The source (`.database`, `.queue`, or a specific
+    ///             `.playlist`) from which to retrieve the songs.
+    ///   - sort: The sorting descriptor for database queries. Ignored for queue
+    ///           and playlist sources.
     /// - Returns: An array of `Song` objects from the specified source.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(from source: Source, sort: SortDescriptor = SortDescriptor(option: .artist)) async throws -> [Song] {
+    func getSongs(from source: Source, sort: SortDescriptor = SortDescriptor(
+        option: .artist)) async throws -> [Song]
+    {
         let lines = switch source {
         case .database:
             try await run(["find \"(title != '')\" sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
@@ -1071,6 +1086,8 @@ extension ConnectionManager {
 // MARK: - Idle mode commands
 
 extension ConnectionManager where Mode == IdleMode {
+    /// Shared singleton instance for idle connection management.
+    /// Used for listening to server events without blocking other operations.
     static let idle = ConnectionManager<IdleMode>()
 
     /// Waits for an idle event from the media server that matches the specified
@@ -1181,14 +1198,12 @@ extension ConnectionManager where Mode == CommandMode {
         return manager
     }
 
-    /// Loads a playlist into queue.
+    /// Loads a playlist into the queue.
     ///
-    /// This asynchronous function clears the queue on the media server
-    /// and then loads new content based on the provided parameter:
-    /// - If a `Playlist` object is provided, it clears the queue and loads the
-    ///   specified playlist using its name.
-    /// - If no playlist is provided (`nil`), it clears the queue and adds all
-    ///   songs from the music directory.
+    /// This function clears the current queue and then loads new content:
+    /// - If a `Playlist` object is provided, it loads the specified playlist.
+    /// - If no playlist is provided (`nil`), it adds all songs from the music
+    ///   directory.
     ///
     /// - Parameter playlist: An optional `Playlist` object. When provided, its
     ///                       `name` is used to load the corresponding playlist.
@@ -1242,8 +1257,8 @@ extension ConnectionManager where Mode == CommandMode {
     /// Updates the media server's database.
     ///
     /// This function triggers a database update on the media server, which
-    /// causes it to rescan the music directory and update its internal
-    /// database.
+    /// causes it to scan the music directory and update its internal
+    /// database with any changes.
     ///
     /// - Parameter force: A Boolean value indicating whether to force a rescan
     ///                   (`true`) or perform a standard update (`false`).
@@ -1281,7 +1296,7 @@ extension ConnectionManager where Mode == CommandMode {
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
                 throw ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for adding songs to a playlist")
+                    "Playlist is required for this operation")
             }
 
             commands = songsToAdd.map {
@@ -1380,7 +1395,7 @@ extension ConnectionManager where Mode == CommandMode {
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
                 throw ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for adding songs to a playlist")
+                    "Playlist is required for this operation")
             }
 
             try await run(["playlistmove \(escape(playlist.name)) \(currentPosition) \(position)"])
@@ -1514,7 +1529,7 @@ extension ConnectionManager where Mode == CommandMode {
         try await run(["seekcur \(value)"])
     }
 
-    /// Set the volume level.
+    /// Sets the volume level.
     ///
     /// - Parameter volume: The volume level to set (0-100).
     /// - Throws: An error if the underlying command execution fails.
