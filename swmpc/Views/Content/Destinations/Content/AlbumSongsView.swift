@@ -61,7 +61,6 @@ struct AlbumSongsView: View {
                                  ZStack(alignment: .bottomLeading) {
                                      Color.clear
                                          .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
-                                         .frame(width: 100)
                                          .mask(
                                              LinearGradient(
                                                  gradient: Gradient(stops: [
@@ -72,6 +71,7 @@ struct AlbumSongsView: View {
                                                  endPoint: .top,
                                              ),
                                          )
+                                         .cornerRadius(18)
 
                                      HStack(spacing: 5) {
                                          Image(systemSymbol: .playFill)

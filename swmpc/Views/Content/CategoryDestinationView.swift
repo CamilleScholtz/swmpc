@@ -215,7 +215,7 @@ struct CategoryDatabaseView: View {
         }
         .task(id: navigator.category) {
             mpd.state.isLoading = true
-            try? await mpd.database.set(idle: false, type: navigator.category.type)
+            try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
             // Reset search when changing categories
             searchQuery = ""
@@ -228,16 +228,16 @@ struct CategoryDatabaseView: View {
             try? await Task.sleep(for: .milliseconds(100))
             scrollToCurrentMedia()
         }
-        .onChange(of: sort) { _, value in
+        .task(id: sort) {
+            // Only reload if we're not already loading (category change handles both)
+            guard !mpd.state.isLoading else { return }
+            
             mpd.state.isLoading = true
+            try? await mpd.database.set(idle: false, sort: sort)
 
-            Task(priority: .userInitiated) {
-                try? await mpd.database.set(idle: false, sort: value)
-
-                scrollToCurrentMedia()
-                try? await Task.sleep(for: .milliseconds(100))
-                scrollToCurrentMedia()
-            }
+            scrollToCurrentMedia()
+            try? await Task.sleep(for: .milliseconds(100))
+            scrollToCurrentMedia()
         }
         .onChange(of: searchQuery) { _, query in
             if query.isEmpty {
