@@ -121,6 +121,9 @@
     "%lld%%" : {
 
     },
+    "1" : {
+
+    },
     "1 album" : {
       "localizations" : {
         "de" : {
@@ -149,66 +152,14 @@
         }
       }
     },
-    "Add" : {
+    "2" : {
 
     },
-    "Add Album to Favorites" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Album zu Favoriten hinzufügen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir álbum a favoritos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter l'album aux favoris"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Album aan favorieten toevoegen"
-          }
-        }
-      }
+    "3" : {
+
     },
-    "Add Album to Playlist" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Album zur Playlist hinzufügen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir álbum a la lista de reproducción"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter l'album à la playlist"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Album aan afspeellijst toevoegen"
-          }
-        }
-      }
+    "Add" : {
+
     },
     "Add Current Song to Favorites" : {
       "localizations" : {
@@ -238,65 +189,11 @@
         }
       }
     },
-    "Add or Remove" : {
+    "Add media from the library" : {
 
     },
-    "Add Song to Playlist" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Song zur Playlist hinzufügen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir canción a la lista de reproducción"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter le morceau à la playlist"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nummer aan afspeellijst toevoegen"
-          }
-        }
-      }
-    },
-    "Add songs from the library to play them" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lieder aus der Bibliothek hinzufügen, um sie abzuspielen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añade canciones de la biblioteca para reproducirlas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoutez des chansons de la bibliothèque pour les lire"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voeg nummers uit de bibliotheek toe om ze af te spelen"
-          }
-        }
-      }
+    "Add or Remove" : {
+
     },
     "Add songs to your library." : {
       "localizations" : {
@@ -611,6 +508,9 @@
           }
         }
       }
+    },
+    "Ascending" : {
+
     },
     "Asian Music" : {
       "localizations" : {
@@ -1290,34 +1190,8 @@
         }
       }
     },
-    "Demo Mode" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demo-Modus"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modo demo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mode démo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demo-modus"
-          }
-        }
-      }
+    "Descending" : {
+
     },
     "Disc %@" : {
       "localizations" : {
@@ -1571,6 +1445,9 @@
         }
       }
     },
+    "Genre" : {
+
+    },
     "Get information about the currently playing song" : {
       "localizations" : {
         "de" : {
@@ -1651,34 +1528,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Terug naar het vorige nummer"
-          }
-        }
-      }
-    },
-    "Go to Current Song" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zum aktuellen Song springen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ir a la canción actual"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aller au morceau actuel"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ga naar huidig nummer"
           }
         }
       }
@@ -1769,6 +1618,9 @@
           }
         }
       }
+    },
+    "Last Modified" : {
+
     },
     "Leave empty if no password is set." : {
       "localizations" : {
@@ -2137,9 +1989,6 @@
         }
       }
     },
-    "No content" : {
-
-    },
     "No songs in playlist." : {
       "localizations" : {
         "de" : {
@@ -2192,40 +2041,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Er wordt momenteel niets afgespeeld"
-          }
-        }
-      }
-    },
-    "Now playing: %@ by %@" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Läuft gerade: %1$@ von %2$@"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Now playing: %1$@ by %2$@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reproduciendo ahora: %1$@ de %2$@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En cours de lecture : %1$@ par %2$@"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nu aan het afspelen: %1$@ van %2$@"
           }
         }
       }
@@ -2650,92 +2465,6 @@
         }
       }
     },
-    "Queue Library" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bibliothek zur Warteschlange hinzufügen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir biblioteca a la cola"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter la bibliothèque à la file d'attente"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collectie aan wachtrij toevoegen"
-          }
-        }
-      }
-    },
-    "Queue Playlist" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Playlist zur Warteschlange hinzufügen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir lista de reproducción a la cola"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter la playlist à la file d'attente"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afspeellijst aan wachtrij toevoegen"
-          }
-        }
-      }
-    },
-    "Queue Playlist %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Playlist %@ zur Warteschlange hinzufügen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir lista %@ a la cola"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter la playlist %@ à la file d'attente"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afspeellijst %@ aan wachtrij toevoegen"
-          }
-        }
-      }
-    },
     "Quit swmpc" : {
       "localizations" : {
         "de" : {
@@ -2853,64 +2582,6 @@
     },
     "Remove" : {
 
-    },
-    "Remove Album from Playlist" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Album aus Playlist entfernen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eliminar álbum de la lista de reproducción"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirer l'album de la playlist"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Album uit afspeellijst verwijderen"
-          }
-        }
-      }
-    },
-    "Remove Song from Playlist" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Song aus Playlist entfernen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eliminar canción de la lista de reproducción"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retirer le morceau de la playlist"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nummer uit afspeellijst verwijderen"
-          }
-        }
-      }
     },
     "Rename Playlist" : {
       "localizations" : {
@@ -3366,35 +3037,6 @@
         }
       }
     },
-    "Simple Mode" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einfacher Modus"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modo simple"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mode simple"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eenvoudige modus"
-          }
-        }
-      }
-    },
     "Skip to the next song in the queue" : {
       "localizations" : {
         "de" : {
@@ -3597,34 +3239,6 @@
         }
       }
     },
-    "This will overwrite the current queue." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dies überschreibt die aktuelle Warteschlange."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esto sobrescribirá la cola actual."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cela écrasera la file d'attente actuelle."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dit overschrijft de huidige wachtrij."
-          }
-        }
-      }
-    },
     "This will remove all songs from the queue." : {
       "localizations" : {
         "de" : {
@@ -3652,6 +3266,9 @@
           }
         }
       }
+    },
+    "Title" : {
+
     },
     "Toggle playback of the current song" : {
       "localizations" : {
@@ -3879,35 +3496,6 @@
     },
     "When enabled, the app runs without a dock icon (menu bar only). Requires a restart to take effect." : {
 
-    },
-    "When enabled, uses mock data instead of connecting to MPD." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn aktiviert, werden Mock-Daten anstelle einer Verbindung zu MPD verwendet."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si está habilitado, usa datos de prueba en lugar de conectarse a MPD."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Si activé, utilise des données fictives au lieu de se connecter à MPD."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Indien ingeschakeld, worden testgegevens gebruikt in plaats van een verbinding met MPD."
-          }
-        }
-      }
     },
     "Workout Tunes" : {
       "localizations" : {

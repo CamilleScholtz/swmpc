@@ -27,11 +27,14 @@ struct Delegate: App {
     #if os(iOS)
         static let mpd = MPD()
     #endif
+
     let navigator = NavigationManager()
 
-    init() {
-        AppShortcuts.updateAppShortcutParameters()
-    }
+    #if os(macOS)
+        init() {
+            AppShortcuts.updateAppShortcutParameters()
+        }
+    #endif
 
     var body: some Scene {
         WindowGroup {
@@ -41,35 +44,29 @@ struct Delegate: App {
                 .environment(Delegate.mpd)
             #elseif os(macOS)
                 .environment(appDelegate.mpd)
-                .onAppear {
-                    for window in NSApplication.shared.windows {
-                        window.tabbingMode = .disallowed
-                    }
-                }
             #endif
         }
         #if os(macOS)
-        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandMenu("Controls") {
-                AsyncButton(appDelegate.mpd.status.isPlaying == true ? "Pause" : "Play") {
+                AsyncButton(appDelegate.mpd.status.isPlaying ? "Pause" : "Play", systemImage: appDelegate.mpd.status.isPlaying == true ? "pause.fill" : "play.fill") {
                     try await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
                 }
                 .keyboardShortcut(.space)
 
-                AsyncButton("Next Song") {
+                AsyncButton("Next Song", systemImage: "forward.fill") {
                     try await ConnectionManager.command().next()
                 }
                 .keyboardShortcut(.downArrow, modifiers: [.command])
 
-                AsyncButton("Previous Song") {
+                AsyncButton("Previous Song", systemImage: "backward.fill") {
                     try await ConnectionManager.command().previous()
                 }
                 .keyboardShortcut(.upArrow, modifiers: [.command])
 
                 Divider()
 
-                AsyncButton("Add Current Song to Favorites") {
+                AsyncButton("Add Current Song to Favorites", systemImage: "heart.fill") {
                     guard let song = appDelegate.mpd.status.song else {
                         return
                     }
@@ -84,47 +81,42 @@ struct Delegate: App {
                 }
                 .keyboardShortcut("l", modifiers: [.command, .option])
 
-                Button("Go to Current Song") {
-                    NotificationCenter.default.post(name: .scrollToCurrentNotification, object: true)
-                }
-                .keyboardShortcut("l", modifiers: [.command])
-
-                Button("Search Library") {
+                Button("Search Library", systemSymbol: .magnifyingglass) {
                     NotificationCenter.default.post(name: .startSearchingNotication, object: nil)
                 }
                 .keyboardShortcut("f", modifiers: [.command])
 
                 Divider()
 
-                AsyncButton("Toggle Repeat") {
+                AsyncButton("Toggle Repeat", systemImage: "repeat") {
                     try await ConnectionManager.command().repeat(!(appDelegate.mpd.status.isRepeat ?? false))
                 }
                 .keyboardShortcut("r", modifiers: [.command])
 
-                AsyncButton("Toggle Shuffle") {
+                AsyncButton("Toggle Shuffle", systemImage: "shuffle") {
                     try await ConnectionManager.command().random(!(appDelegate.mpd.status.isRandom ?? false))
                 }
                 .keyboardShortcut("s", modifiers: [.command])
 
                 Divider()
 
-                AsyncButton("Clear Queue") {
-                    try await ConnectionManager.command().clearQueue()
+                Button("Clear Queue", systemSymbol: .trash) {
+                    NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
                 }
                 .keyboardShortcut(.delete, modifiers: [.command, .option])
 
                 Divider()
 
-                AsyncButton("Reload Library") {
+                AsyncButton("Reload Library", systemImage: "arrow.clockwise") {
                     try await ConnectionManager.command().update()
-                    try await appDelegate.mpd.database.set(force: true)
+                    try await appDelegate.mpd.database.set()
                 }
                 .keyboardShortcut("r", modifiers: [.command, .option])
             }
 
             if let playlists = appDelegate.mpd.playlists.playlists {
                 CommandMenu("Playlists") {
-                    Menu("Load Playlist") {
+                    Menu("Load Playlist", systemImage: "music.note.list") {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
                                 try await ConnectionManager.command().loadPlaylist(playlist)
@@ -145,7 +137,6 @@ struct Delegate: App {
 }
 
 #if os(macOS)
-    @MainActor
     final class AppDelegate: NSObject, NSApplicationDelegate {
         private(set) static var shared: AppDelegate!
 
@@ -184,14 +175,14 @@ struct Delegate: App {
                 self,
                 selector: #selector(handleStatusBarSettingChanged),
                 name: .statusBarSettingChangedNotification,
-                object: nil
+                object: nil,
             )
 
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(handleTerminate),
                 name: NSApplication.willTerminateNotification,
-                object: nil
+                object: nil,
             )
         }
 
@@ -199,27 +190,30 @@ struct Delegate: App {
             let menu = NSMenu()
 
             let playPauseItem = NSMenuItem(
-                title: mpd.status.isPlaying == true ? "Pause" : "Play",
+                title: mpd.status.isPlaying ? "Pause" : "Play",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
-                keyEquivalent: ""
+                keyEquivalent: "",
             )
-            playPauseItem.tag = mpd.status.isPlaying == true ? MenuAction.pause.rawValue : MenuAction.play.rawValue
+            playPauseItem.tag = mpd.status.isPlaying ? MenuAction.pause.rawValue : MenuAction.play.rawValue
+            playPauseItem.image = NSImage(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
             menu.addItem(playPauseItem)
 
             let nextItem = NSMenuItem(
                 title: "Next song",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
-                keyEquivalent: ""
+                keyEquivalent: "",
             )
             nextItem.tag = MenuAction.nextSong.rawValue
+            nextItem.image = NSImage(systemSymbol: .forwardFill)
             menu.addItem(nextItem)
 
             let previousItem = NSMenuItem(
                 title: "Previous song",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
-                keyEquivalent: ""
+                keyEquivalent: "",
             )
             previousItem.tag = MenuAction.previousSong.rawValue
+            previousItem.image = NSImage(systemSymbol: .backwardFill)
             menu.addItem(previousItem)
 
             menu.addItem(NSMenuItem.separator())
@@ -227,9 +221,10 @@ struct Delegate: App {
             let favoritesItem = NSMenuItem(
                 title: "Add current song to favorites",
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
-                keyEquivalent: ""
+                keyEquivalent: "",
             )
             favoritesItem.tag = MenuAction.addToFavorites.rawValue
+            favoritesItem.image = NSImage(systemSymbol: .heartFill)
             menu.addItem(favoritesItem)
 
             return menu
@@ -252,7 +247,7 @@ struct Delegate: App {
             popover.contentViewController = NSViewController()
             popover.contentViewController!.view = NSHostingView(
                 rootView: PopoverView()
-                    .environment(mpd)
+                    .environment(mpd),
             )
         }
 
@@ -332,7 +327,7 @@ struct Delegate: App {
             popover.show(
                 relativeTo: popoverAnchor.button!.bounds,
                 of: popoverAnchor.button!,
-                preferredEdge: .maxY
+                preferredEdge: .maxY,
             )
         }
 

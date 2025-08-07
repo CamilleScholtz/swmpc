@@ -1,5 +1,5 @@
 {
-  "originHash" : "a2d24ee6d7f474d76924ed16fbbe893d9712ba5a8771327342a20d74030898bd",
+  "originHash" : "47a8e333c0695768834ff4519958742c18cfb6c147897c6fcb19420e2b8e82b6",
   "pins" : [
     {
       "identity" : "buttonkit",
@@ -11,48 +11,12 @@
       }
     },
     {
-      "identity" : "keychainstoragekit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/maxhumber/KeychainStorageKit",
-      "state" : {
-        "revision" : "51b0a88f3ca2eb21a777c588754780f8d296f724",
-        "version" : "1.0.0"
-      }
-    },
-    {
       "identity" : "launchatlogin-modern",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sindresorhus/LaunchAtLogin-Modern",
       "state" : {
         "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc",
         "version" : "1.1.0"
-      }
-    },
-    {
-      "identity" : "lnpopupcontroller",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/LeoNatan/LNPopupController.git",
-      "state" : {
-        "revision" : "e14712b8077f9d25c2b70d23241e922537673338",
-        "version" : "3.0.7"
-      }
-    },
-    {
-      "identity" : "lnpopupui",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/LeoNatan/LNPopupUI",
-      "state" : {
-        "revision" : "aa9c813f2b47d055b648628b738e1b115c5e9fad",
-        "version" : "2.0.2"
-      }
-    },
-    {
-      "identity" : "lnswiftuiutils",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/LeoNatan/LNSwiftUIUtils.git",
-      "state" : {
-        "revision" : "7be14fd7942f6b215f4b1912315f9e67266cb082",
-        "version" : "1.1.2"
       }
     },
     {
@@ -96,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "c1805596154bb3a265fd91b8ac0c4433b4348fb0",
-        "version" : "1.2.0"
+        "revision" : "8c0c0a8b49e080e54e5e328cc552821ff07cd341",
+        "version" : "1.2.1"
       }
     },
     {
@@ -123,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/siteline/swiftui-introspect",
       "state" : {
-        "revision" : "807f73ce09a9b9723f12385e592b4e0aaebd3336",
-        "version" : "1.3.0"
+        "revision" : "9bedf1e79c7b7c34b35b74bef126f56d2400ef7f",
+        "version" : "1.4.0-beta.4"
       }
     }
   ],

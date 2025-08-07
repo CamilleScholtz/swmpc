@@ -5,7 +5,6 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
-import KeychainStorageKit
 import SFSafeSymbols
 import SwiftUI
 
@@ -60,8 +59,7 @@ struct SettingsView: View {
     struct GeneralView: View {
         @AppStorage(Setting.host) var host = "localhost"
         @AppStorage(Setting.port) var port = 6600
-
-        @State private var password = ""
+        @AppStorage(Setting.password) var password = ""
 
         @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
@@ -71,14 +69,6 @@ struct SettingsView: View {
                 TextField("MPD Port:", value: $port, formatter: NumberFormatter())
 
                 SecureField("MPD Password:", text: $password)
-                    .onAppear {
-                        @KeychainStorage(Setting.password) var passwordSecureStorage: String?
-                        password = passwordSecureStorage ?? ""
-                    }
-                    .onChange(of: password) { _, value in
-                        @KeychainStorage(Setting.password) var passwordSecureStorage: String?
-                        passwordSecureStorage = value.isEmpty ? nil : value
-                    }
                 Text("Leave empty if no password is set.")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -157,21 +147,23 @@ struct SettingsView: View {
             }
             .padding(32)
             .navigationTitle("Behavior")
-            .alert("Restart Required", isPresented: $restartAlertShown) {
-                Button("Cancel", role: .cancel) {
-                    runAsAgent = !runAsAgent
+            #if os(macOS)
+                .alert("Restart Required", isPresented: $restartAlertShown) {
+                    Button("Cancel", role: .cancel) {
+                        runAsAgent = !runAsAgent
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        isRestarting = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isRestarting = false
+                        }
                     }
-                }
 
-                Button("Quit swmpc", role: .destructive) {
-                    NSApp.terminate(nil)
+                    Button("Quit swmpc", role: .destructive) {
+                        NSApp.terminate(nil)
+                    }
+                } message: {
+                    Text("You need to restart the app for this change to take effect.")
                 }
-            } message: {
-                Text("You need to restart the app for this change to take effect.")
-            }
+            #endif
         }
     }
 
@@ -179,7 +171,7 @@ struct SettingsView: View {
         @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
         @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
 
-        @State private var token = ""
+        @State private var intelligenceToken = ""
 
         var body: some View {
             Form {
@@ -205,20 +197,20 @@ struct SettingsView: View {
                 .pickerStyle(.inline)
                 .disabled(!isIntelligenceEnabled)
 
-                SecureField("API Token:", text: $token)
+                SecureField("API Token:", text: $intelligenceToken)
                     .textContentType(.password)
                     .disabled(!isIntelligenceEnabled)
                     .onAppear {
-                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                        token = tokenSecureStorage ?? ""
+                        @AppStorage(intelligenceModel.setting) var token = ""
+                        token = intelligenceToken
                     }
-                    .onChange(of: token) { _, value in
-                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                        tokenSecureStorage = value.isEmpty ? nil : value
+                    .onChange(of: intelligenceToken) { _, value in
+                        @AppStorage(intelligenceModel.setting) var token = ""
+                        token = value.isEmpty ? "" : value
                     }
                     .onChange(of: intelligenceModel) {
-                        @KeychainStorage(intelligenceModel.setting) var tokenSecureStorage: String?
-                        token = tokenSecureStorage ?? ""
+                        @AppStorage(intelligenceModel.setting) var token = ""
+                        token = intelligenceToken
                     }
             }
             .padding(32)

@@ -46,10 +46,12 @@ struct VolumeSliderView: View {
                         }
                     })
                     .controlSize(.mini)
-                    .introspect(.slider, on: .macOS(.v15)) {
-                        $0.numberOfTickMarks = 1
-                    }
-                    .frame(width: 80)
+                    #if os(macOS)
+                        .introspect(.slider, on: .macOS(.v26)) {
+                            $0.numberOfTickMarks = 2
+                        }
+                    #endif
+                        .frame(width: 80)
 
                     Text("\(Int(volume))%")
                         .font(.subheadline)

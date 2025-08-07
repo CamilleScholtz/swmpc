@@ -29,20 +29,33 @@ struct ArtistView: View {
                         .init(color: Color(.secondarySystemFill).opacity(0.7), location: 1.0),
                     ]),
                     startPoint: .top,
-                    endPoint: .bottom
+                    endPoint: .bottom,
                 ))
-            #if os(iOS)
-                .frame(width: 60, height: 60)
-            #elseif os(macOS)
                 .frame(width: 50, height: 50)
-            #endif
                 .overlay(
-                    Text(artist.name.initials)
-                        .font(.system(size: 18))
-                        .fontDesign(.rounded)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
+                    ZStack {
+                        Text(artist.name.initials)
+                            .font(.system(size: 18))
+                            .fontDesign(.rounded)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+
+                        Color.clear
+                            .glassEffect(.clear, in: Circle())
+                            .mask(
+                                RadialGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0.0),
+                                        .init(color: .black, location: 1.0),
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 45,
+                                ),
+                            )
+                    },
                 )
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
             VStack(alignment: .leading) {
                 Text(artist.name)
@@ -59,14 +72,14 @@ struct ArtistView: View {
             Spacer()
         }
         .contentShape(Rectangle())
-        .task {
-            albumCount = await (try? artist.getAlbums().count) ?? 0
-        }
         .onTapGesture {
             navigator.navigate(to: ContentDestination.artist(artist))
         }
         .contextMenu {
             ContextMenuView(for: artist)
+        }
+        .task(id: artist, priority: .high) {
+            albumCount = await (try? artist.getAlbums().count) ?? 0
         }
     }
 }

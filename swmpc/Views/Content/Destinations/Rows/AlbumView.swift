@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import SFSafeSymbols
 import SwiftUI
 
 struct AlbumView: View {
@@ -32,33 +33,36 @@ struct AlbumView: View {
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
-                ArtworkView(image: artwork)
-                #if os(iOS)
-                    .frame(width: 70)
-                #elseif os(macOS)
-                    .frame(width: 60)
-                #endif
-                    .cornerRadius(5)
-                    .shadow(color: .black.opacity(0.2), radius: 6)
+                ArtworkView(image: artwork, aspectRatioMode: .fill)
+                    .frame(width: 65, height: 65)
+                    .cornerRadius(12)
+                    .animation(.easeInOut(duration: 0.15), value: artwork != nil)
+                    .overlay(
+                        Color.clear
+                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 12))
+                            .mask(
+                                RadialGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0.4),
+                                        .init(color: .black, location: 1.0),
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 50,
+                                ),
+                            ),
+                    )
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
                 #if os(macOS)
-                    if isHovering {
-                        ZStack {
-                            if isHoveringArtwork {
-                                Circle()
-                                    .fill(.accent)
-                                    .frame(width: 40, height: 40)
-                            }
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .frame(width: 40, height: 40)
-
-                            Image(systemSymbol: .playFill)
-                                .font(.title2)
-                                .foregroundColor(.white)
-                        }
-                        .transition(.opacity)
-                    }
+                    Image(systemSymbol: .playFill)
+                        .font(.title2)
+                        .foregroundStyle(.foreground)
+                        .padding(12)
+                        .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
+                        .opacity(isHovering ? 1 : 0)
+                        .animation(.interactiveSpring, value: isHovering)
+                        .animation(.interactiveSpring, value: isHoveringArtwork)
                 #endif
             }
             #if os(macOS)
@@ -102,12 +106,20 @@ struct AlbumView: View {
             .contextMenu {
                 ContextMenuView(for: album)
             }
-            .task(id: album, priority: .high) {
-                guard artwork == nil else {
+            .onChange(of: album) { previous, value in
+                guard previous != value, artwork != nil else {
                     return
                 }
 
-                artwork = try? await album.artwork()
+                artwork = nil
+            }
+            .task(id: album, priority: .high) {
+                let newArtwork = try? await album.artwork()
+                guard !Task.isCancelled, newArtwork != nil else {
+                    return
+                }
+
+                artwork = newArtwork
             }
     }
 }

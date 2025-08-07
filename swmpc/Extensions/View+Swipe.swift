@@ -20,13 +20,15 @@ extension View {
     /// - Returns: A view modified with the interactive swipe gesture.
     func swipeActions(
         onSwipeLeft: @escaping () -> Void,
-        onSwipeRight: @escaping () -> Void
+        onSwipeRight: @escaping () -> Void,
     ) -> some View {
         modifier(SwipeModifier(onSwipeLeft: onSwipeLeft,
                                onSwipeRight: onSwipeRight))
     }
 }
 
+/// View modifier implementing interactive swipe gestures with visual feedback.
+/// Provides offset, rotation, and haptic feedback when crossing thresholds.
 struct SwipeModifier: ViewModifier {
     let onSwipeLeft: () -> Void
     let onSwipeRight: () -> Void
@@ -43,13 +45,14 @@ struct SwipeModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .offset(x: dragOffset.width)
-            .rotationEffect(.degrees(dragOffset.width * rotationAngleMultiplier))
+            .rotationEffect(.degrees(dragOffset.width *
+                    rotationAngleMultiplier))
             .simultaneousGesture(dragGesture)
             .animation(
                 isDragging
                     ? .interactiveSpring(response: 0.2, dampingFraction: 0.8)
                     : .spring(response: 0.4, dampingFraction: 0.7),
-                value: dragOffset
+                value: dragOffset,
             )
             .sensoryFeedback(.success, trigger: lastTriggeredThreshold)
             .onDisappear {

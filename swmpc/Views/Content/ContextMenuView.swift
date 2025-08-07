@@ -74,7 +74,7 @@ struct ContextMenuView<Media: Mediable>: View {
         }
 
         if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
-            Menu(playlistMenuTitle) {
+            Menu(playlistMenuTitle, systemImage: "music.note.list") {
                 ForEach(playlists) { playlist in
                     let shouldSkip = if case let .playlist(currentPlaylist) = source {
                         currentPlaylist == playlist
@@ -91,7 +91,7 @@ struct ContextMenuView<Media: Mediable>: View {
 
         Divider()
 
-        Button(copyTitle) {
+        Button(copyTitle, systemSymbol: .documentOnDocument) {
             textToCopy.copyToClipboard()
         }
     }
@@ -139,6 +139,26 @@ struct SourceToggleButton<Media: Mediable>: View {
         }
     }
 
+    private var actionIcon: String {
+        switch source {
+        case .queue:
+            if let forceAction {
+                switch forceAction {
+                case .add: "plus.circle"
+                case .remove: "minus.circle"
+                }
+            } else {
+                "music.note.list"
+            }
+        case .favorites:
+            "heart"
+        case .playlist:
+            "music.note.list"
+        default:
+            "plus.circle"
+        }
+    }
+
     private var computedTitle: String {
         guard title == nil else {
             return title!
@@ -153,15 +173,14 @@ struct SourceToggleButton<Media: Mediable>: View {
     }
 
     var body: some View {
-        AsyncButton(computedTitle) {
+        AsyncButton(computedTitle, systemImage: actionIcon) {
             let songs: [Song]
 
             switch media {
             case let album as Album:
                 songs = try await album.getSongs()
             case let artist as Artist:
-                let allAlbums = try await ConnectionManager.command().getDatabase() ?? []
-                let artistAlbums = allAlbums.filter { $0.artist.name == artist.name }
+                let artistAlbums = try await artist.getAlbums()
 
                 var artistSongs: [Song] = []
                 for album in artistAlbums {

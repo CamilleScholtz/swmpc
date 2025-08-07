@@ -8,8 +8,7 @@
 import SwiftUI
 
 /// Manages the MPD queue, handling song operations.
-@Observable
-final class QueueManager {
+@Observable final class QueueManager {
     private let state: LoadingState
 
     init(state: LoadingState) {
@@ -23,10 +22,8 @@ final class QueueManager {
     ///
     /// - Parameters:
     ///   - idle: Whether to use the idle connection.
-    ///   - force: Whether to force the update.
     /// - Throws: An error if the queue could not be loaded.
-    @MainActor
-    func set(idle: Bool = false, force _: Bool = false) async throws {
+    func set(idle: Bool = false) async throws {
         defer { state.isLoading = false }
 
         songs = try await idle

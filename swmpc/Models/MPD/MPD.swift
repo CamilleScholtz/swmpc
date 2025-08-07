@@ -37,7 +37,6 @@ import SwiftUI
     /// changes.
     private var updateLoopTask: Task<Void, Never>?
 
-    @MainActor
     init() {
         database = DatabaseManager(state: state)
         queue = QueueManager(state: state)
@@ -48,8 +47,10 @@ import SwiftUI
         }
     }
 
-    deinit {
+    /// Cancels the update loop task.
+    func cancelUpdateLoop() {
         updateLoopTask?.cancel()
+        updateLoopTask = nil
     }
 
     /// Establishes a connection to the MPD server.
@@ -57,7 +58,6 @@ import SwiftUI
     /// This method attempts to connect to the MPD server repeatedly until
     /// successful or the task is cancelled. On failure, it waits 2 seconds
     /// before retrying.
-    @MainActor
     private func connect() async {
         while !Task.isCancelled {
             do {
@@ -79,7 +79,6 @@ import SwiftUI
     /// This method establishes the initial connection, loads the initial state,
     /// and then continuously listens for changes using the idle command. When
     /// changes are detected, it updates the appropriate subsystems.
-    @MainActor
     private func updateLoop() async {
         await connect()
 
@@ -118,15 +117,14 @@ import SwiftUI
     ///
     /// - Parameter change: The type of change reported by the idle command.
     /// - Throws: An error if any update operation fails.
-    @MainActor
     private func performUpdates(for event: IdleEvent) async throws {
         switch event {
         case .playlists:
             try await playlists.set()
         case .database:
-            try await database.set(force: true)
+            try await database.set()
         case .queue:
-            try await queue.set(force: true)
+            try await queue.set()
             try await status.set()
         case .player:
             try await status.set()

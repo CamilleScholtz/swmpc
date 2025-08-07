@@ -12,11 +12,10 @@ struct PreviousSongIntent: AppIntent {
     static let title: LocalizedStringResource = "Previous Song"
     static let description = IntentDescription("Go back to the previous song")
 
-    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         try await ConnectionManager.command().previous()
 
-        guard let song = mpd.status.song else {
+        guard let song = await mpd.status.song else {
             return .result(dialog: IntentDialog("Playing previous song"))
         }
 

@@ -89,7 +89,7 @@ struct IntelligenceView: View {
                     .padding(.vertical, 5)
                     .font(.subheadline)
                     .onReceive(
-                        Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+                        Timer.publish(every: 1, on: .main, in: .common).autoconnect(),
                     ) { _ in
                         loadingSentence = loadingSentences.randomElement()!
                     }
@@ -113,8 +113,7 @@ struct IntelligenceView: View {
                     .disableAutocorrection(true)
                     .focused($isFocused)
                     .offset(y: -15)
-                    .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-                    ) { _ in
+                    .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
                         guard !isFocused else {
                             return
                         }
@@ -185,13 +184,13 @@ struct IntelligenceSparklesView: View {
                 LinearGradient(
                     colors: colors,
                     startPoint: UnitPoint(x: offset, y: 0),
-                    endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0)
+                    endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0),
                 )
                 .onAppear {
                     withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
                         offset = -CGFloat(colors.count - 1)
                     }
-                }
+                },
             )
             .mask(Image(systemSymbol: .sparkles))
     }
@@ -224,14 +223,14 @@ struct IntelligenceButtonView: View {
                 .padding(.horizontal, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(.thinMaterial)
+                        .fill(.thinMaterial),
                 )
                 #elseif os(macOS)
                 .padding(8)
                 .padding(.horizontal, 2)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(.thinMaterial)
+                        .fill(.thinMaterial),
                 )
                 #endif
                 .opacity(isIntelligenceEnabled ? 1 : 0.7)

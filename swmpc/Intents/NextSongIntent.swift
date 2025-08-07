@@ -12,11 +12,10 @@ struct NextSongIntent: AppIntent {
     static let title: LocalizedStringResource = "Next Song"
     static let description = IntentDescription("Skip to the next song in the queue")
 
-    @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         try await ConnectionManager.command().next()
 
-        guard let song = mpd.status.song else {
+        guard let song = await mpd.status.song else {
             return .result(dialog: IntentDialog("Playing next song"))
         }
 

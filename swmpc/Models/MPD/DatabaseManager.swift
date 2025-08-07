@@ -8,67 +8,146 @@
 import SwiftUI
 
 /// Manages the MPD database, handling artists, albums, and song queries.
-@Observable
-final class DatabaseManager {
+@Observable final class DatabaseManager {
+    /// The loading state manager, used to indicate when data is being fetched.
     private let state: LoadingState
 
+    /// Creates a new database manager.
+    ///
+    /// - Parameter state: An instance of `LoadingState` to report back loading
+    ///                    activity for UI updates.
     init(state: LoadingState) {
         self.state = state
     }
 
-    private(set) var type: MediaType = .album
-
-    /// The media in the database.
+    /// The collection of currently loaded media items (e.g., albums, artists,
+    /// or songs) based on the active `type`.
     private(set) var media: [any Mediable]?
 
-    /// Sets the media type and loads the appropriate data.
+    /// The current type of media being displayed or managed (e.g., albums,
+    /// artists).
+    private(set) var type: MediaType = .album
+
+    /// The current sort option being used.
+    private(set) var sort: SortDescriptor = .init(option: .artist)
+
+    /// Sets the media type and/or sort descriptor and fetches corresponding
+    /// media from MPD.
+    ///
+    /// This method only fetches new data if the type or sort has changed. It
+    /// uses either the idle connection (more efficient for background updates)
+    /// or creates a new command connection based on the `idle` parameter.
     ///
     /// - Parameters:
-    ///   - type: The type of media to load.
-    ///   - idle: Whether to use the idle connection.
-    ///   - force: Whether to force the update even if the type is unchanged.
-    /// - Throws: An error if the media could not be set.
-    @MainActor
-    func set(type: MediaType? = nil, idle: Bool = true, force: Bool = false) async throws {
+    ///   - idle: Whether to use the long-lived idle connection (default: true).
+    ///           Set to false for immediate user-initiated fetches.
+    ///   - type: The media type to fetch (album, artist, song, or playlist).
+    ///           If `nil`, retains the current type.
+    ///   - sort: The sort descriptor for ordering results.
+    ///           If `nil`, retains the current sort.
+    /// - Throws: An error if the MPD connection fails or the fetch is
+    ///           cancelled.
+    func set(idle: Bool = true, type: MediaType? = nil, sort: SortDescriptor?
+        = nil)
+        async throws
+    {
         defer { state.isLoading = false }
 
-        guard type != self.type || force else {
+        guard type != self.type || sort != self.sort else {
             return
         }
+
+        let newMedia: [any Mediable]? = switch type ?? self.type {
+        case .album:
+            try await idle
+                ? ConnectionManager.idle.getAlbums(sort: sort ?? self.sort)
+                : ConnectionManager.command().getAlbums(sort: sort ?? self.sort)
+        case .artist:
+            try await idle
+                ? ConnectionManager.idle.getArtists(sort: sort ?? self.sort)
+                : ConnectionManager.command().getArtists(sort: sort ?? self.sort)
+        case .song:
+            try await idle
+                ? ConnectionManager.idle.getSongs(from: Source.database,
+                                                  sort: sort ?? self.sort)
+                : ConnectionManager.command().getSongs(from: Source.database,
+                                                       sort: sort ?? self.sort)
+        case .playlist:
+            nil
+        }
+
+        try Task.checkCancellation()
 
         if let type {
             self.type = type
         }
-
-        media = nil
-
-        switch self.type {
-        case .album:
-            media = try await idle
-                ? ConnectionManager.idle.getDatabase()
-                : ConnectionManager.command().getDatabase()
-        case .artist:
-            let fetchedAlbums = try await idle
-                ? ConnectionManager.idle.getDatabase()
-                : ConnectionManager.command().getDatabase()
-
-            if let fetchedAlbums {
-                let artistDict = Dictionary(grouping: fetchedAlbums.compactMap(\.artist), by: {
-                    $0.name
-                })
-                let artists = artistDict.values.compactMap(\.first).sorted {
-                    $0.name < $1.name
-                }
-                media = artists
-            } else {
-                media = nil
-            }
-        case .song:
-            media = try await idle
-                ? ConnectionManager.idle.getSongs(from: Source.database)
-                : ConnectionManager.command().getSongs(from: Source.database)
-        case .playlist:
-            break
+        if let sort {
+            self.sort = sort
         }
+
+        media = newMedia
+    }
+
+    /// Searches through the locally cached media library.
+    ///
+    /// This function performs a localized case-insensitive search through the
+    /// cached media, matching the query against fields determined by the search
+    /// fields.
+    ///
+    /// - Parameters:
+    ///   - query: The search query string to match against the selected fields.
+    ///   - fields: The search fields that determine which fields to search.
+    /// - Returns: An array of media items matching the search criteria.
+    func search(query: String, fields: SearchFields) -> [any Mediable] {
+        guard !query.isEmpty, !fields.isEmpty, let media else {
+            return []
+        }
+
+        let searchFields = fields.fields
+        return media.filter { item in
+            matches(item: item, query: query, fields: searchFields)
+        }
+    }
+
+    /// Checks if a media item matches the search query against specified fields.
+    ///
+    /// Performs case-insensitive matching based on the media item type and fields.
+    ///
+    /// - Parameters:
+    ///   - item: The media item to check (Song, Album, or Artist).
+    ///   - query: The search query string.
+    ///   - fields: Set of field names to search ("title", "artist", "album").
+    /// - Returns: `true` if the item matches the query in any of the specified
+    ///            fields.
+    private func matches(item: any Mediable, query: String, fields: Set<String>)
+        -> Bool
+    {
+        switch item {
+        case let song as Song:
+            (fields.contains("title") && contains(song.title, query)) ||
+                (fields.contains("artist") && contains(song.artist, query)) ||
+                (fields.contains("album") && contains(song.album.title, query)) ||
+                (fields.contains("genre") && song.genre != nil && contains(song.genre!, query))
+        case let album as Album:
+            (fields.contains("title") && contains(album.title, query)) ||
+                (fields.contains("artist") && contains(album.artist.name,
+                                                       query)) ||
+                (fields.contains("genre") && album.genre != nil && contains(album.genre!, query))
+        case let artist as Artist:
+            fields.contains("artist") && contains(artist.name, query)
+        default:
+            false
+        }
+    }
+
+    /// Performs a localized case-insensitive comparison to check if text
+    /// contains query.
+    ///
+    /// - Parameters:
+    ///   - text: The text to search within.
+    ///   - query: The query string to search for.
+    /// - Returns: `true` if the text contains the query (case-insensitive).
+    private func contains(_ text: String, _ query: String) -> Bool {
+        text.localizedCaseInsensitiveContains(query)
     }
 }

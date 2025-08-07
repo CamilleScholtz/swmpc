@@ -9,17 +9,18 @@ import ButtonKit
 import Noise
 import SFSafeSymbols
 import SwiftUI
-#if os(iOS)
-    import LNPopupUI
-#endif
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+
     #if os(iOS)
         @Binding var isPopupOpen: Bool
+    #elseif os(macOS)
+        @Binding var showQueuePanel: Bool
     #endif
 
     #if os(macOS)
@@ -45,16 +46,17 @@ struct DetailView: View {
         ZStack {
             ZStack {
                 ZStack {
-                    ArtworkView(image: artwork, animationDuration: 0.6)
+                    ArtworkView(image: artwork)
                         .scaledToFit()
+                        .animation(.easeInOut(duration: 0.6), value: artwork)
                     #if os(iOS)
                         .mask(
                             RadialGradient(
                                 gradient: Gradient(colors: [.white, .clear]),
                                 center: .center,
                                 startRadius: -15,
-                                endRadius: 275
-                            )
+                                endRadius: 275,
+                            ),
                         )
                     #elseif os(macOS)
                         .mask(
@@ -62,8 +64,8 @@ struct DetailView: View {
                                 gradient: Gradient(colors: [.white, .clear]),
                                 center: .center,
                                 startRadius: -15,
-                                endRadius: 225
-                            )
+                                endRadius: 225,
+                            ),
                         )
                     #endif
                         .offset(y: 20)
@@ -72,7 +74,8 @@ struct DetailView: View {
                         .drawingGroup()
 
                     ZStack {
-                        ArtworkView(image: artwork, animationDuration: 0.6)
+                        ArtworkView(image: artwork)
+                            .animation(.easeInOut(duration: 0.6), value: artwork)
 
                         Rectangle()
                             .opacity(0)
@@ -86,8 +89,8 @@ struct DetailView: View {
                                 gradient: Gradient(colors: [.white, .clear]),
                                 center: .center,
                                 startRadius: -25,
-                                endRadius: 200
-                            )
+                                endRadius: 200,
+                            ),
                         )
                         .scaleEffect(1.3)
                     #elseif os(macOS)
@@ -96,8 +99,8 @@ struct DetailView: View {
                                 gradient: Gradient(colors: [.white, .clear]),
                                 center: .center,
                                 startRadius: -25,
-                                endRadius: 225
-                            )
+                                endRadius: 225,
+                            ),
                         )
                     #endif
                         .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
@@ -115,39 +118,29 @@ struct DetailView: View {
                     .monochrome()
                     // TODO: Doesn't really work on dark mode.
                     .blendMode(colorScheme == .dark ? .darken : .softLight)
-                    .opacity(0.3)
+                    .opacity(colorScheme == .dark ? 0.1 : 0.3)
 
                 ArtworkView(image: artwork)
+                    .animation(.easeInOut(duration: 0.2), value: artwork)
                     .overlay(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(colorScheme == .dark ? 0.4 : 0.6), .clear],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 0.5
-                                )
-                                .blendMode(.screen)
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(.clear)
+                            .glassEffect(.clear, in: .rect(cornerRadius: 30))
+                            .mask(
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 30)
 
-                            RoundedRectangle(cornerRadius: 20)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [Color.clear, Color.black.opacity(colorScheme == .dark ? 0.6 : 0.4)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 0.5
-                                )
-                                .blendMode(.multiply)
-                        }
+                                    RoundedRectangle(cornerRadius: 30)
+                                        .scale(0.8)
+                                        .blur(radius: 8)
+                                        .blendMode(.destinationOut)
+                                },
+                            ),
                     )
-                    .cornerRadius(20)
+                    .cornerRadius(30)
                     .shadow(color: .black.opacity(0.2), radius: 16)
                 #if os(iOS)
                     .frame(width: 300)
-                    .popupTransitionTarget()
                 #elseif os(macOS)
                     .frame(width: 250)
                     .scaleEffect(isHovering ? 1.02 : 1)
@@ -174,7 +167,7 @@ struct DetailView: View {
                             Task(priority: .userInitiated) {
                                 try? await ConnectionManager.command().previous()
                             }
-                        }
+                        },
                     )
                     .onTapGesture {
                         Task(priority: .userInitiated) {
@@ -208,49 +201,53 @@ struct DetailView: View {
                 #endif
             }
         }
-        #if os(macOS)
-        .ignoresSafeArea()
-        #elseif os(iOS)
-        .popupImage(artwork != nil ? Image(uiImage: artwork!) : Image(systemSymbol: .musicNote))
-        .popupTitle(mpd.status.song?.title ?? "No song playing", subtitle: mpd.status.song?.artist ?? "")
-        // swiftformat:disable:next trailingClosures
-        .popupBarItems({
-            ToolbarItemGroup(placement: .popupBar) {
-                AsyncButton {
-                    try await ConnectionManager.command().pause(mpd.status.isPlaying)
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(.thinMaterial)
-                            .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+        .toolbar {
+            #if os(macOS)
+                ToolbarSpacer(.flexible)
 
-                        ZStack {
-                            Image(systemSymbol: .pauseFill)
-                                .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
-                                .opacity(mpd.status.isPlaying ? 1 : 0.1)
-                                .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
+                ToolbarItem {
+                    Text("Queue")
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
+                        .offset(x: -140)
+                }
+                .sharedBackgroundVisibility(.hidden)
+                .hidden(!showQueuePanel)
 
-                            Image(systemSymbol: .playFill)
-                                .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
-                                .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                                .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
+                ToolbarItem {
+                    Button(action: {
+                        NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
+                    }) {
+                        Image(systemSymbol: .trash)
+                    }
+                    .keyboardShortcut(.delete, modifiers: [.shift, .command])
+                }
+                .hidden(!showQueuePanel || mpd.queue.songs.isEmpty)
+
+                ToolbarItem {
+                    Button(action: {
+                        NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                    }) {
+                        Image(systemSymbol: .sparkles)
+                    }
+                    .disabled(!isIntelligenceEnabled)
+                }
+                .hidden(!showQueuePanel || !mpd.queue.songs.isEmpty)
+
+                ToolbarSpacer(.fixed)
+                    .hidden(!showQueuePanel)
+
+                ToolbarItem {
+                    Button(action: {
+                        withAnimation(.spring) {
+                            showQueuePanel.toggle()
                         }
+                    }) {
+                        Image(systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList)
                     }
                 }
-                .asyncButtonStyle(.pulse)
-                .styledButton(hoverScale: 1.13)
-
-                AsyncButton {
-                    try await ConnectionManager.command().next()
-                } label: {
-                    Image(systemSymbol: .forwardFill)
-                        .foregroundColor(.primary)
-                }
-                .asyncButtonStyle(.pulse)
-            }
-        })
-        .popupProgress(progress)
-        #endif
+            #endif
+        }
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
                 artwork = nil

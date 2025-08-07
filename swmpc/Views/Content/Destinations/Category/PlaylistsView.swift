@@ -72,14 +72,14 @@ struct PlaylistsView: View {
                         .buttonStyle(.plain)
                         .contextMenu {
                             if playlist.name != "Favorites" {
-                                Button("Rename Playlist") {
+                                Button("Rename Playlist", systemSymbol: .pencil) {
                                     isRenamingPlaylist = true
                                     playlistName = playlist.name
                                     playlistToRename = playlist
                                     isFocused = true
                                 }
 
-                                Button("Delete Playlist") {
+                                Button("Delete Playlist", systemSymbol: .trash) {
                                     playlistToDelete = playlist
                                     showDeleteAlert = true
                                 }
@@ -91,7 +91,7 @@ struct PlaylistsView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.clear)
-                                .contentShape(Rectangle())
+                                .contentShape(Rectangle()),
                         )
                     }
                 }
@@ -135,7 +135,7 @@ struct PlaylistsView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color(.secondarySystemBackground))
-                                .opacity(0.5)
+                                .opacity(0.5),
                         )
                 }
                 .buttonStyle(.plain)

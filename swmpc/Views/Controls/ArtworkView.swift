@@ -9,12 +9,10 @@ import SwiftUI
 
 struct ArtworkView: View {
     let image: PlatformImage?
-
-    var animationDuration: Double = 0.2
     var aspectRatioMode: ContentMode = .fit
 
     var body: some View {
-        Group {
+        ZStack {
             if let image {
                 #if os(iOS)
                     Image(uiImage: image)
@@ -27,10 +25,9 @@ struct ArtworkView: View {
                 #endif
             } else {
                 Rectangle()
-                    .fill(Color(.secondarySystemFill).opacity(0.3))
+                    .fill(Color(.secondarySystemFill).opacity(0.4))
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
             }
         }
-        .animation(.easeInOut(duration: animationDuration), value: image)
     }
 }

@@ -132,6 +132,7 @@ struct SidebarView: View {
                 .keyboardShortcut("n", modifiers: [.command])
             }
         }
+        .listStyle(.sidebar)
         .toolbar(removing: .sidebarToggle)
         .alert("Delete Playlist", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {

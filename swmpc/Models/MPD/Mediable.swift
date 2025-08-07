@@ -7,9 +7,17 @@
 
 import SwiftUI
 
-protocol Mediable: Identifiable, Equatable, Hashable {
+/// A protocol that defines the base requirements for all media items in the MPD system.
+///
+/// Types conforming to `Mediable` represent various media entities (artists,
+/// albums, songs) that can be stored, compared, and transmitted safely across
+/// actor boundaries.
+protocol Mediable: Identifiable, Equatable, Codable, Hashable, Sendable {
     /// Returns a unique identifier for the media item.
-    var id: String { get }
+    nonisolated var id: String { get }
+
+    /// The URL path of the media item in the MPD database.
+    var url: URL { get }
 }
 
 extension Mediable {
@@ -19,119 +27,161 @@ extension Mediable {
     ///   - lhs: The first media item.
     ///   - rhs: The second media item.
     /// - Returns: `true` if the identifiers match, `false` otherwise.
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
 
     /// Generates a hash value for the media item based on its identifier.
     ///
     /// - Parameter hasher: The hasher to use for generating the hash value.
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
+/// A protocol for media items that can have associated artwork.
+///
+/// Types conforming to `Artworkable` can fetch and optionally cache artwork
+/// images from the MPD server.
 protocol Artworkable {
-    @MainActor
+    /// Determines if the fetched artwork should be cached.
+    ///
+    /// Albums and artists typically return `true` to cache artwork for
+    /// performance, while songs return `false` to save memory.
+    var shouldCacheArtwork: Bool { get }
+
+    /// Fetches the artwork image for this media item.
+    ///
+    /// - Returns: A platform-specific image if artwork is available, or `nil`
+    ///            if no artwork is found.
+    /// - Throws: An error if the artwork retrieval fails.
     func artwork() async throws -> PlatformImage?
 }
 
 extension Artworkable where Self: Mediable {
-    /// Fetches the artwork for this media item from the MPD server.
+    /// Default implementation that fetches artwork from the MPD server using
+    /// the media item's URL.
     ///
-    /// - Note: Songs are not cached to save memory, while albums and artists
-    /// are cached.
+    /// This implementation uses the `ArtworkManager` to retrieve artwork and
+    /// respects the `shouldCacheArtwork` property to determine caching
+    /// behavior.
     ///
     /// - Returns: A platform-specific image if artwork is available, or `nil`
-    ///           if no artwork is found.
+    ///            if no artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
-    @MainActor
     func artwork() async throws -> PlatformImage? {
-        let url: URL?
-        let shouldCache: Bool
-
-        switch self {
-        case let song as Song:
-            url = song.url
-            shouldCache = false
-        case let album as Album:
-            url = try await album.getURL()
-            shouldCache = true
-        default:
-            return nil
-        }
-
-        guard let url else {
-            throw ViewError.missingData
-        }
-
-        let data = try await ArtworkManager.shared.get(for: url, shouldCache: shouldCache)
+        let data = try await ArtworkManager.shared.get(
+            for: url,
+            shouldCache: shouldCacheArtwork,
+        )
 
         return PlatformImage(data: data)
     }
 }
 
 /// Represents an artist in the MPD database.
-struct Artist: Mediable {
-    var id: String { name }
+///
+/// Artists are identified by their name and can have multiple associated
+/// albums.
+nonisolated struct Artist: Mediable {
+    /// The unique identifier for the artist, which is the artist's name.
+    nonisolated var id: String { name }
 
+    /// The URL path of the artist in the MPD database.
+    let url: URL
+
+    /// The name of the artist.
     let name: String
 
+    /// Fetches all albums by this artist from the MPD database.
+    ///
+    /// - Returns: An array of `Album` objects associated with this artist.
+    /// - Throws: An error if the database query fails.
     func getAlbums() async throws -> [Album] {
-        try await ConnectionManager.command().getAlbums(by: self, from: .database)
+        try await ConnectionManager.command().getAlbums(by: self, from:
+            .database)
     }
 }
 
 /// Represents an album in the MPD database.
-struct Album: Mediable, Artworkable {
-    var id: String { description }
+///
+/// Albums are identified by their artist-title combination and can contain
+/// multiple songs.
+nonisolated struct Album: Mediable, Artworkable {
+    /// The unique identifier for the album, which is the artist-title
+    /// description.
+    nonisolated var id: String { description }
 
+    /// The URL path of the album in the MPD database.
+    let url: URL
+
+    /// The title of the album.
     let title: String
 
+    /// The genre of the album.
+    let genre: String?
+
+    /// The artist who created this album.
     let artist: Artist
 
-    var description: String {
+    /// A human-readable description combining artist name and album title.
+    nonisolated var description: String {
         "\(artist.name) - \(title)"
     }
 
-    /// Fetches all songs in this album.
+    /// Fetches all songs in this album from the MPD database.
     ///
-    /// - Returns: An array of Song objects belonging to this album.
-    /// - Throws: An error if the command execution fails.
+    /// - Returns: An array of `Song` objects belonging to this album.
+    /// - Throws: An error if the database query fails.
     func getSongs() async throws -> [Song] {
-        try await ConnectionManager.command().getSongs(in: self, from: .database)
+        try await ConnectionManager.command().getSongs(in: self, from:
+            .database)
     }
 
-    /// Fetches the URL of the first song in this album.
-    ///
-    /// - Returns: The URL of the first song in this album.
-    /// - Throws: An error if the command execution fails or no songs are found.
-    func getURL() async throws -> URL {
-        try await ConnectionManager.command().getURL(of: self)
-    }
+    /// Albums cache their artwork for performance optimization.
+    var shouldCacheArtwork: Bool { true }
 }
 
 /// Represents a song in the MPD database.
 ///
 /// Songs contain detailed metadata including title, artist, album, duration,
-/// and more.
-struct Song: Mediable, Artworkable {
-    var id: String { url.absoluteString }
+/// disc and track numbers.
+nonisolated struct Song: Mediable, Artworkable {
+    /// The unique identifier for the song, which is its URL as a string.
+    nonisolated var id: String { url.absoluteString }
 
-    let identifier: UInt32?
-    let position: UInt32?
+    /// The URL path of the song file in the MPD database.
     let url: URL
 
+    /// The MPD queue identifier for this song, if it's in the queue.
+    let identifier: UInt32?
+
+    /// The position of this song in the MPD queue, if applicable.
+    let position: UInt32?
+
+    /// The name of the artist performing this song.
     let artist: String
+
+    /// The title of the song.
     let title: String
+
+    /// The duration of the song in seconds.
     let duration: Double
 
+    /// The disc number for multi-disc albums.
     let disc: Int
+
+    /// The track number within the disc.
     let track: Int
 
+    /// The genre of the song.
+    let genre: String?
+
+    /// The album this song belongs to.
     let album: Album
 
-    var description: String {
+    /// A human-readable description combining artist name and song title.
+    nonisolated var description: String {
         "\(artist) - \(title)"
     }
 
@@ -150,13 +200,73 @@ struct Song: Mediable, Artworkable {
     func isBy(_ artist: Artist) -> Bool {
         album.artist == artist
     }
+
+    /// Songs don't cache their artwork as the chance we play or view the same
+    /// song again is low.
+    var shouldCacheArtwork: Bool { false }
 }
 
 /// Represents a playlist in the MPD database.
 ///
-/// Playlists are named collections of songs that can be saved and loaded.
-struct Playlist: Identifiable, Equatable, Hashable, Codable, Sendable {
-    var id: String { name }
+/// Playlists are named collections of songs that can be saved, loaded, and
+/// managed through the MPD server. They are identified by their unique name.
+nonisolated struct Playlist: Identifiable, Equatable, Hashable, Codable,
+    Sendable
+{
+    /// The unique identifier for the playlist, which is its name.
+    nonisolated var id: String { name }
 
+    /// The name of the playlist.
     let name: String
+}
+
+/// Represents a complete sort descriptor combining a sort option with a
+/// direction.
+///
+/// Used to specify how collections of media items should be sorted. The
+/// descriptor can be serialized to and from a string representation for
+/// persistence.
+nonisolated struct SortDescriptor: RawRepresentable, Equatable, Hashable {
+    /// The field or property to sort by.
+    let option: SortOption
+
+    /// The direction of the sort (ascending or descending).
+    let direction: SortDirection
+
+    /// Creates a sort descriptor with the specified option and direction.
+    ///
+    /// - Parameters:
+    ///   - option: The field to sort by.
+    ///   - direction: The sort direction. Defaults to `.ascending`.
+    init(option: SortOption, direction: SortDirection = .ascending) {
+        self.option = option
+        self.direction = direction
+    }
+
+    /// Creates a sort descriptor from its string representation.
+    ///
+    /// The expected format is "option_direction" where direction is either
+    /// "ascending" or "descending". If direction is omitted, defaults to
+    /// ascending.
+    ///
+    /// - Parameter rawValue: The string representation of the sort descriptor.
+    init?(rawValue: String) {
+        let components = rawValue.split(separator: "_")
+        guard let first = components.first,
+              let option = SortOption(rawValue: String(first))
+        else {
+            return nil
+        }
+
+        self.option = option
+        direction = components.count == 2 && components[1] == "descending" ?
+            .descending : .ascending
+    }
+
+    /// The string representation of this sort descriptor.
+    ///
+    /// Returns a string in the format "option_direction" for serialization.
+    var rawValue: String {
+        "\(option.rawValue)_\(direction == .ascending ? "ascending" : "descending")"
+    }
 }

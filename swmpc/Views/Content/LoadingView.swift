@@ -34,7 +34,7 @@ struct LoadingView: View {
             }
             .transition(.asymmetric(
                 insertion: .opacity,
-                removal: .opacity.animation(.easeOut(duration: 0.2).delay(0.2))
+                removal: .opacity.animation(.easeOut(duration: 0.2).delay(0.2)),
             ))
         }
     }

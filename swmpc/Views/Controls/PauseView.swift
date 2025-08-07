@@ -20,23 +20,20 @@ struct PauseView: View {
             try await ConnectionManager.command().pause(mpd.status.isPlaying)
         } label: {
             ZStack {
-                Circle()
-                    .fill(material)
-                    .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+                Image(systemSymbol: .pauseFill)
+                    .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
+                    .opacity(mpd.status.isPlaying ? 1 : 0.1)
 
-                ZStack {
-                    Image(systemSymbol: .pauseFill)
-                        .font(.system(size: size))
-                        .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
-                        .opacity(mpd.status.isPlaying ? 1 : 0.1)
-
-                    Image(systemSymbol: .playFill)
-                        .font(.system(size: size))
-                        .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
-                        .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                }
-                .animation(.interactiveSpring(duration: animationDuration, extraBounce: 0.3), value: mpd.status.isPlaying)
+                Image(systemSymbol: .playFill)
+                    .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
+                    .opacity(mpd.status.isPlaying ? 0.1 : 1)
             }
+            .font(.system(size: size))
+            .foregroundStyle(.foreground)
+            .animation(.interactiveSpring(duration: animationDuration, extraBounce: 0.3), value: mpd.status.isPlaying)
+            .frame(width: size * 2.5, height: size * 2.5)
+            .glassEffect(.regular)
+            .contentShape(Circle())
         }
         .styledButton(hoverScale: 1.13)
     }

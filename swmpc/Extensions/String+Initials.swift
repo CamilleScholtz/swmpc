@@ -6,6 +6,13 @@
 //
 
 extension String {
+    /// Generates initials from the string.
+    ///
+    /// For single words, uses the first and last characters. For multiple
+    /// words, uses the first character of the first and last words. Returns "?"
+    /// for empty strings or strings with no valid characters.
+    ///
+    /// - Returns: A 2-character uppercase string representing the initials.
     var initials: String {
         let words = components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }

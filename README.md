@@ -42,6 +42,6 @@ The latest version of `swmpc` is available on the [App Store](https://apps.apple
 
 ## Requirements
 
-- macOS 15.0 or later
-- iOS 18.0 or later
+- macOS 26.0 or later
+- iOS 26.0 or later
 - MPD 0.24 or later

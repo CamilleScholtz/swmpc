@@ -8,10 +8,6 @@
 import ButtonKit
 import SwiftUI
 
-#if os(iOS)
-    import LNPopupUI
-#endif
-
 enum ViewError: Error {
     case missingData
 }
@@ -20,6 +16,10 @@ struct AppView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
+
+    #if os(iOS)
+        @Environment(\.tabViewBottomAccessoryPlacement) var placement
+    #endif
 
     #if os(iOS)
         @State private var isPopupBarPresented = true
@@ -44,7 +44,7 @@ struct AppView: View {
                                 Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
                                     ZStack {
                                         NavigationStack(path: $boundNavigator.path) {
-                                            CategoryDestinationView(destination: category)
+                                            CategoryDestinationView()
                                                 .navigationDestination(for: ContentDestination.self) { destination in
                                                     ContentDestinationView(destination: destination)
                                                 }
@@ -52,46 +52,45 @@ struct AppView: View {
                                     }
                                 }
                             }
+
+//                            Tab(value: .search, role: .search) {
+//                                HStack {
+//
+//                                }
+//                            }
                         }
-                        .popup(isBarPresented: $isPopupBarPresented, isPopupOpen: $isPopupOpen) {
-                            DetailView(isPopupOpen: $isPopupOpen)
+                        .tabBarMinimizeBehavior(.onScrollDown)
+                        .tabViewBottomAccessory {
+                            DetailMiniView()
                         }
-                        .popupBarProgressViewStyle(.top)
                     #elseif os(macOS)
                         NavigationSplitView {
                             SidebarView()
-                                .navigationSplitViewColumnWidth(min: 180, ideal: 180, max: .infinity)
+                                .navigationSplitViewColumnWidth(180)
                         } content: {
                             NavigationStack(path: $boundNavigator.path) {
-                                CategoryDestinationView(destination: navigator.category)
+                                CategoryDestinationView()
                                     .navigationDestination(for: ContentDestination.self) { destination in
                                         ContentDestinationView(destination: destination)
+                                            .navigationTitle(navigator.category.label)
                                     }
                             }
                             .navigationSplitViewColumnWidth(310)
-                            .navigationBarBackButtonHidden(true)
-                            .ignoresSafeArea()
                             .overlay(
-                                LoadingView()
+                                LoadingView(),
                             )
+                            .scrollEdgeEffectStyle(.soft, for: .top)
                         } detail: {
-                            DetailView()
-                                .padding(60)
-                                .overlay(alignment: .topTrailing) {
-                                    Button {
-                                        withAnimation(.spring) {
-                                            showQueuePanel.toggle()
-                                        }
-                                    } label: {
-                                        Image(systemSymbol: .musicNoteList)
-                                    }
-                                    .styledButton()
-                                    .offset(x: -15, y: 20)
-                                    .ignoresSafeArea()
-                                    .keyboardShortcut("`", modifiers: [.command])
-                                }
+                            // XXX: The scrollview is a hack to hide the toolbar.
+                            ZStack {
+                                ScrollView {}
+                                    .scrollDisabled(true)
+
+                                DetailView(showQueuePanel: $showQueuePanel)
+                                    .padding(60)
+                            }
+                            .scrollEdgeEffectStyle(.soft, for: .top)
                         }
-                        .background(.background)
                         .simultaneousGesture(
                             TapGesture()
                                 .onEnded {
@@ -102,26 +101,20 @@ struct AppView: View {
                                     withAnimation(.spring) {
                                         showQueuePanel = false
                                     }
-                                }
+                                },
                         )
                         .overlay(alignment: .trailing) {
                             if showQueuePanel {
                                 QueuePanelView(showQueuePanel: $showQueuePanel)
                                     .frame(width: 310)
-                                    .background(.background)
                                     .overlay(
                                         Rectangle()
+                                            .ignoresSafeArea(.container, edges: .top)
                                             .frame(width: 1)
                                             .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-                                        alignment: .leading
+                                        alignment: .leading,
                                     )
-                                    .ignoresSafeArea(.container, edges: .top)
                                     .transition(.move(edge: .trailing))
-                            }
-                        }
-                        .toolbar {
-                            ToolbarItem {
-                                Spacer()
                             }
                         }
                     #endif

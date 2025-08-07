@@ -48,7 +48,7 @@ struct SongView: View {
                             .background(
                                 Rectangle()
                                     .fill(.background)
-                                    .frame(width: trackSize, height: trackSize)
+                                    .frame(width: trackSize, height: trackSize),
                             )
                             .opacity(isHovering ? 1 : 0)
                     #endif
@@ -57,7 +57,7 @@ struct SongView: View {
                         .background(
                             Rectangle()
                                 .fill(.background)
-                                .frame(width: trackSize, height: trackSize)
+                                .frame(width: trackSize, height: trackSize),
                         )
                         .opacity(mpd.status.song == song ? 1 : 0)
                 }
@@ -95,30 +95,39 @@ struct SongView: View {
                 .contextMenu {
                     ContextMenuView(for: song, source: source)
                 }
+                .onChange(of: song) { _, _ in
+                    // Reset state when song changes (row is recycled)
+                    #if os(macOS)
+                        isHovering = false
+                        isHoveringHandle = false
+                    #endif
+                }
 
-            if source?.isMovable ?? false {
-                Image(systemSymbol: .line3HorizontalCircle)
-                    .font(.title3)
-                    .foregroundColor(.secondary)
-                    .frame(maxHeight: .infinity)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(stops: [
-                                .init(color: .clear, location: 0.0),
-                                .init(color: Color(.textBackgroundColor), location: 0.3),
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
+            #if os(macOS)
+                if source?.isMovable ?? false {
+                    Image(systemSymbol: .line3HorizontalCircle)
+                        .font(.title3)
+                        .foregroundColor(.secondary)
+                        .frame(maxHeight: .infinity)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: .clear, location: 0.0),
+                                    .init(color: Color(.textBackgroundColor), location: 0.3),
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing,
+                            )
+                            .frame(width: trackSize * 4),
                         )
-                        .frame(width: trackSize * 4)
-                    )
-                    .opacity(isHoveringHandle ? 1 : 0)
-                    .onHover { value in
-                        withAnimation(.interactiveSpring) {
-                            isHoveringHandle = value
+                        .opacity(isHoveringHandle ? 1 : 0)
+                        .onHover { value in
+                            withAnimation(.interactiveSpring) {
+                                isHoveringHandle = value
+                            }
                         }
-                    }
-            }
+                }
+            #endif
         }
     }
 }

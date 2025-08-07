@@ -10,10 +10,9 @@ import SwiftUI
 
 /// Manages artwork fetching and caching for media items.
 ///
-/// Features:
-/// - In-memory caching using NSCache with automatic memory management
-/// - Deduplication of concurrent requests for the same artwork
-/// - Connection pooling for efficient network utilization
+/// `ArtworkManager` is a singleton actor that provides efficient artwork data
+/// retrieval with intelligent caching and request deduplication. It integrates
+/// with `ArtworkConnectionPool` to manage network connections efficiently.
 actor ArtworkManager {
     static let shared = ArtworkManager()
 
@@ -26,16 +25,25 @@ actor ArtworkManager {
         cache.totalCostLimit = 64 * 1024 * 1024
     }
 
-    /// Fetches the artwork data for a given media.
+    /// Fetches artwork data for a given URL, handling caching and request
+    /// deduplication.
+    ///
+    /// This function first checks the in-memory cache for the artwork. If not
+    /// found, it checks if a fetch task for the same URL is already in
+    /// progress. If so, it awaits the result of that task. Otherwise, it
+    /// creates a new task to fetch the data from the network.
     ///
     /// - Parameters:
-    ///     - media: The media for which to fetch the artwork.
-    ///     - shouldCache: Whether or not to cache the fetched data.
+    ///   - url: The URL of the artwork to fetch.
+    ///   - shouldCache: A Boolean indicating whether to store the fetched data
+    ///                  in the in-memory cache. Defaults to `true`.
     /// - Returns: The artwork data.
-    /// - Throws: An error if the artwork data could not be fetched.
+    /// - Throws: An error if the artwork data cannot be fetched.
     func get(for url: URL, shouldCache: Bool = true) async throws ->
         Data
     {
+        try Task.checkCancellation()
+
         if shouldCache, let data = cache.object(forKey: url as NSURL) {
             return data as Data
         }
@@ -48,22 +56,31 @@ actor ArtworkManager {
                                    shouldCache: shouldCache)
         tasks[url] = task
 
+        defer { tasks.removeValue(forKey: url) }
+
         return try await task.value
     }
 
-    /// Creates a new Task responsible for fetching artwork data.
-    /// Handles connection pooling, data fetching, caching, and task removal.
+    /// Creates and returns a new `Task` to fetch artwork data for a specific
+    /// URL.
+    ///
+    /// The created task encapsulates the entire network operation, including:
+    /// 1. Acquiring a connection from the `ArtworkConnectionPool`.
+    /// 2. Fetching the artwork data using the connection.
+    /// 3. Releasing or discarding the connection based on the outcome.
+    /// 4. Caching the data if `shouldCache` is true.
     ///
     /// - Parameters:
-    ///     - url: The URL of the artwork to fetch.
-    ///     - priority: The priority of the task.
-    ///     - shouldCache: Whether or not to cache the fetched data.
+    ///   - url: The URL of the artwork to fetch.
+    ///   - priority: The `TaskPriority` for the fetch operation.
+    ///   - shouldCache: A Boolean indicating whether to cache the fetched data
+    ///                  upon successful completion.
+    /// - Returns: A `Task` that will produce the artwork `Data` or throw an
+    ///            `Error`.
     private func createFetchTask(for url: URL, priority: TaskPriority,
                                  shouldCache: Bool) -> Task<Data, Error>
     {
         Task(priority: priority) {
-            defer { removeTask(for: url) }
-
             try Task.checkCancellation()
 
             var connection: ConnectionManager<ArtworkMode>?
@@ -107,27 +124,14 @@ actor ArtworkManager {
     private func storeInCache(_ data: Data, for url: URL) {
         cache.setObject(data as NSData, forKey: url as NSURL, cost: data.count)
     }
-
-    /// Removes a completed or failed task from the active tasks dictionary.
-    /// - Parameter url: The URL key for the task to remove.
-    private func removeTask(for url: URL) {
-        tasks.removeValue(forKey: url)
-    }
 }
 
 /// Manages a pool of reusable connections for artwork fetching.
-/// This actor implements connection pooling to optimize network resource usage.
 ///
-/// ## Features
-/// - Maintains up to 8 concurrent connections
-/// - Reuses existing connections when possible
-/// - Automatically validates connections before reuse
-/// - Queues requests when all connections are in use
-/// - Handles connection lifecycle management
-///
-/// ## Implementation Details
-/// The pool uses a double-ended queue (Deque) for efficient connection management
-/// and maintains a separate queue for tasks waiting for available connections.
+/// `ArtworkConnectionPool` is a singleton actor that implements connection
+/// pooling to optimize network resource usage and reduce connection setup
+/// overhead. It maintains a pool of validated connections that can be reused
+/// across multiple artwork fetch operations.
 actor ArtworkConnectionPool {
     static let shared = ArtworkConnectionPool()
 
@@ -154,7 +158,7 @@ actor ArtworkConnectionPool {
     /// If a connection is available in the pool, it's returned immediately. If
     /// the pool is empty but the maximum number of active connections hasn't
     /// been reached, a new connection is created and returned. If the pool is
-    /// empty and the maximum number of connections are active,the calling task
+    /// empty and the maximum number of connections are active, the calling task
     /// will be suspended until a connection is released.
     ///
     /// - Returns: A connected `ConnectionManager<ArtworkMode>`.
@@ -212,9 +216,9 @@ actor ArtworkConnectionPool {
 
     /// Discards a failed connection and optionally creates a replacement.
     ///
-    /// This method is called when a connection fails and cannot be returned to the pool.
-    /// If there are tasks waiting for connections and we're below the maximum limit,
-    /// a new connection is created to replace the discarded one.
+    /// This method is called when a connection fails and cannot be returned to
+    /// the pool. If there are tasks waiting for connections and we're below the
+    /// maximum limit, a new connection is created to replace the discarded one.
     ///
     /// - Parameter connection: The failed connection to discard.
     func discardConnection(_ connection: ConnectionManager<ArtworkMode>) async {

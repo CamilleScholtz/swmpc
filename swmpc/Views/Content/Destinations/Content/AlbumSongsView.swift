@@ -39,41 +39,56 @@ struct AlbumSongsView: View {
                             .opacity(0.5)
 
                         ArtworkView(image: artwork)
-                            .cornerRadius(10)
+                            .cornerRadius(18)
                             .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                             .frame(width: 100)
                             .overlay(
-                                ZStack(alignment: .bottomLeading) {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(.ultraThinMaterial)
-                                        .frame(width: 100)
-                                        .mask(
-                                            LinearGradient(
-                                                gradient: Gradient(stops: [
-                                                    .init(color: .black, location: 0.3),
-                                                    .init(color: .black.opacity(0), location: 1.0),
-                                                ]),
-                                                startPoint: .bottom,
-                                                endPoint: .top
-                                            )
-                                        )
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(.clear)
+                                    .glassEffect(.clear, in: .rect(cornerRadius: 18))
+                                    .mask(
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 18)
 
-                                    HStack(spacing: 5) {
-                                        Image(systemSymbol: .playFill)
-                                        Text("Playing")
-                                    }
-                                    .font(.caption2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.black)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(.white)
-                                    .cornerRadius(100)
-                                    .padding(10)
-                                }
-                                .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false)
+                                            RoundedRectangle(cornerRadius: 18)
+                                                .scale(0.8)
+                                                .blur(radius: 8)
+                                                .blendMode(.destinationOut)
+                                        },
+                                    ),
                             )
+                             .overlay(
+                                 ZStack(alignment: .bottomLeading) {
+                                     Color.clear
+                                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+                                         .mask(
+                                             LinearGradient(
+                                                 gradient: Gradient(stops: [
+                                                     .init(color: .black, location: 0.3),
+                                                     .init(color: .black.opacity(0), location: 1.0),
+                                                 ]),
+                                                 startPoint: .bottom,
+                                                 endPoint: .top,
+                                             ),
+                                         )
+                                         .cornerRadius(18)
+
+                                     HStack(spacing: 5) {
+                                         Image(systemSymbol: .playFill)
+                                         Text("Playing")
+                                     }
+                                     .font(.caption2)
+                                     .fontWeight(.semibold)
+                                     .foregroundStyle(.black)
+                                     .padding(.horizontal, 10)
+                                     .padding(.vertical, 4)
+                                     .background(.white)
+                                     .cornerRadius(100)
+                                     .padding(10)
+                                 }
+                                 .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
+                                 .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
+                             )
                     }
 
                     #if os(macOS)
@@ -81,20 +96,14 @@ struct AlbumSongsView: View {
                             AsyncButton {
                                 try await ConnectionManager.command().play(album)
                             } label: {
-                                ZStack {
-                                    Circle()
-                                        .fill(.accent)
-                                        .frame(width: 60, height: 60)
-                                    Circle()
-                                        .fill(.ultraThinMaterial)
-                                        .frame(width: 60, height: 60)
-
-                                    Image(systemSymbol: .playFill)
-                                        .font(.title)
-                                        .foregroundColor(.white)
-                                }
+                                Image(systemSymbol: .playFill)
+                                    .font(.title)
+                                    .foregroundStyle(.foreground)
+                                    .padding(18)
+                                    .glassEffect(.regular.tint(.accent.opacity(0.5)))
+                                    .contentShape(Circle())
                             }
-                            .styledButton(hoverScale: 1.05)
+                            .styledButton()
                             .asyncButtonStyle(.pulse)
                         }
                     #endif
@@ -127,7 +136,7 @@ struct AlbumSongsView: View {
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
-                        Button("Copy Artist Name") {
+                        Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
                             album.artist.name.copyToClipboard()
                         }
                     }
@@ -137,7 +146,7 @@ struct AlbumSongsView: View {
                         Text(
                             String(localized: "\(flat.count) \(flat.count == 1 ? "song" : "songs")")
                                 + " • "
-                                + (flat.reduce(0) { $0 + $1.duration }.humanTimeString)
+                                + (flat.reduce(0) { $0 + $1.duration }.humanTimeString),
                         )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -146,31 +155,14 @@ struct AlbumSongsView: View {
 
                 Spacer()
             }
-            .padding(.bottom, 15 + 7.5)
-            #if os(iOS)
-                .listRowInsets(.init(top: 7.5, leading: 15, bottom: 15 + 7.5, trailing: 15))
-            #elseif os(macOS)
-                .listRowInsets(.init(top: 15, leading: 7.5, bottom: 7.5, trailing: 7.5))
-            #endif
-                .task {
-                    artwork = try? await album.artwork()
-                    songs = await Dictionary(grouping: (try? album.getSongs()) ?? [], by: { $0.disc })
-                }
+            .padding(15)
+            .task {
+                artwork = try? await album.artwork()
+
+                let fetchedSongs = await (try? album.getSongs()) ?? []
+                songs = Dictionary(grouping: fetchedSongs, by: { $0.disc })
+            }
         }
-        #if os(macOS)
-        .frame(width: 310)
-        #endif
-        .overlay(
-            Rectangle()
-            #if os(iOS)
-                .foregroundColor(Color(.secondarySystemFill))
-            #elseif os(macOS)
-                .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill))
-                .offset(x: -15)
-            #endif
-                .frame(height: 1),
-            alignment: .bottom
-        )
 
         if let songs {
             Section {
@@ -182,7 +174,7 @@ struct AlbumSongsView: View {
                     }
 
                     ForEach(songs[disc] ?? []) { song in
-                        SongView(for: song)
+                        RowView(media: song)
                     }
                 }
             }
