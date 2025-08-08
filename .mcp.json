@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "npx",
+      "command": "bunx",
       "args": [
         "-y",
         "xcodebuildmcp@latest"
