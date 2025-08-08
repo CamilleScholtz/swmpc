@@ -5,7 +5,7 @@
 //  Created by Camille Scholtz on 25/03/2025.
 //
 
-enum Setting {
+nonisolated enum Setting {
     static let host = "host"
     static let port = "port"
     static let password = "password"

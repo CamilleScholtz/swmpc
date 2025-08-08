@@ -57,38 +57,38 @@ struct AlbumSongsView: View {
                                         },
                                     ),
                             )
-                             .overlay(
-                                 ZStack(alignment: .bottomLeading) {
-                                     Color.clear
-                                         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
-                                         .mask(
-                                             LinearGradient(
-                                                 gradient: Gradient(stops: [
-                                                     .init(color: .black, location: 0.3),
-                                                     .init(color: .black.opacity(0), location: 1.0),
-                                                 ]),
-                                                 startPoint: .bottom,
-                                                 endPoint: .top,
-                                             ),
-                                         )
-                                         .cornerRadius(18)
+                            .overlay(
+                                ZStack(alignment: .bottomLeading) {
+                                    Color.clear
+                                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+                                        .mask(
+                                            LinearGradient(
+                                                gradient: Gradient(stops: [
+                                                    .init(color: .black, location: 0.3),
+                                                    .init(color: .black.opacity(0), location: 1.0),
+                                                ]),
+                                                startPoint: .bottom,
+                                                endPoint: .top,
+                                            ),
+                                        )
+                                        .cornerRadius(18)
 
-                                     HStack(spacing: 5) {
-                                         Image(systemSymbol: .playFill)
-                                         Text("Playing")
-                                     }
-                                     .font(.caption2)
-                                     .fontWeight(.semibold)
-                                     .foregroundStyle(.black)
-                                     .padding(.horizontal, 10)
-                                     .padding(.vertical, 4)
-                                     .background(.white)
-                                     .cornerRadius(100)
-                                     .padding(10)
-                                 }
-                                 .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                                 .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
-                             )
+                                    HStack(spacing: 5) {
+                                        Image(systemSymbol: .playFill)
+                                        Text("Playing")
+                                    }
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(.white)
+                                    .cornerRadius(100)
+                                    .padding(10)
+                                }
+                                .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
+                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
+                            )
                     }
 
                     #if os(macOS)

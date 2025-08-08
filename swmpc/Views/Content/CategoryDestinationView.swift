@@ -27,9 +27,9 @@ struct CategoryDestinationView: View {
                 EmptyView()
             }
         }
+#if os(macOS)
         .toolbar(removing: .title)
         .toolbar {
-            #if os(macOS)
                 ToolbarItem {
                     Text(navigator.category.label)
                         .font(.system(size: 15))
@@ -41,20 +41,8 @@ struct CategoryDestinationView: View {
 
                 ToolbarSpacer(.flexible)
                     .hidden(isSearchFieldExpanded)
-            #else
-                if !isSearchFieldExpanded {
-                    ToolbarItem {
-                        Text(navigator.category.label)
-                            .font(.system(size: 15))
-                            .fontWeight(.semibold)
-                            .padding(.leading, 12)
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-
-                    ToolbarSpacer(.flexible)
-                }
-            #endif
         }
+#endif
         .onChange(of: navigator.category) {
             isSearchFieldExpanded = false
         }
@@ -72,12 +60,15 @@ struct CategoryDatabaseView: View {
     @Binding var isSearchFieldExpanded: Bool
 
     @State private var scrollTo: String?
+    @State private var animatedScroll = false
 
     @State private var searchFields = SearchFields()
     @State private var searchQuery = ""
     @State private var searchResults: [any Mediable]?
 
+    #if os(macOS)
     @FocusState private var isSearchFieldFocused: Bool
+    #endif
 
     private var sort: SortDescriptor {
         switch navigator.category {
@@ -93,19 +84,19 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = searchResults as? [Album] {
-                CollectionView(data: albums, rowHeight: 65 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: albums, rowHeight: 65 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
                     RowView(media: $0)
                 }
             }
         case .artist:
             if let artists = searchResults as? [Artist] {
-                CollectionView(data: artists, rowHeight: 50 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: artists, rowHeight: 50 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
                     RowView(media: $0)
                 }
             }
         default:
             if let songs = searchResults as? [Song] {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
                     RowView(media: $0)
                 }
             }
@@ -117,19 +108,19 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = mpd.database.media as? [Album] {
-                CollectionView(data: albums, rowHeight: 65 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: albums, rowHeight: 65 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
                     RowView(media: $0)
                 }
             }
         case .artist:
             if let artists = mpd.database.media as? [Artist] {
-                CollectionView(data: artists, rowHeight: 50 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: artists, rowHeight: 50 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
                     RowView(media: $0)
                 }
             }
         default:
             if let songs = mpd.database.media as? [Song] {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
                     RowView(media: $0)
                 }
             }
@@ -141,15 +132,41 @@ struct CategoryDatabaseView: View {
             if searchResults != nil {
                 searchResultsView
                     .id(mpd.database.type)
-                    .ignoresSafeArea(edges: .top)
+                    .ignoresSafeArea(edges: .vertical)
             } else if let media = mpd.database.media, !media.isEmpty {
                 normalMediaView
                     .id(mpd.database.type)
-                    .ignoresSafeArea(edges: .top)
+                    .ignoresSafeArea(edges: .vertical)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
         }
+        #if os(iOS)
+        .searchable(text: $searchQuery, placement: .navigationBarDrawer)
+        .searchToolbarBehavior(.minimize)
+        .toolbar {
+            DefaultToolbarItem(kind: .title)
+            
+            ToolbarSpacer(.fixed)
+
+            
+            ToolbarItem {
+                Button {
+                    animatedScroll = true
+                    scrollToCurrentMedia()
+                } label: {
+                    Image(systemSymbol: .dotViewfinder)
+                }
+                .disabled(mpd.status.song == nil)
+            }
+
+            ToolbarItem {
+                if navigator.category.source.isSortable {
+                    sortMenu
+                }
+            }
+        }
+        #else
         .toolbar {
             ToolbarItem {
                 Group {
@@ -174,6 +191,7 @@ struct CategoryDatabaseView: View {
                 Group {
                     if !isSearchFieldExpanded {
                         Button {
+                            animatedScroll = true
                             scrollToCurrentMedia()
                         } label: {
                             Image(systemSymbol: .dotViewfinder)
@@ -200,19 +218,24 @@ struct CategoryDatabaseView: View {
                     if !isSearchFieldExpanded {
                         searchQuery = ""
                         searchResults = nil
+                        #if os(macOS)
                         isSearchFieldFocused = false
+                        #endif
                     } else {
                         // Delay focus to ensure TextField is rendered
+                        #if os(macOS)
                         Task {
                             try? await Task.sleep(for: .milliseconds(50))
                             isSearchFieldFocused = true
                         }
+                        #endif
                     }
                 } label: {
                     Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
                 }
             }
         }
+        #endif
         .task(id: navigator.category) {
             mpd.state.isLoading = true
             try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
@@ -231,7 +254,7 @@ struct CategoryDatabaseView: View {
         .task(id: sort) {
             // Only reload if we're not already loading (category change handles both)
             guard !mpd.state.isLoading else { return }
-            
+
             mpd.state.isLoading = true
             try? await mpd.database.set(idle: false, sort: sort)
 
@@ -254,7 +277,7 @@ struct CategoryDatabaseView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private var searchFieldsMenu: some View {
         Menu {
@@ -335,6 +358,12 @@ struct CategoryDatabaseView: View {
         default:
             scrollTo = song.id
         }
+        
+        // Reset animated flag after scrolling
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            animatedScroll = false
+        }
     }
 }
 
@@ -350,11 +379,11 @@ struct CategoryPlaylistView: View {
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: false) {
                     RowView(media: $0)
                 }
                 .id(playlist)
-                .ignoresSafeArea(edges: .top)
+                .ignoresSafeArea(edges: .vertical)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
