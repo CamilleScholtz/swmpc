@@ -94,22 +94,6 @@ enum ConnectionManagerError: LocalizedError {
     }
 }
 
-/// Helper structure providing access to main actor isolated app settings from
-/// within actors. This allows connection managers to read user preferences
-/// without blocking the main thread.
-struct ConnectionSettings {
-    static let shared = ConnectionSettings()
-
-    @AppStorage(Setting.host) var host = "localhost"
-    @AppStorage(Setting.port) var port = 6600
-
-    @AppStorage(Setting.password) var password = ""
-
-    @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
-
-    private init() {}
-}
-
 /// Manages TCP connections to the MPD server with support for different
 /// connection modes.
 ///
@@ -174,14 +158,17 @@ actor ConnectionManager<Mode: ConnectionMode> {
         options.noDelay = true
         options.enableKeepalive = Mode.enableKeepalive
 
-        guard let port = await NWEndpoint.Port(rawValue: UInt16(
-            ConnectionSettings.shared.port))
+        var portNumber = UserDefaults.standard.integer(forKey: Setting.port)
+        portNumber = portNumber == 0 ? 6600 : portNumber
+        guard portNumber > 0, portNumber <= 65535,
+              let port = NWEndpoint.Port(rawValue: UInt16(portNumber))
         else {
             throw ConnectionManagerError.invalidPort
         }
 
-        connection = await NWConnection(
-            host: NWEndpoint.Host(ConnectionSettings.shared.host),
+        let host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
+        connection = NWConnection(
+            host: NWEndpoint.Host(host),
             port: port,
             using: NWParameters(tls: nil, tcp: options),
         )
@@ -265,11 +252,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// - Throws: An error if the authentication command fails.
     func ensureAuthenticated() async throws {
-        guard await !ConnectionSettings.shared.password.isEmpty else {
+        let password = UserDefaults.standard.string(forKey: Setting.password) ?? ""
+        guard !password.isEmpty else {
             return
         }
 
-        try await run(["password", ConnectionSettings.shared.password])
+        try await run(["password", password])
     }
 
     /// Sends a ping command to the server.
@@ -1135,7 +1123,8 @@ extension ConnectionManager where Mode == ArtworkMode {
         var totalSize: Int?
 
         loop: while true {
-            try await writeLine("\(ConnectionSettings.shared.artworkGetter.rawValue) \(escape(url.path)) \(offset)")
+            let artworkGetterRaw = UserDefaults.standard.string(forKey: Setting.artworkGetter) ?? ArtworkGetter.library.rawValue
+            try await writeLine("\(artworkGetterRaw) \(escape(url.path)) \(offset)")
 
             var chunkSize: Int?
 

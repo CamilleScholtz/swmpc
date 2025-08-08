@@ -114,6 +114,11 @@ struct AlbumView: View {
                 artwork = nil
             }
             .task(id: album, priority: .high) {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard !Task.isCancelled else {
+                    return
+                }
+                
                 let newArtwork = try? await album.artwork()
                 guard !Task.isCancelled, newArtwork != nil else {
                     return

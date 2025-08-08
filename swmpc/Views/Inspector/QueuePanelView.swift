@@ -60,7 +60,7 @@ struct QueuePanelView: View {
             CollectionView(data: mpd.queue.songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) { song in
                 RowView(media: song)
             }
-            .ignoresSafeArea(edges: .top)
+            .ignoresSafeArea(edges: .vertical)
             .contentMargins(.bottom, 7.5)
             .onAppear {
                 guard let song = mpd.status.song else {

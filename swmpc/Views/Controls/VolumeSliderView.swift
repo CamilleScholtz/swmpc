@@ -7,7 +7,6 @@
 
 import SFSafeSymbols
 import SwiftUI
-import SwiftUIIntrospect
 
 struct VolumeSliderView: View {
     @Environment(MPD.self) private var mpd
@@ -15,6 +14,7 @@ struct VolumeSliderView: View {
     @State private var isHovering = false
     @State private var isChanging = false
     @State private var volume: Double = 0
+    @State private var percentage = 0.5
 
     private var volumeSymbol: SFSymbol {
         let volume = Int(volume)
@@ -36,28 +36,31 @@ struct VolumeSliderView: View {
         HStack(spacing: 6) {
             if isHovering {
                 HStack(spacing: 4) {
-                    Slider(value: $volume, in: 0 ... 100, step: 1, onEditingChanged: { editing in
+                    Slider(value: $percentage, in: 0 ... 1) {} currentValueLabel: {
+                        Text("\(Int(percentage * 100))%")
+                            .font(.subheadline)
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .frame(width: 35, alignment: .trailing)
+                    } ticks: {
+                        SliderTickContentForEach(
+                            stride(from: 0.0, through: 1.0, by: 0.33).map(\.self),
+                            id: \.self,
+                        ) { value in
+                            SliderTick(value)
+                        }
+                    } onEditingChanged: { editing in
                         isChanging = editing
+                        volume = percentage * 100
 
                         if !editing {
                             Task {
                                 try? await ConnectionManager.command().setVolume(Int(volume))
                             }
                         }
-                    })
+                    }
                     .controlSize(.mini)
-                    #if os(macOS)
-                        .introspect(.slider, on: .macOS(.v26)) {
-                            $0.numberOfTickMarks = 2
-                        }
-                    #endif
-                        .frame(width: 80)
-
-                    Text("\(Int(volume))%")
-                        .font(.subheadline)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                        .frame(width: 35, alignment: .trailing)
+                    .frame(width: 120)
                 }
                 .transition(.offset(x: 4).combined(with: .opacity))
             }
@@ -72,11 +75,16 @@ struct VolumeSliderView: View {
         }
         .onAppear {
             volume = Double(mpd.status.volume ?? 0)
+            percentage = volume / 100
         }
         .onChange(of: mpd.status.volume) { _, value in
             if !isChanging {
                 volume = Double(value ?? 0)
+                percentage = volume / 100
             }
+        }
+        .onChange(of: percentage) { _, _ in
+            volume = percentage * 100
         }
     }
 }

@@ -42,22 +42,17 @@ struct AppView: View {
                                 // NOTE: Use SFSafeSymbols version when it is available.
                                 // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
                                 Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
-                                    ZStack {
-                                        NavigationStack(path: $boundNavigator.path) {
-                                            CategoryDestinationView()
-                                                .navigationDestination(for: ContentDestination.self) { destination in
-                                                    ContentDestinationView(destination: destination)
-                                                }
-                                        }
+                                    NavigationStack(path: $boundNavigator.path) {
+                                        CategoryDestinationView()
+                                            .navigationDestination(for: ContentDestination.self) { destination in
+                                                ContentDestinationView(destination: destination)
+                                            }
                                     }
+                                    .overlay(
+                                        LoadingView()
+                                    )
                                 }
                             }
-
-//                            Tab(value: .search, role: .search) {
-//                                HStack {
-//
-//                                }
-//                            }
                         }
                         .tabBarMinimizeBehavior(.onScrollDown)
                         .tabViewBottomAccessory {
