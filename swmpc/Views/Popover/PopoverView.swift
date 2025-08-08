@@ -32,7 +32,22 @@ struct PopoverView: View {
             ArtworkView(image: artwork, aspectRatioMode: .fill)
                 .animation(.easeInOut(duration: 0.2), value: artwork)
                 .frame(width: 250)
-                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.clear)
+                        .glassEffect(.clear, in: .rect(cornerRadius: 20))
+                        .mask(
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 20)
+
+                                RoundedRectangle(cornerRadius: 20)
+                                    .scale(0.8)
+                                    .blur(radius: 8)
+                                    .blendMode(.destinationOut)
+                            },
+                        ),
+                )
+                .cornerRadius(20)
                 .scaleEffect(showInfo ? 0.7 : 1)
                 .offset(y: showInfo ? -7 : 0)
                 .animation(.spring(response: 0.7, dampingFraction: 1, blendDuration: 0.7), value: showInfo)

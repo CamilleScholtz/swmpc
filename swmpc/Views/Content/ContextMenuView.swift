@@ -102,8 +102,8 @@ struct SourceToggleButton<Media: Mediable>: View {
 
     let media: Media
     let source: Source
-    var forceAction: SourceToggleButtonAction? = nil
-    var title: String? = nil
+    var forceAction: SourceToggleButtonAction?
+    var title: String?
 
     enum SourceToggleButtonAction {
         case add

@@ -202,7 +202,7 @@ struct SettingsView: View {
                     .disabled(!isIntelligenceEnabled)
                     .onAppear {
                         @AppStorage(intelligenceModel.setting) var token = ""
-                        token = intelligenceToken
+                        intelligenceToken = token
                     }
                     .onChange(of: intelligenceToken) { _, value in
                         @AppStorage(intelligenceModel.setting) var token = ""
@@ -210,7 +210,7 @@ struct SettingsView: View {
                     }
                     .onChange(of: intelligenceModel) {
                         @AppStorage(intelligenceModel.setting) var token = ""
-                        token = intelligenceToken
+                        intelligenceToken = token
                     }
             }
             .padding(32)

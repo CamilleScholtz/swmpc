@@ -49,7 +49,7 @@ struct AppView: View {
                                             }
                                     }
                                     .overlay(
-                                        LoadingView()
+                                        LoadingView(),
                                     )
                                 }
                             }

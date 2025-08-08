@@ -118,7 +118,7 @@ struct AlbumView: View {
                 guard !Task.isCancelled else {
                     return
                 }
-                
+
                 let newArtwork = try? await album.artwork()
                 guard !Task.isCancelled, newArtwork != nil else {
                     return

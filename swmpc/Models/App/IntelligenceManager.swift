@@ -58,7 +58,7 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
     private static let configs: [IntelligenceModel: ModelConfig] = [
         .openAI: ModelConfig(
             name: "OpenAI",
-            model: "gpt-4.1-mini",
+            model: "gpt-5-mini",
             host: "api.openai.com",
             path: "/v1",
             setting: Setting.openAIToken,
@@ -283,7 +283,7 @@ actor IntelligenceManager {
     ///           or any error thrown by the operation itself.
     private func withTimeout<T: Sendable>(
         seconds: TimeInterval,
-        operation: @escaping @Sendable () async throws -> T
+        operation: @escaping @Sendable () async throws -> T,
     ) async throws -> T {
         try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask {

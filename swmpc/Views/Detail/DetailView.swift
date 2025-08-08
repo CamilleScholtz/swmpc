@@ -65,7 +65,8 @@ struct DetailView: View {
                                 center: .center,
                                 startRadius: -15,
                                 endRadius: 225,
-                            ),
+                            )
+                            .ignoresSafeArea(.all),
                         )
                     #endif
                         .offset(y: 20)
@@ -188,6 +189,7 @@ struct DetailView: View {
                         }
                     }
             }
+            .ignoresSafeArea(edges: .vertical)
             .offset(y: -110)
 
             VStack {
