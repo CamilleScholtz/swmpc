@@ -38,6 +38,7 @@ struct FavoriteView: View {
         }
         .styledButton()
         .asyncButtonStyle(.pulse)
+        .help(isFavorited ? "Remove from favorites" : "Add to favorites")
         .onChange(of: mpd.status.song) { _, value in
             guard let song = value else {
                 return

@@ -6,16 +6,32 @@
 //
 
 import ButtonKit
-import Noise
+
+// import Noise
 import SFSafeSymbols
 import SwiftUI
+
+// MARK: - Layout Constants
+
+private extension Layout.Size {
+    static let detailArtworkLarge: CGFloat = 300
+    static let detailArtworkSmall: CGFloat = 250
+    static let detailControlsHeight: CGFloat = 80
+}
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
+    @AppStorage(Setting.intelligenceModel) private var intelligenceModel = IntelligenceModel.openAI
+
+    var isIntelligenceEnabled: Bool {
+        guard isIntelligenceEnabledSetting else { return false }
+        @AppStorage(intelligenceModel.setting) var token = ""
+        return !token.isEmpty
+    }
 
     #if os(iOS)
         @Binding var isPopupOpen: Bool
@@ -115,35 +131,35 @@ struct DetailView: View {
                     .animation(.spring.delay(isPopupOpen ? 0.2 : 0), value: isPopupOpen)
                 #endif
 
-                Noise(style: .random)
-                    .monochrome()
-                    // TODO: Doesn't really work on dark mode.
-                    .blendMode(colorScheme == .dark ? .darken : .softLight)
-                    .opacity(colorScheme == .dark ? 0.1 : 0.3)
+//                Noise(style: .random)
+//                    .monochrome()
+//                    // TODO: Doesn't really work on dark mode.
+//                    .blendMode(colorScheme == .dark ? .darken : .softLight)
+//                    .opacity(colorScheme == .dark ? 0.1 : 0.3)
 
                 ArtworkView(image: artwork)
                     .animation(.easeInOut(duration: 0.2), value: artwork)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 30)
+                        RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
                             .fill(.clear)
-                            .glassEffect(.clear, in: .rect(cornerRadius: 30))
+                            .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
                             .mask(
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: 30)
+                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
 
-                                    RoundedRectangle(cornerRadius: 30)
+                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
                                         .scale(0.8)
                                         .blur(radius: 8)
                                         .blendMode(.destinationOut)
                                 },
                             ),
                     )
-                    .cornerRadius(30)
+                    .cornerRadius(Layout.CornerRadius.large)
                     .shadow(color: .black.opacity(0.2), radius: 16)
                 #if os(iOS)
-                    .frame(width: 300)
+                    .frame(width: Layout.Size.detailArtworkLarge)
                 #elseif os(macOS)
-                    .frame(width: 250)
+                    .frame(width: Layout.Size.detailArtworkSmall)
                     .scaleEffect(isHovering ? 1.02 : 1)
                     .animation(.spring, value: isHovering)
                     .onHover { value in
@@ -196,7 +212,7 @@ struct DetailView: View {
                 Spacer()
 
                 DetailFooterView()
-                    .frame(height: 80)
+                    .frame(height: Layout.Size.detailControlsHeight)
                 #if os(iOS)
                     .padding(.horizontal, 30)
                     .offset(y: -60)
@@ -223,6 +239,7 @@ struct DetailView: View {
                         Image(systemSymbol: .trash)
                     }
                     .keyboardShortcut(.delete, modifiers: [.shift, .command])
+                    .help("Clear queue")
                 }
                 .hidden(!showQueuePanel || mpd.queue.songs.isEmpty)
 
@@ -233,6 +250,7 @@ struct DetailView: View {
                         Image(systemSymbol: .sparkles)
                     }
                     .disabled(!isIntelligenceEnabled)
+                    .help(isIntelligenceEnabled ? "Fill queue with AI" : "AI features are disabled in settings")
                 }
                 .hidden(!showQueuePanel || !mpd.queue.songs.isEmpty)
 
@@ -247,6 +265,7 @@ struct DetailView: View {
                     }) {
                         Image(systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList)
                     }
+                    .help(showQueuePanel ? "Hide queue panel" : "Show queue panel")
                 }
             #endif
         }

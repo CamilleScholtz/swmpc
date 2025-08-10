@@ -31,15 +31,15 @@ struct AlbumView: View {
     #endif
 
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: Layout.Spacing.large) {
             ZStack {
                 ArtworkView(image: artwork, aspectRatioMode: .fill)
-                    .frame(width: 65, height: 65)
-                    .cornerRadius(12)
+                    .frame(width: Layout.RowHeight.album, height: Layout.RowHeight.album)
+                    .cornerRadius(Layout.CornerRadius.small)
                     .animation(.easeInOut(duration: 0.15), value: artwork != nil)
                     .overlay(
                         Color.clear
-                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 12))
+                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
                             .mask(
                                 RadialGradient(
                                     stops: [
@@ -58,7 +58,7 @@ struct AlbumView: View {
                     Image(systemSymbol: .playFill)
                         .font(.title2)
                         .foregroundStyle(.foreground)
-                        .padding(12)
+                        .padding(Layout.Padding.medium)
                         .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
                         .opacity(isHovering ? 1 : 0)
                         .animation(.interactiveSpring, value: isHovering)

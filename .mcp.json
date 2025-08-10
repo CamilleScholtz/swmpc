@@ -1,11 +1,12 @@
 {
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "bunx",
-      "args": [
-        "-y",
-        "xcodebuildmcp@latest"
-      ]
+    "mcpServers": {
+        "XcodeBuildMCP": {
+            "command": "bunx",
+            "args": ["-y", "xcodebuildmcp@latest"]
+        },
+        "apple-docs": {
+            "command": "bunx",
+            "args": ["-y", "@kimsungwhee/apple-docs-mcp"]
+        }
     }
-  }
 }

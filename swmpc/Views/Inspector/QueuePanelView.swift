@@ -57,11 +57,11 @@ struct QueuePanelView: View {
         @State private var scrollTo: String?
 
         var body: some View {
-            CollectionView(data: mpd.queue.songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo) { song in
+            CollectionView(data: mpd.queue.songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) { song in
                 RowView(media: song)
             }
             .ignoresSafeArea(edges: .vertical)
-            .contentMargins(.bottom, 7.5)
+            .contentMargins(.bottom, Layout.Spacing.small)
             .onAppear {
                 guard let song = mpd.status.song else {
                     return
@@ -78,7 +78,7 @@ struct QueuePanelView: View {
 
     struct EmptyQueueView: View {
         var body: some View {
-            VStack(spacing: 10) {
+            VStack(spacing: Layout.Spacing.medium) {
                 Text("Queue is empty")
                     .font(.headline)
                 Text("Add media from the library")

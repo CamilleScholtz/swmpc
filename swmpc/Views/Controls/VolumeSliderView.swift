@@ -33,35 +33,35 @@ struct VolumeSliderView: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Layout.Spacing.small) {
             if isHovering {
-                HStack(spacing: 4) {
-                    Slider(value: $percentage, in: 0 ... 1) {} currentValueLabel: {
-                        Text("\(Int(percentage * 100))%")
-                            .font(.subheadline)
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                            .frame(width: 35, alignment: .trailing)
-                    } ticks: {
-                        SliderTickContentForEach(
-                            stride(from: 0.0, through: 1.0, by: 0.33).map(\.self),
-                            id: \.self,
-                        ) { value in
-                            SliderTick(value)
-                        }
-                    } onEditingChanged: { editing in
-                        isChanging = editing
-                        volume = percentage * 100
+                Slider(value: $percentage, in: 0 ... 1) {} currentValueLabel: {
+                    Text("\(Int(percentage * 100))%")
+                        .font(.subheadline)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 35, alignment: .trailing)
+                } ticks: {
+                    SliderTickContentForEach(
+                        stride(from: 0.0, through: 1.0, by: 0.33).map(\.self),
+                        id: \.self,
+                    ) { value in
+                        SliderTick(value)
+                    }
+                } onEditingChanged: { editing in
+                    isChanging = editing
+                    volume = percentage * 100
 
-                        if !editing {
-                            Task {
-                                try? await ConnectionManager.command().setVolume(Int(volume))
-                            }
+                    if !editing {
+                        Task {
+                            try? await ConnectionManager.command().setVolume(Int(volume))
                         }
                     }
-                    .controlSize(.mini)
-                    .frame(width: 120)
                 }
+                .controlSize(.mini)
+                .frame(width: 120)
+                .offset(y: 1)
+                .help("Adjust playback volume")
                 .transition(.offset(x: 4).combined(with: .opacity))
             }
 

@@ -8,15 +8,20 @@
 import ButtonKit
 import SwiftUI
 
+private extension Layout.Size {
+    static let progressSeparatorHeight: CGFloat = 9
+    static let popoverPauseIcon: CGFloat = 36
+}
+
 struct PopoverFooterView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(spacing: 15) {
+        VStack(spacing: Layout.Spacing.large) {
             PlayerProgressView(showTimestamps: false)
-                .frame(height: 9)
-                .padding(.horizontal, 15)
+                .frame(height: Layout.Size.progressSeparatorHeight)
+                .padding(.horizontal, Layout.Padding.large)
 
             HStack(alignment: .center, spacing: 0) {
                 RepeatView()
@@ -36,14 +41,11 @@ struct PopoverFooterView: View {
                     .offset(x: -10)
             }
             .asyncButtonStyle(.pulse)
-            .frame(width: 250 - 30)
+            .frame(width: Layout.Size.popoverContentWidth)
             .offset(y: -4)
         }
-        .frame(height: 80)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 15))
-        .cornerRadius(15)
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.15 : 0.05), radius: 3, x: 0, y: 2)
-        .shadow(radius: 20)
+        .frame(height: Layout.Size.popoverFooterHeight)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
     }
 
     struct PopoverPauseView: View {
@@ -56,7 +58,7 @@ struct PopoverFooterView: View {
                 ZStack {
                     Circle()
                         .fill(.primary)
-                        .frame(width: 36, height: 36)
+                        .frame(width: Layout.Size.popoverPauseIcon, height: Layout.Size.popoverPauseIcon)
 
                     ZStack {
                         Image(systemSymbol: .pauseFill)

@@ -36,5 +36,6 @@ struct PauseView: View {
             .contentShape(Circle())
         }
         .styledButton(hoverScale: 1.13)
+        .help(mpd.status.isPlaying ? "Pause playback" : "Resume playback")
     }
 }

@@ -30,6 +30,7 @@ struct PlayerProgressView: View {
                 in: 0 ... duration,
                 onEditingChanged: { editing in
                     isEditing = editing
+
                     if !editing {
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command().seek(sliderValue)
@@ -38,9 +39,17 @@ struct PlayerProgressView: View {
                 },
             )
             .controlSize(.mini)
-            .onChange(of: elapsed) { _, newValue in
-                if !isEditing {
-                    sliderValue = newValue
+            .help("Seek to position in track")
+            .onChange(of: elapsed) { _, value in
+                guard !isEditing else {
+                    return
+                }
+
+                // XXX: One second animation does not work.
+                // See: https://openradar.appspot.com/FB11802261
+                // withAnimation(.linear(duration: 1)) {
+                withAnimation(.spring) {
+                    sliderValue = value
                 }
             }
             .onAppear {

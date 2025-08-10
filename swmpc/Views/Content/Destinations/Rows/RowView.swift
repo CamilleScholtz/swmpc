@@ -23,7 +23,7 @@ struct RowView: View {
                 EmptyView()
             }
         }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 7.5)
+        .padding(.horizontal, Layout.Padding.large)
+        .padding(.vertical, Layout.Spacing.small)
     }
 }

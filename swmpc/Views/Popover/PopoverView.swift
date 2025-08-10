@@ -8,6 +8,10 @@
 import SFSafeSymbols
 import SwiftUI
 
+private extension Layout.Size {
+    static let popoverWidth: CGFloat = 250
+}
+
 struct PopoverView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
@@ -31,7 +35,7 @@ struct PopoverView: View {
         ZStack(alignment: .bottom) {
             ArtworkView(image: artwork, aspectRatioMode: .fill)
                 .animation(.easeInOut(duration: 0.2), value: artwork)
-                .frame(width: 250)
+                .frame(width: Layout.Size.popoverWidth)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .fill(.clear)
@@ -73,8 +77,8 @@ struct PopoverView: View {
                 )
 
             PopoverFooterView()
-                .frame(width: 250 - 30, height: 80)
-                .offset(y: showInfo ? -15 : 90)
+                .frame(width: Layout.Size.popoverContentWidth, height: Layout.Size.popoverFooterHeight)
+                .offset(y: showInfo ? -Layout.Padding.large : 90)
                 .animation(.spring, value: showInfo)
         }
         .mask(
@@ -87,7 +91,7 @@ struct PopoverView: View {
             .offset(x: 23)
             .scaleEffect(x: 1.5),
         )
-        .frame(width: 250, height: height)
+        .frame(width: Layout.Size.popoverWidth, height: height)
         .overlay(alignment: .topLeading) {
             if runAsAgent {
                 Button {
@@ -96,7 +100,7 @@ struct PopoverView: View {
                     Image(systemSymbol: .gearshapeFill)
                         .foregroundColor(Color(.tertiaryLabelColor))
                         .font(.system(size: 14))
-                        .padding(8)
+                        .padding(Layout.Padding.small)
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)

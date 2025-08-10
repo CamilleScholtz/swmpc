@@ -6,9 +6,14 @@
 //
 
 import ButtonKit
-import Noise
 import SFSafeSymbols
 import SwiftUI
+
+// MARK: - Layout Constants
+
+private extension Layout.CornerRadius {
+    static let detailMiniArtwork: CGFloat = 4
+}
 
 struct DetailMiniView: View {
     @Environment(MPD.self) private var mpd
@@ -32,7 +37,7 @@ struct DetailMiniView: View {
         HStack {
             ArtworkView(image: artwork)
 //                .frame(width: 50, height: 50)
-                .cornerRadius(4)
+                .cornerRadius(Layout.CornerRadius.detailMiniArtwork)
 
             VStack {
                 Text(mpd.status.song?.title ?? "No song playing")

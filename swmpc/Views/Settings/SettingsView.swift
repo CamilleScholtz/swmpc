@@ -12,6 +12,15 @@ import SwiftUI
     import LaunchAtLogin
 #endif
 
+private extension Layout.Padding {
+    static let massive: CGFloat = 32
+}
+
+private extension Layout.Size {
+    static let settingsRowHeight: CGFloat = 32
+    static let settingsWindowWidth: CGFloat = 500
+}
+
 struct SettingsView: View {
     enum SettingCategory: String, CaseIterable, Identifiable {
         case general = "General"
@@ -53,7 +62,7 @@ struct SettingsView: View {
                     .tag(category)
             }
         }
-        .frame(width: 500)
+        .frame(width: Layout.Size.settingsWindowWidth)
     }
 
     struct GeneralView: View {
@@ -66,20 +75,24 @@ struct SettingsView: View {
         var body: some View {
             Form {
                 TextField("MPD Host:", text: $host)
+                    .help("Hostname or IP address of your MPD server")
                 TextField("MPD Port:", value: $port, formatter: NumberFormatter())
+                    .help("Port number for MPD connection (default: 6600)")
 
                 SecureField("MPD Password:", text: $password)
+                    .help("Password for MPD server authentication")
                 Text("Leave empty if no password is set.")
                     .font(.caption)
                     .foregroundColor(.secondary)
 
                 Divider()
-                    .frame(height: 32, alignment: .center)
+                    .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
 
                 Picker("Artwork retrieval:", selection: $artworkGetter) {
                     Text("Library").tag(ArtworkGetter.library)
                     Text("Embedded").tag(ArtworkGetter.embedded)
                 }
+                .help("Choose how to retrieve album artwork")
                 .pickerStyle(.inline)
                 Text("Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the song metadata. Using embedded is not recommended as it is generally much slower.")
                     .font(.caption)
@@ -87,9 +100,9 @@ struct SettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Divider()
-                    .frame(height: 32, alignment: .center)
+                    .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
             }
-            .padding(32)
+            .padding(Layout.Padding.massive)
             .navigationTitle("General")
         }
     }
@@ -106,11 +119,13 @@ struct SettingsView: View {
             Form {
                 #if os(macOS)
                     LaunchAtLogin.Toggle()
+                        .help("Automatically start swmpc when you log in")
 
                     Divider()
                         .frame(height: 32, alignment: .center)
 
                     Toggle("Show in Status Bar", isOn: $showStatusBar)
+                        .help("Display swmpc icon in the menu bar")
                         .onChange(of: showStatusBar) {
                             NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
                         }
@@ -120,6 +135,7 @@ struct SettingsView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    .help("Display currently playing song next to the menu bar icon")
                     .disabled(!showStatusBar)
                     .onChange(of: showStatusbarSong) {
                         NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
@@ -135,6 +151,7 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    .help("Run without dock icon (menu bar only mode)")
                     .onChange(of: runAsAgent) {
                         guard !isRestarting else {
                             return
@@ -145,7 +162,7 @@ struct SettingsView: View {
                     }
                 #endif
             }
-            .padding(32)
+            .padding(Layout.Padding.massive)
             .navigationTitle("Behavior")
             #if os(macOS)
                 .alert("Restart Required", isPresented: $restartAlertShown) {
@@ -168,20 +185,29 @@ struct SettingsView: View {
     }
 
     struct IntelligenceView: View {
-        @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
         @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
 
         @State private var intelligenceToken = ""
 
+        var isIntelligenceEnabled: Bool {
+            guard isIntelligenceEnabledSetting else {
+                return false
+            }
+
+            return !intelligenceToken.isEmpty
+        }
+
         var body: some View {
             Form {
-                Toggle(isOn: $isIntelligenceEnabled) {
+                Toggle(isOn: $isIntelligenceEnabledSetting) {
                     Text("Enable AI Features")
                     Text("Currently used for smart playlist and queue generation.")
                 }
+                .help("Enable AI-powered features for playlist generation")
 
                 Divider()
-                    .frame(height: 32, alignment: .center)
+                    .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
 
                 Picker("Model:", selection: $intelligenceModel) {
                     ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
@@ -194,11 +220,13 @@ struct SettingsView: View {
                         .tag(model)
                     }
                 }
+                .help("Select the AI model to use for intelligent features")
                 .pickerStyle(.inline)
                 .disabled(!isIntelligenceEnabled)
 
                 SecureField("API Token:", text: $intelligenceToken)
                     .textContentType(.password)
+                    .help("API token for the selected AI service")
                     .disabled(!isIntelligenceEnabled)
                     .onAppear {
                         @AppStorage(intelligenceModel.setting) var token = ""
@@ -213,7 +241,7 @@ struct SettingsView: View {
                         intelligenceToken = token
                     }
             }
-            .padding(32)
+            .padding(Layout.Padding.massive)
             .navigationTitle("Intelligence")
         }
     }

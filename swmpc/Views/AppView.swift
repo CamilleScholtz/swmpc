@@ -61,7 +61,7 @@ struct AppView: View {
                     #elseif os(macOS)
                         NavigationSplitView {
                             SidebarView()
-                                .navigationSplitViewColumnWidth(180)
+                                .navigationSplitViewColumnWidth(Layout.Size.sidebarWidth)
                         } content: {
                             NavigationStack(path: $boundNavigator.path) {
                                 CategoryDestinationView()
@@ -70,7 +70,7 @@ struct AppView: View {
                                             .navigationTitle(navigator.category.label)
                                     }
                             }
-                            .navigationSplitViewColumnWidth(310)
+                            .navigationSplitViewColumnWidth(Layout.Size.contentWidth)
                             .overlay(
                                 LoadingView(),
                             )
@@ -101,7 +101,7 @@ struct AppView: View {
                         .overlay(alignment: .trailing) {
                             if showQueuePanel {
                                 QueuePanelView(showQueuePanel: $showQueuePanel)
-                                    .frame(width: 310)
+                                    .frame(width: Layout.Size.contentWidth)
                                     .overlay(
                                         Rectangle()
                                             .ignoresSafeArea(.container, edges: .top)
@@ -123,7 +123,7 @@ struct AppView: View {
             mpd.status.stopTrackingElapsed()
         }
         #if os(macOS)
-        .frame(minWidth: 180 + 310 + 650, minHeight: 650)
+        .frame(minWidth: Layout.Size.sidebarWidth + Layout.Size.contentWidth + Layout.Size.detailWidth, minHeight: Layout.Size.detailWidth)
         #endif
     }
 }

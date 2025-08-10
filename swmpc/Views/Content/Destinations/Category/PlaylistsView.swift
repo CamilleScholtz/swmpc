@@ -8,6 +8,10 @@
 import ButtonKit
 import SwiftUI
 
+private extension Layout.CornerRadius {
+    static let small: CGFloat = 8
+}
+
 struct PlaylistsView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
@@ -36,7 +40,7 @@ struct PlaylistsView: View {
                             .padding(.vertical, 8)
                             .padding(.horizontal, 12)
                             .background(Color(.secondarySystemBackground))
-                            .cornerRadius(8)
+                            .cornerRadius(Layout.CornerRadius.small)
                             .focused($isFocused)
                             .onChange(of: isFocused) { _, value in
                                 guard !value else {
@@ -62,7 +66,7 @@ struct PlaylistsView: View {
                         Button {
                             navigator.category = CategoryDestination.playlist(playlist)
                         } label: {
-                            HStack(spacing: 15) {
+                            HStack(spacing: Layout.Spacing.large) {
                                 Label(playlist.name, systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)
                                     .foregroundStyle(.primary)
                                 Spacer()
@@ -89,7 +93,7 @@ struct PlaylistsView: View {
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
                                 .fill(Color.clear)
                                 .contentShape(Rectangle()),
                         )
@@ -133,7 +137,7 @@ struct PlaylistsView: View {
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
                                 .fill(Color(.secondarySystemBackground))
                                 .opacity(0.5),
                         )
@@ -141,7 +145,7 @@ struct PlaylistsView: View {
                 .buttonStyle(.plain)
                 .padding(.top, 10)
             }
-            .padding(.horizontal, 15)
+            .padding(.horizontal, Layout.Padding.large)
             .padding(.vertical, 10)
         }
         .background(Color(.systemBackground))

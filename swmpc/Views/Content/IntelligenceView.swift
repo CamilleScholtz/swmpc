@@ -8,6 +8,18 @@
 import ButtonKit
 import SwiftUI
 
+// MARK: - Layout Constants
+
+private extension Layout.Size {
+    static let intelligenceViewWidth: CGFloat = 300
+}
+
+private extension Layout.Padding {
+    static let intelligenceView: CGFloat = 20
+    static let intelligenceButton: CGFloat = 12
+    static let intelligenceSmall: CGFloat = 8
+}
+
 struct IntelligenceView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
@@ -80,7 +92,7 @@ struct IntelligenceView: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        VStack(spacing: 15) {
+        VStack(spacing: Layout.Spacing.large) {
             if isLoading {
                 IntelligenceSparklesView()
                     .font(.system(size: 40))
@@ -106,9 +118,9 @@ struct IntelligenceView: View {
 
                 TextField(String(localized: suggestion), text: $prompt)
                     .textFieldStyle(.plain)
-                    .padding(8)
+                    .padding(Layout.Padding.intelligenceSmall)
                     .background(colorScheme == .dark ? .accent.opacity(0.2) : .accent)
-                    .cornerRadius(100)
+                    .cornerRadius(Layout.CornerRadius.rounded)
                     .multilineTextAlignment(.center)
                     .disableAutocorrection(true)
                     .focused($isFocused)
@@ -141,6 +153,7 @@ struct IntelligenceView: View {
                         showSheet = false
                     }
                     .keyboardShortcut(.cancelAction)
+                    .help("Cancel and close")
 
                     AsyncButton(actionButtonTitle) {
                         isLoading = true
@@ -159,8 +172,8 @@ struct IntelligenceView: View {
                 .offset(y: -15)
             }
         }
-        .frame(width: 300)
-        .padding(20)
+        .frame(width: Layout.Size.intelligenceViewWidth)
+        .padding(Layout.Padding.intelligenceView)
     }
 
     private var actionButtonTitle: String {
@@ -197,7 +210,14 @@ struct IntelligenceSparklesView: View {
 }
 
 struct IntelligenceButtonView: View {
-    @AppStorage(Setting.isIntelligenceEnabled) var isIntelligenceEnabled = false
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
+    @AppStorage(Setting.intelligenceModel) private var intelligenceModel = IntelligenceModel.openAI
+
+    var isIntelligenceEnabled: Bool {
+        guard isIntelligenceEnabledSetting else { return false }
+        @AppStorage(intelligenceModel.setting) var token = ""
+        return !token.isEmpty
+    }
 
     var playlist: Playlist?
 
@@ -219,14 +239,14 @@ struct IntelligenceButtonView: View {
                     Text("Create Playlist using AI")
                 }
                 #if os(iOS)
-                .padding(12)
+                .padding(Layout.Padding.intelligenceButton)
                 .padding(.horizontal, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
                         .fill(.thinMaterial),
                 )
                 #elseif os(macOS)
-                .padding(8)
+                .padding(Layout.Padding.small)
                 .padding(.horizontal, 2)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
@@ -241,6 +261,7 @@ struct IntelligenceButtonView: View {
         }
         .styledButton(hoverScale: 1.03)
         .asyncButtonStyle(.pulse)
+        .help(isIntelligenceEnabled ? "Create an AI-powered playlist based on your preferences" : "AI features are disabled in settings")
 
         if !isIntelligenceEnabled {
             Text("Enable AI features in settings to use this feature.")

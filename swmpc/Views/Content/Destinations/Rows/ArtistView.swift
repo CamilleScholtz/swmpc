@@ -21,7 +21,7 @@ struct ArtistView: View {
     @State private var albumCount: Int = 0
 
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: Layout.Spacing.large) {
             Circle()
                 .fill(LinearGradient(
                     gradient: Gradient(stops: [
@@ -31,7 +31,7 @@ struct ArtistView: View {
                     startPoint: .top,
                     endPoint: .bottom,
                 ))
-                .frame(width: 50, height: 50)
+                .frame(width: Layout.RowHeight.artist, height: Layout.RowHeight.artist)
                 .overlay(
                     ZStack {
                         Text(artist.name.initials)
