@@ -107,24 +107,31 @@ struct AlbumView: View {
                 ContextMenuView(for: album)
             }
             .onChange(of: album) { previous, value in
-                guard previous != value, artwork != nil else {
+                guard previous != value else {
                     return
                 }
 
+                artworkTask?.cancel()
                 artwork = nil
             }
             .task(id: album, priority: .high) {
-                try? await Task.sleep(for: .milliseconds(100))
-                guard !Task.isCancelled else {
-                    return
+                artworkTask?.cancel()
+
+                artworkTask = Task {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    guard !Task.isCancelled else {
+                        return
+                    }
+
+                    let newArtwork = try? await album.artwork()
+                    guard !Task.isCancelled, newArtwork != nil else {
+                        return
+                    }
+
+                    artwork = newArtwork
                 }
 
-                let newArtwork = try? await album.artwork()
-                guard !Task.isCancelled, newArtwork != nil else {
-                    return
-                }
-
-                artwork = newArtwork
+                await artworkTask?.value
             }
     }
 }

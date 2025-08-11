@@ -84,21 +84,24 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = searchResults as? [Album] {
-                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
+                .scrollAnimation(animatedScroll)
             }
         case .artist:
             if let artists = searchResults as? [Artist] {
-                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
+                .scrollAnimation(animatedScroll)
             }
         default:
             if let songs = searchResults as? [Song] {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
+                .scrollAnimation(animatedScroll)
             }
         }
     }
@@ -108,21 +111,24 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = mpd.database.media as? [Album] {
-                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
+                .scrollAnimation(animatedScroll)
             }
         case .artist:
             if let artists = mpd.database.media as? [Artist] {
-                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
+                .scrollAnimation(animatedScroll)
             }
         default:
             if let songs = mpd.database.media as? [Song] {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
+                .scrollAnimation(animatedScroll)
             }
         }
     }
@@ -377,9 +383,10 @@ struct CategoryPlaylistView: View {
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
                     RowView(media: $0)
                 }
+                .scrollAnimation(animatedScroll)
                 .id(playlist)
                 .ignoresSafeArea(edges: .vertical)
             } else {
