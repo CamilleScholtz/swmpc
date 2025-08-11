@@ -29,11 +29,13 @@ struct PlayerProgressView: View {
                 value: $sliderValue,
                 in: 0 ... duration,
                 onEditingChanged: { editing in
-                    isEditing = editing
-
-                    if !editing {
+                    if editing {
+                        isEditing = true
+                    } else {
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command().seek(sliderValue)
+                            try? await Task.sleep(for: .milliseconds(500))
+                            isEditing = false
                         }
                     }
                 },

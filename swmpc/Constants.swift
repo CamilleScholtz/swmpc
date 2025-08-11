@@ -48,8 +48,14 @@ enum Layout {
     }
 
     enum RowHeight {
-        static let album: CGFloat = 65
-        static let artist: CGFloat = 50
-        static let song: CGFloat = 31.5
+        #if os(iOS)
+            static let album: CGFloat = 70
+            static let artist: CGFloat = 55
+            static let song: CGFloat = 36.5
+        #elseif os(macOS)
+            static let album: CGFloat = 65
+            static let artist: CGFloat = 50
+            static let song: CGFloat = 31.5
+        #endif
     }
 }

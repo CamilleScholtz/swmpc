@@ -59,7 +59,7 @@ struct AlbumView: View {
                         .font(.title2)
                         .foregroundStyle(.foreground)
                         .padding(Layout.Padding.medium)
-                        .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
+                        .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear).interactive())
                         .opacity(isHovering ? 1 : 0)
                         .animation(.interactiveSpring, value: isHovering)
                         .animation(.interactiveSpring, value: isHoveringArtwork)

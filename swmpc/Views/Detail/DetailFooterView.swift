@@ -12,7 +12,7 @@ struct DetailFooterView: View {
     @Environment(MPD.self) private var mpd
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Layout.Spacing.small) {
+        VStack(alignment: .leading, spacing: Layout.Spacing.small - 0.5) {
             HStack(alignment: .center) {
                 Text(mpd.status.song?.title ?? "No song playing")
                 #if os(iOS)

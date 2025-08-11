@@ -8,10 +8,6 @@
 import ButtonKit
 import SwiftUI
 
-private extension Layout.CornerRadius {
-    static let small: CGFloat = 8
-}
-
 struct PlaylistsView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator

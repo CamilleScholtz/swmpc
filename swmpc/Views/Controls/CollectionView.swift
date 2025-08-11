@@ -200,8 +200,6 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
                 item.updateContent(AnyView(
                     content(element)
-                        .environment(mpd)
-                        .environment(navigator),
                 ))
                 return item
             }
@@ -239,8 +237,6 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
                 }
 
                 let contentView = content(element)
-                    .environment(mpd)
-                    .environment(navigator)
                     .frame(width: width)
 
                 let hostingView = NSHostingView(rootView: contentView)
@@ -304,8 +300,6 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
                 cell.updateContent(AnyView(
                     content(element)
-                        .environment(mpd)
-                        .environment(navigator),
                 ))
                 return cell
             }
@@ -337,8 +331,6 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
                 }
 
                 let contentView = content(element)
-                    .environment(mpd)
-                    .environment(navigator)
                     .frame(width: width)
 
                 let hostingController = UIHostingController(rootView: contentView)

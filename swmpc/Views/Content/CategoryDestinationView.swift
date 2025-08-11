@@ -289,7 +289,6 @@ struct CategoryDatabaseView: View {
                             Image(systemSymbol: .checkmark)
                         }
                         Image(systemSymbol: field.symbol)
-                        // Show appropriate label based on media type
                         switch field {
                         case .title:
                             Text("Title")
@@ -358,7 +357,6 @@ struct CategoryDatabaseView: View {
             scrollTo = song.id
         }
 
-        // Reset animated flag after scrolling
         Task {
             try? await Task.sleep(for: .milliseconds(350))
             animatedScroll = false
@@ -414,7 +412,6 @@ struct CategoryPlaylistView: View {
 
             songs = try? await mpd.playlists.getSongs(for: playlist)
 
-            // Scroll to current song after loading playlist
             if songIsInPlaylist(mpd.status.song) {
                 scrollToCurrentSong()
                 try? await Task.sleep(for: .milliseconds(100))
