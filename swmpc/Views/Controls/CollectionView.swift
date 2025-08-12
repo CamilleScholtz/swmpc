@@ -19,11 +19,7 @@ import SwiftUI
 #endif
 
 #if os(iOS)
-    final class HostingCollectionViewCell: UICollectionViewCell {
-        override func updateConfiguration(using state: UICellConfigurationState) {
-            super.updateConfiguration(using: state)
-        }
-    }
+    final class HostingCollectionViewCell: UICollectionViewCell {}
 
 #elseif os(macOS)
     final class HostingCollectionViewItem: NSCollectionViewItem {
@@ -53,7 +49,7 @@ import SwiftUI
 #endif
 
 struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformViewRepresentable
-    where Data.Element: Identifiable & Hashable
+    where Data.Element: Identifiable & Hashable & Sendable
 {
     let data: Data
     let rowHeight: CGFloat?
@@ -64,7 +60,7 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
     @ViewBuilder let content: (Data.Element) -> Content
 
-    func scrollAnimation(_ animated: Bool) -> CollectionView {
+    func scrollAnimation(_ animated: Bool) -> Self {
         var view = self
         view.animated = animated
         return view
@@ -121,8 +117,8 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             coordinator.collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: animated)
         #endif
 
-        DispatchQueue.main.async {
-            scrollTo = nil
+        Task { @MainActor in
+            self.scrollTo = nil
         }
     }
 
@@ -131,7 +127,13 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
         var content: (Data.Element) -> Content
         var rowHeight: CGFloat?
         var contentMargin: EdgeInsets?
-        var currentDataIdentifiers: [Data.Element.ID] = []
+        private var currentDataOrder: [Data.Element.ID] = []
+
+        #if os(iOS)
+            var dataSource: UICollectionViewDiffableDataSource<Int, Data.Element>!
+        #elseif os(macOS)
+            var dataSource: NSCollectionViewDiffableDataSource<Int, Data.Element>!
+        #endif
 
         init(content: @escaping (Data.Element) -> Content, rowHeight: CGFloat?, contentMargin: EdgeInsets?) {
             self.content = content
@@ -148,34 +150,38 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
         }
 
         func updateData(_ data: Data) {
-            // Check if data has actually changed
-            let dataChanged = data.count != currentDataIdentifiers.count ||
-                !data.lazy.map(\.id).elementsEqual(currentDataIdentifiers)
-
-            guard dataChanged else { return }
+            let newIdentifiers = data.map(\.id)
+            
+            // Only compare ordered list
+            guard newIdentifiers != currentDataOrder else { return }
 
             applySnapshot(data)
-            currentDataIdentifiers = data.map(\.id)
+            currentDataOrder = newIdentifiers
         }
 
-        // To be overridden by platform-specific subclasses
-        func applySnapshot(_: Data) {
-            fatalError("Must be overridden")
+        func applySnapshot(_ data: Data) {
+            guard !data.isEmpty else { return }
+            
+            #if os(iOS)
+                var snapshot = NSDiffableDataSourceSnapshot<Int, Data.Element>()
+            #elseif os(macOS)
+                var snapshot = NSDiffableDataSourceSnapshot<Int, Data.Element>()
+            #endif
+            snapshot.appendSections([0])
+            snapshot.appendItems(Array(data))
+            dataSource.apply(snapshot, animatingDifferences: false)
         }
 
-        func calculateItemWidth(for bounds: CGSize) -> CGFloat {
-            let horizontalMargins = (contentMargin?.leading ?? 0) + (contentMargin?.trailing ?? 0)
-            return bounds.width - horizontalMargins
-        }
     }
 
     #if os(macOS)
         final class Coordinator: BaseCoordinator, NSCollectionViewDelegateFlowLayout {
             let collectionView: NSCollectionView
-            private var dataSource: NSCollectionViewDiffableDataSource<Int, Data.Element>!
             private let cellIdentifier = NSUserInterfaceItemIdentifier("Cell")
             private lazy var sizingView = NSHostingView(rootView: AnyView(EmptyView()))
             private var sizeCache: [Data.Element.ID: NSSize] = [:]
+            private var hostingViewPool: [NSHostingView<AnyView>] = []
+            private let maxPoolSize = 10
 
             init(data: Data, content: @escaping (Data.Element) -> Content, rowHeight: CGFloat?, contentMargin: EdgeInsets?) {
                 let layout = NSCollectionViewFlowLayout()
@@ -204,27 +210,34 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
             private func setupDataSource() {
                 dataSource = NSCollectionViewDiffableDataSource<Int, Data.Element>(collectionView: collectionView) { [weak self] collectionView, indexPath, item in
-                    let cell = collectionView.makeItem(withIdentifier: self?.cellIdentifier ?? NSUserInterfaceItemIdentifier("Cell"), for: indexPath) as! HostingCollectionViewItem
-                    if let self {
-                        cell.updateContent(AnyView(content(item)))
-                    }
+                    guard let self else { return nil }
+                    let cell = collectionView.makeItem(withIdentifier: self.cellIdentifier, for: indexPath) as! HostingCollectionViewItem
+                    let contentView = AnyView(self.content(item))
+                    cell.updateContent(contentView)
                     return cell
                 }
             }
-
-            override func applySnapshot(_ data: Data) {
-                var snapshot = NSDiffableDataSourceSnapshot<Int, Data.Element>()
-                snapshot.appendSections([0])
-                snapshot.appendItems(Array(data))
-                dataSource.apply(snapshot, animatingDifferences: false)
+            
+            private func getHostingView() -> NSHostingView<AnyView> {
+                if let view = hostingViewPool.popLast() {
+                    return view
+                }
+                return NSHostingView(rootView: AnyView(EmptyView()))
+            }
+            
+            private func returnHostingView(_ view: NSHostingView<AnyView>) {
+                if hostingViewPool.count < maxPoolSize {
+                    hostingViewPool.append(view)
+                }
             }
 
             func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
                 guard let item = dataSource.itemIdentifier(for: indexPath) else {
                     return .zero
                 }
-
-                let width = calculateItemWidth(for: collectionView.bounds.size)
+                
+                let horizontalMargins = (contentMargin?.leading ?? 0) + (contentMargin?.trailing ?? 0)
+                let width = max(100, collectionView.bounds.width - horizontalMargins)
 
                 if let fixedHeight = rowHeight {
                     return NSSize(width: width, height: fixedHeight)
@@ -233,29 +246,21 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
                 return calculateDynamicSize(for: item, width: width)
             }
 
-            func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, shouldInvalidateLayoutForBoundsChange newBounds: NSRect) -> Bool {
-                let widthChanged = collectionView.bounds.width != newBounds.width
-                if widthChanged {
-                    sizeCache.removeAll()
-                }
-                return widthChanged
-            }
+            // Removed shouldInvalidateLayoutForBoundsChange since width is now constant
 
             private func calculateDynamicSize(for element: Data.Element, width: CGFloat) -> NSSize {
-                let elementID = element.id
-
-                if let cachedSize = sizeCache[elementID], cachedSize.width == width {
+                if let cachedSize = sizeCache[element.id] {
                     return cachedSize
                 }
 
                 let contentView = AnyView(
                     content(element)
-                        .frame(width: width),
+                        .frame(width: width)
                 )
 
                 sizingView.rootView = contentView
                 let size = NSSize(width: width, height: sizingView.fittingSize.height)
-                sizeCache[elementID] = size
+                sizeCache[element.id] = size
 
                 return size
             }
@@ -264,8 +269,8 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
     #elseif os(iOS)
         final class Coordinator: BaseCoordinator, UICollectionViewDelegateFlowLayout {
             let collectionView: UICollectionView
-            private var dataSource: UICollectionViewDiffableDataSource<Int, Data.Element>!
             private let cellRegistration: UICollectionView.CellRegistration<HostingCollectionViewCell, Data.Element>
+            private let collectionWidth: CGFloat
 
             init(data: Data, content: @escaping (Data.Element) -> Content, rowHeight: CGFloat?, contentMargin: EdgeInsets?) {
                 let layout = UICollectionViewFlowLayout()
@@ -287,11 +292,15 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
                 collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
                 collectionView.backgroundColor = .clear
+                
+                // Calculate width once
+                let horizontalMargins = (contentMargin?.leading ?? 0) + (contentMargin?.trailing ?? 0)
+                collectionWidth = UIScreen.main.bounds.width - horizontalMargins
 
-                cellRegistration = UICollectionView.CellRegistration<HostingCollectionViewCell, Data.Element> { [weak content] cell, _, item in
-                    guard let content else { return }
+                cellRegistration = UICollectionView.CellRegistration<HostingCollectionViewCell, Data.Element> { [weak self] cell, _, item in
+                    guard let self else { return }
                     cell.contentConfiguration = UIHostingConfiguration {
-                        AnyView(content(item))
+                        AnyView(self.content(item))
                     }
                     .margins(.all, 0)
                     .background(.clear)
@@ -307,15 +316,8 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             private func setupDataSource() {
                 dataSource = UICollectionViewDiffableDataSource<Int, Data.Element>(collectionView: collectionView) { [weak self] collectionView, indexPath, item in
                     guard let self else { return nil }
-                    return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: item)
+                    return collectionView.dequeueConfiguredReusableCell(using: self.cellRegistration, for: indexPath, item: item)
                 }
-            }
-
-            override func applySnapshot(_ data: Data) {
-                var snapshot = NSDiffableDataSourceSnapshot<Int, Data.Element>()
-                snapshot.appendSections([0])
-                snapshot.appendItems(Array(data))
-                dataSource.apply(snapshot, animatingDifferences: false)
             }
 
             func collectionView(_ collectionView: UICollectionView, layout _: UICollectionViewLayout, sizeForItemAt _: IndexPath) -> CGSize {
@@ -323,9 +325,9 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
                     return UICollectionViewFlowLayout.automaticSize
                 }
 
-                let width = calculateItemWidth(for: collectionView.bounds.size)
-                return CGSize(width: width, height: fixedHeight)
+                return CGSize(width: collectionWidth, height: fixedHeight)
             }
+            // Removed shouldInvalidateLayoutForBoundsChange since width is now constant
         }
     #endif
 }
