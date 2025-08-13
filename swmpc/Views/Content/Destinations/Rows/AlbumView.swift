@@ -20,7 +20,6 @@ struct AlbumView: View {
     }
 
     @State private var artwork: PlatformImage?
-    @State private var artworkTask: Task<Void, Never>?
 
     #if os(iOS)
         @State private var isShowingContextMenu = false
@@ -106,32 +105,13 @@ struct AlbumView: View {
             .contextMenu {
                 ContextMenuView(for: album)
             }
-            .onChange(of: album) { previous, value in
-                guard previous != value else {
+            .task(id: album, priority: .high) {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard !Task.isCancelled else {
                     return
                 }
 
-                artworkTask?.cancel()
-                artwork = nil
-            }
-            .task(id: album, priority: .high) {
-                artworkTask?.cancel()
-
-                artworkTask = Task {
-                    try? await Task.sleep(for: .milliseconds(100))
-                    guard !Task.isCancelled else {
-                        return
-                    }
-
-                    let newArtwork = try? await album.artwork()
-                    guard !Task.isCancelled, newArtwork != nil else {
-                        return
-                    }
-
-                    artwork = newArtwork
-                }
-
-                await artworkTask?.value
+                artwork = try? await album.artwork()
             }
     }
 }

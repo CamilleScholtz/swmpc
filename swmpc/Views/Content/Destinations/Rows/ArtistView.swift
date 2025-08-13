@@ -79,6 +79,11 @@ struct ArtistView: View {
             ContextMenuView(for: artist)
         }
         .task(id: artist, priority: .high) {
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else {
+                return
+            }
+        
             albumCount = await (try? artist.getAlbums().count) ?? 0
         }
     }

@@ -15,10 +15,13 @@ struct RowView: View {
             switch media {
             case let album as Album:
                 AlbumView(for: album)
+                    .id(album)
             case let artist as Artist:
                 ArtistView(for: artist)
+                    .id(artist)
             case let song as Song:
                 SongView(for: song)
+                    .id(song)
             default:
                 EmptyView()
             }
