@@ -83,7 +83,7 @@ struct ArtistView: View {
             guard !Task.isCancelled else {
                 return
             }
-        
+
             albumCount = await (try? artist.getAlbums().count) ?? 0
         }
     }

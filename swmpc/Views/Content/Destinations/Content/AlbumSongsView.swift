@@ -102,13 +102,13 @@ struct AlbumSongsView: View {
                                 try await ConnectionManager.command().play(album)
                             } label: {
                                 Image(systemSymbol: .playFill)
-                                    .font(.title)
+                                    .font(.title2)
                                     .foregroundStyle(.foreground)
-                                    .padding(Layout.Padding.artwork)
+                                    .padding(Layout.Padding.medium)
                                     .glassEffect(.regular.tint(.accent.opacity(0.5)))
                                     .contentShape(Circle())
                             }
-                            .styledButton()
+                            .buttonStyle(.plain)
                             .asyncButtonStyle(.pulse)
                         }
                     #endif

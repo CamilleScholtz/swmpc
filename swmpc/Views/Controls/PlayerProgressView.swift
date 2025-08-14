@@ -41,6 +41,7 @@ struct PlayerProgressView: View {
                 },
             )
             .controlSize(.mini)
+            .disabled(mpd.status.song == nil)
             .help("Seek to position in track")
             .onChange(of: elapsed) { _, value in
                 guard !isEditing else {

@@ -15,6 +15,8 @@ private extension Layout {
 }
 
 struct NextView: View {
+    @Environment(MPD.self) private var mpd
+
     var size: CGFloat = 18
 
     @State private var animating = false
@@ -58,6 +60,7 @@ struct NextView: View {
             .contentShape(Circle())
         }
         .styledButton()
+        .disabled(mpd.status.song == nil)
         .help("Skip to next track")
     }
 }

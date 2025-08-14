@@ -8,10 +8,6 @@
 import SFSafeSymbols
 import SwiftUI
 
-private extension Layout.Size {
-    static let popoverWidth: CGFloat = 250
-}
-
 struct PopoverView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
@@ -20,7 +16,7 @@ struct PopoverView: View {
     @AppStorage(Setting.runAsAgent) var runAsAgent = false
 
     @State private var artwork: PlatformImage?
-    @State private var height = Double(250)
+    @State private var height = Double(Layout.Size.artworkWidth)
 
     @State private var isHovering = false
     @State private var showInfo = false
@@ -35,10 +31,9 @@ struct PopoverView: View {
         ZStack(alignment: .bottom) {
             ArtworkView(image: artwork, aspectRatioMode: .fill)
                 .animation(.easeInOut(duration: 0.2), value: artwork)
-                .frame(width: Layout.Size.popoverWidth)
+                .frame(width: Layout.Size.artworkWidth)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(.clear)
+                    Color.clear
                         .glassEffect(.clear, in: .rect(cornerRadius: 20))
                         .mask(
                             ZStack {
@@ -86,12 +81,13 @@ struct PopoverView: View {
                 gradient: Gradient(colors: [.clear, .white]),
                 center: .top,
                 startRadius: 5,
-                endRadius: 55,
+                endRadius: showInfo ? 6 : 55,
             )
             .offset(x: 23)
-            .scaleEffect(x: 1.5),
+            .scaleEffect(x: 1.5)
+            .animation(.spring, value: showInfo),
         )
-        .frame(width: Layout.Size.popoverWidth, height: height)
+        .frame(width: Layout.Size.artworkWidth, height: height)
         .overlay(alignment: .topLeading) {
             if runAsAgent {
                 Button {
@@ -112,17 +108,17 @@ struct PopoverView: View {
             Task(priority: .userInitiated) {
                 guard let song = mpd.status.song else {
                     artwork = nil
-                    height = 250
+                    height = Layout.Size.artworkWidth
                     return
                 }
 
                 artwork = try? await song.artwork()
                 guard let artwork else {
-                    height = 250
+                    height = Layout.Size.artworkWidth
                     return
                 }
 
-                height = (Double(artwork.size.height) / Double(artwork.size.width) * 250).rounded(.down)
+                height = (Double(artwork.size.height) / Double(artwork.size.width) * Layout.Size.artworkWidth).rounded(.down)
 
                 try? await mpd.status.startTrackingElapsed()
             }
@@ -137,21 +133,22 @@ struct PopoverView: View {
 
             guard let song = mpd.status.song else {
                 artwork = nil
-                height = 250
+                height = Layout.Size.artworkWidth
                 return
             }
 
             artwork = try? await song.artwork()
             guard let artwork else {
-                height = 250
+                height = Layout.Size.artworkWidth
                 return
             }
 
-            height = (Double(artwork.size.height) / Double(artwork.size.width) * 250).rounded(.down)
+            height = (Double(artwork.size.height) / Double(artwork.size.width) * Layout.Size.artworkWidth).rounded(.down)
         }
-        .onHoverWithDebounce(delay: .milliseconds(100), handler: hoverHandler) { hovering in
-            isHovering = hovering
-            if hovering {
+        .onHoverWithDebounce(delay: .milliseconds(100), handler: hoverHandler) { value in
+            isHovering = value
+
+            if value {
                 showInfo = true
             } else {
                 showInfo = false || !mpd.status.isPlaying

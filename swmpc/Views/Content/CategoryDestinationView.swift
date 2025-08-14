@@ -84,24 +84,27 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = searchResults as? [Album] {
-                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large) {
                     RowView(media: $0)
                 }
-                .scrollAnimation(animatedScroll)
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         case .artist:
             if let artists = searchResults as? [Artist] {
-                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large) {
                     RowView(media: $0)
                 }
-                .scrollAnimation(animatedScroll)
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         default:
             if let songs = searchResults as? [Song] {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
                     RowView(media: $0)
                 }
-                .scrollAnimation(animatedScroll)
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         }
     }
@@ -111,24 +114,27 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = mpd.database.media as? [Album] {
-                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large) {
                     RowView(media: $0)
                 }
-                .scrollAnimation(animatedScroll)
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         case .artist:
             if let artists = mpd.database.media as? [Artist] {
-                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large) {
                     RowView(media: $0)
                 }
-                .scrollAnimation(animatedScroll)
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         default:
             if let songs = mpd.database.media as? [Song] {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
                     RowView(media: $0)
                 }
-                .scrollAnimation(animatedScroll)
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         }
     }
@@ -180,6 +186,11 @@ struct CategoryDatabaseView: View {
                                     .frame(width: 195)
                                     .autocorrectionDisabled()
                                     .focused($isSearchFieldFocused)
+                                    .task {
+                                        isSearchFieldFocused = true
+                                        try? await Task.sleep(for: .milliseconds(100))
+                                        isSearchFieldFocused = true
+                                    }
                             }
                         }
                     }
@@ -225,14 +236,6 @@ struct CategoryDatabaseView: View {
                                 searchResults = nil
                                 #if os(macOS)
                                     isSearchFieldFocused = false
-                                #endif
-                            } else {
-                                // Delay focus to ensure TextField is rendered
-                                #if os(macOS)
-                                    Task {
-                                        try? await Task.sleep(for: .milliseconds(50))
-                                        isSearchFieldFocused = true
-                                    }
                                 #endif
                             }
                         } label: {
@@ -374,19 +377,34 @@ struct CategoryPlaylistView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
+    @AppStorage(Setting.intelligenceModel) private var intelligenceModel = IntelligenceModel.openAI
+
+    var isIntelligenceEnabled: Bool {
+        guard isIntelligenceEnabledSetting else { return false }
+        @AppStorage(intelligenceModel.setting) var token = ""
+        return !token.isEmpty
+    }
+
     let playlist: Playlist
 
     @State private var songs: [Song]?
     @State private var scrollTo: String?
     @State private var animatedScroll = false
+    @State private var showIntelligencePlaylistSheet = false
+    @State private var playlistToEdit: Playlist?
+
+    private let fillIntelligencePlaylistNotification = NotificationCenter.default
+        .publisher(for: .fillIntelligencePlaylistNotification)
 
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: Layout.Spacing.small, trailing: 0), scrollTo: $scrollTo) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
                     RowView(media: $0)
                 }
-                .scrollAnimation(animatedScroll)
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
                 .id(playlist)
                 .ignoresSafeArea(edges: .vertical)
             } else {
@@ -403,8 +421,21 @@ struct CategoryPlaylistView: View {
                 }
                 .disabled(mpd.status.song == nil || !songIsInPlaylist(mpd.status.song))
             }
+            .hidden(songs?.isEmpty ?? true)
+
+            ToolbarItem {
+                Button(action: {
+                    NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
+                }) {
+                    Image(systemSymbol: .sparkles)
+                }
+                .disabled(!isIntelligenceEnabled)
+                .help(isIntelligenceEnabled ? "Fill playlist with AI" : "AI features are disabled in settings")
+            }
+            .hidden(!(songs?.isEmpty ?? true))
 
             ToolbarSpacer(.fixed)
+                .hidden((songs?.isEmpty ?? true))
 
             ToolbarItem {
                 AsyncButton {
@@ -413,6 +444,7 @@ struct CategoryPlaylistView: View {
                     Image(systemSymbol: .square3Layers3d)
                 }
             }
+            .hidden((songs?.isEmpty ?? true))
         }
         .task(id: playlist) {
             mpd.state.isLoading = true
@@ -424,6 +456,16 @@ struct CategoryPlaylistView: View {
                 try? await Task.sleep(for: .milliseconds(100))
                 scrollToCurrentSong()
             }
+        }
+        .onReceive(fillIntelligencePlaylistNotification) { notification in
+            guard let playlist = notification.object as? Playlist else {
+                return
+            }
+            playlistToEdit = playlist
+            showIntelligencePlaylistSheet = true
+        }
+        .sheet(isPresented: $showIntelligencePlaylistSheet) {
+            IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
         }
     }
 
@@ -451,12 +493,6 @@ struct CategoryPlaylistView: View {
 struct EmptyCategoryView: View {
     let destination: CategoryDestination
 
-    @State private var showIntelligencePlaylistSheet = false
-    @State private var playlistToEdit: Playlist?
-
-    private let fillIntelligencePlaylistNotification = NotificationCenter.default
-        .publisher(for: .fillIntelligencePlaylistNotification)
-
     var body: some View {
         VStack {
             switch destination {
@@ -466,13 +502,11 @@ struct EmptyCategoryView: View {
 
                 Text("Add songs to your library.")
                     .font(.subheadline)
-            case let .playlist(playlist):
+            case .playlist:
                 Text("No songs in playlist.")
                     .font(.headline)
                 Text("Add songs to your playlist.")
                     .font(.subheadline)
-                IntelligenceButtonView(using: playlist)
-                    .offset(y: 20)
             #if os(iOS)
                 default:
                     EmptyView()
@@ -480,15 +514,5 @@ struct EmptyCategoryView: View {
             }
         }
         .offset(y: -20)
-        .onReceive(fillIntelligencePlaylistNotification) { notification in
-            guard let playlist = notification.object as? Playlist else {
-                return
-            }
-            playlistToEdit = playlist
-            showIntelligencePlaylistSheet = true
-        }
-        .sheet(isPresented: $showIntelligencePlaylistSheet) {
-            IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
-        }
     }
 }

@@ -40,6 +40,12 @@ enum Layout {
             static let detailWidth: CGFloat = 650
         #endif
 
+        #if os(iOS)
+            static let artworkWidth: CGFloat = 300
+        #elseif os(macOS)
+            static let artworkWidth: CGFloat = 250
+        #endif
+
         static let popoverFooterHeight: CGFloat = 80
 
         static let popoverContentWidth: CGFloat = 220 // popoverWidth - 30
@@ -49,9 +55,9 @@ enum Layout {
 
     enum RowHeight {
         #if os(iOS)
-            static let album: CGFloat = 70
-            static let artist: CGFloat = 55
-            static let song: CGFloat = 36.5
+            static let album: CGFloat = 75
+            static let artist: CGFloat = 60
+            static let song: CGFloat = 41.5
         #elseif os(macOS)
             static let album: CGFloat = 65
             static let artist: CGFloat = 50

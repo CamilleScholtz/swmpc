@@ -7,15 +7,10 @@
 
 import ButtonKit
 
-// import Noise
 import SFSafeSymbols
 import SwiftUI
 
-// MARK: - Layout Constants
-
 private extension Layout.Size {
-    static let detailArtworkLarge: CGFloat = 300
-    static let detailArtworkSmall: CGFloat = 250
     static let detailControlsHeight: CGFloat = 80
 }
 
@@ -131,17 +126,10 @@ struct DetailView: View {
                     .animation(.spring.delay(isPopupOpen ? 0.2 : 0), value: isPopupOpen)
                 #endif
 
-//                Noise(style: .random)
-//                    .monochrome()
-//                    // TODO: Doesn't really work on dark mode.
-//                    .blendMode(colorScheme == .dark ? .darken : .softLight)
-//                    .opacity(colorScheme == .dark ? 0.1 : 0.3)
-
                 ArtworkView(image: artwork)
                     .animation(.easeInOut(duration: 0.2), value: artwork)
                     .overlay(
-                        RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                            .fill(.clear)
+                        Color.clear
                             .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
                             .mask(
                                 ZStack {
@@ -156,10 +144,8 @@ struct DetailView: View {
                     )
                     .cornerRadius(Layout.CornerRadius.large)
                     .shadow(color: .black.opacity(0.2), radius: 16)
-                #if os(iOS)
-                    .frame(width: Layout.Size.detailArtworkLarge)
-                #elseif os(macOS)
-                    .frame(width: Layout.Size.detailArtworkSmall)
+                    .frame(width: Layout.Size.artworkWidth)
+                #if os(macOS)
                     .scaleEffect(isHovering ? 1.02 : 1)
                     .animation(.spring, value: isHovering)
                     .onHover { value in
@@ -205,20 +191,17 @@ struct DetailView: View {
                         }
                     }
             }
-            .ignoresSafeArea(edges: .vertical)
-            .offset(y: -110)
+            .offset(y: -Layout.Size.detailControlsHeight)
 
             VStack {
                 Spacer()
 
                 DetailFooterView()
                     .frame(height: Layout.Size.detailControlsHeight)
-                #if os(iOS)
-                    .padding(.horizontal, 30)
-                    .offset(y: -60)
-                #endif
             }
+            .padding(60)
         }
+        .ignoresSafeArea(edges: .vertical)
         .toolbar {
             #if os(macOS)
                 ToolbarSpacer(.flexible)

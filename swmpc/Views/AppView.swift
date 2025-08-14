@@ -74,7 +74,7 @@ struct AppView: View {
                             .overlay(
                                 LoadingView(),
                             )
-                            .scrollEdgeEffectStyle(.soft, for: .top)
+                            .scrollEdgeEffectStyle(.soft, for: .vertical)
                         } detail: {
                             // XXX: The scrollview is a hack to hide the toolbar.
                             ZStack {
@@ -82,9 +82,8 @@ struct AppView: View {
                                     .scrollDisabled(true)
 
                                 DetailView(showQueuePanel: $showQueuePanel)
-                                    .padding(60)
                             }
-                            .scrollEdgeEffectStyle(.soft, for: .top)
+                            .scrollEdgeEffectStyle(.soft, for: .vertical)
                         }
                         .simultaneousGesture(
                             TapGesture()
