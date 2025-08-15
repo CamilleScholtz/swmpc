@@ -29,7 +29,7 @@ struct DetailMiniView: View {
         HStack(spacing: Layout.Spacing.small) {
             ArtworkView(image: artwork, aspectRatioMode: .fill)
                 .frame(width: 32, height: 32)
-                .cornerRadius(Layout.CornerRadius.small / 1.5)
+                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small / 1.5))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(mpd.status.song?.title ?? "No song playing")

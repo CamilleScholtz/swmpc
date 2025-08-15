@@ -34,7 +34,7 @@ struct AlbumView: View {
             ZStack {
                 ArtworkView(image: artwork, aspectRatioMode: .fill)
                     .frame(width: Layout.RowHeight.album, height: Layout.RowHeight.album)
-                    .cornerRadius(Layout.CornerRadius.small)
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
                     .animation(.easeInOut(duration: 0.15), value: artwork != nil)
                     .overlay(
                         Color.clear

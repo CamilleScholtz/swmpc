@@ -136,7 +136,7 @@ struct DetailView: View {
                                 },
                             ),
                     )
-                    .cornerRadius(Layout.CornerRadius.large)
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
                     .shadow(color: .black.opacity(0.2), radius: 16)
                     .frame(width: Layout.Size.artworkWidth)
                 #if os(macOS)

@@ -44,7 +44,7 @@ struct AlbumSongsView: View {
                             .opacity(0.5)
 
                         ArtworkView(image: artwork)
-                            .cornerRadius(Layout.CornerRadius.medium)
+                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
                             .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                             .frame(width: 100)
                             .overlay(
@@ -76,7 +76,7 @@ struct AlbumSongsView: View {
                                                 endPoint: .top,
                                             ),
                                         )
-                                        .cornerRadius(Layout.CornerRadius.medium)
+                                        .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
 
                                     HStack(spacing: 5) {
                                         Image(systemSymbol: .playFill)
@@ -88,7 +88,7 @@ struct AlbumSongsView: View {
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
                                     .background(.white)
-                                    .cornerRadius(Layout.CornerRadius.rounded)
+                                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
                                     .padding(Layout.Padding.playingIndicator)
                                 }
                                 .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)

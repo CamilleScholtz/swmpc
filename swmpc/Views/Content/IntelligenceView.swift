@@ -120,7 +120,7 @@ struct IntelligenceView: View {
                     .textFieldStyle(.plain)
                     .padding(Layout.Padding.intelligenceSmall)
                     .background(colorScheme == .dark ? .accent.opacity(0.2) : .accent)
-                    .cornerRadius(Layout.CornerRadius.rounded)
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
                     .multilineTextAlignment(.center)
                     .disableAutocorrection(true)
                     .focused($isFocused)

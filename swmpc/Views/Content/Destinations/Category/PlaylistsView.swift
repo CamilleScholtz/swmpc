@@ -36,7 +36,7 @@ struct PlaylistsView: View {
                             .padding(.vertical, 8)
                             .padding(.horizontal, 12)
                             .background(Color(.secondarySystemBackground))
-                            .cornerRadius(Layout.CornerRadius.small)
+                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
                             .focused($isFocused)
                             .onChange(of: isFocused) { _, value in
                                 guard !value else {
@@ -101,7 +101,7 @@ struct PlaylistsView: View {
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
                         .background(Color(.secondarySystemBackground))
-                        .cornerRadius(8)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                         .focused($isFocused)
                         .onChange(of: isFocused) { _, value in
                             guard !value else {
