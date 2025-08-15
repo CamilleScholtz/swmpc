@@ -26,10 +26,10 @@ struct DetailMiniView: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Layout.Spacing.small) {
             ArtworkView(image: artwork, aspectRatioMode: .fill)
-                .frame(width: 40, height: 40)
-                .cornerRadius(Layout.CornerRadius.small)
+                .frame(width: 32, height: 32)
+                .cornerRadius(Layout.CornerRadius.small / 1.5)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(mpd.status.song?.title ?? "No song playing")
@@ -44,10 +44,11 @@ struct DetailMiniView: View {
 
             Spacer()
 
-            PauseView(size: 15, button: false)
-            NextView(size: 15)
+            PauseView(size: 20, button: false)
+                .offset(x: Layout.Spacing.medium)
+            NextView(size: 16)
         }
-        .padding(.vertical, Layout.Padding.small)
+        .padding(.horizontal, Layout.Padding.large)
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
                 artwork = nil

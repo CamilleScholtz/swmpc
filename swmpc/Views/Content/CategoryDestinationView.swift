@@ -30,17 +30,17 @@ struct CategoryDestinationView: View {
         #if os(macOS)
         .toolbar(removing: .title)
         .toolbar {
-            ToolbarItem {
-                Text(navigator.category.label)
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                    .padding(.leading, 12)
-            }
-            .sharedBackgroundVisibility(.hidden)
-            .hidden(isSearchFieldExpanded)
+            if !isSearchFieldExpanded {
+                ToolbarItem {
+                    Text(navigator.category.label)
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
+                        .padding(.leading, 12)
+                }
+                .sharedBackgroundVisibility(.hidden)
 
-            ToolbarSpacer(.flexible)
-                .hidden(isSearchFieldExpanded)
+                ToolbarSpacer(.flexible)
+            }
         }
         #endif
         .onChange(of: navigator.category) {
@@ -66,9 +66,7 @@ struct CategoryDatabaseView: View {
     @State private var searchQuery = ""
     @State private var searchResults: [any Mediable]?
 
-    #if os(macOS)
-        @FocusState private var isSearchFieldFocused: Bool
-    #endif
+    @FocusState private var isSearchFieldFocused: Bool
 
     private var sort: SortDescriptor {
         switch navigator.category {
@@ -153,137 +151,97 @@ struct CategoryDatabaseView: View {
                 EmptyCategoryView(destination: navigator.category)
             }
         }
-        #if os(iOS)
-        .searchable(text: $searchQuery, placement: .navigationBarDrawer)
-        .searchToolbarBehavior(.minimize)
         .toolbar {
-            DefaultToolbarItem(kind: .title)
+            if isSearchFieldExpanded {
+                ToolbarItem {
+                    TextField("Search", text: $searchQuery)
+                    #if os(macOS)
+                        .frame(width: 203)
+                    #endif
+                        .autocorrectionDisabled()
+                        .focused($isSearchFieldFocused)
+                        .task {
+                            isSearchFieldFocused = true
+                            try? await Task.sleep(for: .milliseconds(100))
+                            isSearchFieldFocused = true
+                        }
+                }
+
+                ToolbarItem {
+                    searchFieldsMenu
+                }
+            } else {
+                ToolbarItem {
+                    Button {
+                        animatedScroll = true
+                        scrollToCurrentMedia()
+                    } label: {
+                        Image(systemSymbol: .dotViewfinder)
+                    }
+                    .disabled(mpd.status.song == nil)
+                }
+            }
 
             ToolbarSpacer(.fixed)
 
-            ToolbarItem {
-                Button {
-                    animatedScroll = true
-                    scrollToCurrentMedia()
-                } label: {
-                    Image(systemSymbol: .dotViewfinder)
-                }
-                .disabled(mpd.status.song == nil)
-            }
-
-            ToolbarItem {
-                if navigator.category.source.isSortable {
+            if !isSearchFieldExpanded, navigator.category.source.isSortable {
+                ToolbarItem {
                     sortMenu
                 }
             }
+
+            ToolbarItem {
+                Button {
+                    isSearchFieldExpanded.toggle()
+
+                    if !isSearchFieldExpanded {
+                        searchQuery = ""
+                        searchResults = nil
+                        isSearchFieldFocused = false
+                    }
+                } label: {
+                    Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
+                }
+            }
         }
-        #else
-        .toolbar {
-                    ToolbarItem {
-                        Group {
-                            if isSearchFieldExpanded {
-                                TextField("Search", text: $searchQuery)
-                                    .frame(width: 195)
-                                    .autocorrectionDisabled()
-                                    .focused($isSearchFieldFocused)
-                                    .task {
-                                        isSearchFieldFocused = true
-                                        try? await Task.sleep(for: .milliseconds(100))
-                                        isSearchFieldFocused = true
-                                    }
-                            }
-                        }
-                    }
+        .task(id: navigator.category) {
+            mpd.state.isLoading = true
+            try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
-                    ToolbarItem {
-                        Group {
-                            if isSearchFieldExpanded {
-                                searchFieldsMenu
-                            }
-                        }
-                    }
+            searchQuery = ""
+            searchResults = nil
+            searchFields = SearchFields.defaultFields(for: navigator.category.type)
 
-                    ToolbarItem {
-                        Group {
-                            if !isSearchFieldExpanded {
-                                Button {
-                                    animatedScroll = true
-                                    scrollToCurrentMedia()
-                                } label: {
-                                    Image(systemSymbol: .dotViewfinder)
-                                }
-                                .disabled(mpd.status.song == nil)
-                            }
-                        }
-                    }
+            scrollToCurrentMedia()
+            try? await Task.sleep(for: .milliseconds(100))
+            scrollToCurrentMedia()
+        }
+        .task(id: sort) {
+            guard !mpd.state.isLoading else {
+                return
+            }
 
-                    ToolbarSpacer(.fixed)
+            mpd.state.isLoading = true
+            try? await mpd.database.set(idle: false, sort: sort)
 
-                    ToolbarItem {
-                        Group {
-                            if !isSearchFieldExpanded, navigator.category.source.isSortable {
-                                sortMenu
-                            }
-                        }
-                    }
-
-                    ToolbarItem {
-                        Button {
-                            isSearchFieldExpanded.toggle()
-
-                            if !isSearchFieldExpanded {
-                                searchQuery = ""
-                                searchResults = nil
-                                #if os(macOS)
-                                    isSearchFieldFocused = false
-                                #endif
-                            }
-                        } label: {
-                            Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
-                        }
-                    }
-                }
-        #endif
-                .task(id: navigator.category) {
-                    mpd.state.isLoading = true
-                    try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
-
-                    // Reset search when changing categories
-                    searchQuery = ""
-                    searchResults = nil
-
-                    // Set default search fields based on the new media type
-                    searchFields = SearchFields.defaultFields(for: navigator.category.type)
-
-                    scrollToCurrentMedia()
-                    try? await Task.sleep(for: .milliseconds(100))
-                    scrollToCurrentMedia()
-                }
-                .task(id: sort) {
-                    // Only reload if we're not already loading (category change handles both)
-                    guard !mpd.state.isLoading else { return }
-
-                    mpd.state.isLoading = true
-                    try? await mpd.database.set(idle: false, sort: sort)
-
-                    scrollToCurrentMedia()
-                    try? await Task.sleep(for: .milliseconds(100))
-                    scrollToCurrentMedia()
-                }
-                .onChange(of: searchQuery) { _, query in
-                    if query.isEmpty {
-                        searchResults = nil
-                    } else if !searchFields.isEmpty {
-                        searchResults = mpd.database.search(query: query, fields: searchFields)
-                    }
-                }
-                .onChange(of: searchFields) { _, _ in
-                    if !searchQuery.isEmpty, !searchFields.isEmpty {
-                        searchResults = mpd.database.search(query: searchQuery, fields: searchFields)
-                    } else if searchFields.isEmpty {
-                        searchResults = nil
-                    }
-                }
+            scrollToCurrentMedia()
+            try? await Task.sleep(for: .milliseconds(100))
+            scrollToCurrentMedia()
+        }
+        .onChange(of: searchQuery) { _, query in
+            if query.isEmpty {
+                searchResults = nil
+            } else if !searchFields.isEmpty {
+                searchResults = mpd.database.search(query: query, fields: searchFields)
+            }
+        }
+        .onChange(of: searchFields) { _, _ in
+            if !searchQuery.isEmpty, !searchFields.isEmpty {
+                searchResults = mpd.database.search(query: searchQuery, fields: searchFields)
+            } else if searchFields.isEmpty {
+                searchResults = nil
+            }
+        }
     }
 
     @ViewBuilder
@@ -412,39 +370,37 @@ struct CategoryPlaylistView: View {
             }
         }
         .toolbar {
-            ToolbarItem {
-                Button {
-                    animatedScroll = true
-                    scrollToCurrentSong()
-                } label: {
-                    Image(systemSymbol: .dotViewfinder)
+            if songs?.isEmpty ?? true {
+                ToolbarItem {
+                    Button(action: {
+                        NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
+                    }) {
+                        Image(systemSymbol: .sparkles)
+                    }
+                    .disabled(!isIntelligenceEnabled)
+                    .help(isIntelligenceEnabled ? "Fill playlist with AI" : "AI features are disabled in settings")
                 }
-                .disabled(mpd.status.song == nil || !songIsInPlaylist(mpd.status.song))
-            }
-            .hidden(songs?.isEmpty ?? true)
-
-            ToolbarItem {
-                Button(action: {
-                    NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
-                }) {
-                    Image(systemSymbol: .sparkles)
+            } else {
+                ToolbarItem {
+                    Button {
+                        animatedScroll = true
+                        scrollToCurrentSong()
+                    } label: {
+                        Image(systemSymbol: .dotViewfinder)
+                    }
+                    .disabled(mpd.status.song == nil || !songIsInPlaylist(mpd.status.song))
                 }
-                .disabled(!isIntelligenceEnabled)
-                .help(isIntelligenceEnabled ? "Fill playlist with AI" : "AI features are disabled in settings")
-            }
-            .hidden(!(songs?.isEmpty ?? true))
 
-            ToolbarSpacer(.fixed)
-                .hidden((songs?.isEmpty ?? true))
+                ToolbarSpacer(.fixed)
 
-            ToolbarItem {
-                AsyncButton {
-                    try await ConnectionManager.command().loadPlaylist(playlist)
-                } label: {
-                    Image(systemSymbol: .square3Layers3d)
+                ToolbarItem {
+                    AsyncButton {
+                        try await ConnectionManager.command().loadPlaylist(playlist)
+                    } label: {
+                        Image(systemSymbol: .square3Layers3d)
+                    }
                 }
             }
-            .hidden((songs?.isEmpty ?? true))
         }
         .task(id: playlist) {
             mpd.state.isLoading = true

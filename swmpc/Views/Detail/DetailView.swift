@@ -28,9 +28,7 @@ struct DetailView: View {
         return !token.isEmpty
     }
 
-    #if os(iOS)
-        @Binding var isPopupOpen: Bool
-    #elseif os(macOS)
+    #if os(macOS)
         @Binding var showQueuePanel: Bool
     #endif
 
@@ -121,10 +119,6 @@ struct DetailView: View {
                 }
                 .saturation(1.5)
                 .blendMode(colorScheme == .dark ? .softLight : .normal)
-                #if os(iOS)
-                    .opacity(isPopupOpen ? 1 : 0)
-                    .animation(.spring.delay(isPopupOpen ? 0.2 : 0), value: isPopupOpen)
-                #endif
 
                 ArtworkView(image: artwork)
                     .animation(.easeInOut(duration: 0.2), value: artwork)
@@ -183,11 +177,8 @@ struct DetailView: View {
                                     navigator.category = .albums
                                 }
                             #endif
-                            navigator.navigate(to: ContentDestination.album(song.album))
 
-                            #if os(iOS)
-                                isPopupOpen = false
-                            #endif
+                            navigator.navigate(to: ContentDestination.album(song.album))
                         }
                     }
             }
@@ -202,43 +193,44 @@ struct DetailView: View {
             .padding(60)
         }
         .ignoresSafeArea(edges: .vertical)
-        .toolbar {
-            #if os(macOS)
+        #if os(macOS)
+            .toolbar {
                 ToolbarSpacer(.flexible)
 
-                ToolbarItem {
-                    Text("Queue")
-                        .font(.system(size: 15))
-                        .fontWeight(.semibold)
-                        .offset(x: -140)
-                }
-                .sharedBackgroundVisibility(.hidden)
-                .hidden(!showQueuePanel)
-
-                ToolbarItem {
-                    Button(action: {
-                        NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
-                    }) {
-                        Image(systemSymbol: .trash)
+                if showQueuePanel {
+                    ToolbarItem {
+                        Text("Queue")
+                            .font(.system(size: 15))
+                            .fontWeight(.semibold)
+                            .offset(x: -140)
                     }
-                    .keyboardShortcut(.delete, modifiers: [.shift, .command])
-                    .help("Clear queue")
-                }
-                .hidden(!showQueuePanel || mpd.queue.songs.isEmpty)
+                    .sharedBackgroundVisibility(.hidden)
 
-                ToolbarItem {
-                    Button(action: {
-                        NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
-                    }) {
-                        Image(systemSymbol: .sparkles)
+                    if !mpd.queue.songs.isEmpty {
+                        ToolbarItem {
+                            Button(action: {
+                                NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
+                            }) {
+                                Image(systemSymbol: .trash)
+                            }
+                            .keyboardShortcut(.delete, modifiers: [.shift, .command])
+                            .help("Clear queue")
+                        }
+
+                    } else {
+                        ToolbarItem {
+                            Button(action: {
+                                NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                            }) {
+                                Image(systemSymbol: .sparkles)
+                            }
+                            .disabled(!isIntelligenceEnabled)
+                            .help(isIntelligenceEnabled ? "Fill queue with AI" : "AI features are disabled in settings")
+                        }
                     }
-                    .disabled(!isIntelligenceEnabled)
-                    .help(isIntelligenceEnabled ? "Fill queue with AI" : "AI features are disabled in settings")
-                }
-                .hidden(!showQueuePanel || !mpd.queue.songs.isEmpty)
 
-                ToolbarSpacer(.fixed)
-                    .hidden(!showQueuePanel)
+                    ToolbarSpacer(.fixed)
+                }
 
                 ToolbarItem {
                     Button(action: {
@@ -250,15 +242,15 @@ struct DetailView: View {
                     }
                     .help(showQueuePanel ? "Hide queue panel" : "Show queue panel")
                 }
-            #endif
-        }
-        .task(id: mpd.status.song) {
-            guard let song = mpd.status.song else {
-                artwork = nil
-                return
             }
+        #endif
+            .task(id: mpd.status.song) {
+                guard let song = mpd.status.song else {
+                    artwork = nil
+                    return
+                }
 
-            artwork = try? await song.artwork()
-        }
+                artwork = try? await song.artwork()
+            }
     }
 }

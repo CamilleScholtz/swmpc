@@ -18,12 +18,11 @@ struct AppView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     #if os(iOS)
-        @Environment(\.tabViewBottomAccessoryPlacement) var placement
+        @Namespace var namespace
     #endif
 
     #if os(iOS)
-        @State private var isPopupBarPresented = true
-        @State private var isPopupOpen = false
+        @State private var showDetailCover = false
     #elseif os(macOS)
         @State private var showQueuePanel = false
     #endif
@@ -57,6 +56,14 @@ struct AppView: View {
                         .tabBarMinimizeBehavior(.onScrollDown)
                         .tabViewBottomAccessory {
                             DetailMiniView()
+                                .onTapGesture {
+                                    showDetailCover.toggle()
+                                }
+                                .matchedTransitionSource(id: 1, in: namespace)
+                        }
+                        .fullScreenCover(isPresented: $showDetailCover) {
+                            DetailView()
+                                .navigationTransition(.zoom(sourceID: 1, in: namespace))
                         }
                     #elseif os(macOS)
                         NavigationSplitView {

@@ -41,7 +41,7 @@ enum ArtworkMode: ConnectionMode {
     static let label = "artwork"
     static let enableKeepalive = false
     static let bufferSize = 8192
-    static let queueAttributes: DispatchQueue.Attributes = .concurrent
+    static let queueAttributes: DispatchQueue.Attributes = []
     static let qos: DispatchQoS = .utility
 }
 
@@ -1109,6 +1109,17 @@ extension ConnectionManager where Mode == IdleMode {
 // MARK: - Artwork mode commands
 
 extension ConnectionManager where Mode == ArtworkMode {
+    /// Creates and connects a new `ConnectionManager` for artwork operations.
+    ///
+    /// - Returns: A connected `ConnectionManager<ArtworkMode>` instance.
+    /// - Throws: An error if the connection fails.
+    static func artwork() async throws -> ConnectionManager<ArtworkMode> {
+        let manager = ConnectionManager<ArtworkMode>()
+        try await manager.connect()
+
+        return manager
+    }
+
     /// Retrieves the complete artwork data for a given URL by fetching it in
     /// chunks from the media server.
     ///

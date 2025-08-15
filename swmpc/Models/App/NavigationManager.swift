@@ -21,6 +21,9 @@ import SwiftUI
     /// represent navigation to specific albums or artists.
     var path = NavigationPath()
 
+    /// Tracks the content destinations in the path for duplicate prevention.
+    private var pathContents: [ContentDestination] = []
+
     /// The currently selected category destination (e.g., albums, artists,
     /// songs, playlists). When this value changes, the navigation path is
     /// automatically reset to ensure a clean navigation state for the new
@@ -38,7 +41,12 @@ import SwiftUI
     /// - Parameter content: The content destination to navigate to (album or
     ///                      artist).
     func navigate(to content: ContentDestination) {
+        if let last = pathContents.last, last == content {
+            return
+        }
+
         path.append(content)
+        pathContents.append(content)
     }
 
     /// Removes the last item from the navigation path, effectively going back
@@ -49,12 +57,16 @@ import SwiftUI
         }
 
         path.removeLast()
+        if !pathContents.isEmpty {
+            pathContents.removeLast()
+        }
     }
 
     /// Resets the navigation path to an empty state, returning to the root of
     /// the current category.
     func reset() {
         path = NavigationPath()
+        pathContents = []
     }
 }
 
