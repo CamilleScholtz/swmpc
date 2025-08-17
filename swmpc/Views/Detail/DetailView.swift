@@ -6,7 +6,6 @@
 //
 
 import ButtonKit
-
 import SFSafeSymbols
 import SwiftUI
 
@@ -37,6 +36,7 @@ struct DetailView: View {
     #endif
 
     @State private var artwork: PlatformImage?
+    @State private var colors: [Color]?
 
     #if os(iOS)
         private var progress: Float {
@@ -54,72 +54,78 @@ struct DetailView: View {
     var body: some View {
         ZStack {
             ZStack {
-                ZStack {
-                    ArtworkView(image: artwork)
-                        .scaledToFit()
-                        .animation(.easeInOut(duration: 0.6), value: artwork)
-                    #if os(iOS)
-                        .mask(
-                            RadialGradient(
-                                gradient: Gradient(colors: [.white, .clear]),
-                                center: .center,
-                                startRadius: -15,
-                                endRadius: 275,
-                            ),
-                        )
-                    #elseif os(macOS)
-                        .mask(
-                            RadialGradient(
-                                gradient: Gradient(colors: [.white, .clear]),
-                                center: .center,
-                                startRadius: -15,
-                                endRadius: 225,
-                            )
-                            .ignoresSafeArea(.all),
-                        )
-                    #endif
-                        .offset(y: 20)
-                        .blur(radius: 20)
-                        .opacity(0.6)
-                        .drawingGroup()
-
+                if let colors {
+                    let height = artwork.map {
+                        Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
+                    } ?? Layout.Size.artworkWidth
+                    
                     ZStack {
-                        ArtworkView(image: artwork)
-                            .animation(.easeInOut(duration: 0.6), value: artwork)
-
-                        Rectangle()
-                            .opacity(0)
-                            .background(.ultraThinMaterial)
+                        ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
+                            let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
+                                (-60, -60),  // Top left
+                                (60, -60),   // Top right
+                                (-60, 60),   // Bottom left
+                                (60, 60)     // Bottom right
+                            ]
+                            let offset = cornerOffsets[index % 4]
+                            
+                            RadialGradient(
+                                colors: [color, .clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 200
+                            )
+                            .offset(
+                                x: offset.x,
+                                y: offset.y
+                            )
+                        }
                     }
-                    .scaledToFit()
-                    .drawingGroup()
-                    #if os(iOS)
-                        .mask(
-                            RadialGradient(
-                                gradient: Gradient(colors: [.white, .clear]),
-                                center: .center,
-                                startRadius: -25,
-                                endRadius: 200,
-                            ),
-                        )
-                        .scaleEffect(1.3)
-                    #elseif os(macOS)
-                        .mask(
-                            RadialGradient(
-                                gradient: Gradient(colors: [.white, .clear]),
-                                center: .center,
-                                startRadius: -25,
-                                endRadius: 225,
-                            ),
-                        )
-                    #endif
-                        .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
-                        .offset(y: 105)
-                        .blur(radius: 5)
-                }
-                .saturation(1.5)
-                .blendMode(colorScheme == .dark ? .softLight : .normal)
+                    .mask(
+                        RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                            .frame(width: Layout.Size.artworkWidth + 20, height: height + 20)
+                            .blur(radius: 40)
+                    )
+                    .opacity(0.8)
 
+    
+                    ZStack {
+                        ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
+                            let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
+                                (-60, -60),  // Top left
+                                (60, -60),   // Top right
+                                (-60, 60),   // Bottom left
+                                (60, 60)     // Bottom right
+                            ]
+                            let offset = cornerOffsets[index % 4]
+                            
+                            RadialGradient(
+                                colors: [color, .clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 200
+                            )
+                            .offset(
+                                x: offset.x,
+                                y: offset.y
+                            )
+                        }
+                    }
+                    .mask(
+                        RadialGradient(
+                            colors: [.black, .clear],
+                            center: .center,
+                            startRadius: Layout.Size.artworkWidth * 0.2,
+                            endRadius: Layout.Size.artworkWidth,
+                        ),
+                    )
+                    .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
+                    .opacity(0.5)
+                    .offset(y: height / 2)
+                    .blendMode(colorScheme == .dark ? .softLight : .normal)
+                    .animation(.easeInOut(duration: 0.6), value: colors)
+                }
+                
                 ArtworkView(image: artwork)
                     .animation(.easeInOut(duration: 0.2), value: artwork)
                     .overlay(
@@ -137,7 +143,6 @@ struct DetailView: View {
                             ),
                     )
                     .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-                    .shadow(color: .black.opacity(0.2), radius: 16)
                     .frame(width: Layout.Size.artworkWidth)
                 #if os(macOS)
                     .scaleEffect(isHovering ? 1.02 : 1)
@@ -247,10 +252,19 @@ struct DetailView: View {
             .task(id: mpd.status.song) {
                 guard let song = mpd.status.song else {
                     artwork = nil
+                    colors = nil
+    
                     return
                 }
 
                 artwork = try? await song.artwork()
+                guard let artwork else {
+                    colors = nil
+                    
+                    return
+                }
+                
+                colors = await Color.extractDominantColors(from: artwork, count: 4).shuffled()
             }
     }
 }
