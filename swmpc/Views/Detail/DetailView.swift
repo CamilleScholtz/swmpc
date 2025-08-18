@@ -37,6 +37,7 @@ struct DetailView: View {
 
     @State private var artwork: PlatformImage?
     @State private var colors: [Color]?
+    @State private var selectedVersion: Color.ExtractionVersion = .kMeansClustering
 
     #if os(iOS)
         private var progress: Float {
@@ -51,80 +52,126 @@ struct DetailView: View {
         }
     #endif
 
+    @ViewBuilder
+    private func shadowGradient(colors: [Color]) -> some View {
+        let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
+            (-60, -60),
+            (60, -60),
+            (-60, 60),
+            (60, 60)
+        ]
+        
+        ZStack {
+            ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
+                let offset = cornerOffsets[index % 4]
+                
+                RadialGradient(
+                    colors: [color, .clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 200
+                )
+                .offset(
+                    x: offset.x,
+                    y: offset.y
+                )
+            }
+        }
+    }
+    
     var body: some View {
         ZStack {
+            VStack {
+                HStack(spacing: 12) {
+                    Button(action: {
+                        selectedVersion = .kMeansClustering
+                    }) {
+                        Text("1")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 30, height: 30)
+                            .background(selectedVersion == .kMeansClustering ? Color.accentColor : Color.gray.opacity(0.3))
+                            .foregroundColor(selectedVersion == .kMeansClustering ? .white : .primary)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Button(action: {
+                        selectedVersion = .histogramQuantization
+                    }) {
+                        Text("2")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 30, height: 30)
+                            .background(selectedVersion == .histogramQuantization ? Color.accentColor : Color.gray.opacity(0.3))
+                            .foregroundColor(selectedVersion == .histogramQuantization ? .white : .primary)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Button(action: {
+                        selectedVersion = .labColorSpace
+                    }) {
+                        Text("3")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 30, height: 30)
+                            .background(selectedVersion == .labColorSpace ? Color.accentColor : Color.gray.opacity(0.3))
+                            .foregroundColor(selectedVersion == .labColorSpace ? .white : .primary)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Button(action: {
+                        selectedVersion = .gridSampling
+                    }) {
+                        Text("4")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 30, height: 30)
+                            .background(selectedVersion == .gridSampling ? Color.accentColor : Color.gray.opacity(0.3))
+                            .foregroundColor(selectedVersion == .gridSampling ? .white : .primary)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.top, 20)
+                
+                Spacer()
+            }
+            .offset(y: 80)
+            .zIndex(1000)
+            
             ZStack {
                 if let colors {
-                    let height = artwork.map {
-                        Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
-                    } ?? Layout.Size.artworkWidth
-                    
                     ZStack {
-                        ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
-                            let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
-                                (-60, -60),  // Top left
-                                (60, -60),   // Top right
-                                (-60, 60),   // Bottom left
-                                (60, 60)     // Bottom right
-                            ]
-                            let offset = cornerOffsets[index % 4]
-                            
-                            RadialGradient(
-                                colors: [color, .clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 200
+                        let height = artwork.map {
+                            Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
+                        } ?? Layout.Size.artworkWidth
+                        
+                        shadowGradient(colors: colors)
+                            .mask(
+                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                    .frame(width: Layout.Size.artworkWidth + 15, height: height + 15)
+                                    .blur(radius: 40)
                             )
-                            .offset(
-                                x: offset.x,
-                                y: offset.y
+                            .opacity(0.6)
+                        
+                        shadowGradient(colors: colors)
+                            .mask(
+                                RadialGradient(
+                                    colors: [.black, .clear],
+                                    center: .center,
+                                    startRadius: Layout.Size.artworkWidth * 0.2,
+                                    endRadius: Layout.Size.artworkWidth,
+                                ),
                             )
-                        }
+                            .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
+                            .opacity(0.5)
+                            .offset(y: height / 2)
+                            .animation(.easeInOut(duration: 0.6), value: colors)
                     }
-                    .mask(
-                        RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                            .frame(width: Layout.Size.artworkWidth + 20, height: height + 20)
-                            .blur(radius: 40)
-                    )
-                    .opacity(0.8)
-
-    
-                    ZStack {
-                        ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
-                            let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
-                                (-60, -60),  // Top left
-                                (60, -60),   // Top right
-                                (-60, 60),   // Bottom left
-                                (60, 60)     // Bottom right
-                            ]
-                            let offset = cornerOffsets[index % 4]
-                            
-                            RadialGradient(
-                                colors: [color, .clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 200
-                            )
-                            .offset(
-                                x: offset.x,
-                                y: offset.y
-                            )
-                        }
-                    }
-                    .mask(
-                        RadialGradient(
-                            colors: [.black, .clear],
-                            center: .center,
-                            startRadius: Layout.Size.artworkWidth * 0.2,
-                            endRadius: Layout.Size.artworkWidth,
-                        ),
-                    )
-                    .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
-                    .opacity(0.5)
-                    .offset(y: height / 2)
                     .blendMode(colorScheme == .dark ? .softLight : .normal)
-                    .animation(.easeInOut(duration: 0.6), value: colors)
+                    .brightness(-0.3)
+                    .saturation(0.9)
                 }
+
                 
                 ArtworkView(image: artwork)
                     .animation(.easeInOut(duration: 0.2), value: artwork)
@@ -264,7 +311,11 @@ struct DetailView: View {
                     return
                 }
                 
-                colors = await Color.extractDominantColors(from: artwork, count: 4).shuffled()
+                colors = await Color.extractDominantColors(from: artwork, count: 4, version: selectedVersion)
+            }
+            .task(id: selectedVersion) {
+                guard let artwork else { return }
+                colors = await Color.extractDominantColors(from: artwork, count: 4, version: selectedVersion)
             }
     }
 }
