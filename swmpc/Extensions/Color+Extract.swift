@@ -9,114 +9,108 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 
+#if os(macOS)
+    typealias PlatformColor = NSColor
+#else
+    typealias PlatformColor = UIColor
+#endif
+
 extension Color {
-    /// A simple representation of a color in the RGB space for distance calculations.
+    private nonisolated static let context = CIContext()
+
     private nonisolated struct RGB: Hashable {
         let r: CGFloat
         let g: CGFloat
         let b: CGFloat
 
-        init(red: CGFloat, green: CGFloat, blue: CGFloat) {
-            r = red
-            g = green
-            b = blue
+        var brightness: CGFloat {
+            0.3 * r + 0.6 * g + 0.1 * b
         }
 
-        /// Calculates the squared Euclidean distance to another color.
-        /// Squaring avoids the need for a costly square root operation while still being effective for comparison.
-        func distanceSquared(to other: RGB) -> CGFloat {
+        var saturation: CGFloat {
+            let maxVal = max(r, g, b)
+            let minVal = min(r, g, b)
+            
+            return maxVal > 0 ? (maxVal - minVal) / maxVal : 0
+        }
+
+        var vibrancy: CGFloat {
+            saturation * 0.7 + min(1.0, brightness * 1.2) * 0.3
+        }
+
+        func distance(to other: RGB) -> CGFloat {
             let dr = r - other.r
             let dg = g - other.g
             let db = b - other.b
+            
             return dr * dr + dg * dg + db * db
         }
 
-        /// Returns the brightness (luminance) of the color using relative luminance formula.
-        var brightness: CGFloat {
-            0.299 * r + 0.587 * g + 0.114 * b
-        }
-
-        /// Returns the saturation of the color in HSB color space.
-        var saturation: CGFloat {
-            let maxComponent = max(r, g, b)
-            let minComponent = min(r, g, b)
-
-            if maxComponent == 0 {
-                return 0
-            }
-
-            return (maxComponent - minComponent) / maxComponent
-        }
-
-        /// Returns a vibrancy score combining brightness and saturation.
-        /// Higher scores indicate more vibrant, visually appealing colors.
-        var vibrancy: CGFloat {
-            // Boost brightness to avoid dark colors
-            // Prefer mid-to-bright colors with good saturation
-            let brightnessScore = min(1.0, brightness * 1.5) // Boost brightness
-            return saturation * 0.6 + brightnessScore * 0.4
-        }
-
-        /// Enhances the color to be more vibrant
         func enhanced() -> RGB {
-            // Convert to HSB-like calculations for better color preservation
-            let maxVal = max(r, g, b)
-            let minVal = min(r, g, b)
-            let delta = maxVal - minVal
+            let color = PlatformColor(red: r, green: g, blue: b, alpha: 1.0)
+            var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            color.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
 
-            // Calculate current saturation and brightness
-            let currentBrightness = maxVal
-            let currentSaturation = maxVal > 0 ? delta / maxVal : 0
+            // Adjust brightness and saturation - boost saturation more
+            let newBrightness = max(0.45, min(0.75, b * 1.15))
+            let newSaturation = min(1.0, max(0.4, s * 1.5 + 0.1))
 
-            // Target brightness (never too dark, never washed out)
-            let targetBrightness = max(0.5, min(0.9, currentBrightness * 1.4))
+            let enhanced = PlatformColor(hue: h, saturation: newSaturation, brightness: newBrightness, alpha: 1.0)
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
+            enhanced.getRed(&red, green: &green, blue: &blue, alpha: &a)
 
-            // Boost saturation for muted colors
-            let targetSaturation = min(1.0, currentSaturation * 1.5 + 0.2)
+            return RGB(r: red, g: green, b: blue)
+        }
 
-            // If it's a grayscale color, just brighten it
-            if currentSaturation < 0.05 {
-                let gray = targetBrightness
-                return RGB(red: gray, green: gray, blue: gray)
-            }
+        // Create harmonious variations
+        func createVariation(factor: CGFloat) -> RGB {
+            let color = PlatformColor(red: r, green: g, blue: b, alpha: 1.0)
+            var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            color.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
 
-            // Reconstruct color with enhanced saturation and brightness
-            let brightnessFactor = targetBrightness / max(0.01, currentBrightness)
+            // Create variation by adjusting brightness
+            let newBrightness = max(0.2, min(1.0, b * factor))
+            let varied = PlatformColor(hue: h, saturation: s, brightness: newBrightness, alpha: 1.0)
 
-            // Apply brightness adjustment
-            var newR = r * brightnessFactor
-            var newG = g * brightnessFactor
-            var newB = b * brightnessFactor
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
+            varied.getRed(&red, green: &green, blue: &blue, alpha: &a)
 
-            // Enhance saturation by pushing colors away from gray
-            let gray = (newR + newG + newB) / 3.0
-            let saturationFactor = targetSaturation / max(0.01, currentSaturation)
-
-            newR = gray + (newR - gray) * saturationFactor
-            newG = gray + (newG - gray) * saturationFactor
-            newB = gray + (newB - gray) * saturationFactor
-
-            // Clamp values
-            return RGB(
-                red: min(1.0, max(0.0, newR)),
-                green: min(1.0, max(0.0, newG)),
-                blue: min(1.0, max(0.0, newB))
-            )
+            return RGB(r: red, g: green, b: blue)
         }
     }
 
-    /// Extracts a specified number of dominant colors from an image using k-means clustering.
-    ///
-    /// - Parameters:
-    ///   - image: The `PlatformImage` (UIImage or NSImage) to analyze.
-    ///   - count: The number of distinct colors to return. Defaults to 1.
-    ///   - quality: The quality of the downsampled image for analysis. Lower is faster.
-    /// - Returns: An array of SwiftUI `Color` objects, sorted by dominance.
+    // Helper function to process pixel buffer and build histogram
+    private nonisolated static func buildColorHistogram(
+        from pixels: [UInt8],
+        count: Int,
+        quantize: CGFloat = 32.0,
+    ) -> [RGB: Int] {
+        var histogram = [RGB: Int](minimumCapacity: min(count / 16, 1000))
+
+        pixels.withUnsafeBufferPointer { buffer in
+            for i in stride(from: 0, to: count, by: 4) {
+                let a = CGFloat(buffer[i + 3]) / 255.0
+                guard a > 0.5 else {
+                    continue
+                }
+
+                let r = round(CGFloat(buffer[i]) / 255.0 * quantize) / quantize
+                let g = round(CGFloat(buffer[i + 1]) / 255.0 * quantize) / quantize
+                let b = round(CGFloat(buffer[i + 2]) / 255.0 * quantize) / quantize
+
+                let color = RGB(r: r, g: g, b: b)
+                histogram[color, default: 0] += 1
+            }
+        }
+
+        return histogram
+    }
+
     @concurrent
     nonisolated static func extractDominantColors(
         from image: PlatformImage,
         count: Int = 1,
-        quality: CGFloat = 100.0
+        quality: CGFloat = 100.0,
     ) async -> [Color] {
         #if os(macOS)
             guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
@@ -128,190 +122,98 @@ extension Color {
             }
         #endif
 
-        // Convert to CIImage and get proper color space
         let ciImage = CIImage(cgImage: cgImage)
         let colorSpace = ciImage.colorSpace ?? CGColorSpaceCreateDeviceRGB()
 
-        // 1. Downsample the image for performance
-        let scaleFactor = quality / max(ciImage.extent.width, ciImage.extent.height)
-        let downsampledImage = ciImage.transformed(by: .init(scaleX: scaleFactor, y: scaleFactor))
+        let scale = quality / max(ciImage.extent.width, ciImage.extent.height)
+        let scaled = ciImage.transformed(by: .init(scaleX: scale, y: scale))
 
-        // 2. First pass: Get pixel data directly to analyze color distribution
-        let context = CIContext()
-        let width = Int(downsampledImage.extent.width)
-        let height = Int(downsampledImage.extent.height)
+        let width = Int(scaled.extent.width)
+        let height = Int(scaled.extent.height)
         let bytesPerRow = width * 4
-        var pixelData = [UInt8](repeating: 0, count: height * bytesPerRow)
+        let pixelCount = height * bytesPerRow
+        var pixels = [UInt8](repeating: 0, count: pixelCount)
 
-        context.render(downsampledImage,
-                       toBitmap: &pixelData,
+        context.render(scaled,
+                       toBitmap: &pixels,
                        rowBytes: bytesPerRow,
-                       bounds: downsampledImage.extent,
+                       bounds: scaled.extent,
                        format: .RGBA8,
                        colorSpace: colorSpace)
 
-        // 3. Sample colors and build a color histogram
-        var colorHistogram: [RGB: Int] = [:]
-        let quantizationFactor: CGFloat = 32.0 // Quantize to reduce similar colors
+        // Use helper function to build histogram
+        let histogram = buildColorHistogram(from: pixels, count: pixelCount)
 
-        for y in 0 ..< height {
-            for x in 0 ..< width {
-                let pixelIndex = (y * width + x) * 4
-                let r = CGFloat(pixelData[pixelIndex]) / 255.0
-                let g = CGFloat(pixelData[pixelIndex + 1]) / 255.0
-                let b = CGFloat(pixelData[pixelIndex + 2]) / 255.0
-                let a = CGFloat(pixelData[pixelIndex + 3]) / 255.0
-
-                if a > 0.5 {
-                    // Quantize colors to reduce noise
-                    let qr = round(r * quantizationFactor) / quantizationFactor
-                    let qg = round(g * quantizationFactor) / quantizationFactor
-                    let qb = round(b * quantizationFactor) / quantizationFactor
-
-                    let color = RGB(red: qr, green: qg, blue: qb)
-                    colorHistogram[color, default: 0] += 1
-                }
-            }
+        // Score colors by frequency and vibrancy instead of strict filtering
+        let scoredColors = histogram.map { color, frequency in
+            // Use logarithmic scale for frequency to prevent overwhelming dominant colors
+            let freqScore = log(CGFloat(frequency) + 1.0)
+            let score = freqScore * color.vibrancy
+            return (color: color, score: score, frequency: frequency)
         }
 
-        // 4. Sort colors by frequency and filter out browns/grays
-        let sortedColors = colorHistogram.sorted { $0.value > $1.value }
-            .map(\.key)
-            .filter { color in
-                // Filter out muddy browns and grays
-                let saturation = color.saturation
-                let brightness = color.brightness
+        // Sort by score and filter out very poor colors
+        var candidates = scoredColors
+            .filter { $0.color.saturation > 0.1 || $0.color.brightness > 0.2 }
+            .sorted { $0.score > $1.score }
+            .map(\.color)
 
-                // Reject colors that are too gray (low saturation)
-                if saturation < 0.15 { return false }
+        if candidates.count < count * 2 {
+            let filter = CIFilter.kMeans()
+            filter.inputImage = scaled
+            filter.count = min(16, max(8, count * 4))
+            filter.extent = scaled.extent
 
-                // Reject very dark colors unless they're saturated
-                if brightness < 0.2, saturation < 0.5 { return false }
+            if let output = filter.outputImage {
+                let kWidth = Int(output.extent.width)
+                let kHeight = Int(output.extent.height)
+                let kPixelCount = kWidth * kHeight * 4
+                var kPixels = [UInt8](repeating: 0, count: kPixelCount)
 
-                // Reject "brown" colors (low saturation in mid-brightness range)
-                let isBrown = brightness > 0.2 && brightness < 0.6 && saturation < 0.25
-                if isBrown { return false }
-
-                return true
-            }
-
-        // 5. If we filtered out too many colors, use k-means as fallback
-        let useKMeans = sortedColors.count < count * 2
-        var candidateColors: [RGB] = []
-
-        if useKMeans {
-            // Use k-means filter for broader color extraction
-            let clusterCount = min(16, max(8, count * 4))
-            let kmeansFilter = CIFilter.kMeans()
-            kmeansFilter.inputImage = downsampledImage
-            kmeansFilter.count = clusterCount
-            kmeansFilter.extent = downsampledImage.extent
-
-            if let outputImage = kmeansFilter.outputImage {
-                // Render k-means result
-                let kmeansWidth = Int(outputImage.extent.width)
-                let kmeansHeight = Int(outputImage.extent.height)
-                var kmeansBitmap = [UInt8](repeating: 0, count: kmeansWidth * kmeansHeight * 4)
-
-                context.render(outputImage,
-                               toBitmap: &kmeansBitmap,
-                               rowBytes: kmeansWidth * 4,
-                               bounds: outputImage.extent,
+                context.render(output,
+                               toBitmap: &kPixels,
+                               rowBytes: kWidth * 4,
+                               bounds: output.extent,
                                format: .RGBA8,
                                colorSpace: colorSpace)
 
-                // Extract unique colors from k-means result
-                var kmeansColors: Set<RGB> = []
-                for y in 0 ..< kmeansHeight {
-                    for x in 0 ..< kmeansWidth {
-                        let idx = (y * kmeansWidth + x) * 4
-                        let r = CGFloat(kmeansBitmap[idx]) / 255.0
-                        let g = CGFloat(kmeansBitmap[idx + 1]) / 255.0
-                        let b = CGFloat(kmeansBitmap[idx + 2]) / 255.0
-                        let a = CGFloat(kmeansBitmap[idx + 3]) / 255.0
-
-                        if a > 0.5 {
-                            kmeansColors.insert(RGB(red: r, green: g, blue: b))
-                        }
-                    }
-                }
-
-                // Sort k-means colors by vibrancy
-                candidateColors = kmeansColors.sorted { $0.vibrancy > $1.vibrancy }
-            }
-        } else {
-            candidateColors = sortedColors
-        }
-
-        // 6. Select distinct colors with better diversity
-        var distinctColors: [RGB] = []
-        let minDistance: CGFloat = 0.12 // Increased threshold for more distinct colors
-
-        for color in candidateColors {
-            if distinctColors.count >= count { break }
-
-            let isDistinct = distinctColors.isEmpty || distinctColors.allSatisfy { existing in
-                color.distanceSquared(to: existing) > minDistance
-            }
-
-            // Additional check: ensure color is vibrant enough (lowered threshold)
-            if isDistinct, color.vibrancy > 0.25 {
-                distinctColors.append(color)
+                // Use helper function for k-means histogram too
+                let kHistogram = buildColorHistogram(from: kPixels, count: kPixelCount, quantize: 255.0)
+                candidates = kHistogram.keys.sorted { $0.vibrancy > $1.vibrancy }
             }
         }
 
-        // 7. If we still don't have enough colors, add the most frequent ones
-        if distinctColors.count < count {
-            for color in candidateColors {
-                if distinctColors.count >= count { break }
+        var result: [RGB] = []
+        let minDist: CGFloat = 0.1
 
-                // Lower the distance threshold for additional colors
-                let isAcceptable = distinctColors.allSatisfy { existing in
-                    color.distanceSquared(to: existing) > 0.05
-                }
+        for color in candidates {
+            if result.count >= count { break }
 
-                if isAcceptable {
-                    distinctColors.append(color)
-                }
+            let distinct = result.isEmpty || result.allSatisfy {
+                color.distance(to: $0) > minDist
+            }
+
+            if distinct, color.vibrancy > 0.3 {
+                result.append(color)
             }
         }
 
-        // 8. Fill remaining slots with color variations if needed
-        while distinctColors.count < count {
-            if let primaryColor = distinctColors.first {
-                // Create complementary or shifted colors
-                let hueShift = CGFloat(distinctColors.count) * 0.25
-                let shifted = RGB(
-                    red: (primaryColor.r + hueShift).truncatingRemainder(dividingBy: 1.0),
-                    green: (primaryColor.g + hueShift * 0.7).truncatingRemainder(dividingBy: 1.0),
-                    blue: (primaryColor.b + hueShift * 0.4).truncatingRemainder(dividingBy: 1.0)
-                )
-                distinctColors.append(shifted)
+        while result.count < count {
+            if let first = result.first {
+                // Use the new createVariation method for harmonious colors
+                let factor = 1.0 - (CGFloat(result.count) * 0.15)
+                result.append(first.createVariation(factor: factor))
             } else {
-                // Fallback to a default color
-                distinctColors.append(RGB(red: 0.5, green: 0.5, blue: 0.8))
+                result.append(RGB(r: 0.5, g: 0.5, b: 0.8))
             }
         }
 
-        // 9. Enhance colors moderately to avoid muddy results without over-saturation
-        let enhancedColors = distinctColors.map { color in
-            // Only enhance if the color needs it
-            if color.saturation < 0.4 || color.brightness < 0.4 {
-                return color.enhanced()
-            } else {
-                // For already vibrant colors, just slight brightness adjustment
-                let brightnessFactor = max(0.8, min(1.1, 1.0 + (0.5 - color.brightness) * 0.3))
-                return RGB(
-                    red: min(1.0, color.r * brightnessFactor),
-                    green: min(1.0, color.g * brightnessFactor),
-                    blue: min(1.0, color.b * brightnessFactor)
-                )
-            }
+        let enhanced = result.map { color in
+            color.saturation < 0.5 || color.brightness < 0.4 ? color.enhanced() : color
         }
 
-        // 10. Sort by vibrancy to get the most appealing colors first
-        let sortedByVibrancy = enhancedColors.sorted { $0.vibrancy > $1.vibrancy }
-
-        return sortedByVibrancy.prefix(count).map { Color(red: $0.r, green: $0.g, blue: $0.b) }
+        return enhanced.sorted { $0.vibrancy > $1.vibrancy }
+            .prefix(count)
+            .map { Color(red: $0.r, green: $0.g, blue: $0.b) }
     }
 }

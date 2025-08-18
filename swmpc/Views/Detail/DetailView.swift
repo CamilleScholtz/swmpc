@@ -110,8 +110,6 @@ struct DetailView: View {
                             .animation(.easeInOut(duration: 0.6), value: colors)
                     }
                     .blendMode(colorScheme == .dark ? .softLight : .normal)
-                    .brightness(-0.3)
-                    .saturation(0.9)
                 }
 
                 ArtworkView(image: artwork)
