@@ -79,7 +79,7 @@ import SwiftUI
     private func syncPathContents() {
         let currentCount = path.count
         let trackedCount = pathContents.count
-        
+
         if currentCount < trackedCount {
             pathContents = Array(pathContents.prefix(currentCount))
         }

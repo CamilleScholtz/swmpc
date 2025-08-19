@@ -62,14 +62,12 @@ extension Color {
             return RGB(r: red, g: green, b: blue)
         }
 
-        // Create harmonious variations
         func createVariation(factor: CGFloat) -> RGB {
             let color = PlatformColor(red: r, green: g, blue: b, alpha: 1.0)
             var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
             color.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
 
-            // Create variation by adjusting brightness - also cap to 0.65
-            let newBrightness = max(0.2, min(0.65, b * factor))
+            let newBrightness = max(0.2, min(0.7, b * factor))
             let varied = PlatformColor(hue: h, saturation: s, brightness: newBrightness, alpha: 1.0)
 
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
@@ -79,7 +77,6 @@ extension Color {
         }
     }
 
-    // Helper function to process pixel buffer and build histogram
     private nonisolated static func buildColorHistogram(
         from pixels: [UInt8],
         count: Int,
@@ -204,7 +201,7 @@ extension Color {
                 let factor = 1.0 - (CGFloat(result.count) * 0.15)
                 result.append(first.createVariation(factor: factor))
             } else {
-                result.append(RGB(r: 0.5, g: 0.5, b: 0.8))
+                result.append(RGB(r: 0.5, g: 0.5, b: 0.5))
             }
         }
 

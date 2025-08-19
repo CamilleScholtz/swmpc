@@ -8,7 +8,7 @@
 import AppIntents
 import SwiftUI
 
-struct PreviousSongIntent: AppIntent {
+struct PreviousSongIntent: AppIntent, AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Previous Song"
     static let description = IntentDescription("Go back to the previous song")
 
@@ -23,4 +23,8 @@ struct PreviousSongIntent: AppIntent {
     }
 
     static let openAppWhenRun: Bool = false
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Go to previous song")
+    }
 }

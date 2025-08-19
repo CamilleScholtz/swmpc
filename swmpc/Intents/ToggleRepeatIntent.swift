@@ -8,7 +8,7 @@
 import AppIntents
 import SwiftUI
 
-struct ToggleRepeatIntent: AppIntent {
+struct ToggleRepeatIntent: AppIntent, AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Toggle Repeat"
     static let description = IntentDescription("Enable or disable repeat mode")
 
@@ -19,4 +19,8 @@ struct ToggleRepeatIntent: AppIntent {
     }
 
     static let openAppWhenRun: Bool = false
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Toggle repeat mode")
+    }
 }
