@@ -90,7 +90,7 @@ struct DetailView: View {
                         shadowGradient(colors: colors)
                             .mask(
                                 RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                    .frame(width: Layout.Size.artworkWidth + 15, height: height + 15)
+                                    .frame(width: Layout.Size.artworkWidth + Layout.Padding.small, height: height + Layout.Padding.small)
                                     .blur(radius: 40),
                             )
                             .opacity(0.6)
@@ -100,8 +100,8 @@ struct DetailView: View {
                                 RadialGradient(
                                     colors: [.black, .clear],
                                     center: .center,
-                                    startRadius: Layout.Size.artworkWidth * 0.2,
-                                    endRadius: Layout.Size.artworkWidth,
+                                    startRadius: 0,
+                                    endRadius: Layout.Size.artworkWidth * 1.4,
                                 ),
                             )
                             .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
@@ -109,7 +109,7 @@ struct DetailView: View {
                             .offset(y: height / 2)
                             .animation(.easeInOut(duration: 0.6), value: colors)
                     }
-                    .blendMode(colorScheme == .dark ? .softLight : .normal)
+                    .opacity(colorScheme == .dark ? 0.3 : 0.8)
                 }
 
                 ArtworkView(image: artwork)

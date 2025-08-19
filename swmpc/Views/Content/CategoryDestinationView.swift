@@ -202,6 +202,7 @@ struct CategoryDatabaseView: View {
                 } label: {
                     Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
                 }
+                .keyboardShortcut("f", modifiers: .command)
             }
         }
         .task(id: navigator.category) {

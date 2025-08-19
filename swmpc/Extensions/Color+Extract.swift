@@ -30,7 +30,7 @@ extension Color {
         var saturation: CGFloat {
             let maxVal = max(r, g, b)
             let minVal = min(r, g, b)
-            
+
             return maxVal > 0 ? (maxVal - minVal) / maxVal : 0
         }
 
@@ -42,7 +42,7 @@ extension Color {
             let dr = r - other.r
             let dg = g - other.g
             let db = b - other.b
-            
+
             return dr * dr + dg * dg + db * db
         }
 
@@ -51,9 +51,9 @@ extension Color {
             var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
             color.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
 
-            // Adjust brightness and saturation - boost saturation more
-            let newBrightness = max(0.45, min(0.75, b * 1.15))
-            let newSaturation = min(1.0, max(0.4, s * 1.5 + 0.1))
+            // Adjust brightness and saturation - cap brightness to 0.7
+            let newBrightness = max(0.35, min(0.7, b * 1.1))
+            let newSaturation = min(1.0, max(0.4, s * 1.5))
 
             let enhanced = PlatformColor(hue: h, saturation: newSaturation, brightness: newBrightness, alpha: 1.0)
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
@@ -68,8 +68,8 @@ extension Color {
             var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
             color.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
 
-            // Create variation by adjusting brightness
-            let newBrightness = max(0.2, min(1.0, b * factor))
+            // Create variation by adjusting brightness - also cap to 0.65
+            let newBrightness = max(0.2, min(0.65, b * factor))
             let varied = PlatformColor(hue: h, saturation: s, brightness: newBrightness, alpha: 1.0)
 
             var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
