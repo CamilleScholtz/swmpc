@@ -23,14 +23,7 @@ struct ArtistView: View {
     var body: some View {
         HStack(spacing: Layout.Spacing.large) {
             Circle()
-                .fill(LinearGradient(
-                    gradient: Gradient(stops: [
-                        .init(color: Color(.secondarySystemFill), location: 0.0),
-                        .init(color: Color(.secondarySystemFill).opacity(0.7), location: 1.0),
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom,
-                ))
+                .fill(Color(.tertiarySystemFill))
                 .frame(width: Layout.RowHeight.artist, height: Layout.RowHeight.artist)
                 .overlay(
                     ZStack {

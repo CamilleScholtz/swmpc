@@ -55,6 +55,13 @@ protocol CollectionViewCoordinator: AnyObject {
                 ])
 
                 hostingView = hosting
+
+                // TODO: I don't know if this actually brings performance benefits.
+//                view.wantsLayer = true
+//                if let layer = view.layer {
+//                    layer.shouldRasterize = true
+//                    layer.rasterizationScale = view.window?.backingScaleFactor ?? 2.0
+//                }
             }
         }
     }
@@ -307,13 +314,18 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
             private func setupDataSource() {
                 let cellRegistration = UICollectionView.CellRegistration<UICollectionViewCell, Data.Element> { [weak self] cell, _, item in
-                    guard let self else { return }
+                    guard let self else {
+                        return
+                    }
 
                     cell.contentConfiguration = UIHostingConfiguration {
                         self.content(item)
                     }
                     .margins(.all, 0)
                     .background(.clear)
+
+                    cell.layer.shouldRasterize = true
+                    cell.layer.rasterizationScale = cell.traitCollection.displayScale
                 }
 
                 dataSource = UICollectionViewDiffableDataSource<Int, Data.Element>(collectionView: collectionView) { collectionView, indexPath, item in
@@ -323,7 +335,9 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
             func updateData<ViewData: RandomAccessCollection>(_ data: ViewData) where ViewData.Element == Data.Element {
                 let newIdentifiers = data.map(\.id)
-                guard newIdentifiers != currentDataOrder else { return }
+                guard newIdentifiers != currentDataOrder else {
+                    return
+                }
 
                 var snapshot = NSDiffableDataSourceSnapshot<Int, Data.Element>()
                 snapshot.appendSections([0])

@@ -25,7 +25,7 @@ struct ArtworkView: View {
                 #endif
             } else {
                 Rectangle()
-                    .fill(Color(.secondarySystemFill).opacity(0.4))
+                    .fill(Color(.tertiarySystemFill))
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
             }
         }

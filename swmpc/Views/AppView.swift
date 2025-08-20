@@ -59,11 +59,11 @@ struct AppView: View {
                                 .onTapGesture {
                                     showDetailCover.toggle()
                                 }
-                            // .matchedTransitionSource(id: 1, in: namespace)
+                                .matchedTransitionSource(id: 1, in: namespace)
                         }
                         .fullScreenCover(isPresented: $showDetailCover) {
                             DetailView()
-                            // .navigationTransition(.zoom(sourceID: 1, in: namespace))
+                                .navigationTransition(.zoom(sourceID: 1, in: namespace))
                         }
                     #elseif os(macOS)
                         NavigationSplitView {
