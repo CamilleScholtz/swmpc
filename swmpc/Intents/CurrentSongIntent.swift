@@ -21,4 +21,8 @@ struct CurrentSongIntent: AppIntent {
     }
 
     static let openAppWhenRun: Bool = false
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Get current song info")
+    }
 }

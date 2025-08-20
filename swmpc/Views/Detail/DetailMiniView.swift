@@ -6,7 +6,6 @@
 //
 
 import ButtonKit
-import Noise
 import SFSafeSymbols
 import SwiftUI
 
@@ -15,38 +14,41 @@ struct DetailMiniView: View {
 
     @State private var artwork: PlatformImage?
 
-    #if os(iOS)
-        private var progress: Float {
-            guard let elapsed = mpd.status.elapsed,
-                  let duration = mpd.status.song?.duration,
-                  duration > 0
-            else {
-                return 0
-            }
-
-            return Float(elapsed / duration)
+    private var progress: Float {
+        guard let elapsed = mpd.status.elapsed,
+              let duration = mpd.status.song?.duration,
+              duration > 0
+        else {
+            return 0
         }
-    #endif
+
+        return Float(elapsed / duration)
+    }
 
     var body: some View {
-        HStack {
-            ArtworkView(image: artwork)
-//                .frame(width: 50, height: 50)
-                .cornerRadius(4)
+        HStack(spacing: Layout.Spacing.small) {
+            ArtworkView(image: artwork, aspectRatioMode: .fill)
+                .frame(width: 32, height: 32)
+                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small / 1.5))
 
-            VStack {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(mpd.status.song?.title ?? "No song playing")
                     .font(.subheadline)
+                    .lineLimit(1)
 
                 Text(mpd.status.song?.artist ?? "")
                     .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
             Spacer()
 
-//            PauseView()
-//            NextView()
+            PauseView(size: 20, button: false)
+                .offset(x: Layout.Spacing.medium)
+            NextView(size: 16)
         }
+        .padding(.horizontal, Layout.Padding.large)
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
                 artwork = nil

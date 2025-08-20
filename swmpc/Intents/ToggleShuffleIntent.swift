@@ -8,7 +8,7 @@
 import AppIntents
 import SwiftUI
 
-struct ToggleShuffleIntent: AppIntent {
+struct ToggleShuffleIntent: AppIntent, AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Toggle Shuffle"
     static let description = IntentDescription("Enable or disable shuffle mode")
 
@@ -19,4 +19,8 @@ struct ToggleShuffleIntent: AppIntent {
     }
 
     static let openAppWhenRun: Bool = false
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Toggle shuffle mode")
+    }
 }

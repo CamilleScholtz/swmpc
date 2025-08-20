@@ -8,7 +8,18 @@
 import ButtonKit
 import SwiftUI
 
+// MARK: - Layout Constants
+
+private extension Layout {
+    enum Control {
+        static let previousButtonMultiplier: CGFloat = 2.0
+        static let previousSizeAdjustment: CGFloat = 5
+    }
+}
+
 struct PreviousView: View {
+    @Environment(MPD.self) private var mpd
+
     var size: CGFloat = 18
 
     @State private var animating = false
@@ -44,13 +55,15 @@ struct PreviousView: View {
                         .scaleEffect(value)
                 }
                 .font(.system(size: size))
-                .offset(x: -value * (size - 5))
-                .offset(x: (size - 5) / 3)
+                .offset(x: -value * (size - Layout.Control.previousSizeAdjustment))
+                .offset(x: (size - Layout.Control.previousSizeAdjustment) / 3)
             }
-            .frame(width: (size - 5) * 2)
-            .padding(12)
+            .frame(width: (size - Layout.Control.previousSizeAdjustment) * 2)
+            .padding(Layout.Padding.large)
             .contentShape(Circle())
         }
         .styledButton()
+        .disabled(mpd.status.song == nil)
+        .help("Skip to previous track")
     }
 }

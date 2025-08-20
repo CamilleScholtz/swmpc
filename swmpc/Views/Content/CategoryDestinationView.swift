@@ -30,17 +30,17 @@ struct CategoryDestinationView: View {
         #if os(macOS)
         .toolbar(removing: .title)
         .toolbar {
-            ToolbarItem {
-                Text(navigator.category.label)
-                    .font(.system(size: 15))
-                    .fontWeight(.semibold)
-                    .padding(.leading, 12)
-            }
-            .sharedBackgroundVisibility(.hidden)
-            .hidden(isSearchFieldExpanded)
+            if !isSearchFieldExpanded {
+                ToolbarItem {
+                    Text(navigator.category.label)
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
+                        .padding(.leading, 12)
+                }
+                .sharedBackgroundVisibility(.hidden)
 
-            ToolbarSpacer(.flexible)
-                .hidden(isSearchFieldExpanded)
+                ToolbarSpacer(.flexible)
+            }
         }
         #endif
         .onChange(of: navigator.category) {
@@ -66,9 +66,7 @@ struct CategoryDatabaseView: View {
     @State private var searchQuery = ""
     @State private var searchResults: [any Mediable]?
 
-    #if os(macOS)
-        @FocusState private var isSearchFieldFocused: Bool
-    #endif
+    @FocusState private var isSearchFieldFocused: Bool
 
     private var sort: SortDescriptor {
         switch navigator.category {
@@ -84,21 +82,27 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = searchResults as? [Album] {
-                CollectionView(data: albums, rowHeight: 65 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large) {
                     RowView(media: $0)
                 }
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         case .artist:
             if let artists = searchResults as? [Artist] {
-                CollectionView(data: artists, rowHeight: 50 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large) {
                     RowView(media: $0)
                 }
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         default:
             if let songs = searchResults as? [Song] {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
                     RowView(media: $0)
                 }
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         }
     }
@@ -108,21 +112,27 @@ struct CategoryDatabaseView: View {
         switch mpd.database.type {
         case .album:
             if let albums = mpd.database.media as? [Album] {
-                CollectionView(data: albums, rowHeight: 65 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large) {
                     RowView(media: $0)
                 }
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         case .artist:
             if let artists = mpd.database.media as? [Artist] {
-                CollectionView(data: artists, rowHeight: 50 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large) {
                     RowView(media: $0)
                 }
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         default:
             if let songs = mpd.database.media as? [Song] {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
                     RowView(media: $0)
                 }
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
             }
         }
     }
@@ -141,140 +151,98 @@ struct CategoryDatabaseView: View {
                 EmptyCategoryView(destination: navigator.category)
             }
         }
-        #if os(iOS)
-        .searchable(text: $searchQuery, placement: .navigationBarDrawer)
-        .searchToolbarBehavior(.minimize)
         .toolbar {
-            DefaultToolbarItem(kind: .title)
+            if isSearchFieldExpanded {
+                ToolbarItem {
+                    TextField("Search", text: $searchQuery)
+                    #if os(macOS)
+                        .frame(width: 203)
+                    #endif
+                        .autocorrectionDisabled()
+                        .focused($isSearchFieldFocused)
+                        .task {
+                            isSearchFieldFocused = true
+                            try? await Task.sleep(for: .milliseconds(100))
+                            isSearchFieldFocused = true
+                        }
+                }
+
+                ToolbarItem {
+                    searchFieldsMenu
+                }
+            } else {
+                ToolbarItem {
+                    Button {
+                        animatedScroll = true
+                        scrollToCurrentMedia()
+                    } label: {
+                        Image(systemSymbol: .dotViewfinder)
+                    }
+                    .disabled(mpd.status.song == nil)
+                }
+            }
 
             ToolbarSpacer(.fixed)
 
-            ToolbarItem {
-                Button {
-                    animatedScroll = true
-                    scrollToCurrentMedia()
-                } label: {
-                    Image(systemSymbol: .dotViewfinder)
-                }
-                .disabled(mpd.status.song == nil)
-            }
-
-            ToolbarItem {
-                if navigator.category.source.isSortable {
+            if !isSearchFieldExpanded, navigator.category.source.isSortable {
+                ToolbarItem {
                     sortMenu
                 }
             }
+
+            ToolbarItem {
+                Button {
+                    isSearchFieldExpanded.toggle()
+
+                    if !isSearchFieldExpanded {
+                        searchQuery = ""
+                        searchResults = nil
+                        isSearchFieldFocused = false
+                    }
+                } label: {
+                    Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
+                }
+                .keyboardShortcut("f", modifiers: .command)
+            }
         }
-        #else
-        .toolbar {
-                    ToolbarItem {
-                        Group {
-                            if isSearchFieldExpanded {
-                                TextField("Search", text: $searchQuery)
-                                    .frame(width: 195)
-                                    .autocorrectionDisabled()
-                                    .focused($isSearchFieldFocused)
-                            }
-                        }
-                    }
+        .task(id: navigator.category) {
+            mpd.state.isLoading = true
+            try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
-                    ToolbarItem {
-                        Group {
-                            if isSearchFieldExpanded {
-                                searchFieldsMenu
-                            }
-                        }
-                    }
+            searchQuery = ""
+            searchResults = nil
+            searchFields = SearchFields.defaultFields(for: navigator.category.type)
 
-                    ToolbarItem {
-                        Group {
-                            if !isSearchFieldExpanded {
-                                Button {
-                                    animatedScroll = true
-                                    scrollToCurrentMedia()
-                                } label: {
-                                    Image(systemSymbol: .dotViewfinder)
-                                }
-                                .disabled(mpd.status.song == nil)
-                            }
-                        }
-                    }
+            scrollToCurrentMedia()
+            try? await Task.sleep(for: .milliseconds(100))
+            scrollToCurrentMedia()
+        }
+        .task(id: sort) {
+            guard !mpd.state.isLoading else {
+                return
+            }
 
-                    ToolbarSpacer(.fixed)
+            mpd.state.isLoading = true
+            try? await mpd.database.set(idle: false, sort: sort)
 
-                    ToolbarItem {
-                        Group {
-                            if !isSearchFieldExpanded, navigator.category.source.isSortable {
-                                sortMenu
-                            }
-                        }
-                    }
-
-                    ToolbarItem {
-                        Button {
-                            isSearchFieldExpanded.toggle()
-
-                            if !isSearchFieldExpanded {
-                                searchQuery = ""
-                                searchResults = nil
-                                #if os(macOS)
-                                    isSearchFieldFocused = false
-                                #endif
-                            } else {
-                                // Delay focus to ensure TextField is rendered
-                                #if os(macOS)
-                                    Task {
-                                        try? await Task.sleep(for: .milliseconds(50))
-                                        isSearchFieldFocused = true
-                                    }
-                                #endif
-                            }
-                        } label: {
-                            Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
-                        }
-                    }
-                }
-        #endif
-                .task(id: navigator.category) {
-                    mpd.state.isLoading = true
-                    try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
-
-                    // Reset search when changing categories
-                    searchQuery = ""
-                    searchResults = nil
-
-                    // Set default search fields based on the new media type
-                    searchFields = SearchFields.defaultFields(for: navigator.category.type)
-
-                    scrollToCurrentMedia()
-                    try? await Task.sleep(for: .milliseconds(100))
-                    scrollToCurrentMedia()
-                }
-                .task(id: sort) {
-                    // Only reload if we're not already loading (category change handles both)
-                    guard !mpd.state.isLoading else { return }
-
-                    mpd.state.isLoading = true
-                    try? await mpd.database.set(idle: false, sort: sort)
-
-                    scrollToCurrentMedia()
-                    try? await Task.sleep(for: .milliseconds(100))
-                    scrollToCurrentMedia()
-                }
-                .onChange(of: searchQuery) { _, query in
-                    if query.isEmpty {
-                        searchResults = nil
-                    } else if !searchFields.isEmpty {
-                        searchResults = mpd.database.search(query: query, fields: searchFields)
-                    }
-                }
-                .onChange(of: searchFields) { _, _ in
-                    if !searchQuery.isEmpty, !searchFields.isEmpty {
-                        searchResults = mpd.database.search(query: searchQuery, fields: searchFields)
-                    } else if searchFields.isEmpty {
-                        searchResults = nil
-                    }
-                }
+            scrollToCurrentMedia()
+            try? await Task.sleep(for: .milliseconds(100))
+            scrollToCurrentMedia()
+        }
+        .onChange(of: searchQuery) { _, query in
+            if query.isEmpty {
+                searchResults = nil
+            } else if !searchFields.isEmpty {
+                searchResults = mpd.database.search(query: query, fields: searchFields)
+            }
+        }
+        .onChange(of: searchFields) { _, _ in
+            if !searchQuery.isEmpty, !searchFields.isEmpty {
+                searchResults = mpd.database.search(query: searchQuery, fields: searchFields)
+            } else if searchFields.isEmpty {
+                searchResults = nil
+            }
+        }
     }
 
     @ViewBuilder
@@ -289,7 +257,6 @@ struct CategoryDatabaseView: View {
                             Image(systemSymbol: .checkmark)
                         }
                         Image(systemSymbol: field.symbol)
-                        // Show appropriate label based on media type
                         switch field {
                         case .title:
                             Text("Title")
@@ -358,7 +325,6 @@ struct CategoryDatabaseView: View {
             scrollTo = song.id
         }
 
-        // Reset animated flag after scrolling
         Task {
             try? await Task.sleep(for: .milliseconds(350))
             animatedScroll = false
@@ -370,18 +336,34 @@ struct CategoryPlaylistView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
+    @AppStorage(Setting.intelligenceModel) private var intelligenceModel = IntelligenceModel.openAI
+
+    var isIntelligenceEnabled: Bool {
+        guard isIntelligenceEnabledSetting else { return false }
+        @AppStorage(intelligenceModel.setting) var token = ""
+        return !token.isEmpty
+    }
+
     let playlist: Playlist
 
     @State private var songs: [Song]?
     @State private var scrollTo: String?
     @State private var animatedScroll = false
+    @State private var showIntelligencePlaylistSheet = false
+    @State private var playlistToEdit: Playlist?
+
+    private let fillIntelligencePlaylistNotification = NotificationCenter.default
+        .publisher(for: .fillIntelligencePlaylistNotification)
 
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
-                CollectionView(data: songs, rowHeight: 31.5 + 15, contentMargin: EdgeInsets(top: 0, leading: 0, bottom: 7.5, trailing: 0), scrollTo: $scrollTo, animated: animatedScroll) {
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
                     RowView(media: $0)
                 }
+                .contentMargins(.bottom, Layout.Spacing.small)
+                .scrollTo($scrollTo, animated: animatedScroll)
                 .id(playlist)
                 .ignoresSafeArea(edges: .vertical)
             } else {
@@ -389,23 +371,35 @@ struct CategoryPlaylistView: View {
             }
         }
         .toolbar {
-            ToolbarItem {
-                Button {
-                    animatedScroll = true
-                    scrollToCurrentSong()
-                } label: {
-                    Image(systemSymbol: .dotViewfinder)
+            if songs?.isEmpty ?? true {
+                ToolbarItem {
+                    Button(action: {
+                        NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
+                    }) {
+                        Image(systemSymbol: .sparkles)
+                    }
+                    .disabled(!isIntelligenceEnabled)
+                    .help(isIntelligenceEnabled ? "Fill playlist with AI" : "AI features are disabled in settings")
                 }
-                .disabled(mpd.status.song == nil || !songIsInPlaylist(mpd.status.song))
-            }
+            } else {
+                ToolbarItem {
+                    Button {
+                        animatedScroll = true
+                        scrollToCurrentSong()
+                    } label: {
+                        Image(systemSymbol: .dotViewfinder)
+                    }
+                    .disabled(mpd.status.song == nil || !songIsInPlaylist(mpd.status.song))
+                }
 
-            ToolbarSpacer(.fixed)
+                ToolbarSpacer(.fixed)
 
-            ToolbarItem {
-                AsyncButton {
-                    try await ConnectionManager.command().loadPlaylist(playlist)
-                } label: {
-                    Image(systemSymbol: .square3Layers3d)
+                ToolbarItem {
+                    AsyncButton {
+                        try await ConnectionManager.command().loadPlaylist(playlist)
+                    } label: {
+                        Image(systemSymbol: .square3Layers3d)
+                    }
                 }
             }
         }
@@ -414,12 +408,21 @@ struct CategoryPlaylistView: View {
 
             songs = try? await mpd.playlists.getSongs(for: playlist)
 
-            // Scroll to current song after loading playlist
             if songIsInPlaylist(mpd.status.song) {
                 scrollToCurrentSong()
                 try? await Task.sleep(for: .milliseconds(100))
                 scrollToCurrentSong()
             }
+        }
+        .onReceive(fillIntelligencePlaylistNotification) { notification in
+            guard let playlist = notification.object as? Playlist else {
+                return
+            }
+            playlistToEdit = playlist
+            showIntelligencePlaylistSheet = true
+        }
+        .sheet(isPresented: $showIntelligencePlaylistSheet) {
+            IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
         }
     }
 
@@ -447,12 +450,6 @@ struct CategoryPlaylistView: View {
 struct EmptyCategoryView: View {
     let destination: CategoryDestination
 
-    @State private var showIntelligencePlaylistSheet = false
-    @State private var playlistToEdit: Playlist?
-
-    private let fillIntelligencePlaylistNotification = NotificationCenter.default
-        .publisher(for: .fillIntelligencePlaylistNotification)
-
     var body: some View {
         VStack {
             switch destination {
@@ -462,13 +459,11 @@ struct EmptyCategoryView: View {
 
                 Text("Add songs to your library.")
                     .font(.subheadline)
-            case let .playlist(playlist):
+            case .playlist:
                 Text("No songs in playlist.")
                     .font(.headline)
                 Text("Add songs to your playlist.")
                     .font(.subheadline)
-                IntelligenceButtonView(using: playlist)
-                    .offset(y: 20)
             #if os(iOS)
                 default:
                     EmptyView()
@@ -476,15 +471,5 @@ struct EmptyCategoryView: View {
             }
         }
         .offset(y: -20)
-        .onReceive(fillIntelligencePlaylistNotification) { notification in
-            guard let playlist = notification.object as? Playlist else {
-                return
-            }
-            playlistToEdit = playlist
-            showIntelligencePlaylistSheet = true
-        }
-        .sheet(isPresented: $showIntelligencePlaylistSheet) {
-            IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
-        }
     }
 }

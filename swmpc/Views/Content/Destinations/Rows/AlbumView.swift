@@ -20,7 +20,6 @@ struct AlbumView: View {
     }
 
     @State private var artwork: PlatformImage?
-    @State private var artworkTask: Task<Void, Never>?
 
     #if os(iOS)
         @State private var isShowingContextMenu = false
@@ -31,15 +30,15 @@ struct AlbumView: View {
     #endif
 
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: Layout.Spacing.large) {
             ZStack {
                 ArtworkView(image: artwork, aspectRatioMode: .fill)
-                    .frame(width: 65, height: 65)
-                    .cornerRadius(12)
+                    .frame(width: Layout.RowHeight.album, height: Layout.RowHeight.album)
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
                     .animation(.easeInOut(duration: 0.15), value: artwork != nil)
                     .overlay(
                         Color.clear
-                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: 12))
+                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
                             .mask(
                                 RadialGradient(
                                     stops: [
@@ -58,8 +57,8 @@ struct AlbumView: View {
                     Image(systemSymbol: .playFill)
                         .font(.title2)
                         .foregroundStyle(.foreground)
-                        .padding(12)
-                        .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear))
+                        .padding(Layout.Padding.medium)
+                        .glassEffect(.regular.tint(isHoveringArtwork ? .accent.opacity(0.5) : .clear).interactive())
                         .opacity(isHovering ? 1 : 0)
                         .animation(.interactiveSpring, value: isHovering)
                         .animation(.interactiveSpring, value: isHoveringArtwork)
@@ -106,25 +105,13 @@ struct AlbumView: View {
             .contextMenu {
                 ContextMenuView(for: album)
             }
-            .onChange(of: album) { previous, value in
-                guard previous != value, artwork != nil else {
-                    return
-                }
-
-                artwork = nil
-            }
             .task(id: album, priority: .high) {
                 try? await Task.sleep(for: .milliseconds(100))
                 guard !Task.isCancelled else {
                     return
                 }
 
-                let newArtwork = try? await album.artwork()
-                guard !Task.isCancelled, newArtwork != nil else {
-                    return
-                }
-
-                artwork = newArtwork
+                artwork = try? await album.artwork()
             }
     }
 }

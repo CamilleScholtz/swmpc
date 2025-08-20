@@ -27,7 +27,7 @@ protocol ConnectionMode: Sendable {
 
 /// Connection mode for idle operations that listen for MPD server events.
 /// Uses keepalive to maintain long-lived connections.
-enum IdleMode: ConnectionMode {
+nonisolated enum IdleMode: ConnectionMode {
     static let label = "idle"
     static let enableKeepalive = true
     static let bufferSize = 4096
@@ -37,17 +37,17 @@ enum IdleMode: ConnectionMode {
 
 /// Connection mode for artwork retrieval operations.
 /// Uses larger buffers and concurrent queue for efficient image data transfer.
-enum ArtworkMode: ConnectionMode {
+nonisolated enum ArtworkMode: ConnectionMode {
     static let label = "artwork"
     static let enableKeepalive = false
     static let bufferSize = 8192
-    static let queueAttributes: DispatchQueue.Attributes = .concurrent
+    static let queueAttributes: DispatchQueue.Attributes = []
     static let qos: DispatchQoS = .utility
 }
 
 /// Connection mode for executing MPD commands.
 /// Optimized for quick command execution with higher priority.
-enum CommandMode: ConnectionMode {
+nonisolated enum CommandMode: ConnectionMode {
     static let label = "command"
     static let enableKeepalive = false
     static let bufferSize = 4096
@@ -940,9 +940,9 @@ extension ConnectionManager {
 
         switch source {
         case .database:
-            lines = try await run(["find \(filter(key: "albumartist", value: artist.name))"])
+            lines = try await run(["find \(filter(key: "albumartist", value: artist.name)) sort date"])
         case .queue:
-            lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))"])
+            lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name)) sort date"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving albums by artist")
@@ -1109,6 +1109,17 @@ extension ConnectionManager where Mode == IdleMode {
 // MARK: - Artwork mode commands
 
 extension ConnectionManager where Mode == ArtworkMode {
+    /// Creates and connects a new `ConnectionManager` for artwork operations.
+    ///
+    /// - Returns: A connected `ConnectionManager<ArtworkMode>` instance.
+    /// - Throws: An error if the connection fails.
+    static func artwork() async throws -> ConnectionManager<ArtworkMode> {
+        let manager = ConnectionManager<ArtworkMode>()
+        try await manager.connect()
+
+        return manager
+    }
+
     /// Retrieves the complete artwork data for a given URL by fetching it in
     /// chunks from the media server.
     ///

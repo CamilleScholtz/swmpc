@@ -15,15 +15,18 @@ struct RowView: View {
             switch media {
             case let album as Album:
                 AlbumView(for: album)
+                    .id(album)
             case let artist as Artist:
                 ArtistView(for: artist)
+                    .id(artist)
             case let song as Song:
                 SongView(for: song)
+                    .id(song)
             default:
                 EmptyView()
             }
         }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 7.5)
+        .padding(.horizontal, Layout.Padding.large)
+        .padding(.vertical, Layout.Spacing.small)
     }
 }

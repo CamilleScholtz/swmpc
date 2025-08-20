@@ -12,8 +12,7 @@ struct PauseView: View {
     @Environment(MPD.self) private var mpd
 
     var size: CGFloat = 30
-    var material: Material = .thinMaterial
-    var animationDuration: Double = 0.4
+    var button: Bool = true
 
     var body: some View {
         AsyncButton {
@@ -30,11 +29,13 @@ struct PauseView: View {
             }
             .font(.system(size: size))
             .foregroundStyle(.foreground)
-            .animation(.interactiveSpring(duration: animationDuration, extraBounce: 0.3), value: mpd.status.isPlaying)
+            .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
             .frame(width: size * 2.5, height: size * 2.5)
-            .glassEffect(.regular)
+            .glassEffect(button ? .regular.interactive() : .identity)
             .contentShape(Circle())
         }
-        .styledButton(hoverScale: 1.13)
+        .styledButton(hoverScale: button ? 1.2 : 1.13)
+        .disabled(mpd.status.song == nil)
+        .help(mpd.status.isPlaying ? "Pause playback" : "Resume playback")
     }
 }

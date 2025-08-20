@@ -20,7 +20,7 @@ struct ArtistAlbumsView: View {
 
     var body: some View {
         Section {
-            HStack(spacing: 15) {
+            HStack(spacing: Layout.Spacing.large) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(artist.name)
                     #if os(iOS)
@@ -42,7 +42,7 @@ struct ArtistAlbumsView: View {
 
                 Spacer()
             }
-            .padding(15)
+            .padding(Layout.Padding.large)
         }
         .task {
             albums = await (try? artist.getAlbums()) ?? []

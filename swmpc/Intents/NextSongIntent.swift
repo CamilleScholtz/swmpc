@@ -8,7 +8,7 @@
 import AppIntents
 import SwiftUI
 
-struct NextSongIntent: AppIntent {
+struct NextSongIntent: AppIntent, AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Next Song"
     static let description = IntentDescription("Skip to the next song in the queue")
 
@@ -23,4 +23,8 @@ struct NextSongIntent: AppIntent {
     }
 
     static let openAppWhenRun: Bool = false
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Skip to next song")
+    }
 }

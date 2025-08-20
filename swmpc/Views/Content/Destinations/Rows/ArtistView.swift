@@ -21,17 +21,10 @@ struct ArtistView: View {
     @State private var albumCount: Int = 0
 
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: Layout.Spacing.large) {
             Circle()
-                .fill(LinearGradient(
-                    gradient: Gradient(stops: [
-                        .init(color: Color(.secondarySystemFill), location: 0.0),
-                        .init(color: Color(.secondarySystemFill).opacity(0.7), location: 1.0),
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom,
-                ))
-                .frame(width: 50, height: 50)
+                .fill(Color(.tertiarySystemFill))
+                .frame(width: Layout.RowHeight.artist, height: Layout.RowHeight.artist)
                 .overlay(
                     ZStack {
                         Text(artist.name.initials)
@@ -79,6 +72,11 @@ struct ArtistView: View {
             ContextMenuView(for: artist)
         }
         .task(id: artist, priority: .high) {
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else {
+                return
+            }
+
             albumCount = await (try? artist.getAlbums().count) ?? 0
         }
     }

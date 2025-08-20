@@ -17,16 +17,17 @@ struct RandomView: View {
         } label: {
             ZStack {
                 Image(systemSymbol: .shuffle)
-                    .padding(10)
+                    .padding(Layout.Padding.medium)
 
                 Circle()
                     .fill(Color(.accent))
-                    .frame(width: 4, height: 4)
+                    .frame(width: Layout.Size.dotIndicator, height: Layout.Size.dotIndicator)
                     .offset(y: 12)
                     .opacity(mpd.status.isRandom ?? false ? 1 : 0)
             }
             .contentShape(Circle())
         }
         .styledButton()
+        .help(mpd.status.isRandom ?? false ? "Disable shuffle mode" : "Enable shuffle mode")
     }
 }

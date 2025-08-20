@@ -18,12 +18,11 @@ struct AppView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     #if os(iOS)
-        @Environment(\.tabViewBottomAccessoryPlacement) var placement
+        @Namespace var namespace
     #endif
 
     #if os(iOS)
-        @State private var isPopupBarPresented = true
-        @State private var isPopupOpen = false
+        @State private var showDetailCover = false
     #elseif os(macOS)
         @State private var showQueuePanel = false
     #endif
@@ -57,11 +56,19 @@ struct AppView: View {
                         .tabBarMinimizeBehavior(.onScrollDown)
                         .tabViewBottomAccessory {
                             DetailMiniView()
+                                .onTapGesture {
+                                    showDetailCover.toggle()
+                                }
+                                .matchedTransitionSource(id: 1, in: namespace)
+                        }
+                        .fullScreenCover(isPresented: $showDetailCover) {
+                            DetailView()
+                                .navigationTransition(.zoom(sourceID: 1, in: namespace))
                         }
                     #elseif os(macOS)
                         NavigationSplitView {
                             SidebarView()
-                                .navigationSplitViewColumnWidth(180)
+                                .navigationSplitViewColumnWidth(Layout.Size.sidebarWidth)
                         } content: {
                             NavigationStack(path: $boundNavigator.path) {
                                 CategoryDestinationView()
@@ -70,11 +77,11 @@ struct AppView: View {
                                             .navigationTitle(navigator.category.label)
                                     }
                             }
-                            .navigationSplitViewColumnWidth(310)
+                            .navigationSplitViewColumnWidth(Layout.Size.contentWidth)
                             .overlay(
                                 LoadingView(),
                             )
-                            .scrollEdgeEffectStyle(.soft, for: .top)
+                            .scrollEdgeEffectStyle(.soft, for: .vertical)
                         } detail: {
                             // XXX: The scrollview is a hack to hide the toolbar.
                             ZStack {
@@ -82,9 +89,8 @@ struct AppView: View {
                                     .scrollDisabled(true)
 
                                 DetailView(showQueuePanel: $showQueuePanel)
-                                    .padding(60)
                             }
-                            .scrollEdgeEffectStyle(.soft, for: .top)
+                            .scrollEdgeEffectStyle(.soft, for: .vertical)
                         }
                         .simultaneousGesture(
                             TapGesture()
@@ -101,7 +107,7 @@ struct AppView: View {
                         .overlay(alignment: .trailing) {
                             if showQueuePanel {
                                 QueuePanelView(showQueuePanel: $showQueuePanel)
-                                    .frame(width: 310)
+                                    .frame(width: Layout.Size.contentWidth)
                                     .overlay(
                                         Rectangle()
                                             .ignoresSafeArea(.container, edges: .top)
@@ -123,7 +129,7 @@ struct AppView: View {
             mpd.status.stopTrackingElapsed()
         }
         #if os(macOS)
-        .frame(minWidth: 180 + 310 + 650, minHeight: 650)
+        .frame(minWidth: Layout.Size.sidebarWidth + Layout.Size.contentWidth + Layout.Size.detailWidth, minHeight: Layout.Size.detailWidth)
         #endif
     }
 }

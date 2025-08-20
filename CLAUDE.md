@@ -8,9 +8,10 @@ swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with
 
 - **Platforms**: macOS 26, iOS 26
 - **Language**: Swift 6.2
-- **UI Framework**: SwiftUI with use of new Observation macro
-- **Build System**: Xcode project (no Package.swift)
-- **Concurrency**: Uses the modern Swift 6.2 model (Main Actor by default, Approachable Concurrency). See the Concurrency Model section for detailed guidance.
+- **UI Framework**: SwiftUI with Observation framework (@Observable)
+- **Build System**: Xcode project (swmpc.xcodeproj)
+- **Scheme**: swmpc (single scheme for both platforms)
+- **Concurrency**: Swift 6.2 model with Main Actor by default and Approachable Concurrency - see the Concurrency Model section for detailed guidance
 
 ## Concurrency Model
 
@@ -50,36 +51,44 @@ This project adopts Swift 6.2's modern concurrency settings. This fundamentally 
 
 ## Architecture
 
-The app follows an MVVM-style architecture using SwiftUI and the Observation framework:
+The app follows an MVVM-style architecture using SwiftUI and the Observation framework. The main entry point is `swmpc/Delegate.swift` which sets up the app for both platforms.
 
-- **swmpc/Models/App/**: App-level managers
-  - `NavigationManager`: Handles navigation state
-  - `IntelligenceManager`: AI integration for smart playlists
-  - `Settings`: User preferences with @AppStorage
+### Core Components
 
-- **swmpc/Models/MPD/**: MPD protocol implementation
-  - `ConnectionManager`: Lower level TCP connection to MPD
-  - `MPD`: Main MPD client with command methods
-  - `StatusManager`: Manages MPD status updates
-  - `LibraryManager`: Manages the media in MPD's database
+- **MPD Client (`swmpc/Models/MPD/MPD.swift`)**: Central coordinator that initializes and manages all MPD-related components. Uses an update loop with the idle command to listen for server changes.
+
+- **Connection Layer (`ConnectionManager.swift`)**: Handles TCP connections with different modes (Idle, Artwork, Command) for performance optimization. Uses Network.framework with configurable buffer sizes and queue priorities.
+
+- **State Managers**:
+  - `StatusManager`: Tracks playback state, current song, volume
+  - `DatabaseManager`: Handles music library queries and search
   - `QueueManager`: Manages the playback queue
-  - `PlaylistManager`: Manages MPD playlists
-  - `MPD`: Main MPD client interface. This class initalizes `ConnectionManager`, `StatusManager`, `LibraryManager`, `QueueManager`, and `PlaylistManager`.
+  - `PlaylistManager`: CRUD operations for playlists
+  - `ArtworkManager`: Fetches and caches album artwork
 
-- **swmpc/Views/**: SwiftUI views organized by feature
+- **App-Level Services**:
+  - `NavigationManager`: Coordinates navigation state between views
+  - `IntelligenceManager`: OpenAI integration for smart playlist generation
+  - `Settings`: User preferences with @AppStorage persistence
 
-- **Platform Differences**: Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code
-  - macOS: Menu bar app with NSStatusItem popover
-  - iOS: Tab-based navigation with LNPopupUI for now playing
+### Platform Differences
+
+Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code:
+- macOS: Menu bar app with NSStatusItem popover (`PopoverView.swift`)
+- iOS: Tab-based navigation with LNPopupUI for now playing
 
 ## Key Dependencies
 
-External packages (managed in Xcode):
-- `OpenAI`: AI integration
-- `SwiftUIIntrospect`: AppKit/UIKit introspection
-- `LaunchAtLogin` (macOS only): Startup behavior
-- `ButtonKit`: Async button handling
+External packages (managed via Xcode's Swift Package Manager):
+- `OpenAI`: AI integration for smart playlists
+- `LaunchAtLogin` (macOS only): Auto-start at login
+- `ButtonKit`: Async button action handling
+- `LNPopupUI` (iOS only): Now playing popup interface
+- `DequeModule`: High-performance collections for connection buffering
 
-## MPD Protocol Notes
+## MPD Protocol Implementation
 
-- Requires MPD 0.24+
+- Requires MPD 0.24+ for full feature support
+- Connection modes optimize for different operations (idle listening, command execution, artwork fetching)
+- Uses MPD's idle command for real-time updates without polling
+- Binary protocol support for album artwork retrieval

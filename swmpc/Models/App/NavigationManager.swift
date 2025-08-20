@@ -19,7 +19,14 @@ import SwiftUI
     /// The navigation path representing the current navigation stack within the
     /// selected category. This stack contains `ContentDestination` values that
     /// represent navigation to specific albums or artists.
-    var path = NavigationPath()
+    var path = NavigationPath() {
+        didSet {
+            syncPathContents()
+        }
+    }
+
+    /// Tracks the content destinations in the path for duplicate prevention.
+    private var pathContents: [ContentDestination] = []
 
     /// The currently selected category destination (e.g., albums, artists,
     /// songs, playlists). When this value changes, the navigation path is
@@ -38,7 +45,12 @@ import SwiftUI
     /// - Parameter content: The content destination to navigate to (album or
     ///                      artist).
     func navigate(to content: ContentDestination) {
+        if let last = pathContents.last, last == content {
+            return
+        }
+
         path.append(content)
+        pathContents.append(content)
     }
 
     /// Removes the last item from the navigation path, effectively going back
@@ -49,12 +61,28 @@ import SwiftUI
         }
 
         path.removeLast()
+        if !pathContents.isEmpty {
+            pathContents.removeLast()
+        }
     }
 
     /// Resets the navigation path to an empty state, returning to the root of
     /// the current category.
     func reset() {
         path = NavigationPath()
+        pathContents = []
+    }
+
+    /// Synchronizes the pathContents array with the actual NavigationPath count.
+    /// This ensures our tracking stays in sync when SwiftUI modifies the path directly
+    /// (e.g., via the back button).
+    private func syncPathContents() {
+        let currentCount = path.count
+        let trackedCount = pathContents.count
+
+        if currentCount < trackedCount {
+            pathContents = Array(pathContents.prefix(currentCount))
+        }
     }
 }
 

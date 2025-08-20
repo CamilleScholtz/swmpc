@@ -29,18 +29,30 @@ struct PlayerProgressView: View {
                 value: $sliderValue,
                 in: 0 ... duration,
                 onEditingChanged: { editing in
-                    isEditing = editing
-                    if !editing {
+                    if editing {
+                        isEditing = true
+                    } else {
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command().seek(sliderValue)
+                            try? await Task.sleep(for: .milliseconds(500))
+                            isEditing = false
                         }
                     }
                 },
             )
             .controlSize(.mini)
-            .onChange(of: elapsed) { _, newValue in
-                if !isEditing {
-                    sliderValue = newValue
+            .disabled(mpd.status.song == nil)
+            .help("Seek to position in track")
+            .onChange(of: elapsed) { _, value in
+                guard !isEditing else {
+                    return
+                }
+
+                // XXX: One second animation does not work.
+                // See: https://openradar.appspot.com/FB11802261
+                // withAnimation(.linear(duration: 1)) {
+                withAnimation(.spring) {
+                    sliderValue = value
                 }
             }
             .onAppear {

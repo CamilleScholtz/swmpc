@@ -6,20 +6,28 @@
 //
 
 import ButtonKit
-import Noise
 import SFSafeSymbols
 import SwiftUI
+
+private extension Layout.Size {
+    static let detailControlsHeight: CGFloat = 80
+}
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
+    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
+    @AppStorage(Setting.intelligenceModel) private var intelligenceModel = IntelligenceModel.openAI
 
-    #if os(iOS)
-        @Binding var isPopupOpen: Bool
-    #elseif os(macOS)
+    var isIntelligenceEnabled: Bool {
+        guard isIntelligenceEnabledSetting else { return false }
+        @AppStorage(intelligenceModel.setting) var token = ""
+        return !token.isEmpty
+    }
+
+    #if os(macOS)
         @Binding var showQueuePanel: Bool
     #endif
 
@@ -28,6 +36,7 @@ struct DetailView: View {
     #endif
 
     @State private var artwork: PlatformImage?
+    @State private var colors: [Color]?
 
     #if os(iOS)
         private var progress: Float {
@@ -42,108 +51,86 @@ struct DetailView: View {
         }
     #endif
 
+    @ViewBuilder
+    private func shadowGradient(colors: [Color]) -> some View {
+        let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
+            (-60, -60),
+            (60, -60),
+            (-60, 60),
+            (60, 60),
+        ]
+
+        ZStack {
+            ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
+                let offset = cornerOffsets[index % 4]
+
+                RadialGradient(
+                    colors: [color, .clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 200,
+                )
+                .offset(
+                    x: offset.x,
+                    y: offset.y,
+                )
+            }
+        }
+    }
+
     var body: some View {
         ZStack {
             ZStack {
-                ZStack {
-                    ArtworkView(image: artwork)
-                        .scaledToFit()
-                        .animation(.easeInOut(duration: 0.6), value: artwork)
-                    #if os(iOS)
-                        .mask(
-                            RadialGradient(
-                                gradient: Gradient(colors: [.white, .clear]),
-                                center: .center,
-                                startRadius: -15,
-                                endRadius: 275,
-                            ),
-                        )
-                    #elseif os(macOS)
-                        .mask(
-                            RadialGradient(
-                                gradient: Gradient(colors: [.white, .clear]),
-                                center: .center,
-                                startRadius: -15,
-                                endRadius: 225,
-                            )
-                            .ignoresSafeArea(.all),
-                        )
-                    #endif
-                        .offset(y: 20)
-                        .blur(radius: 20)
-                        .opacity(0.6)
-                        .drawingGroup()
-
+                if let colors {
                     ZStack {
-                        ArtworkView(image: artwork)
-                            .animation(.easeInOut(duration: 0.6), value: artwork)
+                        let height = artwork.map {
+                            Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
+                        } ?? Layout.Size.artworkWidth
 
-                        Rectangle()
-                            .opacity(0)
-                            .background(.ultraThinMaterial)
+                        shadowGradient(colors: colors)
+                            .mask(
+                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                    .frame(width: Layout.Size.artworkWidth + Layout.Padding.small, height: height + Layout.Padding.small)
+                                    .blur(radius: 40),
+                            )
+                            .opacity(0.6)
+
+                        shadowGradient(colors: colors)
+                            .mask(
+                                RadialGradient(
+                                    colors: [.black, .clear],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: Layout.Size.artworkWidth * 1.4,
+                                ),
+                            )
+                            .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
+                            .opacity(0.5)
+                            .offset(y: height / 2)
+                            .animation(.easeInOut(duration: 0.6), value: colors)
                     }
-                    .scaledToFit()
-                    .drawingGroup()
-                    #if os(iOS)
-                        .mask(
-                            RadialGradient(
-                                gradient: Gradient(colors: [.white, .clear]),
-                                center: .center,
-                                startRadius: -25,
-                                endRadius: 200,
-                            ),
-                        )
-                        .scaleEffect(1.3)
-                    #elseif os(macOS)
-                        .mask(
-                            RadialGradient(
-                                gradient: Gradient(colors: [.white, .clear]),
-                                center: .center,
-                                startRadius: -25,
-                                endRadius: 225,
-                            ),
-                        )
-                    #endif
-                        .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
-                        .offset(y: 105)
-                        .blur(radius: 5)
+                    .opacity(colorScheme == .dark ? 0.3 : 0.8)
                 }
-                .saturation(1.5)
-                .blendMode(colorScheme == .dark ? .softLight : .normal)
-                #if os(iOS)
-                    .opacity(isPopupOpen ? 1 : 0)
-                    .animation(.spring.delay(isPopupOpen ? 0.2 : 0), value: isPopupOpen)
-                #endif
-
-                Noise(style: .random)
-                    .monochrome()
-                    // TODO: Doesn't really work on dark mode.
-                    .blendMode(colorScheme == .dark ? .darken : .softLight)
-                    .opacity(colorScheme == .dark ? 0.1 : 0.3)
 
                 ArtworkView(image: artwork)
                     .animation(.easeInOut(duration: 0.2), value: artwork)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(.clear)
-                            .glassEffect(.clear, in: .rect(cornerRadius: 30))
+                        Color.clear
+                            .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
                             .mask(
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: 30)
+                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
 
-                                    RoundedRectangle(cornerRadius: 30)
+                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
                                         .scale(0.8)
                                         .blur(radius: 8)
                                         .blendMode(.destinationOut)
                                 },
                             ),
                     )
-                    .cornerRadius(30)
-                    .shadow(color: .black.opacity(0.2), radius: 16)
-                #if os(iOS)
-                    .frame(width: 300)
-                #elseif os(macOS)
-                    .frame(width: 250)
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                    .frame(width: Layout.Size.artworkWidth)
+                #if os(macOS)
                     .scaleEffect(isHovering ? 1.02 : 1)
                     .animation(.spring, value: isHovering)
                     .onHover { value in
@@ -181,63 +168,60 @@ struct DetailView: View {
                                     navigator.category = .albums
                                 }
                             #endif
-                            navigator.navigate(to: ContentDestination.album(song.album))
 
-                            #if os(iOS)
-                                isPopupOpen = false
-                            #endif
+                            navigator.navigate(to: ContentDestination.album(song.album))
                         }
                     }
             }
-            .ignoresSafeArea(edges: .vertical)
-            .offset(y: -110)
+            .offset(y: -Layout.Size.detailControlsHeight)
 
             VStack {
                 Spacer()
 
                 DetailFooterView()
-                    .frame(height: 80)
-                #if os(iOS)
-                    .padding(.horizontal, 30)
-                    .offset(y: -60)
-                #endif
+                    .frame(height: Layout.Size.detailControlsHeight)
             }
+            .padding(60)
         }
-        .toolbar {
-            #if os(macOS)
+        .ignoresSafeArea(edges: .vertical)
+        #if os(macOS)
+            .toolbar {
                 ToolbarSpacer(.flexible)
 
-                ToolbarItem {
-                    Text("Queue")
-                        .font(.system(size: 15))
-                        .fontWeight(.semibold)
-                        .offset(x: -140)
-                }
-                .sharedBackgroundVisibility(.hidden)
-                .hidden(!showQueuePanel)
-
-                ToolbarItem {
-                    Button(action: {
-                        NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
-                    }) {
-                        Image(systemSymbol: .trash)
+                if showQueuePanel {
+                    ToolbarItem {
+                        Text("Queue")
+                            .font(.system(size: 15))
+                            .fontWeight(.semibold)
+                            .offset(x: -140)
                     }
-                    .keyboardShortcut(.delete, modifiers: [.shift, .command])
-                }
-                .hidden(!showQueuePanel || mpd.queue.songs.isEmpty)
+                    .sharedBackgroundVisibility(.hidden)
 
-                ToolbarItem {
-                    Button(action: {
-                        NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
-                    }) {
-                        Image(systemSymbol: .sparkles)
+                    if !mpd.queue.songs.isEmpty {
+                        ToolbarItem {
+                            Button(action: {
+                                NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
+                            }) {
+                                Image(systemSymbol: .trash)
+                            }
+                            .keyboardShortcut(.delete, modifiers: [.shift, .command])
+                            .help("Clear queue")
+                        }
+
+                    } else {
+                        ToolbarItem {
+                            Button(action: {
+                                NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                            }) {
+                                Image(systemSymbol: .sparkles)
+                            }
+                            .disabled(!isIntelligenceEnabled)
+                            .help(isIntelligenceEnabled ? "Fill queue with AI" : "AI features are disabled in settings")
+                        }
                     }
-                    .disabled(!isIntelligenceEnabled)
-                }
-                .hidden(!showQueuePanel || !mpd.queue.songs.isEmpty)
 
-                ToolbarSpacer(.fixed)
-                    .hidden(!showQueuePanel)
+                    ToolbarSpacer(.fixed)
+                }
 
                 ToolbarItem {
                     Button(action: {
@@ -247,16 +231,26 @@ struct DetailView: View {
                     }) {
                         Image(systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList)
                     }
+                    .help(showQueuePanel ? "Hide queue panel" : "Show queue panel")
                 }
-            #endif
-        }
-        .task(id: mpd.status.song) {
-            guard let song = mpd.status.song else {
-                artwork = nil
-                return
             }
+        #endif
+            .task(id: mpd.status.song) {
+                guard let song = mpd.status.song else {
+                    artwork = nil
+                    colors = nil
 
-            artwork = try? await song.artwork()
-        }
+                    return
+                }
+
+                artwork = try? await song.artwork()
+                guard let artwork else {
+                    colors = nil
+
+                    return
+                }
+
+                colors = await Color.extractDominantColors(from: artwork, count: 4)
+            }
     }
 }

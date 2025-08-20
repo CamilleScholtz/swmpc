@@ -8,7 +8,15 @@
 import ButtonKit
 import SwiftUI
 
+private extension Layout {
+    enum Control {
+        static let nextSizeAdjustment: CGFloat = 5
+    }
+}
+
 struct NextView: View {
+    @Environment(MPD.self) private var mpd
+
     var size: CGFloat = 18
 
     @State private var animating = false
@@ -44,13 +52,15 @@ struct NextView: View {
                         .scaleEffect(1 - value)
                 }
                 .font(.system(size: size))
-                .offset(x: value * (size - 5))
-                .offset(x: -(size - 5) / 3)
+                .offset(x: value * (size - Layout.Control.nextSizeAdjustment))
+                .offset(x: -(size - Layout.Control.nextSizeAdjustment) / 3)
             }
-            .frame(width: (size - 5) * 2)
-            .padding(12)
+            .frame(width: (size - Layout.Control.nextSizeAdjustment) * 2)
+            .padding(Layout.Padding.large)
             .contentShape(Circle())
         }
         .styledButton()
+        .disabled(mpd.status.song == nil)
+        .help("Skip to next track")
     }
 }

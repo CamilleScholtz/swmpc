@@ -40,7 +40,7 @@ struct SidebarView: View {
                 .foregroundStyle(.secondary)
                 .fontWeight(.semibold)
                 .fontDesign(.rounded)
-                .padding(.bottom, 15)
+                .padding(.bottom, Layout.Padding.large)
 
             ForEach(CategoryDestination.categories) { category in
                 NavigationLink(value: category) {

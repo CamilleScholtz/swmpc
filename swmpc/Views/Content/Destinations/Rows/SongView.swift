@@ -33,7 +33,7 @@ struct SongView: View {
 
     var body: some View {
         ZStack(alignment: .trailing) {
-            HStack(spacing: 15) {
+            HStack(spacing: Layout.Spacing.large) {
                 ZStack {
                     Text(String(song.track))
                         .font(.headline)

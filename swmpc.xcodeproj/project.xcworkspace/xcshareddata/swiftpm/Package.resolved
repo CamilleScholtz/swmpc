@@ -1,5 +1,5 @@
 {
-  "originHash" : "d976a3753e8bbe2ccb2f850c45f2ad11880c3c6c80620923b80e470cbf0902f5",
+  "originHash" : "93a39b08f7e010c96c7d95e56390bdd3485135ba69e52368a826a6eb1c6215e9",
   "pins" : [
     {
       "identity" : "buttonkit",
@@ -20,21 +20,12 @@
       }
     },
     {
-      "identity" : "noise",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/heestand-xyz/Noise",
-      "state" : {
-        "revision" : "9fc3dd5b86995913f4cd58152f4d8d7da245ce7e",
-        "version" : "2.0.5"
-      }
-    },
-    {
       "identity" : "openai",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MacPaw/OpenAI",
       "state" : {
-        "revision" : "bb283b2ac48c1e90121d73d6bfb45f961dc0b7a3",
-        "version" : "0.4.5"
+        "revision" : "80045fcda7ba727a327eb0a525e983fd7a796c70",
+        "version" : "0.4.6"
       }
     },
     {

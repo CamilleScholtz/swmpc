@@ -17,16 +17,17 @@ struct RepeatView: View {
         } label: {
             ZStack {
                 Image(systemSymbol: .repeat)
-                    .padding(10)
+                    .padding(Layout.Padding.medium)
 
                 Circle()
                     .fill(Color(.accent))
-                    .frame(width: 4, height: 4)
+                    .frame(width: Layout.Size.dotIndicator, height: Layout.Size.dotIndicator)
                     .offset(y: 12)
                     .opacity(mpd.status.isRepeat ?? false ? 1 : 0)
             }
             .contentShape(Circle())
         }
         .styledButton()
+        .help(mpd.status.isRepeat ?? false ? "Disable repeat mode" : "Enable repeat mode")
     }
 }

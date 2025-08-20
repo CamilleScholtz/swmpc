@@ -12,7 +12,7 @@ struct DetailFooterView: View {
     @Environment(MPD.self) private var mpd
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: Layout.Spacing.small - 0.5) {
             HStack(alignment: .center) {
                 Text(mpd.status.song?.title ?? "No song playing")
                 #if os(iOS)
@@ -40,7 +40,7 @@ struct DetailFooterView: View {
                 HStack(alignment: .center, spacing: 20) {
                     RepeatView()
 
-                    HStack(spacing: 15) {
+                    HStack(spacing: Layout.Spacing.large) {
                         PreviousView()
                         PauseView()
                         NextView()

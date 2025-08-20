@@ -21,6 +21,6 @@ struct ContentDestinationView: View {
                 }
             }
         }
-        .contentMargins(.bottom, 7.5)
+        .contentMargins(.bottom, Layout.Spacing.small)
     }
 }

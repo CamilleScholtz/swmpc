@@ -8,6 +8,11 @@
 import ButtonKit
 import SwiftUI
 
+private extension Layout.Padding {
+    static let artwork: CGFloat = 18
+    static let playingIndicator: CGFloat = 10
+}
+
 struct AlbumSongsView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
@@ -27,7 +32,7 @@ struct AlbumSongsView: View {
 
     var body: some View {
         Section {
-            HStack(spacing: 15) {
+            HStack(spacing: Layout.Spacing.large) {
                 ZStack {
                     ZStack(alignment: .bottom) {
                         ArtworkView(image: artwork)
@@ -39,18 +44,18 @@ struct AlbumSongsView: View {
                             .opacity(0.5)
 
                         ArtworkView(image: artwork)
-                            .cornerRadius(18)
+                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
                             .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
                             .frame(width: 100)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 18)
+                                RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
                                     .fill(.clear)
-                                    .glassEffect(.clear, in: .rect(cornerRadius: 18))
+                                    .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.medium))
                                     .mask(
                                         ZStack {
-                                            RoundedRectangle(cornerRadius: 18)
+                                            RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
 
-                                            RoundedRectangle(cornerRadius: 18)
+                                            RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
                                                 .scale(0.8)
                                                 .blur(radius: 8)
                                                 .blendMode(.destinationOut)
@@ -60,7 +65,7 @@ struct AlbumSongsView: View {
                             .overlay(
                                 ZStack(alignment: .bottomLeading) {
                                     Color.clear
-                                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+                                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
                                         .mask(
                                             LinearGradient(
                                                 gradient: Gradient(stops: [
@@ -71,7 +76,7 @@ struct AlbumSongsView: View {
                                                 endPoint: .top,
                                             ),
                                         )
-                                        .cornerRadius(18)
+                                        .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
 
                                     HStack(spacing: 5) {
                                         Image(systemSymbol: .playFill)
@@ -83,8 +88,8 @@ struct AlbumSongsView: View {
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
                                     .background(.white)
-                                    .cornerRadius(100)
-                                    .padding(10)
+                                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
+                                    .padding(Layout.Padding.playingIndicator)
                                 }
                                 .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
                                 .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
@@ -97,13 +102,13 @@ struct AlbumSongsView: View {
                                 try await ConnectionManager.command().play(album)
                             } label: {
                                 Image(systemSymbol: .playFill)
-                                    .font(.title)
+                                    .font(.title2)
                                     .foregroundStyle(.foreground)
-                                    .padding(18)
+                                    .padding(Layout.Padding.medium)
                                     .glassEffect(.regular.tint(.accent.opacity(0.5)))
                                     .contentShape(Circle())
                             }
-                            .styledButton()
+                            .buttonStyle(.plain)
                             .asyncButtonStyle(.pulse)
                         }
                     #endif
@@ -155,7 +160,7 @@ struct AlbumSongsView: View {
 
                 Spacer()
             }
-            .padding(15)
+            .padding(Layout.Padding.large)
             .task {
                 artwork = try? await album.artwork()
 

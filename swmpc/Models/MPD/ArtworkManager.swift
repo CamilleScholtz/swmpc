@@ -5,14 +5,13 @@
 //  Created by Camille Scholtz on 22/12/2024.
 //
 
-import DequeModule
 import SwiftUI
 
 /// Manages artwork fetching and caching for media items.
 ///
 /// `ArtworkManager` is a singleton actor that provides efficient artwork data
-/// retrieval with intelligent caching and request deduplication. It integrates
-/// with `ArtworkConnectionPool` to manage network connections efficiently.
+/// retrieval with intelligent caching and request deduplication. Each artwork
+/// fetch uses its own connection to prevent buffer confusion during parallel loads.
 actor ArtworkManager {
     static let shared = ArtworkManager()
 
@@ -64,11 +63,9 @@ actor ArtworkManager {
     /// Creates and returns a new `Task` to fetch artwork data for a specific
     /// URL.
     ///
-    /// The created task encapsulates the entire network operation, including:
-    /// 1. Acquiring a connection from the `ArtworkConnectionPool`.
-    /// 2. Fetching the artwork data using the connection.
-    /// 3. Releasing or discarding the connection based on the outcome.
-    /// 4. Caching the data if `shouldCache` is true.
+    /// The created task creates a new connection for each fetch operation,
+    /// retrieves the artwork data, and properly cleans up the connection.
+    /// The task also handles caching if `shouldCache` is true.
     ///
     /// - Parameters:
     ///   - url: The URL of the artwork to fetch.
@@ -83,21 +80,11 @@ actor ArtworkManager {
         Task(priority: priority) {
             try Task.checkCancellation()
 
-            var connection: ConnectionManager<ArtworkMode>?
+            let connection = try await ConnectionManager<ArtworkMode>.artwork()
+
             do {
-                connection = try await ArtworkConnectionPool.shared
-                    .acquireConnection()
-                guard let acquiredConnection = connection else {
-                    throw ConnectionManagerError.connectionSetupFailed
-                }
-
-                try Task.checkCancellation()
-
-                let data = try await acquiredConnection.getArtworkData(for: url)
-
-                await ArtworkConnectionPool.shared.releaseConnection(
-                    acquiredConnection)
-                connection = nil
+                let data = try await connection.getArtworkData(for: url)
+                await connection.disconnect()
 
                 try Task.checkCancellation()
 
@@ -107,11 +94,7 @@ actor ArtworkManager {
 
                 return data
             } catch {
-                if let failedConnection = connection {
-                    await ArtworkConnectionPool.shared.discardConnection(
-                        failedConnection)
-                }
-
+                await connection.disconnect()
                 throw error
             }
         }
@@ -123,124 +106,5 @@ actor ArtworkManager {
     ///   - url: The URL key for the cached data.
     private func storeInCache(_ data: Data, for url: URL) {
         cache.setObject(data as NSData, forKey: url as NSURL, cost: data.count)
-    }
-}
-
-/// Manages a pool of reusable connections for artwork fetching.
-///
-/// `ArtworkConnectionPool` is a singleton actor that implements connection
-/// pooling to optimize network resource usage and reduce connection setup
-/// overhead. It maintains a pool of validated connections that can be reused
-/// across multiple artwork fetch operations.
-actor ArtworkConnectionPool {
-    static let shared = ArtworkConnectionPool()
-
-    /// The maximum number of connections allowed to be active (checked out)
-    /// concurrently.
-    private let maxSize = 8
-
-    /// Available connections ready for immediate reuse.
-    private var pool: Deque<ConnectionManager<ArtworkMode>> = Deque()
-
-    /// How many connections are currently checked out and in use.
-    private var activeConnectionsCount = 0
-
-    /// Tasks waiting for a connection because the pool was empty and the limit
-    /// was reached.
-    private var waiters: Deque<CheckedContinuation<ConnectionManager<ArtworkMode>,
-        Error>> = Deque()
-
-    /// Private initializer to enforce singleton pattern.
-    private init() {}
-
-    /// Acquires a connection from the pool.
-    ///
-    /// If a connection is available in the pool, it's returned immediately. If
-    /// the pool is empty but the maximum number of active connections hasn't
-    /// been reached, a new connection is created and returned. If the pool is
-    /// empty and the maximum number of connections are active, the calling task
-    /// will be suspended until a connection is released.
-    ///
-    /// - Returns: A connected `ConnectionManager<ArtworkMode>`.
-    /// - Throws: A `ConnectionManagerError` if creating or validating a
-    ///           connection fails.
-    func acquireConnection() async throws -> ConnectionManager<ArtworkMode> {
-        while true {
-            try Task.checkCancellation()
-
-            if let connection = pool.popFirst() {
-                do {
-                    try await connection.ping()
-                    activeConnectionsCount += 1
-
-                    return connection
-                } catch {
-                    await connection.disconnect()
-                    continue
-                }
-            }
-
-            if activeConnectionsCount < maxSize {
-                activeConnectionsCount += 1
-                do {
-                    let connection = ConnectionManager<ArtworkMode>()
-                    try await connection.connect()
-
-                    return connection
-                } catch {
-                    activeConnectionsCount -= 1
-                    throw ConnectionManagerError.connectionSetupFailed
-                }
-            }
-
-            return try await withCheckedThrowingContinuation { continuation in
-                waiters.append(continuation)
-            }
-        }
-    }
-
-    /// Returns a connection to the pool or passes it directly to a waiting
-    /// task.
-    ///
-    /// - Parameter connection: The `ConnectionManager<ArtworkMode>` to release.
-    func releaseConnection(_ connection: ConnectionManager<ArtworkMode>) {
-        activeConnectionsCount -= 1
-
-        if let waiter = waiters.popFirst() {
-            waiter.resume(returning: connection)
-            activeConnectionsCount += 1
-        } else {
-            pool.append(connection)
-        }
-    }
-
-    /// Discards a failed connection and optionally creates a replacement.
-    ///
-    /// This method is called when a connection fails and cannot be returned to
-    /// the pool. If there are tasks waiting for connections and we're below the
-    /// maximum limit, a new connection is created to replace the discarded one.
-    ///
-    /// - Parameter connection: The failed connection to discard.
-    func discardConnection(_ connection: ConnectionManager<ArtworkMode>) async {
-        activeConnectionsCount -= 1
-        await connection.disconnect()
-
-        if !waiters.isEmpty, activeConnectionsCount < maxSize {
-            activeConnectionsCount += 1
-
-            do {
-                let connection = ConnectionManager<ArtworkMode>()
-                try await connection.connect()
-
-                if let waiter = waiters.popFirst() {
-                    waiter.resume(returning: connection)
-                } else {
-                    activeConnectionsCount -= 1
-                    pool.append(connection)
-                }
-            } catch {
-                activeConnectionsCount -= 1
-            }
-        }
     }
 }

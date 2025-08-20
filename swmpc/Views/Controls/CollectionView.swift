@@ -6,80 +6,142 @@
 //
 
 import SwiftUI
-#if os(macOS)
-    import AppKit
-
-    typealias PlatformViewRepresentable = NSViewRepresentable
-#elseif os(iOS)
+#if os(iOS)
     import UIKit
-
-    typealias PlatformViewRepresentable = UIViewRepresentable
+#elseif os(macOS)
+    import AppKit
 #endif
 
+#if os(iOS)
+    typealias PlatformViewRepresentable = UIViewRepresentable
+#elseif os(macOS)
+    typealias PlatformViewRepresentable = NSViewRepresentable
+#endif
+
+protocol CollectionViewCoordinator: AnyObject {
+    associatedtype DataElement: Identifiable & Hashable & Sendable
+    associatedtype ContentView: View
+
+    var content: (DataElement) -> ContentView { get set }
+    var rowHeight: CGFloat { get set }
+    var contentMargin: EdgeInsets? { get set }
+
+    func update<Data: RandomAccessCollection>(view: CollectionView<Data, ContentView>) where Data.Element == DataElement
+    func updateData<Data: RandomAccessCollection>(_ data: Data) where Data.Element == DataElement
+}
+
 #if os(macOS)
-    final class HostingCollectionViewItem: NSCollectionViewItem {
-        private var hostingView: NSHostingView<AnyView>?
+    final class HostingCollectionViewItem<Content: View>: NSCollectionViewItem {
+        private var hostingView: NSHostingView<Content>?
 
         override func loadView() {
             view = NSView()
         }
 
-        func updateContent(_ content: AnyView) {
+        func updateContent(_ content: Content) {
             if let hostingView {
                 hostingView.rootView = content
             } else {
                 let hosting = NSHostingView(rootView: content)
                 hosting.translatesAutoresizingMaskIntoConstraints = false
+
                 view.addSubview(hosting)
+
                 NSLayoutConstraint.activate([
                     hosting.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                     hosting.trailingAnchor.constraint(equalTo: view.trailingAnchor),
                     hosting.topAnchor.constraint(equalTo: view.topAnchor),
                     hosting.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 ])
+
                 hostingView = hosting
-            }
-        }
-    }
 
-#elseif os(iOS)
-    final class HostingCollectionViewCell: UICollectionViewCell {
-        private var hostingController: UIHostingController<AnyView>?
-
-        func updateContent(_ content: AnyView) {
-            if let hostingController {
-                hostingController.rootView = content
-            } else {
-                let hosting = UIHostingController(rootView: content)
-                hosting.view.translatesAutoresizingMaskIntoConstraints = false
-                hosting.view.backgroundColor = .clear
-                contentView.addSubview(hosting.view)
-                NSLayoutConstraint.activate([
-                    hosting.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-                    hosting.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-                    hosting.view.topAnchor.constraint(equalTo: contentView.topAnchor),
-                    hosting.view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-                ])
-                hostingController = hosting
+                // TODO: I don't know if this actually brings performance benefits.
+//                view.wantsLayer = true
+//                if let layer = view.layer {
+//                    layer.shouldRasterize = true
+//                    layer.rasterizationScale = view.window?.backingScaleFactor ?? 2.0
+//                }
             }
         }
     }
 #endif
 
 struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformViewRepresentable
-    where Data.Element: Identifiable & Hashable
+    where Data.Element: Identifiable & Hashable & Sendable
 {
     let data: Data
-    let rowHeight: CGFloat?
-    let contentMargin: EdgeInsets?
-    @Binding var scrollTo: Data.Element.ID?
+    let rowHeight: CGFloat
+    private var contentMargin: EdgeInsets?
+    private var scrollToBinding: Binding<Data.Element.ID?>?
     var animated: Bool = false
     @ViewBuilder let content: (Data.Element) -> Content
 
-    @Environment(MPD.self) private var mpd
-    @Environment(NavigationManager.self) private var navigator
+    init(
+        data: Data,
+        rowHeight: CGFloat,
+        @ViewBuilder content: @escaping (Data.Element) -> Content,
+    ) {
+        self.data = data
+        self.rowHeight = rowHeight
+        contentMargin = nil
+        scrollToBinding = nil
+        self.content = content
+    }
 
-    #if os(macOS)
+    func contentMargins(_ edges: Edge.Set = .all, _ length: CGFloat) -> Self {
+        var view = self
+        var newMargins = view.contentMargin ?? EdgeInsets()
+
+        if edges.contains(.top) {
+            newMargins.top = length
+        }
+        if edges.contains(.bottom) {
+            newMargins.bottom = length
+        }
+        if edges.contains(.leading) {
+            newMargins.leading = length
+        }
+        if edges.contains(.trailing) {
+            newMargins.trailing = length
+        }
+
+        view.contentMargin = newMargins
+        return view
+    }
+
+    func scrollTo(_ binding: Binding<Data.Element.ID?>, animated: Bool = false) -> Self {
+        var view = self
+        view.scrollToBinding = binding
+        view.animated = animated
+        return view
+    }
+
+    private var scrollTo: Data.Element.ID? {
+        scrollToBinding?.wrappedValue
+    }
+
+    private func resetScrollTo() {
+        scrollToBinding?.wrappedValue = nil
+    }
+
+    #if os(iOS)
+        func makeUIView(context: Context) -> UICollectionView {
+            context.coordinator.collectionView
+        }
+
+        func updateUIView(_: UICollectionView, context: Context) {
+            context.coordinator.update(view: self)
+            if scrollTo != nil {
+                handleScrollToItem(coordinator: context.coordinator)
+                // Reset after initiating scroll, deferred to avoid modifying state during view update
+                Task { @MainActor in
+                    resetScrollTo()
+                }
+            }
+        }
+
+    #elseif os(macOS)
         func makeNSView(context: Context) -> NSScrollView {
             let scrollView = NSScrollView()
             scrollView.hasVerticalScroller = true
@@ -88,43 +150,27 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
         }
 
         func updateNSView(_: NSScrollView, context: Context) {
-            updateCoordinator(context.coordinator)
-        }
+            context.coordinator.update(view: self)
+            if scrollTo != nil {
+                handleScrollToItem(coordinator: context.coordinator)
 
-    #elseif os(iOS)
-        func makeUIView(context: Context) -> UICollectionView {
-            context.coordinator.collectionView
-        }
-
-        func updateUIView(_: UICollectionView, context: Context) {
-            updateCoordinator(context.coordinator)
+                Task { @MainActor in
+                    resetScrollTo()
+                }
+            }
         }
     #endif
 
-    private func updateCoordinator(_ coordinator: Coordinator) {
-        let hasDataChanged = !coordinator.data.elementsEqual(data) { $0.id == $1.id }
-
-        coordinator.data = data
-        coordinator.content = content
-        coordinator.mpd = mpd
-        coordinator.navigator = navigator
-        coordinator.rowHeight = rowHeight
-        coordinator.contentMargin = contentMargin
-
-        if hasDataChanged {
-            coordinator.collectionView.reloadData()
-        }
-
-        handleScrollToItem(coordinator: coordinator)
-    }
-
     func makeCoordinator() -> Coordinator {
-        Coordinator(data: data, content: content, mpd: mpd, navigator: navigator, rowHeight: rowHeight, contentMargin: contentMargin)
+        Coordinator(data: data, content: content, rowHeight: rowHeight, contentMargin: contentMargin)
     }
 
     private func handleScrollToItem(coordinator: Coordinator) {
         guard let id = scrollTo,
-              let index = data.firstIndex(where: { $0.id == id }) else { return }
+              let index = data.firstIndex(where: { $0.id == id })
+        else {
+            return
+        }
 
         let indexPath = IndexPath(item: data.distance(from: data.startIndex, to: index), section: 0)
 
@@ -141,30 +187,21 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
         #elseif os(iOS)
             coordinator.collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: animated)
         #endif
-
-        DispatchQueue.main.async {
-            scrollTo = nil
-        }
     }
 
     #if os(macOS)
-        final class Coordinator: NSObject, NSCollectionViewDataSource, NSCollectionViewDelegateFlowLayout {
-            var data: Data
-            var content: (Data.Element) -> Content
-            var mpd: MPD
-            var navigator: NavigationManager
+        final class Coordinator: NSObject, NSCollectionViewDelegateFlowLayout, CollectionViewCoordinator {
             let collectionView: NSCollectionView
-            var rowHeight: CGFloat?
+            var content: (Data.Element) -> Content
+            var rowHeight: CGFloat
             var contentMargin: EdgeInsets?
+            var dataSource: NSCollectionViewDiffableDataSource<Int, Data.Element>!
 
-            private var sizeCache: [Data.Element.ID: NSSize] = [:]
             private let cellIdentifier = NSUserInterfaceItemIdentifier("Cell")
+            private var currentDataOrder: [Data.Element.ID] = []
 
-            init(data: Data, content: @escaping (Data.Element) -> Content, mpd: MPD, navigator: NavigationManager, rowHeight: CGFloat?, contentMargin: EdgeInsets?) {
-                self.data = data
+            init(data: Data, content: @escaping (Data.Element) -> Content, rowHeight: CGFloat, contentMargin: EdgeInsets?) {
                 self.content = content
-                self.mpd = mpd
-                self.navigator = navigator
                 self.rowHeight = rowHeight
                 self.contentMargin = contentMargin
 
@@ -185,96 +222,70 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
                 super.init()
 
-                collectionView.register(HostingCollectionViewItem.self, forItemWithIdentifier: cellIdentifier)
-                collectionView.dataSource = self
+                collectionView.register(HostingCollectionViewItem<Content>.self, forItemWithIdentifier: cellIdentifier)
                 collectionView.delegate = self
+
+                setupDataSource()
+                updateData(data)
             }
 
-            func collectionView(_: NSCollectionView, numberOfItemsInSection _: Int) -> Int {
-                data.count
+            func update<ViewData: RandomAccessCollection>(view: CollectionView<ViewData, Content>) where ViewData.Element == Data.Element {
+                content = view.content
+                rowHeight = view.rowHeight
+                contentMargin = view.contentMargin
+
+                updateData(view.data)
             }
 
-            func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
-                let item = collectionView.makeItem(withIdentifier: cellIdentifier, for: indexPath) as! HostingCollectionViewItem
-                let element = elementAt(indexPath)
+            private func setupDataSource() {
+                dataSource = NSCollectionViewDiffableDataSource<Int, Data.Element>(collectionView: collectionView) { [weak self] collectionView, indexPath, item in
+                    guard let self else { return nil }
 
-                item.updateContent(AnyView(
-                    content(element)
-                        .environment(mpd)
-                        .environment(navigator),
-                ))
-                return item
-            }
+                    let cell = collectionView.makeItem(withIdentifier: cellIdentifier, for: indexPath) as! HostingCollectionViewItem<Content>
+                    let contentView = content(item)
+                    cell.updateContent(contentView)
 
-            func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
-                let width = calculateItemWidth(for: collectionView)
-
-                if let fixedHeight = rowHeight {
-                    return NSSize(width: width, height: fixedHeight)
+                    return cell
                 }
-
-                return calculateDynamicSize(for: elementAt(indexPath), width: width)
             }
 
-            func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, shouldInvalidateLayoutForBoundsChange newBounds: NSRect) -> Bool {
-                guard collectionView.bounds.width != newBounds.width else { return false }
-                sizeCache.removeAll()
-                return true
+            func updateData<ViewData: RandomAccessCollection>(_ data: ViewData) where ViewData.Element == Data.Element {
+                let newIdentifiers = data.map(\.id)
+                guard newIdentifiers != currentDataOrder else { return }
+
+                var snapshot = NSDiffableDataSourceSnapshot<Int, Data.Element>()
+                snapshot.appendSections([0])
+                snapshot.appendItems(Array(data))
+                dataSource.apply(snapshot, animatingDifferences: false)
+                currentDataOrder = newIdentifiers
             }
 
-            private func elementAt(_ indexPath: IndexPath) -> Data.Element {
-                data[data.index(data.startIndex, offsetBy: indexPath.item)]
-            }
-
-            private func calculateItemWidth(for collectionView: NSCollectionView) -> CGFloat {
+            func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, sizeForItemAt _: IndexPath) -> NSSize {
                 let horizontalMargins = (contentMargin?.leading ?? 0) + (contentMargin?.trailing ?? 0)
-                return collectionView.bounds.width - horizontalMargins
-            }
-
-            private func calculateDynamicSize(for element: Data.Element, width: CGFloat) -> NSSize {
-                let elementID = element.id
-
-                if let cachedSize = sizeCache[elementID], cachedSize.width == width {
-                    return cachedSize
-                }
-
-                let contentView = content(element)
-                    .environment(mpd)
-                    .environment(navigator)
-                    .frame(width: width)
-
-                let hostingView = NSHostingView(rootView: contentView)
-                let size = NSSize(width: width, height: hostingView.fittingSize.height)
-                sizeCache[elementID] = size
-
-                return size
+                let width = collectionView.bounds.width - horizontalMargins
+                return NSSize(width: width, height: rowHeight)
             }
         }
 
     #elseif os(iOS)
-        final class Coordinator: NSObject, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-            var data: Data
-            var content: (Data.Element) -> Content
-            var mpd: MPD
-            var navigator: NavigationManager
+        final class Coordinator: NSObject, UICollectionViewDelegateFlowLayout, CollectionViewCoordinator {
             let collectionView: UICollectionView
-            var rowHeight: CGFloat?
+            var content: (Data.Element) -> Content
+            var rowHeight: CGFloat
             var contentMargin: EdgeInsets?
+            var dataSource: UICollectionViewDiffableDataSource<Int, Data.Element>!
 
-            private var sizeCache: [Data.Element.ID: CGSize] = [:]
-            private let cellIdentifier = String(describing: HostingCollectionViewCell.self)
+            private var currentDataOrder: [Data.Element.ID] = []
 
-            init(data: Data, content: @escaping (Data.Element) -> Content, mpd: MPD, navigator: NavigationManager, rowHeight: CGFloat?, contentMargin: EdgeInsets?) {
-                self.data = data
+            init(data: Data, content: @escaping (Data.Element) -> Content, rowHeight: CGFloat, contentMargin: EdgeInsets?) {
                 self.content = content
-                self.mpd = mpd
-                self.navigator = navigator
                 self.rowHeight = rowHeight
                 self.contentMargin = contentMargin
 
                 let layout = UICollectionViewFlowLayout()
                 layout.minimumLineSpacing = 0
                 layout.minimumInteritemSpacing = 0
+
                 if let contentMargin {
                     layout.sectionInset = UIEdgeInsets(
                         top: contentMargin.top,
@@ -289,67 +300,57 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
                 super.init()
 
-                collectionView.register(HostingCollectionViewCell.self, forCellWithReuseIdentifier: cellIdentifier)
-                collectionView.dataSource = self
                 collectionView.delegate = self
+                setupDataSource()
+                updateData(data)
             }
 
-            func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
-                data.count
+            func update<ViewData: RandomAccessCollection>(view: CollectionView<ViewData, Content>) where ViewData.Element == Data.Element {
+                content = view.content
+                rowHeight = view.rowHeight
+                contentMargin = view.contentMargin
+                updateData(view.data)
             }
 
-            func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath) as! HostingCollectionViewCell
-                let element = elementAt(indexPath)
+            private func setupDataSource() {
+                let cellRegistration = UICollectionView.CellRegistration<UICollectionViewCell, Data.Element> { [weak self] cell, _, item in
+                    guard let self else {
+                        return
+                    }
 
-                cell.updateContent(AnyView(
-                    content(element)
-                        .environment(mpd)
-                        .environment(navigator),
-                ))
-                return cell
-            }
+                    cell.contentConfiguration = UIHostingConfiguration {
+                        self.content(item)
+                    }
+                    .margins(.all, 0)
+                    .background(.clear)
 
-            func collectionView(_ collectionView: UICollectionView, layout _: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-                let width = calculateItemWidth(for: collectionView)
-
-                if let fixedHeight = rowHeight {
-                    return CGSize(width: width, height: fixedHeight)
+                    cell.layer.shouldRasterize = true
+                    cell.layer.rasterizationScale = cell.traitCollection.displayScale
                 }
 
-                return calculateDynamicSize(for: elementAt(indexPath), width: width)
+                dataSource = UICollectionViewDiffableDataSource<Int, Data.Element>(collectionView: collectionView) { collectionView, indexPath, item in
+                    collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: item)
+                }
             }
 
-            private func elementAt(_ indexPath: IndexPath) -> Data.Element {
-                data[data.index(data.startIndex, offsetBy: indexPath.item)]
+            func updateData<ViewData: RandomAccessCollection>(_ data: ViewData) where ViewData.Element == Data.Element {
+                let newIdentifiers = data.map(\.id)
+                guard newIdentifiers != currentDataOrder else {
+                    return
+                }
+
+                var snapshot = NSDiffableDataSourceSnapshot<Int, Data.Element>()
+                snapshot.appendSections([0])
+                snapshot.appendItems(Array(data))
+                dataSource.apply(snapshot, animatingDifferences: false)
+                currentDataOrder = newIdentifiers
             }
 
-            private func calculateItemWidth(for collectionView: UICollectionView) -> CGFloat {
+            func collectionView(_ collectionView: UICollectionView, layout _: UICollectionViewLayout, sizeForItemAt _: IndexPath) -> CGSize {
                 let horizontalMargins = (contentMargin?.leading ?? 0) + (contentMargin?.trailing ?? 0)
-                return collectionView.bounds.width - horizontalMargins
-            }
+                let itemWidth = collectionView.bounds.width - horizontalMargins
 
-            private func calculateDynamicSize(for element: Data.Element, width: CGFloat) -> CGSize {
-                let elementID = element.id
-
-                if let cachedSize = sizeCache[elementID], cachedSize.width == width {
-                    return cachedSize
-                }
-
-                let contentView = content(element)
-                    .environment(mpd)
-                    .environment(navigator)
-                    .frame(width: width)
-
-                let hostingController = UIHostingController(rootView: contentView)
-                let size = hostingController.view.systemLayoutSizeFitting(
-                    CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
-                    withHorizontalFittingPriority: .required,
-                    verticalFittingPriority: .fittingSizeLevel,
-                )
-                sizeCache[elementID] = size
-
-                return size
+                return CGSize(width: itemWidth, height: rowHeight)
             }
         }
     #endif
