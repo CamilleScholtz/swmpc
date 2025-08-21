@@ -239,7 +239,9 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
             private func setupDataSource() {
                 dataSource = NSCollectionViewDiffableDataSource<Int, Data.Element>(collectionView: collectionView) { [weak self] collectionView, indexPath, item in
-                    guard let self else { return nil }
+                    guard let self else {
+                        return nil
+                    }
 
                     let cell = collectionView.makeItem(withIdentifier: cellIdentifier, for: indexPath) as! HostingCollectionViewItem<Content>
                     let contentView = content(item)
@@ -263,6 +265,7 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             func collectionView(_ collectionView: NSCollectionView, layout _: NSCollectionViewLayout, sizeForItemAt _: IndexPath) -> NSSize {
                 let horizontalMargins = (contentMargin?.leading ?? 0) + (contentMargin?.trailing ?? 0)
                 let width = collectionView.bounds.width - horizontalMargins
+
                 return NSSize(width: width, height: rowHeight)
             }
         }

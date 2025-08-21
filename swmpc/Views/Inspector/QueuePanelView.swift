@@ -34,11 +34,11 @@ struct QueuePanelView: View {
         .alert("Clear Queue", isPresented: $showClearQueueAlert) {
             Button("Cancel", role: .cancel) {}
 
-            AsyncButton("Clear Queue", role: .destructive) {
+            AsyncButton("Clear", role: .destructive) {
                 try await ConnectionManager.command().clearQueue()
             }
         } message: {
-            Text("This will remove all songs from the queue.")
+            Text("Are you sure you want to clear the queue?")
         }
         .onReceive(fillIntelligenceQueueNotification) { _ in
             showIntelligenceQueueSheet = true

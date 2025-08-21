@@ -352,6 +352,7 @@ struct CategoryPlaylistView: View {
     @State private var animatedScroll = false
     @State private var showIntelligencePlaylistSheet = false
     @State private var playlistToEdit: Playlist?
+    @State private var showReplaceQueueAlert = false
 
     private let fillIntelligencePlaylistNotification = NotificationCenter.default
         .publisher(for: .fillIntelligencePlaylistNotification)
@@ -395,8 +396,8 @@ struct CategoryPlaylistView: View {
                 ToolbarSpacer(.fixed)
 
                 ToolbarItem {
-                    AsyncButton {
-                        try await ConnectionManager.command().loadPlaylist(playlist)
+                    Button {
+                        showReplaceQueueAlert = true
                     } label: {
                         Image(systemSymbol: .square3Layers3d)
                     }
@@ -423,6 +424,15 @@ struct CategoryPlaylistView: View {
         }
         .sheet(isPresented: $showIntelligencePlaylistSheet) {
             IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
+        }
+        .alert("Replace Queue", isPresented: $showReplaceQueueAlert) {
+            Button("Cancel", role: .cancel) { }
+            
+            AsyncButton("Replace", role: .destructive) {
+                try await ConnectionManager.command().loadPlaylist(playlist)
+            }
+        } message: {
+            Text("Are you sure you want to replace the current queue with this playlist?")
         }
     }
 

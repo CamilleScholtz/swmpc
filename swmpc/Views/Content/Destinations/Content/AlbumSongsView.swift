@@ -36,16 +36,8 @@ struct AlbumSongsView: View {
                 ZStack {
                     ZStack(alignment: .bottom) {
                         ArtworkView(image: artwork)
-                            .frame(width: 80)
-                            .blur(radius: 9.5)
-                            .offset(y: 4)
-                            .saturation(1.5)
-                            .blendMode(colorScheme == .dark ? .softLight : .normal)
-                            .opacity(0.5)
-
-                        ArtworkView(image: artwork)
                             .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
-                            .shadow(color: .black.opacity(0.2), radius: 8, y: 2)
+                            .shadow(color: .black.opacity(0.2), radius: 12, y: 3)
                             .frame(width: 100)
                             .overlay(
                                 RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)

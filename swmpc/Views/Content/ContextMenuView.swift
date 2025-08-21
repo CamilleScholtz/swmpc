@@ -73,7 +73,7 @@ struct ContextMenuView<Media: Mediable>: View {
             SourceToggleButton(media: media, source: .favorites)
         }
 
-        if let playlists = (mpd.status.playlist != nil) ? mpd.playlists.playlists?.filter({ $0 != mpd.status.playlist }) : mpd.playlists.playlists {
+        if let playlists = mpd.playlists.playlists {
             Menu(playlistMenuTitle, systemImage: "music.note.list") {
                 ForEach(playlists) { playlist in
                     let shouldSkip = if case let .playlist(currentPlaylist) = source {

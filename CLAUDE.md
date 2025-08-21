@@ -88,7 +88,7 @@ External packages (managed via Xcode's Swift Package Manager):
 
 ## MPD Protocol Implementation
 
-- Requires MPD 0.24+ for full feature support
+- Requires MPD 0.22+
 - Connection modes optimize for different operations (idle listening, command execution, artwork fetching)
 - Uses MPD's idle command for real-time updates without polling
 - Binary protocol support for album artwork retrieval

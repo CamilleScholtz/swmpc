@@ -75,7 +75,7 @@ enum ConnectionManagerError: LocalizedError {
         case .invalidPort:
             "Invalid port provided. Port must be between 1 and 65535."
         case .unsupportedServerVersion:
-            "Unsupported MPD server version. Minimum required version is 0.24."
+            "Unsupported MPD server version. Minimum required version is 0.22."
         case .connectionSetupFailed:
             "Failed to establish network connection to MPD server."
         case .connectionUnexpectedClosure:
@@ -232,13 +232,13 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Ensures that the server version is supported.
     ///
     /// This function checks the version of the MPD server obtained after
-    /// connecting. The minimum supported version is 0.24. If the version is
+    /// connecting. The minimum supported version is 0.22. If the version is
     /// `nil` (not yet known), the check passes.
     ///
     /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is older than the minimum required.
     func ensureVersionSupported() throws {
-        guard version?.compare("0.24", options: .numeric) !=
+        guard version?.compare("0.22", options: .numeric) !=
             .orderedAscending
         else {
             throw ConnectionManagerError.unsupportedServerVersion
@@ -841,15 +841,13 @@ extension ConnectionManager {
     ///   - `isRandom`: A Boolean indicating if random playback is enabled.
     ///   - `isRepeat`: A Boolean indicating if repeat playback is enabled.
     ///   - `elapsed`: The elapsed playback time in seconds.
-    ///   - `playlist`: The last loaded playlist.
     ///   - `song`: The currently playing song, if any.
     ///   - `volume`: The current volume level (0-100).
     /// - Throws: An error if the response is malformed or if the underlying
     ///           command execution fails.
     func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?,
                                           isRepeat: Bool?, elapsed: Double?,
-                                          playlist: Playlist?, song: Song?,
-                                          volume: Int?)
+                                          song: Song?, volume: Int?)
     {
         let lines = try await run(["status", "currentsong"])
 
@@ -877,9 +875,6 @@ extension ConnectionManager {
         let isRepeat = fields["repeat"].map { $0 == "1" }
         let elapsed = fields["elapsed"].flatMap(Double.init)
         let volume = fields["volume"].flatMap(Int.init)
-        let playlist = fields["lastloadedplaylist"].flatMap { name in
-            name.isEmpty ? nil : Playlist(name: name)
-        }
 
         let song: Song? = if fields["file"] != nil {
             try parseMediaResponse(fields.map {
@@ -889,7 +884,7 @@ extension ConnectionManager {
             nil
         }
 
-        return (state, isRandom, isRepeat, elapsed, playlist, song, volume)
+        return (state, isRandom, isRepeat, elapsed, song, volume)
     }
 
     /// Retrieves all unique albums from the database, sorted as specified.

@@ -36,9 +36,6 @@ import SwiftUI
     /// The currently playing song.
     private(set) var song: Song?
 
-    /// The currently loaded playlist, if any.
-    private(set) var playlist: Playlist?
-
     /// The current volume level (0-100).
     private(set) var volume: Int?
 
@@ -134,7 +131,6 @@ import SwiftUI
             #endif
         }
 
-        _ = playlist.update(to: data.playlist)
         _ = volume.update(to: data.volume)
     }
 
