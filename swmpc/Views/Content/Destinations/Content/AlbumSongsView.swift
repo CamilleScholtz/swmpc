@@ -48,7 +48,7 @@ struct AlbumSongsView: View {
                                             RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
 
                                             RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
-                                                .scale(0.8)
+                                                .scale(0.9)
                                                 .blur(radius: 8)
                                                 .blendMode(.destinationOut)
                                         },

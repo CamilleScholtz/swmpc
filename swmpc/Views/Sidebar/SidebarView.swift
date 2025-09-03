@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import SFSafeSymbols
 import SwiftUI
 
 struct SidebarView: View {
@@ -82,16 +83,20 @@ struct SidebarView: View {
                         .help(Text(playlist.name))
                         .contextMenu {
                             if playlist.name != "Favorites" {
-                                Button("Rename Playlist") {
+                                Button {
                                     isRenamingPlaylist = true
                                     playlistName = playlist.name
                                     playlistToRename = playlist
                                     isFocused = true
+                                } label: {
+                                    Label("Rename Playlist", systemSymbol: .pencil)
                                 }
 
-                                Button("Delete Playlist") {
+                                Button(role: .destructive) {
                                     playlistToDelete = playlist
                                     showDeleteAlert = true
+                                } label: {
+                                    Label("Delete Playlist", systemSymbol: .trash)
                                 }
                             }
                         }

@@ -11,6 +11,9 @@ import SwiftUI
 
 struct CategoryDestinationView: View {
     @Environment(NavigationManager.self) private var navigator
+    #if os(macOS)
+        @Environment(\.controlActiveState) private var controlActiveState
+    #endif
 
     @State private var isSearchFieldExpanded = false
 
@@ -31,11 +34,13 @@ struct CategoryDestinationView: View {
         .toolbar(removing: .title)
         .toolbar {
             if !isSearchFieldExpanded {
+                // XXX: I want to use DefaultToolbarItem, but that does not work for some reason.
                 ToolbarItem {
                     Text(navigator.category.label)
                         .font(.system(size: 15))
                         .fontWeight(.semibold)
                         .padding(.leading, 12)
+                        .foregroundStyle(controlActiveState == .inactive ? .secondary : .primary)
                 }
                 .sharedBackgroundVisibility(.hidden)
 
@@ -159,6 +164,8 @@ struct CategoryDatabaseView: View {
                         .frame(width: 203)
                     #endif
                         .autocorrectionDisabled()
+                        // XXX: This doesn't work.
+                        // See: https://developer.apple.com/forums/thread/797948
                         .focused($isSearchFieldFocused)
                         .task {
                             isSearchFieldFocused = true
@@ -249,14 +256,11 @@ struct CategoryDatabaseView: View {
     private var searchFieldsMenu: some View {
         Menu {
             ForEach(SearchFields.availableFields(for: mpd.database.type), id: \.self) { field in
-                Button {
-                    searchFields.toggle(field)
-                } label: {
-                    HStack {
-                        if searchFields.contains(field) {
-                            Image(systemSymbol: .checkmark)
-                        }
-                        Image(systemSymbol: field.symbol)
+                Toggle(isOn: Binding(
+                    get: { searchFields.contains(field) },
+                    set: { _ in searchFields.toggle(field) },
+                )) {
+                    Label {
                         switch field {
                         case .title:
                             Text("Title")
@@ -267,6 +271,8 @@ struct CategoryDatabaseView: View {
                         case .genre:
                             Text("Genre")
                         }
+                    } icon: {
+                        Image(systemSymbol: field.symbol)
                     }
                 }
             }
@@ -426,8 +432,8 @@ struct CategoryPlaylistView: View {
             IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
         }
         .alert("Replace Queue", isPresented: $showReplaceQueueAlert) {
-            Button("Cancel", role: .cancel) { }
-            
+            Button("Cancel", role: .cancel) {}
+
             AsyncButton("Replace", role: .destructive) {
                 try await ConnectionManager.command().loadPlaylist(playlist)
             }

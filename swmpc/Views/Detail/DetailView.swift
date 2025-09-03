@@ -122,7 +122,7 @@ struct DetailView: View {
                                     RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
 
                                     RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                        .scale(0.8)
+                                        .scale(0.9)
                                         .blur(radius: 8)
                                         .blendMode(.destinationOut)
                                 },

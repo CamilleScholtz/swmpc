@@ -222,12 +222,12 @@ struct SettingsView: View {
                 }
                 .help("Select the AI model to use for intelligent features")
                 .pickerStyle(.inline)
-                .disabled(!isIntelligenceEnabled)
+                .disabled(!isIntelligenceEnabledSetting)
 
                 SecureField("API Token:", text: $intelligenceToken)
                     .textContentType(.password)
                     .help("API token for the selected AI service")
-                    .disabled(!isIntelligenceEnabled)
+                    .disabled(!isIntelligenceEnabledSetting)
                     .onAppear {
                         @AppStorage(intelligenceModel.setting) var token = ""
                         intelligenceToken = token

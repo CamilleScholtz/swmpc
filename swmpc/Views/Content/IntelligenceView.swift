@@ -6,18 +6,11 @@
 //
 
 import ButtonKit
+import SFSafeSymbols
 import SwiftUI
 
-// MARK: - Layout Constants
-
 private extension Layout.Size {
-    static let intelligenceViewWidth: CGFloat = 300
-}
-
-private extension Layout.Padding {
-    static let intelligenceView: CGFloat = 20
-    static let intelligenceButton: CGFloat = 12
-    static let intelligenceSmall: CGFloat = 8
+    static let intelligenceViewWidth: CGFloat = 350
 }
 
 struct IntelligenceView: View {
@@ -88,74 +81,113 @@ struct IntelligenceView: View {
 
     @State private var loadingSentence: LocalizedStringResource
     @State private var suggestion: LocalizedStringResource
+    @State private var backgroundOffset: CGFloat = 0
 
     @FocusState private var isFocused: Bool
+
+    private let backgroundColors: [Color] = [
+        .blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple,
+    ]
 
     var body: some View {
         VStack(spacing: Layout.Spacing.large) {
             if isLoading {
-                IntelligenceSparklesView()
-                    .font(.system(size: 40))
+                VStack(spacing: Layout.Spacing.large) {
+                    Image(systemSymbol: .sparkles)
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: backgroundColors.map { $0.opacity(0.8) },
+                                startPoint: UnitPoint(x: backgroundOffset, y: 0),
+                                endPoint: UnitPoint(
+                                    x: CGFloat(backgroundColors.count) + backgroundOffset,
+                                    y: 0,
+                                ),
+                            ),
+                        )
+                        .padding(.top, Layout.Padding.large)
 
-                Text(loadingSentence)
-                    .padding(.vertical, 5)
-                    .font(.subheadline)
-                    .onReceive(
-                        Timer.publish(every: 1, on: .main, in: .common).autoconnect(),
-                    ) { _ in
-                        loadingSentence = loadingSentences.randomElement()!
-                    }
+                    Text(loadingSentence)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                        .onReceive(
+                            Timer.publish(every: 1.5, on: .main, in: .common).autoconnect(),
+                        ) { _ in
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                loadingSentence = loadingSentences.randomElement()!
+                            }
+                        }
+                }
+                .frame(maxHeight: .infinity)
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             } else {
-                Text("I want to listen to…")
-                    .font(.headline)
+                VStack(spacing: Layout.Spacing.medium) {
+                    VStack(spacing: Layout.Spacing.small) {
+                        Image(systemSymbol: .sparkles)
+                            .font(.system(size: 28, weight: .medium))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: backgroundColors.map { $0.opacity(0.8) },
+                                    startPoint: UnitPoint(x: backgroundOffset, y: 0),
+                                    endPoint: UnitPoint(
+                                        x: CGFloat(backgroundColors.count) + backgroundOffset,
+                                        y: 0,
+                                    ),
+                                ),
+                            )
+                            .padding(.top, Layout.Padding.small)
 
-                // NOTE: So this is super hacky, but we create this invisible
-                // TextField that draws the focus, because `.focused` for
-                // some reason does not work.
-                TextField("", text: .constant(""))
-                    .textFieldStyle(.plain)
-                    .frame(width: 0, height: 0)
+                        Text("I want to listen to…")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(.top, Layout.Padding.medium)
 
-                TextField(String(localized: suggestion), text: $prompt)
-                    .textFieldStyle(.plain)
-                    .padding(Layout.Padding.intelligenceSmall)
-                    .background(colorScheme == .dark ? .accent.opacity(0.2) : .accent)
-                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
-                    .multilineTextAlignment(.center)
-                    .disableAutocorrection(true)
-                    .focused($isFocused)
-                    .offset(y: -15)
-                    .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-                        guard !isFocused else {
-                            return
+                    TextField(String(localized: suggestion), text: $prompt)
+                        .textFieldStyle(.plain)
+                        .font(.body)
+                        .padding(12)
+                        .glassEffect(.regular.interactive())
+                        .multilineTextAlignment(.center)
+                        .disableAutocorrection(true)
+                        .focused($isFocused)
+                        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
+                            guard !isFocused else {
+                                return
+                            }
+
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                suggestion = suggestions.randomElement()!
+                            }
                         }
+                        .onChange(of: isFocused) { _, value in
+                            guard value else {
+                                return
+                            }
 
-                        suggestion = suggestions.randomElement()!
-                    }
-                    .onChange(of: isFocused) { _, value in
-                        guard value else {
-                            return
+                            suggestion = ""
                         }
-
-                        suggestion = ""
-                    }
-                    .onAppear {
-                        isFocused = false
-                    }
+                        .onAppear {
+                            isFocused = false
+                        }
+                }
 
                 Spacer()
 
-                HStack {
+                HStack(spacing: Layout.Spacing.medium) {
                     Button("Cancel", role: .cancel) {
                         if case let .playlist(playlist) = target {
                             playlist.wrappedValue = nil
                         }
                         showSheet = false
                     }
+                    .buttonStyle(.bordered)
                     .keyboardShortcut(.cancelAction)
                     .help("Cancel and close")
 
-                    AsyncButton(actionButtonTitle) {
+                    AsyncButton {
                         isLoading = true
 
                         try? await IntelligenceManager.shared.fill(target: target, prompt: prompt)
@@ -165,15 +197,54 @@ struct IntelligenceView: View {
 
                         isLoading = false
                         showSheet = false
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemSymbol: .sparkles)
+                                .font(.callout.weight(.semibold))
+                            Text(actionButtonTitle)
+                        }
                     }
+                    .buttonStyle(.borderedProminent)
                     .asyncButtonStyle(.pulse)
                     .keyboardShortcut(.defaultAction)
                 }
-                .offset(y: -15)
+                .padding(.top, Layout.Padding.medium)
             }
         }
         .frame(width: Layout.Size.intelligenceViewWidth)
-        .padding(Layout.Padding.intelligenceView)
+        .padding(Layout.Padding.large)
+        .background {
+            LinearGradient(
+                colors: backgroundColors.map { $0.opacity(colorScheme == .dark ? 0.6 : 0.9) },
+                startPoint: UnitPoint(x: backgroundOffset, y: 0),
+                endPoint: UnitPoint(
+                    x: CGFloat(backgroundColors.count) + backgroundOffset,
+                    y: 0,
+                ),
+            )
+            .mask(
+                RadialGradient(
+                    colors: [
+                        .black,
+                        .clear,
+                    ],
+                    center: .init(x: 0.5, y: 0.1),
+                    startRadius: 0,
+                    endRadius: Layout.Size.intelligenceViewWidth / 2 + 30,
+                )
+                .blur(radius: 50),
+            )
+            .ignoresSafeArea()
+            .onAppear {
+                withAnimation(
+                    .linear(duration: 15)
+                        .repeatForever(autoreverses: false),
+                ) {
+                    backgroundOffset = -CGFloat(backgroundColors.count - 1)
+                }
+            }
+        }
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isLoading)
     }
 
     private var actionButtonTitle: String {
@@ -183,28 +254,5 @@ struct IntelligenceView: View {
         case .queue:
             "Fill Queue"
         }
-    }
-}
-
-struct IntelligenceSparklesView: View {
-    @State private var offset: CGFloat = 0
-
-    private let colors: [Color] = [.yellow, .orange, .brown, .orange, .yellow]
-
-    var body: some View {
-        Image(systemSymbol: .sparkles)
-            .overlay(
-                LinearGradient(
-                    colors: colors,
-                    startPoint: UnitPoint(x: offset, y: 0),
-                    endPoint: UnitPoint(x: CGFloat(colors.count) + offset, y: 0),
-                )
-                .onAppear {
-                    withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
-                        offset = -CGFloat(colors.count - 1)
-                    }
-                },
-            )
-            .mask(Image(systemSymbol: .sparkles))
     }
 }

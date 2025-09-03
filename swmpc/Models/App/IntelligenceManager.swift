@@ -90,7 +90,7 @@ enum IntelligenceModel: String, Identifiable, CaseIterable {
         ),
         .claude: ModelConfig(
             name: "Claude",
-            model: "claude-3-5-haiku-latest",
+            model: "claude-sonnet-4-0",
             host: "api.anthropic.com",
             path: "/v1/messages",
             setting: Setting.claudeToken,

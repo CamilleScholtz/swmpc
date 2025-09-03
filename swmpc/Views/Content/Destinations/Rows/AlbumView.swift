@@ -47,7 +47,7 @@ struct AlbumView: View {
                                     ],
                                     center: .center,
                                     startRadius: 0,
-                                    endRadius: 50,
+                                    endRadius: Layout.RowHeight.album - Layout.Padding.small,
                                 ),
                             ),
                     )
