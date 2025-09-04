@@ -21,6 +21,21 @@ struct IntelligenceView: View {
 
     @Binding var showSheet: Bool
 
+    init(target: IntelligenceTarget, showSheet: Binding<Bool>) {
+        self.target = target
+        _showSheet = showSheet
+
+        _loadingSentence = State(initialValue: loadingSentences.randomElement()!)
+    }
+
+    @State private var prompt = ""
+    @State private var isLoading = false
+
+    @State private var loadingSentence: LocalizedStringResource
+    @State private var colorOffset: CGFloat = 0
+
+    @FocusState private var isFocused: Bool
+
     private let loadingSentences: [LocalizedStringResource] = [
         "Analyzing music preferences…",
         "Matching tracks to vibe…",
@@ -48,133 +63,103 @@ struct IntelligenceView: View {
         "Waiting for inspiration…",
         "Calculating song popularity…",
         "Analyzing waveform…",
+        "Tuning into your frequency…",
+        "Measuring vibe consistency…",
+        "Harmonizing track flow…",
+        "Blending genres…",
+        "Ranking tracks by mood match…",
+        "Rebalancing sonic palette…",
+        "Extracting emotional tone…",
+        "Testing replay value…",
+        "Simulating crowd reaction…",
+        "Syncing tempo with heartbeat…",
+        "Balancing energy curves…",
+        "Measuring danceability index…",
+        "Estimating sing-along potential…",
+        "Locking in auditory aesthetic…",
+        "Rolling dice for track order…",
+        "Consulting the hipster council…",
+        "Scraping forgotten MySpace pages…",
+        "Peeking at DJ forums circa 2007…",
+        "Training a tiny AI just for this playlist…",
+        "Peeking at your guilty pleasures…",
+        "Overthinking song transitions…",
+        "Polling imaginary audience…",
+        "Summoning obscure SoundCloud producers…",
+        "Fact-checking vibes on Wikipedia…",
+        "Crowdsourcing from ghosts of Limewire…",
+        "Consulting your future self’s nostalgia…",
+        "Googling 'songs like Despacito'…",
     ]
 
-    private let suggestions: [LocalizedStringResource] = [
-        "Love Songs",
-        "Turkish Music",
-        "Asian Music",
-        "Russian Music",
-        "Baroque Pop-Punk",
-        "Spontaneous Jazz",
-        "Chill vibes",
-        "Workout Tunes",
-        "Party Mix",
-        "Study Beats",
-        "Relaxing Music",
-        "Post-Apocalyptic Polka",
-        "Gnome Music",
-        "Video Game Soundtracks",
-        "Classical Music",
-    ]
-
-    init(target: IntelligenceTarget, showSheet: Binding<Bool>) {
-        self.target = target
-        _showSheet = showSheet
-
-        _loadingSentence = State(initialValue: loadingSentences.randomElement()!)
-        _suggestion = State(initialValue: suggestions.randomElement()!)
-    }
-
-    @State private var prompt = ""
-    @State private var isLoading = false
-
-    @State private var loadingSentence: LocalizedStringResource
-    @State private var suggestion: LocalizedStringResource
-    @State private var backgroundOffset: CGFloat = 0
-
-    @FocusState private var isFocused: Bool
-
-    private let backgroundColors: [Color] = [
+    private let colors: [Color] = [
         .blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple,
     ]
+
+    private var actionButtonTitle: String {
+        switch target {
+        case .playlist:
+            "Create"
+        case .queue:
+            "Fill Queue"
+        }
+    }
 
     var body: some View {
         VStack(spacing: Layout.Spacing.large) {
             if isLoading {
-                VStack(spacing: Layout.Spacing.large) {
-                    Image(systemSymbol: .sparkles)
-                        .font(.system(size: 28, weight: .medium))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: backgroundColors.map { $0.opacity(0.8) },
-                                startPoint: UnitPoint(x: backgroundOffset, y: 0),
-                                endPoint: UnitPoint(
-                                    x: CGFloat(backgroundColors.count) + backgroundOffset,
-                                    y: 0,
-                                ),
-                            ),
-                        )
-                        .padding(.top, Layout.Padding.large)
+                Spacer()
+            }
 
-                    Text(loadingSentence)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                        .onReceive(
-                            Timer.publish(every: 1.5, on: .main, in: .common).autoconnect(),
-                        ) { _ in
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                loadingSentence = loadingSentences.randomElement()!
-                            }
+            Image(systemSymbol: .sparkles)
+                .font(.system(size: isLoading ? 42 : 28))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: colors.map { $0.opacity(0.8) },
+                        startPoint: UnitPoint(x: colorOffset, y: 0),
+                        endPoint: UnitPoint(
+                            x: CGFloat(colors.count) + colorOffset,
+                            y: 0,
+                        ),
+                    ),
+                )
+                .shadow(radius: isLoading ? 9 : 8, y: 1)
+
+            if isLoading {
+                Spacer()
+
+                Text(loadingSentence)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                    .onReceive(
+                        Timer.publish(every: 1.5, on: .main, in: .common).autoconnect(),
+                    ) { _ in
+                        withAnimation(.spring) {
+                            loadingSentence = loadingSentences.randomElement()!
                         }
-                }
-                .frame(maxHeight: .infinity)
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            } else {
-                VStack(spacing: Layout.Spacing.medium) {
-                    VStack(spacing: Layout.Spacing.small) {
-                        Image(systemSymbol: .sparkles)
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: backgroundColors.map { $0.opacity(0.8) },
-                                    startPoint: UnitPoint(x: backgroundOffset, y: 0),
-                                    endPoint: UnitPoint(
-                                        x: CGFloat(backgroundColors.count) + backgroundOffset,
-                                        y: 0,
-                                    ),
-                                ),
-                            )
-                            .padding(.top, Layout.Padding.small)
-
-                        Text("I want to listen to…")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.primary)
                     }
-                    .padding(.top, Layout.Padding.medium)
-
-                    TextField(String(localized: suggestion), text: $prompt)
-                        .textFieldStyle(.plain)
-                        .font(.body)
-                        .padding(12)
-                        .glassEffect(.regular.interactive())
-                        .multilineTextAlignment(.center)
-                        .disableAutocorrection(true)
-                        .focused($isFocused)
-                        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
-                            guard !isFocused else {
-                                return
-                            }
-
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                suggestion = suggestions.randomElement()!
-                            }
-                        }
-                        .onChange(of: isFocused) { _, value in
-                            guard value else {
-                                return
-                            }
-
-                            suggestion = ""
-                        }
-                        .onAppear {
-                            isFocused = false
-                        }
-                }
 
                 Spacer()
+            } else {
+                VStack(spacing: Layout.Spacing.small) {
+                    Text("I want to listen to…")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
+
+                TextField("", text: $prompt)
+                    .textFieldStyle(.plain)
+                    .font(.body)
+                    .padding(12)
+                    .glassEffect(.regular.interactive())
+                    .multilineTextAlignment(.center)
+                    .disableAutocorrection(true)
+                    .focused($isFocused)
+                    .onAppear {
+                        isFocused = false
+                    }
 
                 HStack(spacing: Layout.Spacing.medium) {
                     Button("Cancel", role: .cancel) {
@@ -187,7 +172,7 @@ struct IntelligenceView: View {
                     .keyboardShortcut(.cancelAction)
                     .help("Cancel and close")
 
-                    AsyncButton {
+                    AsyncButton(actionButtonTitle) {
                         isLoading = true
 
                         try? await IntelligenceManager.shared.fill(target: target, prompt: prompt)
@@ -197,12 +182,6 @@ struct IntelligenceView: View {
 
                         isLoading = false
                         showSheet = false
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemSymbol: .sparkles)
-                                .font(.callout.weight(.semibold))
-                            Text(actionButtonTitle)
-                        }
                     }
                     .buttonStyle(.borderedProminent)
                     .asyncButtonStyle(.pulse)
@@ -211,14 +190,14 @@ struct IntelligenceView: View {
                 .padding(.top, Layout.Padding.medium)
             }
         }
-        .frame(width: Layout.Size.intelligenceViewWidth)
         .padding(Layout.Padding.large)
+        .frame(width: Layout.Size.intelligenceViewWidth, height: Layout.Size.intelligenceViewWidth / 1.68)
         .background {
             LinearGradient(
-                colors: backgroundColors.map { $0.opacity(colorScheme == .dark ? 0.6 : 0.9) },
-                startPoint: UnitPoint(x: backgroundOffset, y: 0),
+                colors: colors.map { $0.opacity(colorScheme == .dark ? 0.6 : 1) },
+                startPoint: UnitPoint(x: colorOffset, y: 0),
                 endPoint: UnitPoint(
-                    x: CGFloat(backgroundColors.count) + backgroundOffset,
+                    x: CGFloat(colors.count) + colorOffset,
                     y: 0,
                 ),
             )
@@ -235,24 +214,15 @@ struct IntelligenceView: View {
                 .blur(radius: 50),
             )
             .ignoresSafeArea()
-            .onAppear {
-                withAnimation(
-                    .linear(duration: 15)
-                        .repeatForever(autoreverses: false),
-                ) {
-                    backgroundOffset = -CGFloat(backgroundColors.count - 1)
-                }
+        }
+        .onAppear {
+            withAnimation(
+                .linear(duration: 15)
+                    .repeatForever(autoreverses: false),
+            ) {
+                colorOffset = -CGFloat(colors.count - 1)
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isLoading)
-    }
-
-    private var actionButtonTitle: String {
-        switch target {
-        case .playlist:
-            "Create"
-        case .queue:
-            "Fill Queue"
-        }
+        .animation(.spring, value: isLoading)
     }
 }
