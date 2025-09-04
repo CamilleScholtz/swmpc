@@ -96,10 +96,10 @@ struct IntelligenceView: View {
         .blue, .purple, .red, .orange, .yellow, .cyan, .blue, .purple,
     ]
 
-    private var actionButtonTitle: String {
+    private var actionButtonTitle: LocalizedStringResource {
         switch target {
         case .playlist:
-            "Create"
+            "Fill Playlist"
         case .queue:
             "Fill Queue"
         }
@@ -172,7 +172,7 @@ struct IntelligenceView: View {
                     .keyboardShortcut(.cancelAction)
                     .help("Cancel and close")
 
-                    AsyncButton(actionButtonTitle) {
+                    AsyncButton(String(localized: actionButtonTitle)) {
                         isLoading = true
 
                         try? await IntelligenceManager.shared.fill(target: target, prompt: prompt)
