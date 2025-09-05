@@ -24,6 +24,9 @@ import SwiftUI
         state == .play
     }
 
+    /// Whether consume mode is enabled.
+    private(set) var isConsume: Bool?
+
     /// Whether random/shuffle mode is enabled.
     private(set) var isRandom: Bool?
 
@@ -101,6 +104,13 @@ import SwiftUI
                     ? startTrackingElapsedTask()
                     : stopTrackingElapsedTask()
             }
+        }
+
+        if isConsume.update(to: data.isConsume ?? false) {
+            #if os(macOS)
+                AppDelegate.shared.setPopoverAnchorImage(changed:
+                    data.isConsume ?? false ? "consume" : "preserve")
+            #endif
         }
 
         if isRandom.update(to: data.isRandom ?? false) {

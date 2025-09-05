@@ -838,6 +838,7 @@ extension ConnectionManager {
     ///
     /// - Returns: A tuple containing:
     ///   - `state`: The current player state (`play`, `pause`, or `stop`).
+    ///   - `isConsume`: A Boolean indicating if consume playback is enabled.
     ///   - `isRandom`: A Boolean indicating if random playback is enabled.
     ///   - `isRepeat`: A Boolean indicating if repeat playback is enabled.
     ///   - `elapsed`: The elapsed playback time in seconds.
@@ -846,8 +847,9 @@ extension ConnectionManager {
     /// - Throws: An error if the response is malformed or if the underlying
     ///           command execution fails.
     func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?,
-                                          isRepeat: Bool?, elapsed: Double?,
-                                          song: Song?, volume: Int?)
+                                          isRepeat: Bool?, isConsume: Bool?,
+                                          elapsed: Double?, song: Song?, volume:
+                                          Int?)
     {
         let lines = try await run(["status", "currentsong"])
 
@@ -871,6 +873,7 @@ extension ConnectionManager {
             state = nil
         }
 
+        let isConsume = fields["consume"].map { $0 == "1" }
         let isRandom = fields["random"].map { $0 == "1" }
         let isRepeat = fields["repeat"].map { $0 == "1" }
         let elapsed = fields["elapsed"].flatMap(Double.init)
@@ -884,7 +887,7 @@ extension ConnectionManager {
             nil
         }
 
-        return (state, isRandom, isRepeat, elapsed, song, volume)
+        return (state, isConsume, isRandom, isRepeat, elapsed, song, volume)
     }
 
     /// Retrieves all unique albums from the database, sorted as specified.
@@ -1497,13 +1500,13 @@ extension ConnectionManager where Mode == CommandMode {
         try await run(["next"])
     }
 
-    /// Sets the repeat mode.
+    /// Sets the consume mode.
     ///
     /// - Parameter value: A Boolean value indicating whether to enable (`true`)
-    ///                    or disable (`false`) repeat mode.
+    ///                    or disable (`false`) consume mode.
     /// - Throws: An error if the underlying command execution fails.
-    func `repeat`(_ value: Bool) async throws {
-        try await run([value ? "repeat 1" : "repeat 0"])
+    func consume(_ value: Bool) async throws {
+        try await run([value ? "consume 1" : "consume 0"])
     }
 
     /// Sets the random mode.
@@ -1513,6 +1516,15 @@ extension ConnectionManager where Mode == CommandMode {
     /// - Throws: An error if the underlying command execution fails.
     func random(_ value: Bool) async throws {
         try await run([value ? "random 1" : "random 0"])
+    }
+
+    /// Sets the repeat mode.
+    ///
+    /// - Parameter value: A Boolean value indicating whether to enable (`true`)
+    ///                    or disable (`false`) repeat mode.
+    /// - Throws: An error if the underlying command execution fails.
+    func `repeat`(_ value: Bool) async throws {
+        try await run([value ? "repeat 1" : "repeat 0"])
     }
 
     /// Seek to a specific position in the currently playing song.

@@ -86,14 +86,18 @@ struct Delegate: App {
                     try await ConnectionManager.command().repeat(!(appDelegate.mpd.status.isRepeat ?? false))
                 }
                 .keyboardShortcut("r", modifiers: [.command])
-
+                
                 AsyncButton("Toggle Shuffle", systemImage: "shuffle") {
                     try await ConnectionManager.command().random(!(appDelegate.mpd.status.isRandom ?? false))
                 }
                 .keyboardShortcut("s", modifiers: [.command])
-
+                
                 Divider()
-
+                
+                AsyncButton("Toggle Consume", systemImage: "flame") {
+                    try await ConnectionManager.command().consume(!(appDelegate.mpd.status.isConsume ?? false))
+                }
+                
                 Button("Clear Queue", systemSymbol: .trash) {
                     NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
                 }
@@ -257,6 +261,10 @@ struct Delegate: App {
                 popoverAnchor.button!.image = NSImage(systemSymbol: .pauseFill, accessibilityDescription: "pause")
             case "stop":
                 popoverAnchor.button!.image = NSImage(systemSymbol: .stopFill, accessibilityDescription: "stop")
+            case "consume":
+                popoverAnchor.button!.image = NSImage(systemSymbol: .flame, accessibilityDescription: "consume")
+            case "preserve":
+                popoverAnchor.button!.image = NSImage(systemSymbol: .flame, accessibilityDescription: "preserve")
             case "random":
                 popoverAnchor.button!.image = NSImage(systemSymbol: .shuffle, accessibilityDescription: "random")
             case "sequential":

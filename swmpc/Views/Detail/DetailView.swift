@@ -220,6 +220,16 @@ struct DetailView: View {
                         }
                     }
 
+                    ToolbarItem {
+                        AsyncButton {
+                            try await ConnectionManager.command().consume(!(mpd.status.isConsume ?? false))
+                        } label: {
+                            Image(systemSymbol: mpd.status.isConsume ?? false ? .flameFill : .flame)
+                                .foregroundStyle(mpd.status.isConsume ?? false ? Color.accentColor : Color.secondary)
+                        }
+                        .help(mpd.status.isConsume ?? false ? "Disable consume mode" : "Enable consume mode")
+                    }
+
                     ToolbarSpacer(.fixed)
                 }
 

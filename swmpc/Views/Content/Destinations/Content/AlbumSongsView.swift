@@ -171,7 +171,7 @@ struct AlbumSongsView: View {
                     }
 
                     ForEach(songs[disc] ?? []) { song in
-                        RowView(media: song)
+                        RowView(media: song, source: .database)
                     }
                 }
             }

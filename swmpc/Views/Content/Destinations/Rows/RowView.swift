@@ -9,6 +9,12 @@ import SwiftUI
 
 struct RowView: View {
     let media: any Mediable
+    let source: Source?
+
+    init(media: any Mediable, source: Source? = nil) {
+        self.media = media
+        self.source = source
+    }
 
     var body: some View {
         Group {
@@ -20,7 +26,7 @@ struct RowView: View {
                 ArtistView(for: artist)
                     .id(artist)
             case let song as Song:
-                SongView(for: song)
+                SongView(for: song, source: source)
                     .id(song)
             default:
                 EmptyView()

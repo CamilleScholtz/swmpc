@@ -104,9 +104,9 @@ struct SongView: View {
                 }
 
             #if os(macOS)
-                if source?.isMovable ?? false {
+                if source?.isReorderable ?? false {
                     Image(systemSymbol: .line3HorizontalCircle)
-                        .font(.title3)
+                        .font(.title2)
                         .foregroundColor(.secondary)
                         .frame(maxHeight: .infinity)
                         .background(

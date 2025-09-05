@@ -54,6 +54,21 @@ struct AppShortcuts: AppShortcutsProvider {
         )
 
         AppShortcut(
+            intent: ToggleConsumeIntent(),
+            phrases: [
+                "Toggle consume in \(.applicationName)",
+                "Consume music in \(.applicationName)",
+                "Turn on consume in \(.applicationName)",
+                "Turn off consume in \(.applicationName)",
+                "Enable consume in \(.applicationName)",
+                "Disable consume in \(.applicationName)",
+                "Consume mode in \(.applicationName)",
+            ],
+            shortTitle: "Toggle Consume",
+            systemImageName: "flame",
+        )
+        
+        AppShortcut(
             intent: ToggleShuffleIntent(),
             phrases: [
                 "Toggle shuffle in \(.applicationName)",

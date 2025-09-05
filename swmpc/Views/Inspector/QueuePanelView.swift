@@ -58,10 +58,15 @@ struct QueuePanelView: View {
 
         var body: some View {
             CollectionView(data: mpd.queue.songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) { song in
-                RowView(media: song)
+                RowView(media: song, source: .queue)
             }
             .contentMargins(.bottom, Layout.Spacing.small)
             .scrollTo($scrollTo, animated: false)
+            .reorderable { sourceIndices, destination in
+                Task {
+                    await handleReorder(sourceIndices: sourceIndices, destination: destination)
+                }
+            }
             .ignoresSafeArea(edges: .vertical)
             .onAppear {
                 guard let song = mpd.status.song else {
@@ -73,6 +78,23 @@ struct QueuePanelView: View {
                     try? await Task.sleep(for: .milliseconds(100))
                     scrollTo = song.id
                 }
+            }
+        }
+
+        private func handleReorder(sourceIndices: IndexSet, destination: Int) async {
+            guard let sourceIndex = sourceIndices.first,
+                  sourceIndex < mpd.queue.songs.count
+            else {
+                return
+            }
+
+            let song = mpd.queue.songs[sourceIndex]
+
+            do {
+                try await ConnectionManager.command().move(song, to: destination, in: .queue)
+                try await mpd.queue.set()
+            } catch {
+                print("Failed to reorder song: \(error)")
             }
         }
     }

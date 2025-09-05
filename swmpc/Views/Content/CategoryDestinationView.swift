@@ -103,8 +103,8 @@ struct CategoryDatabaseView: View {
             }
         default:
             if let songs = searchResults as? [Song] {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
-                    RowView(media: $0)
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) { song in
+                    RowView(media: song, source: .database)
                 }
                 .contentMargins(.bottom, Layout.Spacing.small)
                 .scrollTo($scrollTo, animated: animatedScroll)
@@ -133,8 +133,8 @@ struct CategoryDatabaseView: View {
             }
         default:
             if let songs = mpd.database.media as? [Song] {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
-                    RowView(media: $0)
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) { song in
+                    RowView(media: song, source: .database)
                 }
                 .contentMargins(.bottom, Layout.Spacing.small)
                 .scrollTo($scrollTo, animated: animatedScroll)
@@ -166,10 +166,9 @@ struct CategoryDatabaseView: View {
                         .autocorrectionDisabled()
                         // XXX: This doesn't work.
                         // See: https://developer.apple.com/forums/thread/797948
+                        // And: https://stackoverflow.com/questions/74245149/focusstate-textfield-not-working-within-toolbar-toolbaritem
                         .focused($isSearchFieldFocused)
-                        .task {
-                            isSearchFieldFocused = true
-                            try? await Task.sleep(for: .milliseconds(100))
+                        .onAppear {
                             isSearchFieldFocused = true
                         }
                 }
@@ -366,11 +365,16 @@ struct CategoryPlaylistView: View {
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) {
-                    RowView(media: $0)
+                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) { song in
+                    RowView(media: song, source: navigator.category.source)
                 }
                 .contentMargins(.bottom, Layout.Spacing.small)
                 .scrollTo($scrollTo, animated: animatedScroll)
+                .reorderable { indices, destination in
+                    Task {
+                        await handleReorder(indices: indices, destination: destination)
+                    }
+                }
                 .id(playlist)
                 .ignoresSafeArea(edges: .vertical)
             } else {
@@ -460,6 +464,24 @@ struct CategoryPlaylistView: View {
             return false
         }
         return songs.contains { $0.id == song.id }
+    }
+
+    private func handleReorder(indices: IndexSet, destination: Int) async {
+        guard let sourceIndex = indices.first,
+              let songs,
+              sourceIndex < songs.count
+        else {
+            return
+        }
+
+        let song = songs[sourceIndex]
+
+        do {
+            try await ConnectionManager.command().move(song, to: destination, in: navigator.category.source)
+            self.songs = try await mpd.playlists.getSongs(for: playlist)
+        } catch {
+            print("Failed to reorder song in playlist: \(error)")
+        }
     }
 }
 

@@ -7,19 +7,35 @@
   },
   "groups" : [
     {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "hidden" : false,
+          "image-name" : "1212.png",
+          "name" : "1212"
+        }
+      ],
+      "opacity" : 1,
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
       "blend-mode" : "normal",
       "blur-material" : null,
       "hidden" : false,
       "layers" : [
         {
           "hidden" : false,
-          "image-name" : "1212.png",
-          "name" : "1212"
-        },
-        {
-          "hidden" : false,
           "image-name" : "1414.png",
-          "name" : "1414"
+          "name" : "1414",
+          "opacity" : 1
         }
       ],
       "lighting" : "individual",
@@ -31,7 +47,7 @@
       "specular" : true,
       "translucency" : {
         "enabled" : true,
-        "value" : 0.13
+        "value" : 0.47
       }
     }
   ],

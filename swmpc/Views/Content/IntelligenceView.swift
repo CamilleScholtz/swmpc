@@ -194,7 +194,7 @@ struct IntelligenceView: View {
         .frame(width: Layout.Size.intelligenceViewWidth, height: Layout.Size.intelligenceViewWidth / 1.68)
         .background {
             LinearGradient(
-                colors: colors.map { $0.opacity(colorScheme == .dark ? 0.6 : 1) },
+                colors: colors.map { $0.opacity(colorScheme == .dark ? 0.6 : 0.8) },
                 startPoint: UnitPoint(x: colorOffset, y: 0),
                 endPoint: UnitPoint(
                     x: CGFloat(colors.count) + colorOffset,

@@ -75,6 +75,8 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
     private var contentMargin: EdgeInsets?
     private var scrollToBinding: Binding<Data.Element.ID?>?
     var animated: Bool = false
+    private var canReorder: Bool = false
+    private var onReorder: ((IndexSet, Int) -> Void)?
     @ViewBuilder let content: (Data.Element) -> Content
 
     init(
@@ -114,6 +116,13 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
         var view = self
         view.scrollToBinding = binding
         view.animated = animated
+        return view
+    }
+
+    func reorderable(onReorder: @escaping (IndexSet, Int) -> Void) -> Self {
+        var view = self
+        view.canReorder = true
+        view.onReorder = onReorder
         return view
     }
 
@@ -162,7 +171,7 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
     #endif
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(data: data, content: content, rowHeight: rowHeight, contentMargin: contentMargin)
+        Coordinator(data: data, content: content, rowHeight: rowHeight, contentMargin: contentMargin, canReorder: canReorder, onReorder: onReorder)
     }
 
     private func handleScrollToItem(coordinator: Coordinator) {
@@ -196,14 +205,18 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
             var rowHeight: CGFloat
             var contentMargin: EdgeInsets?
             var dataSource: NSCollectionViewDiffableDataSource<Int, Data.Element>!
+            var canReorder: Bool
+            var onReorder: ((IndexSet, Int) -> Void)?
 
             private let cellIdentifier = NSUserInterfaceItemIdentifier("Cell")
             private var currentDataOrder: [Data.Element.ID] = []
 
-            init(data: Data, content: @escaping (Data.Element) -> Content, rowHeight: CGFloat, contentMargin: EdgeInsets?) {
+            init(data: Data, content: @escaping (Data.Element) -> Content, rowHeight: CGFloat, contentMargin: EdgeInsets?, canReorder: Bool, onReorder: ((IndexSet, Int) -> Void)?) {
                 self.content = content
                 self.rowHeight = rowHeight
                 self.contentMargin = contentMargin
+                self.canReorder = canReorder
+                self.onReorder = onReorder
 
                 let layout = NSCollectionViewFlowLayout()
                 layout.minimumLineSpacing = 0
@@ -219,11 +232,19 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
                 collectionView = NSCollectionView()
                 collectionView.collectionViewLayout = layout
+                collectionView.isSelectable = true
+                collectionView.allowsEmptySelection = true
+                collectionView.allowsMultipleSelection = false
 
                 super.init()
 
                 collectionView.register(HostingCollectionViewItem<Content>.self, forItemWithIdentifier: cellIdentifier)
                 collectionView.delegate = self
+
+                if canReorder {
+                    collectionView.registerForDraggedTypes([.string])
+                    collectionView.setDraggingSourceOperationMask(.move, forLocal: true)
+                }
 
                 setupDataSource()
                 updateData(data)
@@ -268,22 +289,67 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
 
                 return NSSize(width: width, height: rowHeight)
             }
+
+            func collectionView(_: NSCollectionView, canDragItemsAt _: Set<IndexPath>, with _: NSEvent) -> Bool {
+                canReorder
+            }
+
+            func collectionView(_: NSCollectionView, pasteboardWriterForItemAt indexPath: IndexPath) -> NSPasteboardWriting? {
+                guard canReorder else { return nil }
+
+                let item = NSPasteboardItem()
+                item.setString(String(indexPath.item), forType: .string)
+                return item
+            }
+
+            func collectionView(_: NSCollectionView, validateDrop _: NSDraggingInfo, proposedIndexPath _: AutoreleasingUnsafeMutablePointer<NSIndexPath>, dropOperation proposedDropOperation: UnsafeMutablePointer<NSCollectionView.DropOperation>) -> NSDragOperation {
+                guard canReorder else { return [] }
+
+                if proposedDropOperation.pointee == .on {
+                    proposedDropOperation.pointee = .before
+                }
+
+                return .move
+            }
+
+            func collectionView(_: NSCollectionView, acceptDrop draggingInfo: NSDraggingInfo, indexPath: IndexPath, dropOperation: NSCollectionView.DropOperation) -> Bool {
+                guard canReorder,
+                      let items = draggingInfo.draggingPasteboard.pasteboardItems,
+                      let itemString = items.first?.string(forType: .string),
+                      let sourceIndex = Int(itemString)
+                else {
+                    return false
+                }
+
+                let destinationIndex = dropOperation == .before ? indexPath.item : indexPath.item + 1
+
+                if sourceIndex != destinationIndex, sourceIndex != destinationIndex - 1 {
+                    onReorder?(IndexSet(integer: sourceIndex), destinationIndex > sourceIndex ? destinationIndex - 1 : destinationIndex)
+                    return true
+                }
+
+                return false
+            }
         }
 
     #elseif os(iOS)
-        final class Coordinator: NSObject, UICollectionViewDelegateFlowLayout, CollectionViewCoordinator {
+        final class Coordinator: NSObject, UICollectionViewDelegateFlowLayout, UICollectionViewDragDelegate, UICollectionViewDropDelegate, CollectionViewCoordinator {
             let collectionView: UICollectionView
             var content: (Data.Element) -> Content
             var rowHeight: CGFloat
             var contentMargin: EdgeInsets?
             var dataSource: UICollectionViewDiffableDataSource<Int, Data.Element>!
+            var canReorder: Bool
+            var onReorder: ((IndexSet, Int) -> Void)?
 
             private var currentDataOrder: [Data.Element.ID] = []
 
-            init(data: Data, content: @escaping (Data.Element) -> Content, rowHeight: CGFloat, contentMargin: EdgeInsets?) {
+            init(data: Data, content: @escaping (Data.Element) -> Content, rowHeight: CGFloat, contentMargin: EdgeInsets?, canReorder: Bool, onReorder: ((IndexSet, Int) -> Void)?) {
                 self.content = content
                 self.rowHeight = rowHeight
                 self.contentMargin = contentMargin
+                self.canReorder = canReorder
+                self.onReorder = onReorder
 
                 let layout = UICollectionViewFlowLayout()
                 layout.minimumLineSpacing = 0
@@ -304,6 +370,11 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
                 super.init()
 
                 collectionView.delegate = self
+                if canReorder {
+                    collectionView.dragDelegate = self
+                    collectionView.dropDelegate = self
+                    collectionView.dragInteractionEnabled = true
+                }
                 setupDataSource()
                 updateData(data)
             }
@@ -354,6 +425,44 @@ struct CollectionView<Data: RandomAccessCollection, Content: View>: PlatformView
                 let itemWidth = collectionView.bounds.width - horizontalMargins
 
                 return CGSize(width: itemWidth, height: rowHeight)
+            }
+
+            func collectionView(_: UICollectionView, itemsForBeginning _: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+                guard canReorder else { return [] }
+
+                let itemProvider = NSItemProvider(object: String(indexPath.item) as NSString)
+                let dragItem = UIDragItem(itemProvider: itemProvider)
+                dragItem.localObject = indexPath
+                return [dragItem]
+            }
+
+            func collectionView(_: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath _: IndexPath?) -> UICollectionViewDropProposal {
+                guard canReorder else {
+                    return UICollectionViewDropProposal(operation: .forbidden)
+                }
+
+                if session.localDragSession != nil {
+                    return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+                }
+
+                return UICollectionViewDropProposal(operation: .forbidden)
+            }
+
+            func collectionView(_: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+                guard canReorder,
+                      let destinationIndexPath = coordinator.destinationIndexPath,
+                      let dragItem = coordinator.items.first,
+                      let sourceIndexPath = dragItem.dragItem.localObject as? IndexPath
+                else {
+                    return
+                }
+
+                if sourceIndexPath != destinationIndexPath {
+                    let destinationIndex = destinationIndexPath.item > sourceIndexPath.item ? destinationIndexPath.item - 1 : destinationIndexPath.item
+                    onReorder?(IndexSet(integer: sourceIndexPath.item), destinationIndex)
+
+                    coordinator.drop(dragItem.dragItem, toItemAt: destinationIndexPath)
+                }
             }
         }
     #endif

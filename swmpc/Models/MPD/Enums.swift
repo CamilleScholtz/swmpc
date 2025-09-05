@@ -67,8 +67,8 @@ enum Source: Equatable, Hashable {
         }
     }
 
-    /// Indicates whether items from this source can be moved (reordered).
-    nonisolated var isMovable: Bool {
+    /// Indicates whether items from this source can be reordered.
+    nonisolated var isReorderable: Bool {
         switch self {
         case .queue, .playlist, .favorites:
             true
