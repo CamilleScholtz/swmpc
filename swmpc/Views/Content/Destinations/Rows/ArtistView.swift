@@ -8,7 +8,7 @@
 import ButtonKit
 import SwiftUI
 
-struct ArtistView: View {
+struct ArtistView: View, Equatable {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
@@ -16,6 +16,10 @@ struct ArtistView: View {
 
     init(for artist: Artist) {
         self.artist = artist
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.artist.id == rhs.artist.id
     }
 
     @State private var albumCount: Int = 0

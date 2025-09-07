@@ -67,7 +67,7 @@ struct AppShortcuts: AppShortcutsProvider {
             shortTitle: "Toggle Consume",
             systemImageName: "flame",
         )
-        
+
         AppShortcut(
             intent: ToggleShuffleIntent(),
             phrases: [

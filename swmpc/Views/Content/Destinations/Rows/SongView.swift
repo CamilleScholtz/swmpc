@@ -5,10 +5,9 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import ButtonKit
 import SwiftUI
 
-struct SongView: View {
+struct SongView: View, Equatable {
     @Environment(MPD.self) private var mpd
 
     private let song: Song
@@ -17,6 +16,10 @@ struct SongView: View {
     init(for song: Song, source: Source? = nil) {
         self.song = song
         self.source = source
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.song.id == rhs.song.id
     }
 
     #if os(macOS)
@@ -96,7 +99,6 @@ struct SongView: View {
                     ContextMenuView(for: song, source: source)
                 }
                 .onChange(of: song) { _, _ in
-                    // Reset state when song changes (row is recycled)
                     #if os(macOS)
                         isHovering = false
                         isHoveringHandle = false

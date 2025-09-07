@@ -64,8 +64,7 @@ struct CategoryDatabaseView: View {
 
     @Binding var isSearchFieldExpanded: Bool
 
-    @State private var scrollTo: String?
-    @State private var animatedScroll = false
+    @State private var scrollTarget: ScrollTarget?
 
     @State private var searchFields = SearchFields()
     @State private var searchQuery = ""
@@ -83,75 +82,49 @@ struct CategoryDatabaseView: View {
     }
 
     @ViewBuilder
-    private var searchResultsView: some View {
-        switch mpd.database.type {
-        case .album:
-            if let albums = searchResults as? [Album] {
-                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large) {
-                    RowView(media: $0)
+    private func mediaList(for media: [any Mediable]) -> some View {
+        Group {
+            switch mpd.database.type {
+            case .album:
+                if let albums = media as? [Album] {
+                    List(albums, id: \.id) { album in
+                        AlbumView(for: album)
+                            .equatable()
+                            .mediaRowStyle()
+                    }
+                    .mediaListStyle(rowHeight: Layout.RowHeight.album + Layout.Padding.large)
                 }
-                .contentMargins(.bottom, Layout.Spacing.small)
-                .scrollTo($scrollTo, animated: animatedScroll)
-            }
-        case .artist:
-            if let artists = searchResults as? [Artist] {
-                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large) {
-                    RowView(media: $0)
+            case .artist:
+                if let artists = media as? [Artist] {
+                    List(artists, id: \.id) { artist in
+                        ArtistView(for: artist)
+                            .equatable()
+                            .mediaRowStyle()
+                    }
+                    .mediaListStyle(rowHeight: Layout.RowHeight.artist + Layout.Padding.large)
                 }
-                .contentMargins(.bottom, Layout.Spacing.small)
-                .scrollTo($scrollTo, animated: animatedScroll)
-            }
-        default:
-            if let songs = searchResults as? [Song] {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) { song in
-                    RowView(media: song, source: .database)
+            default:
+                if let songs = media as? [Song] {
+                    List(songs, id: \.id) { song in
+                        SongView(for: song, source: .database)
+                            .equatable()
+                            .mediaRowStyle()
+                    }
+                    .mediaListStyle(rowHeight: Layout.RowHeight.song + Layout.Padding.large)
                 }
-                .contentMargins(.bottom, Layout.Spacing.small)
-                .scrollTo($scrollTo, animated: animatedScroll)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var normalMediaView: some View {
-        switch mpd.database.type {
-        case .album:
-            if let albums = mpd.database.media as? [Album] {
-                CollectionView(data: albums, rowHeight: Layout.RowHeight.album + Layout.Padding.large) {
-                    RowView(media: $0)
-                }
-                .contentMargins(.bottom, Layout.Spacing.small)
-                .scrollTo($scrollTo, animated: animatedScroll)
-            }
-        case .artist:
-            if let artists = mpd.database.media as? [Artist] {
-                CollectionView(data: artists, rowHeight: Layout.RowHeight.artist + Layout.Padding.large) {
-                    RowView(media: $0)
-                }
-                .contentMargins(.bottom, Layout.Spacing.small)
-                .scrollTo($scrollTo, animated: animatedScroll)
-            }
-        default:
-            if let songs = mpd.database.media as? [Song] {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) { song in
-                    RowView(media: song, source: .database)
-                }
-                .contentMargins(.bottom, Layout.Spacing.small)
-                .scrollTo($scrollTo, animated: animatedScroll)
             }
         }
+        .scrollToItem($scrollTarget)
     }
 
     var body: some View {
         ZStack {
-            if searchResults != nil {
-                searchResultsView
+            if let searchResults {
+                mediaList(for: searchResults)
                     .id(mpd.database.type)
-                    .ignoresSafeArea(edges: .vertical)
             } else if let media = mpd.database.media, !media.isEmpty {
-                normalMediaView
+                mediaList(for: media)
                     .id(mpd.database.type)
-                    .ignoresSafeArea(edges: .vertical)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -178,11 +151,8 @@ struct CategoryDatabaseView: View {
                 }
             } else {
                 ToolbarItem {
-                    Button {
-                        animatedScroll = true
-                        scrollToCurrentMedia()
-                    } label: {
-                        Image(systemSymbol: .dotViewfinder)
+                    Button("Scroll to Current Media", systemSymbol: .dotViewfinder) {
+                        scrollToCurrentMedia(animated: true)
                     }
                     .disabled(mpd.status.song == nil)
                 }
@@ -197,7 +167,7 @@ struct CategoryDatabaseView: View {
             }
 
             ToolbarItem {
-                Button {
+                Button("Search", systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass) {
                     isSearchFieldExpanded.toggle()
 
                     if !isSearchFieldExpanded {
@@ -205,8 +175,6 @@ struct CategoryDatabaseView: View {
                         searchResults = nil
                         isSearchFieldFocused = false
                     }
-                } label: {
-                    Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
                 }
                 .keyboardShortcut("f", modifiers: .command)
             }
@@ -220,7 +188,7 @@ struct CategoryDatabaseView: View {
             searchFields = SearchFields.defaultFields(for: navigator.category.type)
 
             scrollToCurrentMedia()
-            try? await Task.sleep(for: .milliseconds(100))
+            try? await Task.sleep(for: .milliseconds(200))
             scrollToCurrentMedia()
         }
         .task(id: sort) {
@@ -316,24 +284,21 @@ struct CategoryDatabaseView: View {
         .menuIndicator(.hidden)
     }
 
-    private func scrollToCurrentMedia() {
+    private func scrollToCurrentMedia(animated: Bool = false) {
         guard let song = mpd.status.song else {
             return
         }
 
-        switch navigator.category.type {
+        let id = switch navigator.category.type {
         case .album:
-            scrollTo = song.album.id
+            song.album.id
         case .artist:
-            scrollTo = song.album.artist.id
+            song.album.artist.id
         default:
-            scrollTo = song.id
+            song.id
         }
 
-        Task {
-            try? await Task.sleep(for: .milliseconds(350))
-            animatedScroll = false
-        }
+        scrollTarget = ScrollTarget(id: id, animated: animated)
     }
 }
 
@@ -353,8 +318,7 @@ struct CategoryPlaylistView: View {
     let playlist: Playlist
 
     @State private var songs: [Song]?
-    @State private var scrollTo: String?
-    @State private var animatedScroll = false
+    @State private var scrollTarget: ScrollTarget?
     @State private var showIntelligencePlaylistSheet = false
     @State private var playlistToEdit: Playlist?
     @State private var showReplaceQueueAlert = false
@@ -365,18 +329,26 @@ struct CategoryPlaylistView: View {
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
-                CollectionView(data: songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) { song in
-                    RowView(media: song, source: navigator.category.source)
-                }
-                .contentMargins(.bottom, Layout.Spacing.small)
-                .scrollTo($scrollTo, animated: animatedScroll)
-                .reorderable { indices, destination in
-                    Task {
-                        await handleReorder(indices: indices, destination: destination)
+                List {
+                    ForEach(songs) { song in
+                        SongView(for: song, source: navigator.category.source)
+                            .equatable()
+                            .id(song.id)
                     }
+                    .onMove { indices, destination in
+                        Task {
+                            await handleReorder(indices: indices, destination: destination)
+                        }
+                    }
+                    .mediaRowStyle()
                 }
-                .id(playlist)
-                .ignoresSafeArea(edges: .vertical)
+                .mediaListStyle(rowHeight: Layout.RowHeight.song + Layout.Padding.large)
+                .scrollToItem($scrollTarget)
+                #if os(iOS)
+                    .environment(\.editMode, .constant(.active))
+                #endif
+                    .id(playlist)
+                    .ignoresSafeArea(edges: .vertical)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -384,21 +356,15 @@ struct CategoryPlaylistView: View {
         .toolbar {
             if songs?.isEmpty ?? true {
                 ToolbarItem {
-                    Button(action: {
+                    Button("Fill playlist with AI", systemSymbol: .sparkles) {
                         NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
-                    }) {
-                        Image(systemSymbol: .sparkles)
                     }
                     .disabled(!isIntelligenceEnabled)
-                    .help(isIntelligenceEnabled ? "Fill playlist with AI" : "AI features are disabled in settings")
                 }
             } else {
                 ToolbarItem {
-                    Button {
-                        animatedScroll = true
-                        scrollToCurrentSong()
-                    } label: {
-                        Image(systemSymbol: .dotViewfinder)
+                    Button("Scroll to Current Song", systemSymbol: .dotViewfinder) {
+                        scrollToCurrentSong(animated: true)
                     }
                     .disabled(mpd.status.song == nil || !songIsInPlaylist(mpd.status.song))
                 }
@@ -406,10 +372,8 @@ struct CategoryPlaylistView: View {
                 ToolbarSpacer(.fixed)
 
                 ToolbarItem {
-                    Button {
+                    Button("Replace Queue", systemSymbol: .square3Layers3d) {
                         showReplaceQueueAlert = true
-                    } label: {
-                        Image(systemSymbol: .square3Layers3d)
                     }
                 }
             }
@@ -421,7 +385,7 @@ struct CategoryPlaylistView: View {
 
             if songIsInPlaylist(mpd.status.song) {
                 scrollToCurrentSong()
-                try? await Task.sleep(for: .milliseconds(100))
+                try? await Task.sleep(for: .milliseconds(200))
                 scrollToCurrentSong()
             }
         }
@@ -446,17 +410,12 @@ struct CategoryPlaylistView: View {
         }
     }
 
-    private func scrollToCurrentSong() {
+    private func scrollToCurrentSong(animated: Bool = false) {
         guard let song = mpd.status.song else {
             return
         }
 
-        scrollTo = song.id
-
-        Task {
-            try? await Task.sleep(for: .milliseconds(350))
-            animatedScroll = false
-        }
+        scrollTarget = ScrollTarget(id: song.id, animated: animated)
     }
 
     private func songIsInPlaylist(_ song: Song?) -> Bool {

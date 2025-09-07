@@ -79,7 +79,7 @@ struct PlaylistsView: View {
                                     isFocused = true
                                 }
 
-                                Button("Delete Playlist", systemSymbol: .trash) {
+                                Button("Delete Playlist", systemSymbol: .trash, role: .destructive) {
                                     playlistToDelete = playlist
                                     showDeleteAlert = true
                                 }

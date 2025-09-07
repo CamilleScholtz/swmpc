@@ -37,7 +37,7 @@ struct AlbumSongsView: View {
                     ZStack(alignment: .bottom) {
                         ArtworkView(image: artwork)
                             .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
-                            .shadow(color: .black.opacity(0.2), radius: 12, y: 3)
+                            .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small, y: 4)
                             .frame(width: 100)
                             .overlay(
                                 RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
@@ -152,13 +152,14 @@ struct AlbumSongsView: View {
 
                 Spacer()
             }
-            .padding(Layout.Padding.large)
-            .task {
-                artwork = try? await album.artwork()
+            .padding(.bottom, Layout.Spacing.medium)
+        }
+        .mediaRowStyle()
+        .task {
+            artwork = try? await album.artwork()
 
-                let fetchedSongs = await (try? album.getSongs()) ?? []
-                songs = Dictionary(grouping: fetchedSongs, by: { $0.disc })
-            }
+            let fetchedSongs = await (try? album.getSongs()) ?? []
+            songs = Dictionary(grouping: fetchedSongs, by: { $0.disc })
         }
 
         if let songs {
@@ -168,10 +169,13 @@ struct AlbumSongsView: View {
                         Text("Disc \(String(disc))")
                             .font(.headline)
                             .padding(.top, disc == songs.keys.sorted().first ? 0 : 10)
+                            .mediaRowStyle()
                     }
 
                     ForEach(songs[disc] ?? []) { song in
-                        RowView(media: song, source: .database)
+                        SongView(for: song, source: .database)
+                            .equatable()
+                            .mediaRowStyle()
                     }
                 }
             }

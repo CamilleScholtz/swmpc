@@ -42,15 +42,18 @@ struct ArtistAlbumsView: View {
 
                 Spacer()
             }
-            .padding(Layout.Padding.large)
+            .padding(.bottom, Layout.Spacing.medium)
         }
+        .mediaRowStyle()
         .task {
             albums = await (try? artist.getAlbums()) ?? []
         }
 
         Section {
             ForEach(albums) { album in
-                RowView(media: album)
+                AlbumView(for: album)
+                    .equatable()
+                    .mediaRowStyle()
             }
         }
     }

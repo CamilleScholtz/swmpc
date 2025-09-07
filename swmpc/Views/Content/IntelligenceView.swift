@@ -172,7 +172,7 @@ struct IntelligenceView: View {
                     .keyboardShortcut(.cancelAction)
                     .help("Cancel and close")
 
-                    AsyncButton(String(localized: actionButtonTitle)) {
+                    AsyncButton(String(localized: actionButtonTitle), role: .confirm) {
                         isLoading = true
 
                         try? await IntelligenceManager.shared.fill(target: target, prompt: prompt)

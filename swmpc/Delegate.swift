@@ -86,18 +86,18 @@ struct Delegate: App {
                     try await ConnectionManager.command().repeat(!(appDelegate.mpd.status.isRepeat ?? false))
                 }
                 .keyboardShortcut("r", modifiers: [.command])
-                
+
                 AsyncButton("Toggle Shuffle", systemImage: "shuffle") {
                     try await ConnectionManager.command().random(!(appDelegate.mpd.status.isRandom ?? false))
                 }
                 .keyboardShortcut("s", modifiers: [.command])
-                
+
                 Divider()
-                
+
                 AsyncButton("Toggle Consume", systemImage: "flame") {
                     try await ConnectionManager.command().consume(!(appDelegate.mpd.status.isConsume ?? false))
                 }
-                
+
                 Button("Clear Queue", systemSymbol: .trash) {
                     NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
                 }

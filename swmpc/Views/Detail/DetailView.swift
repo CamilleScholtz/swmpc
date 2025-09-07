@@ -193,55 +193,42 @@ struct DetailView: View {
                         Text("Queue")
                             .font(.system(size: 15))
                             .fontWeight(.semibold)
-                            .offset(x: -140)
+                            .offset(x: -102)
                     }
                     .sharedBackgroundVisibility(.hidden)
 
+                    ToolbarItem {
+                        AsyncButton(mpd.status.isConsume ?? false ? "Disable Consume" : "Enable Consume", systemImage: mpd.status.isConsume ?? false ? SFSymbol.flameFill.rawValue : SFSymbol.flame.rawValue) {
+                            try await ConnectionManager.command().consume(!(mpd.status.isConsume ?? false))
+                        }
+                    }
+
                     if !mpd.queue.songs.isEmpty {
                         ToolbarItem {
-                            Button(action: {
+                            Button("Clear Queue", systemSymbol: .trash, role: .destructive) {
                                 NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
-                            }) {
-                                Image(systemSymbol: .trash)
                             }
                             .keyboardShortcut(.delete, modifiers: [.shift, .command])
-                            .help("Clear queue")
                         }
 
                     } else {
                         ToolbarItem {
-                            Button(action: {
+                            Button("Fill Queue with AI", systemSymbol: .sparkles) {
                                 NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
-                            }) {
-                                Image(systemSymbol: .sparkles)
                             }
                             .disabled(!isIntelligenceEnabled)
-                            .help(isIntelligenceEnabled ? "Fill queue with AI" : "AI features are disabled in settings")
                         }
-                    }
-
-                    ToolbarItem {
-                        AsyncButton {
-                            try await ConnectionManager.command().consume(!(mpd.status.isConsume ?? false))
-                        } label: {
-                            Image(systemSymbol: mpd.status.isConsume ?? false ? .flameFill : .flame)
-                                .foregroundStyle(mpd.status.isConsume ?? false ? Color.accentColor : Color.secondary)
-                        }
-                        .help(mpd.status.isConsume ?? false ? "Disable consume mode" : "Enable consume mode")
                     }
 
                     ToolbarSpacer(.fixed)
                 }
 
                 ToolbarItem {
-                    Button(action: {
+                    Button(showQueuePanel ? "Hide Queue" : "Show Queue", systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList) {
                         withAnimation(.spring) {
                             showQueuePanel.toggle()
                         }
-                    }) {
-                        Image(systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList)
                     }
-                    .help(showQueuePanel ? "Hide queue panel" : "Show queue panel")
                 }
             }
         #endif

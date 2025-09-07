@@ -127,11 +127,9 @@ struct SidebarView: View {
                 }
 
                 // TODO: This button doesn't take up the full width.
-                Button(action: {
+                Button("New Playlist", systemSymbol: .plus) {
                     isCreatingPlaylist = true
                     isFocused = true
-                }) {
-                    Label("New Playlist", systemSymbol: .plus)
                 }
                 .buttonStyle(PlainButtonStyle())
                 .keyboardShortcut("n", modifiers: [.command])

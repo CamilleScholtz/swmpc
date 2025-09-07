@@ -846,8 +846,8 @@ extension ConnectionManager {
     ///   - `volume`: The current volume level (0-100).
     /// - Throws: An error if the response is malformed or if the underlying
     ///           command execution fails.
-    func getStatusData() async throws -> (state: PlayerState?, isRandom: Bool?,
-                                          isRepeat: Bool?, isConsume: Bool?,
+    func getStatusData() async throws -> (state: PlayerState?, isConsume: Bool?,
+                                          isRandom: Bool?, isRepeat: Bool?,
                                           elapsed: Double?, song: Song?, volume:
                                           Int?)
     {

@@ -54,35 +54,39 @@ struct QueuePanelView: View {
     struct QueueView: View {
         @Environment(MPD.self) private var mpd
 
-        @State private var scrollTo: String?
+        @State private var scrollTarget: ScrollTarget?
 
         var body: some View {
-            CollectionView(data: mpd.queue.songs, rowHeight: Layout.RowHeight.song + Layout.Padding.large) { song in
-                RowView(media: song, source: .queue)
-            }
-            .contentMargins(.bottom, Layout.Spacing.small)
-            .scrollTo($scrollTo, animated: false)
-            .reorderable { sourceIndices, destination in
-                Task {
-                    await handleReorder(sourceIndices: sourceIndices, destination: destination)
+            List {
+                ForEach(mpd.queue.songs, id: \.id) { song in
+                    SongView(for: song, source: .queue)
+                        .equatable()
+                        .mediaRowStyle()
+                }
+                .onMove { indices, destination in
+                    Task {
+                        await handleReorder(indices: indices, destination: destination)
+                    }
                 }
             }
-            .ignoresSafeArea(edges: .vertical)
-            .onAppear {
-                guard let song = mpd.status.song else {
-                    return
-                }
+            .mediaListStyle(rowHeight: Layout.RowHeight.song + Layout.Padding.large)
+            .scrollToItem($scrollTarget)
+            #if os(iOS)
+                .environment(\.editMode, .constant(.active))
+            #endif
+                .task {
+                    guard let song = mpd.status.song else {
+                        return
+                    }
 
-                // Defer scrolling to avoid state modification during view update
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(100))
-                    scrollTo = song.id
+                    scrollTarget = ScrollTarget(id: song.id, animated: false)
+                    try? await Task.sleep(for: .milliseconds(200))
+                    scrollTarget = ScrollTarget(id: song.id, animated: false)
                 }
-            }
         }
 
-        private func handleReorder(sourceIndices: IndexSet, destination: Int) async {
-            guard let sourceIndex = sourceIndices.first,
+        private func handleReorder(indices: IndexSet, destination: Int) async {
+            guard let sourceIndex = indices.first,
                   sourceIndex < mpd.queue.songs.count
             else {
                 return

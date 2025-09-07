@@ -5,11 +5,10 @@
 //  Created by Camille Scholtz on 16/03/2025.
 //
 
-import ButtonKit
 import SFSafeSymbols
 import SwiftUI
 
-struct AlbumView: View {
+struct AlbumView: View, Equatable {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
@@ -17,6 +16,10 @@ struct AlbumView: View {
 
     init(for album: Album) {
         self.album = album
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.album.id == rhs.album.id
     }
 
     @State private var artwork: PlatformImage?
@@ -51,7 +54,7 @@ struct AlbumView: View {
                                 ),
                             ),
                     )
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
+                    .shadow(color: .black.opacity(0.15), radius: Layout.Padding.small)
 
                 #if os(macOS)
                     Image(systemSymbol: .playFill)

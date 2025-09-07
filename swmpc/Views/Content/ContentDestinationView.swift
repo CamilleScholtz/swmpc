@@ -11,16 +11,14 @@ struct ContentDestinationView: View {
     let destination: ContentDestination
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                switch destination {
-                case let .album(album):
-                    AlbumSongsView(for: album)
-                case let .artist(artist):
-                    ArtistAlbumsView(for: artist)
-                }
+        List {
+            switch destination {
+            case let .album(album):
+                AlbumSongsView(for: album)
+            case let .artist(artist):
+                ArtistAlbumsView(for: artist)
             }
         }
-        .contentMargins(.bottom, Layout.Spacing.small)
+        .mediaListStyle()
     }
 }
