@@ -344,9 +344,6 @@ struct CategoryPlaylistView: View {
                 }
                 .mediaListStyle(rowHeight: Layout.RowHeight.song + Layout.Padding.large)
                 .scrollToItem($scrollTarget)
-                #if os(iOS)
-                    .environment(\.editMode, .constant(.active))
-                #endif
                     .id(playlist)
                     .ignoresSafeArea(edges: .vertical)
             } else {

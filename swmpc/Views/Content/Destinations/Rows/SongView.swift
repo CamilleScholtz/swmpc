@@ -56,13 +56,14 @@ struct SongView: View, Equatable {
                             .opacity(isHovering ? 1 : 0)
                     #endif
 
-                    WaveView()
-                        .background(
-                            Rectangle()
-                                .fill(.background)
-                                .frame(width: trackSize, height: trackSize),
-                        )
-                        .opacity(mpd.status.song == song ? 1 : 0)
+                    if mpd.status.song == song {
+                        WaveView()
+                            .background(
+                                Rectangle()
+                                    .fill(.background)
+                                    .frame(width: trackSize, height: trackSize),
+                            )
+                    }
                 }
                 .frame(width: trackSize, height: trackSize)
 

@@ -71,9 +71,9 @@ struct QueuePanelView: View {
             }
             .mediaListStyle(rowHeight: Layout.RowHeight.song + Layout.Padding.large)
             .scrollToItem($scrollTarget)
-            #if os(iOS)
-                .environment(\.editMode, .constant(.active))
-            #endif
+//            #if os(iOS)
+//                .environment(\.editMode, .constant(.active))
+//            #endif
                 .task {
                     guard let song = mpd.status.song else {
                         return

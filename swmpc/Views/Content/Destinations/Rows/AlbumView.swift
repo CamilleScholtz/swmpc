@@ -108,8 +108,7 @@ struct AlbumView: View, Equatable {
             .contextMenu {
                 ContextMenuView(for: album)
             }
-            .task(id: album, priority: .high) {
-                try? await Task.sleep(for: .milliseconds(100))
+            .task(id: album, priority: .medium) {
                 guard !Task.isCancelled else {
                     return
                 }
