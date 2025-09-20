@@ -964,35 +964,6 @@
         }
       }
     },
-    "Create" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erstellen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crear"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Créer"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aanmaken"
-          }
-        }
-      }
-    },
     "Cross-referencing mood with melodies…" : {
       "localizations" : {
         "de" : {
