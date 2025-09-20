@@ -28,13 +28,13 @@ struct AppView: View {
     #endif
 
     var body: some View {
+        @Bindable var boundNavigator = navigator
+
         Group {
             if mpd.status.state == nil {
                 ErrorView()
             } else {
                 Group {
-                    @Bindable var boundNavigator = navigator
-
                     #if os(iOS)
                         TabView(selection: $boundNavigator.category) {
                             ForEach(CategoryDestination.categories) { category in
