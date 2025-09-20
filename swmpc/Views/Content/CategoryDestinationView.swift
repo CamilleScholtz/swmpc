@@ -19,15 +19,22 @@ struct CategoryDestinationView: View {
 
     var body: some View {
         Group {
-            switch navigator.category.source {
-            case .database:
-                CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
-            case .favorites:
-                CategoryPlaylistView(playlist: navigator.category.source.playlist!)
-            case .playlist:
-                CategoryPlaylistView(playlist: navigator.category.source.playlist!)
+            switch navigator.category {
+            #if os(iOS)
+                case .playlists:
+                    PlaylistsView()
+            #endif
             default:
-                EmptyView()
+                switch navigator.category.source {
+                case .database:
+                    CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
+                case .favorites:
+                    CategoryPlaylistView(playlist: navigator.category.source.playlist!)
+                case .playlist:
+                    CategoryPlaylistView(playlist: navigator.category.source.playlist!)
+                default:
+                    EmptyView()
+                }
             }
         }
         #if os(macOS)
@@ -344,8 +351,8 @@ struct CategoryPlaylistView: View {
                 }
                 .mediaListStyle(rowHeight: Layout.RowHeight.song + Layout.Padding.large)
                 .scrollToItem($scrollTarget)
-                    .id(playlist)
-                    .ignoresSafeArea(edges: .vertical)
+                .id(playlist)
+                .ignoresSafeArea(edges: .vertical)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
