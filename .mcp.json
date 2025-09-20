@@ -1,8 +1,13 @@
 {
     "mcpServers": {
-        "XcodeBuildMCP": {
+        "XcodeMCP": {
             "command": "bunx",
-            "args": ["-y", "xcodebuildmcp@latest"]
+            "args": ["-y", "xcodemcp@latest"],
+            "env": {
+                "LOG_LEVEL": "INFO",
+                "XCODE_MCP_PREFERRED_SCHEME": "swmpc",
+                "XCODE_MCP_PREFERRED_XCODEPROJ": "swmpc.xcodeproj"
+            }
         },
         "apple-docs": {
             "command": "bunx",
