@@ -48,6 +48,8 @@ struct DetailMiniView: View {
                 .offset(x: Layout.Spacing.medium)
             NextView(size: 16)
         }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
         .padding(.horizontal, Layout.Padding.large)
         .task(id: mpd.status.song) {
             guard let song = mpd.status.song else {
