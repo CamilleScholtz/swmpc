@@ -99,7 +99,7 @@ struct CategoryDatabaseView: View {
                             .equatable()
                             .mediaRowStyle()
                     }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.album + Layout.Padding.large)
+                    .mediaListStyle(rowHeight: Layout.RowHeight.album)
                 }
             case .artist:
                 if let artists = media as? [Artist] {
@@ -108,7 +108,7 @@ struct CategoryDatabaseView: View {
                             .equatable()
                             .mediaRowStyle()
                     }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.artist + Layout.Padding.large)
+                    .mediaListStyle(rowHeight: Layout.RowHeight.artist)
                 }
             default:
                 if let songs = media as? [Song] {
@@ -117,7 +117,7 @@ struct CategoryDatabaseView: View {
                             .equatable()
                             .mediaRowStyle()
                     }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.song + Layout.Padding.large)
+                    .mediaListStyle(rowHeight: Layout.RowHeight.song)
                 }
             }
         }
@@ -352,7 +352,7 @@ struct CategoryPlaylistView: View {
                     }
                     .mediaRowStyle()
                 }
-                .mediaListStyle(rowHeight: Layout.RowHeight.song + Layout.Padding.large)
+                .mediaListStyle(rowHeight: Layout.RowHeight.song)
                 .scrollToItem($scrollTarget)
                 .id(playlist)
                 .ignoresSafeArea(edges: .vertical)

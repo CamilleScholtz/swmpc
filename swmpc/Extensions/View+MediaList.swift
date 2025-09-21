@@ -13,7 +13,11 @@ extension View {
         if let rowHeight {
             listStyle(.plain)
                 .contentMargins(.bottom, bottomMargin)
-                .environment(\.defaultMinListRowHeight, rowHeight)
+            #if os(iOS)
+                .environment(\.defaultMinListRowHeight, rowHeight + (Layout.Padding.medium * 2))
+            #elseif os(macOS)
+                .environment(\.defaultMinListRowHeight, rowHeight + (Layout.Padding.small * 2))
+            #endif
         } else {
             listStyle(.plain)
                 .contentMargins(.bottom, bottomMargin)
@@ -23,7 +27,12 @@ extension View {
     @ViewBuilder
     func mediaRowStyle() -> some View {
         listRowSeparator(.hidden)
+        #if os(iOS)
+            .listRowInsets(.horizontal, Layout.Padding.large)
+            .listRowInsets(.vertical, Layout.Padding.medium)
+        #elseif os(macOS)
             .listRowInsets(.horizontal, Layout.Padding.small)
             .listRowInsets(.vertical, Layout.Padding.small)
+        #endif
     }
 }
