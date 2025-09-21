@@ -139,12 +139,15 @@ struct CategoryDatabaseView: View {
         .toolbar {
             if isSearchFieldExpanded {
                 ToolbarItem {
-                    TextField("Search", text: $searchQuery)
+                    TextField("Search \(String(localized: navigator.category.label).lowercased())", text: $searchQuery)
                     #if os(macOS)
-                        .frame(width: 203)
+                        .frame(width: 195.5)
                     #endif
+                        .padding(.leading, Layout.Padding.small)
+                        // XXX: This doesn't work for some reason.
+                        .focusEffectDisabled()
                         .autocorrectionDisabled()
-                        // XXX: This doesn't work.
+                        // XXX: This ALSO doesn't work.
                         // See: https://developer.apple.com/forums/thread/797948
                         // And: https://stackoverflow.com/questions/74245149/focusstate-textfield-not-working-within-toolbar-toolbaritem
                         .focused($isSearchFieldFocused)
