@@ -68,7 +68,8 @@ struct AppView: View {
                             List {
                                 DetailView(artwork: artwork)
                                     .frame(height: 600)
-                                    .mediaRowStyle()
+                                    .listRowSeparator(.hidden)
+                                    .listRowInsets(.horizontal, Layout.Padding.large)
 
                                 QueueView()
                             }

@@ -37,19 +37,20 @@ struct QueueView: View {
         Group {
             #if os(iOS)
                 Group {
-                    QueueHeaderView(
-                        showClearQueueAlert: $showClearQueueAlert,
-                        showIntelligenceQueueSheet: $showIntelligenceQueueSheet,
-                        isIntelligenceEnabled: isIntelligenceEnabled,
-                    )
-                    .padding(Layout.Padding.large)
+                    Group {
+                        QueueHeaderView(
+                            showClearQueueAlert: $showClearQueueAlert,
+                            showIntelligenceQueueSheet: $showIntelligenceQueueSheet,
+                            isIntelligenceEnabled: isIntelligenceEnabled,
+                        )
+                        .listRowSeparator(.visible)
+                        .listRowInsets(.horizontal, Layout.Padding.large)
 
-                    Divider()
-
-                    if mpd.queue.songs.isEmpty {
-                        EmptyQueueView()
-                    } else {
-                        MediaList()
+                        if mpd.queue.songs.isEmpty {
+                            EmptyQueueView()
+                        } else {
+                            MediaList()
+                        }
                     }
                 }
             #else
@@ -122,7 +123,7 @@ struct QueueView: View {
                         .disabled(!isIntelligenceEnabled)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.glass)
             }
         }
     }
