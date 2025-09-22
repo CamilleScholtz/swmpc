@@ -9,13 +9,15 @@ import SwiftUI
 
 struct ErrorView: View {
     @Environment(MPD.self) private var mpd
-    #if os(iOS)
-        @Environment(NavigationManager.self) private var navigator
-    #elseif os(macOS)
+    #if os(macOS)
         @Environment(\.openSettings) private var openSettings
     #endif
 
     @State private var showError = false
+
+    #if os(iOS)
+        @State private var showSettingsSheet = false
+    #endif
 
     var body: some View {
         VStack(alignment: .center) {
@@ -33,7 +35,7 @@ struct ErrorView: View {
                         .foregroundColor(.secondary)
                     Button {
                         #if os(iOS)
-                            navigator.category = .settings
+                            showSettingsSheet = true
                         #elseif os(macOS)
                             openSettings()
                         #endif
@@ -67,5 +69,10 @@ struct ErrorView: View {
 
             showError = true
         }
+        #if os(iOS)
+        .sheet(isPresented: $showSettingsSheet) {
+            SettingsView()
+        }
+        #endif
     }
 }
