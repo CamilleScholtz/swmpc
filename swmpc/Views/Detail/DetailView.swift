@@ -16,15 +16,6 @@ private extension Layout.Size {
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
 
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
-    @AppStorage(Setting.intelligenceModel) private var intelligenceModel = IntelligenceModel.openAI
-
-    var isIntelligenceEnabled: Bool {
-        guard isIntelligenceEnabledSetting else { return false }
-        @AppStorage(intelligenceModel.setting) var token = ""
-        return !token.isEmpty
-    }
-
     let artwork: PlatformImage?
 
     #if os(macOS)
@@ -98,7 +89,7 @@ struct DetailView: View {
                         Button("Fill Queue with AI", systemSymbol: .sparkles) {
                             NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
                         }
-                        .disabled(!isIntelligenceEnabled)
+                        .disabled(!IntelligenceManager.shared.isEnabled)
                     }
                 }
 

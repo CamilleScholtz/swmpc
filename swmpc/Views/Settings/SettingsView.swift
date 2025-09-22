@@ -211,22 +211,14 @@ struct SettingsView: View {
     }
 
     struct IntelligenceView: View {
-        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
+        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
         @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
 
         @State private var intelligenceToken = ""
 
-        var isIntelligenceEnabled: Bool {
-            guard isIntelligenceEnabledSetting else {
-                return false
-            }
-
-            return !intelligenceToken.isEmpty
-        }
-
         var body: some View {
             Form {
-                Toggle(isOn: $isIntelligenceEnabledSetting) {
+                Toggle(isOn: $isIntelligenceEnabled) {
                     Text("Enable AI Features")
                     Text("Currently used for smart playlist and queue generation.")
                 }
@@ -248,12 +240,12 @@ struct SettingsView: View {
                 }
                 .help("Select the AI model to use for intelligent features")
                 .pickerStyle(.inline)
-                .disabled(!isIntelligenceEnabledSetting)
+                .disabled(!isIntelligenceEnabled)
 
                 SecureField("API Token:", text: $intelligenceToken)
                     .textContentType(.password)
                     .help("API token for the selected AI service")
-                    .disabled(!isIntelligenceEnabledSetting)
+                    .disabled(!isIntelligenceEnabled)
                     .onAppear {
                         @AppStorage(intelligenceModel.setting) var token = ""
                         intelligenceToken = token

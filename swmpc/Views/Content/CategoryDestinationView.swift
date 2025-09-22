@@ -356,15 +356,6 @@ struct CategoryPlaylistView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
-    @AppStorage(Setting.intelligenceModel) private var intelligenceModel = IntelligenceModel.openAI
-
-    var isIntelligenceEnabled: Bool {
-        guard isIntelligenceEnabledSetting else { return false }
-        @AppStorage(intelligenceModel.setting) var token = ""
-        return !token.isEmpty
-    }
-
     let playlist: Playlist
 
     @State private var songs: [Song]?
@@ -406,7 +397,7 @@ struct CategoryPlaylistView: View {
                     Button("Fill playlist with AI", systemSymbol: .sparkles) {
                         NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
                     }
-                    .disabled(!isIntelligenceEnabled)
+                    .disabled(!IntelligenceManager.shared.isEnabled)
                 }
             } else {
                 ToolbarItem {

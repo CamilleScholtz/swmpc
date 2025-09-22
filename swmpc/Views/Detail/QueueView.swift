@@ -16,15 +16,6 @@ struct QueueView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
-    @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabledSetting = false
-    @AppStorage(Setting.intelligenceModel) private var intelligenceModel = IntelligenceModel.openAI
-
-    var isIntelligenceEnabled: Bool {
-        guard isIntelligenceEnabledSetting else { return false }
-        @AppStorage(intelligenceModel.setting) var token = ""
-        return !token.isEmpty
-    }
-
     @State private var showClearQueueAlert = false
     @State private var showIntelligenceQueueSheet = false
 
@@ -40,8 +31,7 @@ struct QueueView: View {
                     Group {
                         QueueHeaderView(
                             showClearQueueAlert: $showClearQueueAlert,
-                            showIntelligenceQueueSheet: $showIntelligenceQueueSheet,
-                            isIntelligenceEnabled: isIntelligenceEnabled,
+                            showIntelligenceQueueSheet: $showIntelligenceQueueSheet
                         )
                         .listRowSeparator(.visible)
                         .listRowInsets(.horizontal, Layout.Padding.large)
@@ -92,8 +82,6 @@ struct QueueView: View {
         @Binding var showClearQueueAlert: Bool
         @Binding var showIntelligenceQueueSheet: Bool
 
-        let isIntelligenceEnabled: Bool
-
         var body: some View {
             HStack {
                 Text("Queue")
@@ -120,7 +108,7 @@ struct QueueView: View {
                         } label: {
                             Image(systemSymbol: .sparkles)
                         }
-                        .disabled(!isIntelligenceEnabled)
+                        .disabled(!IntelligenceManager.shared.isEnabled)
                     }
                 }
                 .buttonStyle(.glass)

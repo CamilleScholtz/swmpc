@@ -139,6 +139,18 @@ actor IntelligenceManager {
 
     private init() {}
 
+    /// Checks if intelligence mode is enabled (setting enabled and token not empty).
+    nonisolated var isEnabled: Bool {
+        MainActor.assumeIsolated {
+            let settingEnabled = UserDefaults.standard.bool(forKey: Setting.isIntelligenceEnabled)
+            let model = UserDefaults.standard.string(forKey: Setting.intelligenceModel)
+                .flatMap { IntelligenceModel(rawValue: $0) } ?? .openAI
+            let token = UserDefaults.standard.string(forKey: model.setting) ?? ""
+
+            return settingEnabled && !token.isEmpty
+        }
+    }
+
     /// Creates an OpenAI client configured for the specified model provider.
     ///
     /// - Parameter model: The AI model provider to connect to.
@@ -148,17 +160,12 @@ actor IntelligenceManager {
     ///           `IntelligenceManagerError.missingToken` if API token is not
     ///           configured.
     private func connect(using model: IntelligenceModel) async throws -> OpenAI {
-        let (isEnabled, token) = await MainActor.run {
-            let isEnabled = UserDefaults.standard.bool(forKey: Setting
-                .isIntelligenceEnabled)
-            let token = UserDefaults.standard.string(forKey: model.setting)
-                ?? ""
-
-            return (isEnabled, token)
-        }
-
         guard isEnabled else {
             throw IntelligenceManagerError.intelligenceDisabled
+        }
+
+        let token = await MainActor.run {
+            UserDefaults.standard.string(forKey: model.setting) ?? ""
         }
 
         guard !token.isEmpty else {
