@@ -31,7 +31,7 @@ struct QueueView: View {
                     Group {
                         QueueHeaderView(
                             showClearQueueAlert: $showClearQueueAlert,
-                            showIntelligenceQueueSheet: $showIntelligenceQueueSheet
+                            showIntelligenceQueueSheet: $showIntelligenceQueueSheet,
                         )
                         .listRowSeparator(.visible)
                         .listRowInsets(.horizontal, Layout.Padding.large)

@@ -10,8 +10,10 @@ nonisolated enum Setting {
     static let port = "port"
     static let password = "password"
 
-    static let showStatusBar = "show_status_bar"
-    static let showStatusbarSong = "show_statusbar_song"
+    #if os(macOS)
+        static let showStatusBar = "show_status_bar"
+        static let showStatusbarSong = "show_statusbar_song"
+    #endif
 
     static let isIntelligenceEnabled = "is_intelligence_enabled"
     static let intelligenceModel = "intelligence_model"
@@ -24,7 +26,9 @@ nonisolated enum Setting {
 
     static let artworkGetter = "artwork_getter"
 
-    static let runAsAgent = "run_as_agent"
+    #if os(macOS)
+        static let runAsAgent = "run_as_agent"
+    #endif
 
     static let albumSortOption = "album_sort_option"
     static let artistSortOption = "artist_sort_option"
