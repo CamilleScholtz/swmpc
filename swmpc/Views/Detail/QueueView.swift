@@ -28,19 +28,18 @@ struct QueueView: View {
         Group {
             #if os(iOS)
                 Group {
-                    Group {
-                        QueueHeaderView(
-                            showClearQueueAlert: $showClearQueueAlert,
-                            showIntelligenceQueueSheet: $showIntelligenceQueueSheet,
-                        )
-                        .listRowSeparator(.visible)
-                        .listRowInsets(.horizontal, Layout.Padding.large)
+                    QueueHeaderView(
+                        showClearQueueAlert: $showClearQueueAlert,
+                        showIntelligenceQueueSheet: $showIntelligenceQueueSheet,
+                    )
+                    .listRowSeparator(.visible)
+                    .listRowInsets(.horizontal, Layout.Padding.large)
 
-                        if mpd.queue.songs.isEmpty {
-                            EmptyQueueView()
-                        } else {
-                            MediaList()
-                        }
+                    if mpd.queue.songs.isEmpty {
+                        EmptyQueueView()
+                            .mediaRowStyle()
+                    } else {
+                        MediaList()
                     }
                 }
             #else
@@ -83,7 +82,7 @@ struct QueueView: View {
         @Binding var showIntelligenceQueueSheet: Bool
 
         var body: some View {
-            HStack {
+            HStack(alignment: .center) {
                 Text("Queue")
                     .font(.headline)
 
