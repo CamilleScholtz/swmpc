@@ -12,18 +12,7 @@ import SwiftUI
 struct DetailMiniView: View {
     @Environment(MPD.self) private var mpd
 
-    @State private var artwork: PlatformImage?
-
-    private var progress: Float {
-        guard let elapsed = mpd.status.elapsed,
-              let duration = mpd.status.song?.duration,
-              duration > 0
-        else {
-            return 0
-        }
-
-        return Float(elapsed / duration)
-    }
+    let artwork: PlatformImage?
 
     var body: some View {
         HStack(spacing: Layout.Spacing.small) {
@@ -51,13 +40,5 @@ struct DetailMiniView: View {
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .padding(.horizontal, Layout.Padding.large)
-        .task(id: mpd.status.song) {
-            guard let song = mpd.status.song else {
-                artwork = nil
-                return
-            }
-
-            artwork = try? await song.artwork()
-        }
     }
 }

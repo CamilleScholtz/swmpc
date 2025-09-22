@@ -15,6 +15,10 @@ struct CategoryDestinationView: View {
         @Environment(\.controlActiveState) private var controlActiveState
     #endif
 
+    #if os(iOS)
+        @Binding var showSettingsSheet: Bool
+    #endif
+
     @State private var isSearchFieldExpanded = false
 
     var body: some View {
@@ -27,7 +31,11 @@ struct CategoryDestinationView: View {
             default:
                 switch navigator.category.source {
                 case .database:
-                    CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
+                    #if os(iOS)
+                        CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded, showSettingsSheet: $showSettingsSheet)
+                    #elseif os(macOS)
+                        CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
+                    #endif
                 case .favorites:
                     CategoryPlaylistView(playlist: navigator.category.source.playlist!)
                 case .playlist:
@@ -70,6 +78,10 @@ struct CategoryDatabaseView: View {
     @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor(option: .album)
 
     @Binding var isSearchFieldExpanded: Bool
+
+    #if os(iOS)
+        @Binding var showSettingsSheet: Bool
+    #endif
 
     @State private var scrollTarget: ScrollTarget?
 
@@ -170,11 +182,13 @@ struct CategoryDatabaseView: View {
 
             ToolbarSpacer(.fixed)
 
-            if !isSearchFieldExpanded, navigator.category.source.isSortable {
-                ToolbarItem {
-                    sortMenu
+            #if os(macOS)
+                if !isSearchFieldExpanded, navigator.category.source.isSortable {
+                    ToolbarItem {
+                        sortMenu
+                    }
                 }
-            }
+            #endif
 
             ToolbarItem {
                 Button("Search", systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass) {
@@ -188,6 +202,14 @@ struct CategoryDatabaseView: View {
                 }
                 .keyboardShortcut("f", modifiers: .command)
             }
+
+            #if os(iOS)
+                if !isSearchFieldExpanded {
+                    ToolbarItem {
+                        sortMenu
+                    }
+                }
+            #endif
         }
         .task(id: navigator.category) {
             mpd.state.isLoading = true
@@ -262,34 +284,52 @@ struct CategoryDatabaseView: View {
     @ViewBuilder
     private var sortMenu: some View {
         Menu {
-            ForEach(navigator.category.type.availableSortOptions, id: \.self) { option in
-                Button {
-                    let newSort = if sort.option == option {
-                        SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)
-                    } else {
-                        SortDescriptor(option: option)
-                    }
+            if navigator.category.source.isSortable {
+                ForEach(navigator.category.type.availableSortOptions, id: \.self) { option in
+                    Button {
+                        let newSort = if sort.option == option {
+                            SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)
+                        } else {
+                            SortDescriptor(option: option)
+                        }
 
-                    switch navigator.category {
-                    case .albums: albumSort = newSort
-                    case .artists: artistSort = newSort
-                    case .songs: songSort = newSort
-                    default: break
-                    }
-                } label: {
-                    if sort.option == option {
-                        Image(systemSymbol: .checkmark)
-                    }
+                        switch navigator.category {
+                        case .albums: albumSort = newSort
+                        case .artists: artistSort = newSort
+                        case .songs: songSort = newSort
+                        default: break
+                        }
+                    } label: {
+                        if sort.option == option {
+                            Image(systemSymbol: .checkmark)
+                        }
 
-                    Text(option.label)
+                        Text(option.label)
 
-                    if sort.option == option {
-                        Text(sort.direction.label)
+                        if sort.option == option {
+                            Text(sort.direction.label)
+                        }
                     }
                 }
+
+                #if os(iOS)
+                    Divider()
+                #endif
             }
+
+            #if os(iOS)
+                Button {
+                    showSettingsSheet = true
+                } label: {
+                    Label("Settings", systemSymbol: .gearshape)
+                }
+            #endif
         } label: {
-            Image(systemSymbol: .line3HorizontalDecrease)
+            #if os(iOS)
+                Image(systemSymbol: .ellipsis)
+            #elseif os(macOS)
+                Image(systemSymbol: .line3HorizontalDecrease)
+            #endif
         }
         .menuIndicator(.hidden)
     }

@@ -23,9 +23,12 @@ struct AppView: View {
 
     #if os(iOS)
         @State private var showDetailCover = false
+        @State private var showSettingsSheet = false
     #elseif os(macOS)
         @State private var showQueuePanel = false
     #endif
+
+    @State private var artwork: PlatformImage?
 
     var body: some View {
         @Bindable var boundNavigator = navigator
@@ -42,7 +45,7 @@ struct AppView: View {
                                 // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
                                 Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
                                     NavigationStack(path: $boundNavigator.path) {
-                                        CategoryDestinationView()
+                                        CategoryDestinationView(showSettingsSheet: $showSettingsSheet)
                                             .navigationDestination(for: ContentDestination.self) { destination in
                                                 ContentDestinationView(destination: destination)
                                             }
@@ -55,15 +58,25 @@ struct AppView: View {
                         }
                         .tabBarMinimizeBehavior(.onScrollDown)
                         .tabViewBottomAccessory {
-                            DetailMiniView()
+                            DetailMiniView(artwork: artwork)
                                 .onTapGesture {
                                     showDetailCover.toggle()
                                 }
                                 .matchedTransitionSource(id: 1, in: namespace)
                         }
                         .fullScreenCover(isPresented: $showDetailCover) {
-                            DetailView()
-                                .navigationTransition(.zoom(sourceID: 1, in: namespace))
+                            List {
+                                DetailView(artwork: artwork)
+                                    .frame(height: 600)
+                                    .mediaRowStyle()
+
+                                QueueView()
+                            }
+                            .mediaListStyle()
+                            .navigationTransition(.zoom(sourceID: 1, in: namespace))
+                        }
+                        .sheet(isPresented: $showSettingsSheet) {
+                            SettingsView()
                         }
                     #elseif os(macOS)
                         NavigationSplitView {
@@ -88,7 +101,7 @@ struct AppView: View {
                                 ScrollView {}
                                     .scrollDisabled(true)
 
-                                DetailView(showQueuePanel: $showQueuePanel)
+                                DetailView(artwork: artwork, showQueuePanel: $showQueuePanel)
                             }
                             .scrollEdgeEffectStyle(.soft, for: .vertical)
                         }
@@ -106,7 +119,7 @@ struct AppView: View {
                         )
                         .overlay(alignment: .trailing) {
                             if showQueuePanel {
-                                QueuePanelView(showQueuePanel: $showQueuePanel)
+                                QueueView()
                                     .frame(width: Layout.Size.contentWidth)
                                     .overlay(
                                         Rectangle()
@@ -124,6 +137,14 @@ struct AppView: View {
         }
         .task(priority: .medium) {
             try? await mpd.status.startTrackingElapsed()
+        }
+        .task(id: mpd.status.song) {
+            guard let song = mpd.status.song else {
+                artwork = nil
+                return
+            }
+
+            artwork = try? await song.artwork()
         }
         .onDisappear {
             mpd.status.stopTrackingElapsed()

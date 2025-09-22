@@ -27,6 +27,8 @@ struct DetailView: View {
         return !token.isEmpty
     }
 
+    let artwork: PlatformImage?
+
     #if os(macOS)
         @Binding var showQueuePanel: Bool
     #endif
@@ -35,7 +37,6 @@ struct DetailView: View {
         @State private var isHovering = false
     #endif
 
-    @State private var artwork: PlatformImage?
     @State private var colors: [Color]?
 
     #if os(iOS)
@@ -181,73 +182,68 @@ struct DetailView: View {
                 DetailFooterView()
                     .frame(height: Layout.Size.detailControlsHeight)
             }
-            .padding(60)
+            #if os(iOS)
+            .padding(Layout.Padding.large)
+            #elseif os(macOS)
+            .padding(Layout.Padding.large * 4)
+            #endif
         }
-        .ignoresSafeArea(edges: .vertical)
+        .task(id: artwork) {
+            guard let artwork else {
+                colors = nil
+                return
+            }
+
+            colors = await Color.extractDominantColors(from: artwork, count: 4)
+        }
         #if os(macOS)
-            .toolbar {
-                ToolbarSpacer(.flexible)
+        .ignoresSafeArea(edges: .vertical)
+        .toolbar {
+            ToolbarSpacer(.flexible)
 
-                if showQueuePanel {
-                    ToolbarItem {
-                        Text("Queue")
-                            .font(.system(size: 15))
-                            .fontWeight(.semibold)
-                            .offset(x: -102)
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-
-                    ToolbarItem {
-                        AsyncButton(mpd.status.isConsume ?? false ? "Disable Consume" : "Enable Consume", systemImage: mpd.status.isConsume ?? false ? SFSymbol.flameFill.rawValue : SFSymbol.flame.rawValue) {
-                            try await ConnectionManager.command().consume(!(mpd.status.isConsume ?? false))
-                        }
-                    }
-
-                    if !mpd.queue.songs.isEmpty {
-                        ToolbarItem {
-                            Button("Clear Queue", systemSymbol: .trash, role: .destructive) {
-                                NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
-                            }
-                            .keyboardShortcut(.delete, modifiers: [.shift, .command])
-                        }
-
-                    } else {
-                        ToolbarItem {
-                            Button("Fill Queue with AI", systemSymbol: .sparkles) {
-                                NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
-                            }
-                            .disabled(!isIntelligenceEnabled)
-                        }
-                    }
-
-                    ToolbarSpacer(.fixed)
+            if showQueuePanel {
+                ToolbarItem {
+                    Text("Queue")
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
+                        .offset(x: -102)
                 }
+                .sharedBackgroundVisibility(.hidden)
 
                 ToolbarItem {
-                    Button(showQueuePanel ? "Hide Queue" : "Show Queue", systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList) {
-                        withAnimation(.spring) {
-                            showQueuePanel.toggle()
+                    AsyncButton(mpd.status.isConsume ?? false ? "Disable Consume" : "Enable Consume", systemImage: mpd.status.isConsume ?? false ? SFSymbol.flameFill.rawValue : SFSymbol.flame.rawValue) {
+                        try await ConnectionManager.command().consume(!(mpd.status.isConsume ?? false))
+                    }
+                }
+
+                if !mpd.queue.songs.isEmpty {
+                    ToolbarItem {
+                        Button("Clear Queue", systemSymbol: .trash, role: .destructive) {
+                            NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
                         }
+                        .keyboardShortcut(.delete, modifiers: [.shift, .command])
+                    }
+
+                } else {
+                    ToolbarItem {
+                        Button("Fill Queue with AI", systemSymbol: .sparkles) {
+                            NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                        }
+                        .disabled(!isIntelligenceEnabled)
+                    }
+                }
+
+                ToolbarSpacer(.fixed)
+            }
+
+            ToolbarItem {
+                Button(showQueuePanel ? "Hide Queue" : "Show Queue", systemSymbol: showQueuePanel ? .chevronRight : .musicNoteList) {
+                    withAnimation(.spring) {
+                        showQueuePanel.toggle()
                     }
                 }
             }
+        }
         #endif
-            .task(id: mpd.status.song) {
-                guard let song = mpd.status.song else {
-                    artwork = nil
-                    colors = nil
-
-                    return
-                }
-
-                artwork = try? await song.artwork()
-                guard let artwork else {
-                    colors = nil
-
-                    return
-                }
-
-                colors = await Color.extractDominantColors(from: artwork, count: 4)
-            }
     }
 }

@@ -22,13 +22,24 @@ private extension Layout.Size {
 }
 
 struct SettingsView: View {
-    enum SettingCategory: String, CaseIterable, Identifiable {
+    enum SettingCategory: String, Identifiable {
         case general = "General"
         case behavior = "Behavior"
         case intelligence = "Intelligence"
 
         var id: Self { self }
         var title: String { rawValue }
+
+        #if os(iOS)
+            static var allCases: [SettingCategory] {
+                [.general, .intelligence]
+            }
+
+        #elseif os(macOS)
+            static var allCases: [SettingCategory] {
+                [.general, .behavior, .intelligence]
+            }
+        #endif
 
         var image: SFSymbol {
             switch self {
@@ -53,16 +64,29 @@ struct SettingsView: View {
     @State private var selection: SettingCategory? = .general
 
     var body: some View {
-        TabView(selection: $selection) {
-            ForEach(SettingCategory.allCases) { category in
-                category.view
-                    .tabItem {
-                        Label(category.title, systemSymbol: category.image)
+        #if os(iOS)
+            NavigationView {
+                List {
+                    ForEach(SettingCategory.allCases) { category in
+                        NavigationLink(destination: category.view) {
+                            Label(category.title, systemSymbol: category.image)
+                        }
                     }
-                    .tag(category)
+                }
+                .navigationTitle("Settings")
             }
-        }
-        .frame(width: Layout.Size.settingsWindowWidth)
+        #elseif os(macOS)
+            TabView(selection: $selection) {
+                ForEach(SettingCategory.allCases) { category in
+                    category.view
+                        .tabItem {
+                            Label(category.title, systemSymbol: category.image)
+                        }
+                        .tag(category)
+                }
+            }
+            .frame(width: Layout.Size.settingsWindowWidth)
+        #endif
     }
 
     struct GeneralView: View {
@@ -108,12 +132,14 @@ struct SettingsView: View {
     }
 
     struct BehaviorView: View {
-        @AppStorage(Setting.showStatusBar) var showStatusBar = true
-        @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-        @AppStorage(Setting.runAsAgent) var runAsAgent = false
+        #if os(macOS)
+            @AppStorage(Setting.showStatusBar) var showStatusBar = true
+            @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
+            @AppStorage(Setting.runAsAgent) var runAsAgent = false
 
-        @State private var restartAlertShown = false
-        @State private var isRestarting = false
+            @State private var restartAlertShown = false
+            @State private var isRestarting = false
+        #endif
 
         var body: some View {
             Form {

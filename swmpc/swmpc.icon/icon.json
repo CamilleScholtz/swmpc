@@ -13,7 +13,14 @@
         {
           "hidden" : false,
           "image-name" : "12.png",
-          "name" : "Disk"
+          "name" : "Disk",
+          "position" : {
+            "scale" : 0.96,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
         }
       ],
       "shadow" : {
