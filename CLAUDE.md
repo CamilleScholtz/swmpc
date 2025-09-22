@@ -75,7 +75,7 @@ The app follows an MVVM-style architecture using SwiftUI and the Observation fra
 
 Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code:
 - macOS: Menu bar app with NSStatusItem popover (`PopoverView.swift`)
-- iOS: Tab-based navigation with LNPopupUI for now playing
+- iOS: Tab-based navigation with full screen cover for now playing and queue
 
 ## Key Dependencies
 
@@ -83,7 +83,6 @@ External packages (managed via Xcode's Swift Package Manager):
 - `OpenAI`: AI integration for smart playlists
 - `LaunchAtLogin` (macOS only): Auto-start at login
 - `ButtonKit`: Async button action handling
-- `LNPopupUI` (iOS only): Now playing popup interface
 - `DequeModule`: High-performance collections for connection buffering
 
 ## MPD Protocol Implementation
