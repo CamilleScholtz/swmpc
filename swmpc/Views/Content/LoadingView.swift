@@ -16,7 +16,7 @@ struct LoadingView: View {
         case .albums, .artists, .songs, .playlist:
             return mpd.state.isLoading
         #if os(iOS)
-            case .playlists, .settings:
+            case .playlists:
                 return false
         #endif
         }
@@ -30,7 +30,9 @@ struct LoadingView: View {
                     .ignoresSafeArea()
 
                 ProgressView()
+                #if os(macOS)
                     .controlSize(.large)
+                #endif
             }
             .transition(.asymmetric(
                 insertion: .opacity,

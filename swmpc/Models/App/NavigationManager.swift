@@ -108,8 +108,6 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
     #if os(iOS)
         /// The playlists view showing all available playlists (iOS only).
         case playlists
-        /// The settings view for app configuration (iOS only).
-        case settings
     #endif
 
     /// Returns the available category destinations for the current platform.
@@ -133,7 +131,6 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case .playlist: .playlist
         #if os(iOS)
             case .playlists: .playlist
-            case .settings: .song
         #endif
         }
     }
@@ -149,8 +146,6 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         #if os(iOS)
             case .playlists:
                 .database
-            case .settings:
-                .database
         #endif
         }
     }
@@ -165,7 +160,6 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
 
         #if os(iOS)
             case .playlists: "Playlists"
-            case .settings: "Settings"
         #endif
         }
     }
@@ -180,7 +174,6 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
 
         #if os(iOS)
             case .playlists: .musicNoteList
-            case .settings: .gear
         #endif
         }
     }
