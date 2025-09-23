@@ -89,6 +89,10 @@ struct CategoryDatabaseView: View {
     @State private var searchQuery = ""
     @State private var searchResults: [any Mediable]?
 
+    #if os(iOS)
+        @State private var previousCategory: CategoryDestination?
+    #endif
+
     @FocusState private var isSearchFieldFocused: Bool
 
     private var sort: SortDescriptor {
@@ -212,6 +216,14 @@ struct CategoryDatabaseView: View {
             #endif
         }
         .task(id: navigator.category) {
+            #if os(iOS)
+                guard navigator.category != previousCategory else {
+                    return
+                }
+
+                previousCategory = navigator.category
+            #endif
+
             mpd.state.isLoading = true
             try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
@@ -224,6 +236,12 @@ struct CategoryDatabaseView: View {
             scrollToCurrentMedia()
         }
         .task(id: sort) {
+            #if os(iOS)
+                guard navigator.category != previousCategory else {
+                    return
+                }
+            #endif
+
             guard !mpd.state.isLoading else {
                 return
             }
