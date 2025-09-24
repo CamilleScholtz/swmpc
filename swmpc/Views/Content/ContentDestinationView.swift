@@ -8,17 +8,26 @@
 import SwiftUI
 
 struct ContentDestinationView: View {
+    @Environment(NavigationManager.self) private var navigator
+
     let destination: ContentDestination
 
     var body: some View {
-        List {
-            switch destination {
-            case let .album(album):
+        switch destination {
+        case let .album(album):
+            List {
                 AlbumSongsView(for: album)
-            case let .artist(artist):
+            }
+            .mediaListStyle()
+        case let .artist(artist):
+            List {
                 ArtistAlbumsView(for: artist)
             }
+            .mediaListStyle()
+        #if os(iOS)
+            case let .playlist(playlist):
+                CategoryPlaylistView(playlist: playlist)
+        #endif
         }
-        .mediaListStyle()
     }
 }

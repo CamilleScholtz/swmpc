@@ -60,7 +60,7 @@ struct PlaylistsView: View {
                             }
                     } else {
                         Button {
-                            navigator.category = CategoryDestination.playlist(playlist)
+                            navigator.path.append(ContentDestination.playlist(playlist))
                         } label: {
                             HStack(spacing: Layout.Spacing.large) {
                                 Label(playlist.name, systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)

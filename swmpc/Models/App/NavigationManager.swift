@@ -205,4 +205,8 @@ enum ContentDestination: Identifiable, Hashable {
     case album(Album)
     /// Navigation to a specific artist's detail view.
     case artist(Artist)
+    #if os(iOS)
+        /// Navigation to a specific playlist's detail view.
+        case playlist(Playlist)
+    #endif
 }
