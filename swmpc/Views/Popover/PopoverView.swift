@@ -13,8 +13,6 @@ struct PopoverView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openSettings) private var openSettings
 
-    @AppStorage(Setting.runAsAgent) var runAsAgent = false
-
     @State private var artwork: PlatformImage?
     @State private var height = Double(Layout.Size.artworkWidth)
 
@@ -88,22 +86,6 @@ struct PopoverView: View {
             .animation(.spring, value: showInfo),
         )
         .frame(width: Layout.Size.artworkWidth, height: height)
-        .overlay(alignment: .topLeading) {
-            if runAsAgent {
-                Button {
-                    openSettings()
-                } label: {
-                    Image(systemSymbol: .gearshapeFill)
-                        .foregroundColor(Color(.tertiaryLabelColor))
-                        .font(.system(size: 14))
-                        .padding(Layout.Padding.small)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .opacity(showInfo ? 1 : 0)
-                .animation(.spring, value: showInfo)
-            }
-        }
         .onReceive(willShowNotification) { _ in
             Task(priority: .userInitiated) {
                 guard let song = mpd.status.song else {

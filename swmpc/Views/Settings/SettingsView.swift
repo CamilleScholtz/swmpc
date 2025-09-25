@@ -167,7 +167,6 @@ struct SettingsView: View {
         struct BehaviorView: View {
             @AppStorage(Setting.showStatusBar) var showStatusBar = true
             @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-            @AppStorage(Setting.runAsAgent) var runAsAgent = false
 
             @State private var restartAlertShown = false
             @State private var isRestarting = false
@@ -199,38 +198,6 @@ struct SettingsView: View {
 
                     Divider()
                         .frame(height: 32, alignment: .center)
-
-                    Toggle(isOn: $runAsAgent) {
-                        Text("Run as Agent")
-                        Text("When enabled, the app runs without a dock icon (menu bar only). Requires a restart to take effect.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .help("Run without dock icon (menu bar only mode)")
-                    .onChange(of: runAsAgent) {
-                        guard !isRestarting else {
-                            return
-                        }
-
-                        isRestarting = true
-                        restartAlertShown = true
-                    }
-                }
-                .alert("Restart Required", isPresented: $restartAlertShown) {
-                    Button("Cancel", role: .cancel) {
-                        runAsAgent = !runAsAgent
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isRestarting = false
-                        }
-                    }
-
-                    Button("Quit swmpc", role: .destructive) {
-                        NSApp.terminate(nil)
-                    }
-                } message: {
-                    Text("You need to restart the app for this change to take effect.")
                 }
             }
         }

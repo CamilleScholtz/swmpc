@@ -149,7 +149,6 @@ struct Delegate: App {
 
         @AppStorage(Setting.showStatusBar) var showStatusBar = true
         @AppStorage(Setting.showStatusbarSong) var showStatusbarSong = true
-        @AppStorage(Setting.runAsAgent) var runAsAgent = false
 
         enum MenuAction: Int {
             case play = 100
@@ -161,8 +160,6 @@ struct Delegate: App {
 
         func applicationDidFinishLaunching(_: Notification) {
             AppDelegate.shared = self
-
-            NSApp.setActivationPolicy(runAsAgent ? .prohibited : .regular)
 
             if showStatusBar {
                 configureStatusItem()
