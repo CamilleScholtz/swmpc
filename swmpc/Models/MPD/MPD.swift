@@ -31,7 +31,7 @@ import SwiftUI
     let state = LoadingState()
 
     /// The most recent connection or communication error, if any.
-    var error: Error?
+    var error: EquatableError?
 
     /// The background task that maintains the connection and listens for
     /// changes.
@@ -47,10 +47,19 @@ import SwiftUI
         }
     }
 
-    /// Cancels the update loop task.
-    func cancelUpdateLoop() {
+    /// Reinitializes the MPD connection with new settings.
+    func reinitialize() async {
         updateLoopTask?.cancel()
         updateLoopTask = nil
+
+        await ConnectionManager.idle.disconnect()
+
+        error = nil
+        status.state = nil
+
+        updateLoopTask = Task { [weak self] in
+            await self?.updateLoop()
+        }
     }
 
     /// Establishes a connection to the MPD server.
@@ -66,7 +75,7 @@ import SwiftUI
 
                 return
             } catch {
-                self.error = error
+                self.error = EquatableError(error)
                 status.state = nil
 
                 try? await Task.sleep(for: .seconds(2))

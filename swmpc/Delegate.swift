@@ -129,6 +129,7 @@ struct Delegate: App {
         #if os(macOS)
             Settings {
                 SettingsView()
+                    .environment(appDelegate.mpd)
             }
         #endif
     }

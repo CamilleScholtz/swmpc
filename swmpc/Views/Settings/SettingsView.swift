@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import ButtonKit
 import SFSafeSymbols
 import SwiftUI
 
@@ -15,7 +16,7 @@ import SwiftUI
 #if os(macOS)
     private extension Layout.Size {
         static let settingsRowHeight: CGFloat = 32
-        static let settingsWindowWidth: CGFloat = 500
+        static let settingsWindowWidth: CGFloat = 600
     }
 #endif
 
@@ -102,10 +103,29 @@ struct SettingsView: View {
     }
 
     struct ConnectionView: View {
-        @AppStorage(Setting.host) var host = "localhost"
-        @AppStorage(Setting.port) var port = 6600
-        @AppStorage(Setting.password) var password = ""
+        @Environment(MPD.self) private var mpd
+
         @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
+
+        @State private var host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
+        @State private var port = UserDefaults.standard.integer(forKey: Setting.port) == 0 ? 6600 : UserDefaults.standard.integer(forKey: Setting.port)
+        @State private var password = UserDefaults.standard.string(forKey: Setting.password) ?? ""
+
+        @State private var connectionStatus: ConnectionStatus = .connecting
+
+        private enum ConnectionStatus {
+            case connecting
+            case success
+            case failure
+
+            var color: Color {
+                switch self {
+                case .connecting: .yellow
+                case .success: .green
+                case .failure: .red
+                }
+            }
+        }
 
         var body: some View {
             Form {
@@ -126,8 +146,43 @@ struct SettingsView: View {
                 Section {
                     SecureField("MPD Password".settingsLabel, text: $password)
                         .help("Password for MPD server authentication")
+
+                    HStack {
+                        AsyncButton("Connect") {
+                            connectionStatus = .connecting
+
+                            UserDefaults.standard.set(host, forKey: Setting.host)
+                            UserDefaults.standard.set(port, forKey: Setting.port)
+                            UserDefaults.standard.set(password, forKey: Setting.password)
+
+                            await mpd.reinitialize()
+                            try? await Task.sleep(for: .seconds(2))
+
+                            updateConnectionStatus()
+                        }
+
+                        Circle()
+                            .fill(connectionStatus.color)
+                            .frame(width: 10, height: 10)
+                    }
+
+                    if case .failure = connectionStatus, let error = mpd.error {
+                        Text(error.localizedDescription)
+                            .font(.caption)
+                            .monospaced()
+                            .foregroundColor(.secondary)
+                            .padding(7)
+                            .background(
+                                RoundedRectangle(cornerRadius: 7)
+                                    .fill(Color(white: 0.1, opacity: 0.05))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 7)
+                                            .stroke(Color.secondary.opacity(0.2), lineWidth: 1),
+                                    ),
+                            )
+                    }
                 } footer: {
-                    Text("Leave empty if no password is set.")
+                    Text("Leave passwrod field empty if no password is set. Click Connect to test the connection and apply changes.")
                     #if os(macOS)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -159,6 +214,25 @@ struct SettingsView: View {
                         .padding(.top, 1)
                     #endif
                 }
+            }
+            .onAppear {
+                updateConnectionStatus()
+            }
+            .onChange(of: mpd.status.state) {
+                updateConnectionStatus()
+            }
+            .onChange(of: mpd.error) {
+                updateConnectionStatus()
+            }
+        }
+
+        private func updateConnectionStatus() {
+            if mpd.error != nil {
+                connectionStatus = .failure
+            } else if mpd.status.state != nil {
+                connectionStatus = .success
+            } else {
+                connectionStatus = .connecting
             }
         }
     }
