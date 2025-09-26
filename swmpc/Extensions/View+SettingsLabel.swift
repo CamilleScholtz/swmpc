@@ -7,12 +7,21 @@
 
 import SwiftUI
 
-extension String {
-    var settingsLabel: String {
+struct SettingsLabel: View {
+    let key: LocalizedStringKey
+
+    init(_ key: LocalizedStringKey) {
+        self.key = key
+    }
+
+    var body: some View {
         #if os(macOS)
-            return self + ":"
+            HStack(spacing: 0) {
+                Text(key)
+                Text(":")
+            }
         #else
-            return self
+            Text(key)
         #endif
     }
 }

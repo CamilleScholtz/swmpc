@@ -131,22 +131,28 @@ struct SettingsView: View {
         var body: some View {
             Form {
                 Section {
-                    TextField("MPD Host".settingsLabel, text: $host)
-                        .help("Hostname or IP address of your MPD server")
+                    TextField(text: $host, label: {
+                        SettingsLabel("MPD Host")
+                    })
+                    .help("Hostname or IP address of your MPD server")
                     #if os(iOS)
                         .autocapitalization(.none)
                         .keyboardType(.URL)
                     #endif
-                    TextField("MPD Port".settingsLabel, value: $port, formatter: NumberFormatter())
-                        .help("Port number for MPD connection (default: 6600)")
+                    TextField(value: $port, formatter: NumberFormatter(), label: {
+                        SettingsLabel("MPD Port")
+                    })
+                    .help("Port number for MPD connection (default: 6600)")
                     #if os(iOS)
                         .keyboardType(.numberPad)
                     #endif
                 }
 
                 Section {
-                    SecureField("MPD Password".settingsLabel, text: $password)
-                        .help("Password for MPD server authentication")
+                    SecureField(text: $password, label: {
+                        SettingsLabel("MPD Password")
+                    })
+                    .help("Password for MPD server authentication")
 
                     HStack {
                         AsyncButton("Connect") {
@@ -198,7 +204,7 @@ struct SettingsView: View {
                 #endif
 
                 Section {
-                    Picker("Artwork retrieval".settingsLabel, selection: $artworkGetter) {
+                    Picker(selection: $artworkGetter, label: SettingsLabel("Artwork retrieval")) {
                         Text("Library").tag(ArtworkGetter.library)
                         Text("Embedded").tag(ArtworkGetter.embedded)
                     }
@@ -307,7 +313,7 @@ struct SettingsView: View {
                 #endif
 
                 Section {
-                    Picker("Model".settingsLabel, selection: $intelligenceModel) {
+                    Picker(selection: $intelligenceModel, label: SettingsLabel("Model")) {
                         ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
                             HStack {
                                 Text(model.name)
@@ -324,10 +330,12 @@ struct SettingsView: View {
                     #endif
                         .disabled(!isIntelligenceEnabled)
 
-                    SecureField("API Token".settingsLabel, text: $intelligenceToken)
-                        .textContentType(.password)
-                        .help("API token for the selected AI service")
-                        .disabled(!isIntelligenceEnabled)
+                    SecureField(text: $intelligenceToken, label: {
+                        SettingsLabel("API Token")
+                    })
+                    .textContentType(.password)
+                    .help("API token for the selected AI service")
+                    .disabled(!isIntelligenceEnabled)
                 }
             }
             .onAppear {
