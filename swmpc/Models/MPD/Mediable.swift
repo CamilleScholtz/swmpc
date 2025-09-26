@@ -16,8 +16,8 @@ protocol Mediable: Identifiable, Equatable, Codable, Hashable, Sendable {
     /// Returns a unique identifier for the media item.
     nonisolated var id: String { get }
 
-    /// The URL path of the media item in the MPD database.
-    var url: URL { get }
+    /// The file path of the media item in the MPD database.
+    var file: String { get }
 }
 
 extension Mediable {
@@ -60,7 +60,7 @@ protocol Artworkable {
 
 extension Artworkable where Self: Mediable {
     /// Default implementation that fetches artwork from the MPD server using
-    /// the media item's URL.
+    /// the media item's file.
     ///
     /// This implementation uses the `ArtworkManager` to retrieve artwork and
     /// respects the `shouldCacheArtwork` property to determine caching
@@ -71,7 +71,7 @@ extension Artworkable where Self: Mediable {
     /// - Throws: An error if the artwork retrieval fails.
     func artwork() async throws -> PlatformImage? {
         let data = try await ArtworkManager.shared.get(
-            for: url,
+            for: file,
             shouldCache: shouldCacheArtwork,
         )
 
@@ -87,8 +87,8 @@ nonisolated struct Artist: Mediable {
     /// The unique identifier for the artist, which is the artist's name.
     nonisolated var id: String { name }
 
-    /// The URL path of the artist in the MPD database.
-    let url: URL
+    /// The file path of the artist in the MPD database.
+    let file: String
 
     /// The name of the artist.
     let name: String
@@ -112,8 +112,8 @@ nonisolated struct Album: Mediable, Artworkable {
     /// description.
     nonisolated var id: String { description }
 
-    /// The URL path of the album in the MPD database.
-    let url: URL
+    /// The file path of the album in the MPD database.
+    let file: String
 
     /// The title of the album.
     let title: String
@@ -147,11 +147,11 @@ nonisolated struct Album: Mediable, Artworkable {
 /// Songs contain detailed metadata including title, artist, album, duration,
 /// disc and track numbers.
 nonisolated struct Song: Mediable, Artworkable {
-    /// The unique identifier for the song, which is its URL as a string.
-    nonisolated var id: String { url.absoluteString }
+    /// The unique identifier for the song, which is its file path.
+    nonisolated var id: String { file }
 
-    /// The URL path of the song file in the MPD database.
-    let url: URL
+    /// The file path of the song in the MPD database.
+    let file: String
 
     /// The MPD queue identifier for this song, if it's in the queue.
     let identifier: UInt32?

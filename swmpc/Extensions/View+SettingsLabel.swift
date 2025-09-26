@@ -10,7 +10,7 @@ import SwiftUI
 extension String {
     var settingsLabel: String {
         #if os(macOS)
-            return hasSuffix(":") ? self : self + ":"
+            return self + ":"
         #else
             return self
         #endif

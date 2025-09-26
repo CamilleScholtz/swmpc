@@ -194,25 +194,23 @@ struct SourceToggleButton<Media: Mediable>: View {
                 throw ViewError.missingData
             }
 
-            let urls: Set<URL>
-            switch source {
+            let existingSongs: [Song] = switch source {
             case .queue:
-                urls = Set(mpd.queue.songs.map(\.url))
+                mpd.queue.songs
             case .favorites:
-                urls = Set(mpd.playlists.favorites.map(\.url))
+                mpd.playlists.favorites
             case .playlist:
-                let playlistSongs = try await ConnectionManager.command().getSongs(from: source)
-                urls = Set(playlistSongs.map(\.url))
+                try await ConnectionManager.command().getSongs(from: source)
             default:
                 throw ViewError.missingData
             }
 
+            let existingFiles = Set(existingSongs.map(\.file))
+
             let shouldRemove: Bool = if let forceAction {
-                // If action is forced, use it regardless of current state
                 forceAction == .remove
             } else {
-                // If not forced, toggle based on current presence
-                songs.contains(where: { urls.contains($0.url) })
+                songs.contains(where: { existingFiles.contains($0.file) })
             }
 
             if shouldRemove {

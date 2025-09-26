@@ -732,20 +732,18 @@ actor ConnectionManager<Mode: ConnectionMode> {
             fields[key] = value
         }
 
-        guard let file = fields["file"], let encoded = file
-            .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-            let url = URL(string: encoded)
-        else {
+        guard let file = fields["file"] else {
             throw ConnectionManagerError.malformedResponse(
-                "Missing or invalid URL field")
+                "Missing or invalid file field")
         }
 
-        let artistName = fields["albumartist"] ?? fields["artist"] ?? "Unknown Artist"
+        let artistName = fields["albumartist"] ?? fields["artist"]
+            ?? "Unknown Artist"
 
         switch type {
         case .song:
             let song = Song(
-                url: url,
+                file: file,
                 identifier: fields["id"].flatMap { UInt32($0) },
                 position: fields["pos"].flatMap { UInt32($0) }
                     ?? index.map { UInt32($0) },
@@ -756,11 +754,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 track: fields["track"].flatMap { Int($0) } ?? 1,
                 genre: fields["genre"],
                 album: Album(
-                    url: url,
+                    file: file,
                     title: fields["album"] ?? "Unknown Album",
                     genre: fields["genre"],
                     artist: Artist(
-                        url: url,
+                        file: file,
                         name: artistName,
                     ),
                 ),
@@ -769,11 +767,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
             return try castResult(song)
         case .album:
             let album = Album(
-                url: url,
+                file: file,
                 title: fields["album"] ?? "Unknown Album",
                 genre: fields["genre"],
                 artist: Artist(
-                    url: url,
+                    file: file,
                     name: artistName,
                 ),
             )
@@ -781,7 +779,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             return try castResult(album)
         case .artist:
             let artist = Artist(
-                url: url,
+                file: file,
                 name: artistName,
             )
 
@@ -808,9 +806,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            song's position.
     /// - Returns: An array of media objects, each cast to the generic type `T`.
     /// - Throws: An error if parsing of any chunk fails.
-    @concurrent
-    private nonisolated func parseMediaResponse<T>(_ lines: [String], as type:
-        MediaType, index: Bool = false) async throws -> [T]
+    private nonisolated func parseMediaResponseArray<T>(_ lines: [String],
+                                                        as type: MediaType,
+                                                        index: Bool = false)
+        throws -> [T]
     {
         let chunks = chunkLines(lines, startingWith: "file")
 
@@ -907,7 +906,7 @@ extension ConnectionManager {
     {
         let lines = try await run(["find \(filter(key: "track", value: "1")) sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
 
-        let albums: [Album] = try await parseMediaResponse(lines, as: .album)
+        let albums: [Album] = try parseMediaResponseArray(lines, as: .album)
 
         var seen: Set<String> = []
         var unique: [Album] = []
@@ -946,7 +945,7 @@ extension ConnectionManager {
                 "Only database and queue sources are supported for retrieving albums by artist")
         }
 
-        let albums: [Album] = try await parseMediaResponse(lines, as: .album)
+        let albums: [Album] = try parseMediaResponseArray(lines, as: .album)
 
         var seen: Set<String> = []
         var unique: [Album] = []
@@ -1012,7 +1011,7 @@ extension ConnectionManager {
             try await run(["listplaylistinfo \(escape(source.playlist!.name))"])
         }
 
-        return try await parseMediaResponse(lines, as: .song, index: true)
+        return try parseMediaResponseArray(lines, as: .song, index: true)
     }
 
     /// Retrieves songs from the database or queue that match a specific album.
@@ -1037,7 +1036,7 @@ extension ConnectionManager {
                 "Only database and queue sources are supported for retrieving songs in an album")
         }
 
-        return try await parseMediaResponse(lines, as: .song)
+        return try parseMediaResponseArray(lines, as: .song)
     }
 
     /// Retrieves all playlists.
@@ -1118,22 +1117,22 @@ extension ConnectionManager where Mode == ArtworkMode {
         return manager
     }
 
-    /// Retrieves the complete artwork data for a given URL by fetching it in
+    /// Retrieves the complete artwork data for a given file by fetching it in
     /// chunks from the media server.
     ///
-    /// - Parameter url: The URL representing the artwork resource on the
-    ///                  server.
+    /// - Parameter file: The file path representing the artwork resource on
+    ///                   the server.
     /// - Returns: A `Data` object containing the complete binary artwork data.
     /// - Throws: An error if the server response is malformed, if the read
     ///           operation fails, or if other connection related errors occur.
-    func getArtworkData(for url: URL) async throws -> Data {
+    func getArtworkData(for file: String) async throws -> Data {
         var data = Data()
         var offset = 0
         var totalSize: Int?
 
         loop: while true {
             let artworkGetterRaw = UserDefaults.standard.string(forKey: Setting.artworkGetter) ?? ArtworkGetter.library.rawValue
-            try await writeLine("\(artworkGetterRaw) \(escape(url.path)) \(offset)")
+            try await writeLine("\(artworkGetterRaw) \(escape(file)) \(offset)")
 
             var chunkSize: Int?
 
@@ -1282,14 +1281,14 @@ extension ConnectionManager where Mode == CommandMode {
 
         let existingSongs = try await getSongs(from: source)
         let songsToAdd = songs.filter { song in
-            !existingSongs.contains { $0.url == song.url }
+            !existingSongs.contains { $0.file == song.file }
         }
 
         let commands: [String]
         switch source {
         case .queue:
             commands = songsToAdd.map {
-                "add \(escape($0.url.path))"
+                "add \(escape($0.file))"
             }
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
@@ -1298,7 +1297,7 @@ extension ConnectionManager where Mode == CommandMode {
             }
 
             commands = songsToAdd.map {
-                "playlistadd \(playlist.name) \(escape($0.url.path))"
+                "playlistadd \(playlist.name) \(escape($0.file))"
             }
         case .database:
             throw ConnectionManagerError.unsupportedOperation(
@@ -1320,10 +1319,10 @@ extension ConnectionManager where Mode == CommandMode {
         }
 
         let sourceSongs = try await getSongs(from: source)
-        let urls = songs.map(\.url)
+        let filesToRemove = Set(songs.map(\.file))
         let positions = sourceSongs
             .compactMap { song in
-                urls.contains(song.url) ? song.position : nil
+                filesToRemove.contains(song.file) ? song.position : nil
             }
             .sorted(by: >)
 
@@ -1428,7 +1427,7 @@ extension ConnectionManager where Mode == CommandMode {
             songs = try await getSongs(in: album, from: .database)
         case let artist as Artist:
             let lines = try await run(["find \(filter(key: "artist", value: artist.name))"])
-            songs = try await parseMediaResponse(lines, as: .song)
+            songs = try parseMediaResponseArray(lines, as: .song)
         case let song as Song:
             songs = [song]
         default:
@@ -1447,12 +1446,12 @@ extension ConnectionManager where Mode == CommandMode {
         var commands = [String]()
 
         for (index, song) in songs.enumerated() {
-            if let existingSong = queue.first(where: { $0.url == song.url }) {
+            if let existingSong = queue.first(where: { $0.file == song.file }) {
                 if index == 0 {
                     id = existingSong.identifier
                 }
             } else {
-                commands.append("addid \(escape(song.url.path))")
+                commands.append("addid \(escape(song.file))")
             }
         }
 

@@ -304,6 +304,7 @@ actor IntelligenceManager {
 
             let result = try await group.next()!
             group.cancelAll()
+
             return result
         }
     }

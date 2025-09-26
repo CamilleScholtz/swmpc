@@ -65,7 +65,7 @@ struct Delegate: App {
                         return
                     }
 
-                    let isFavorited = appDelegate.mpd.playlists.favorites.contains { $0.url == song.url }
+                    let isFavorited = appDelegate.mpd.playlists.favorites.contains { $0.file == song.file }
 
                     if isFavorited {
                         try await ConnectionManager.command().remove(songs: [song], from: .favorites)
@@ -379,7 +379,7 @@ struct Delegate: App {
                         return
                     }
 
-                    let isFavorited = mpd.playlists.favorites.contains { $0.url == song.url }
+                    let isFavorited = mpd.playlists.favorites.contains { $0.file == song.file }
 
                     if isFavorited {
                         try? await ConnectionManager.command().remove(songs: [song], from: .favorites)

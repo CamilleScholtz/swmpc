@@ -227,4 +227,3 @@ enum ContentDestination: Identifiable, Hashable {
         case playlist(Playlist)
     #endif
 }
-

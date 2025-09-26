@@ -15,8 +15,8 @@ import SwiftUI
 actor ArtworkManager {
     static let shared = ArtworkManager()
 
-    private let cache = NSCache<NSURL, NSData>()
-    private var tasks: [URL: Task<Data, Error>] = [:]
+    private let cache = NSCache<NSString, NSData>()
+    private var tasks: [String: Task<Data, Error>] = [:]
 
     /// Private initializer to enforce singleton pattern. Sets up the cache with
     /// a 64MB memory limit.
@@ -28,53 +28,53 @@ actor ArtworkManager {
     /// deduplication.
     ///
     /// This function first checks the in-memory cache for the artwork. If not
-    /// found, it checks if a fetch task for the same URL is already in
+    /// found, it checks if a fetch task for the same file is already in
     /// progress. If so, it awaits the result of that task. Otherwise, it
     /// creates a new task to fetch the data from the network.
     ///
     /// - Parameters:
-    ///   - url: The URL of the artwork to fetch.
+    ///   - file: The file path of the artwork to fetch.
     ///   - shouldCache: A Boolean indicating whether to store the fetched data
     ///                  in the in-memory cache. Defaults to `true`.
     /// - Returns: The artwork data.
     /// - Throws: An error if the artwork data cannot be fetched.
-    func get(for url: URL, shouldCache: Bool = true) async throws ->
+    func get(for file: String, shouldCache: Bool = true) async throws ->
         Data
     {
         try Task.checkCancellation()
 
-        if shouldCache, let data = cache.object(forKey: url as NSURL) {
+        if shouldCache, let data = cache.object(forKey: file as NSString) {
             return data as Data
         }
 
-        if let existingTask = tasks[url] {
+        if let existingTask = tasks[file] {
             return try await existingTask.value
         }
 
-        let task = createFetchTask(for: url, priority: .high,
+        let task = createFetchTask(for: file, priority: .high,
                                    shouldCache: shouldCache)
-        tasks[url] = task
+        tasks[file] = task
 
-        defer { tasks.removeValue(forKey: url) }
+        defer { tasks.removeValue(forKey: file) }
 
         return try await task.value
     }
 
     /// Creates and returns a new `Task` to fetch artwork data for a specific
-    /// URL.
+    /// file.
     ///
     /// The created task creates a new connection for each fetch operation,
     /// retrieves the artwork data, and properly cleans up the connection.
     /// The task also handles caching if `shouldCache` is true.
     ///
     /// - Parameters:
-    ///   - url: The URL of the artwork to fetch.
+    ///   - file: The file path of the artwork to fetch.
     ///   - priority: The `TaskPriority` for the fetch operation.
     ///   - shouldCache: A Boolean indicating whether to cache the fetched data
     ///                  upon successful completion.
     /// - Returns: A `Task` that will produce the artwork `Data` or throw an
     ///            `Error`.
-    private func createFetchTask(for url: URL, priority: TaskPriority,
+    private func createFetchTask(for file: String, priority: TaskPriority,
                                  shouldCache: Bool) -> Task<Data, Error>
     {
         Task(priority: priority) {
@@ -83,13 +83,13 @@ actor ArtworkManager {
             let connection = try await ConnectionManager<ArtworkMode>.artwork()
 
             do {
-                let data = try await connection.getArtworkData(for: url)
+                let data = try await connection.getArtworkData(for: file)
                 await connection.disconnect()
 
                 try Task.checkCancellation()
 
                 if shouldCache {
-                    storeInCache(data, for: url)
+                    storeInCache(data, for: file)
                 }
 
                 return data
@@ -103,8 +103,8 @@ actor ArtworkManager {
     /// Stores artwork data in the cache.
     /// - Parameters:
     ///   - data: The artwork data to cache.
-    ///   - url: The URL key for the cached data.
-    private func storeInCache(_ data: Data, for url: URL) {
-        cache.setObject(data as NSData, forKey: url as NSURL, cost: data.count)
+    ///   - file: The file path key for the cached data.
+    private func storeInCache(_ data: Data, for file: String) {
+        cache.setObject(data as NSData, forKey: file as NSString, cost: data.count)
     }
 }

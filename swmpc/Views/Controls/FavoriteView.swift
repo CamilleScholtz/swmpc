@@ -45,14 +45,14 @@ struct FavoriteView: View {
                 return
             }
 
-            isFavorited = mpd.playlists.favorites.contains { $0.url == song.url }
+            isFavorited = mpd.playlists.favorites.contains { $0.file == song.file }
         }
         .onChange(of: mpd.playlists.favorites) { _, value in
             guard let song = mpd.status.song else {
                 return
             }
 
-            isFavorited = value.contains { $0.url == song.url }
+            isFavorited = value.contains { $0.file == song.file }
         }
     }
 }
