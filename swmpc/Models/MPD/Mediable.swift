@@ -233,6 +233,10 @@ nonisolated struct SortDescriptor: RawRepresentable, Equatable, Hashable {
     /// The direction of the sort (ascending or descending).
     let direction: SortDirection
 
+    /// The default sort descriptor, sorting by artist in ascending order.
+    static let `default` = SortDescriptor(option: .artist, direction:
+        .ascending)
+
     /// Creates a sort descriptor with the specified option and direction.
     ///
     /// - Parameters:
@@ -247,15 +251,17 @@ nonisolated struct SortDescriptor: RawRepresentable, Equatable, Hashable {
     ///
     /// The expected format is "option_direction" where direction is either
     /// "ascending" or "descending". If direction is omitted, defaults to
-    /// ascending.
+    /// ascending. Returns the default descriptor if parsing fails.
     ///
     /// - Parameter rawValue: The string representation of the sort descriptor.
-    init?(rawValue: String) {
+    init(rawValue: String) {
         let components = rawValue.split(separator: "_")
         guard let first = components.first,
               let option = SortOption(rawValue: String(first))
         else {
-            return nil
+            self = .default
+
+            return
         }
 
         self.option = option

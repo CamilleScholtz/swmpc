@@ -65,9 +65,9 @@ struct CategoryDatabaseView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    @AppStorage(Setting.albumSortOption) private var albumSort = SortDescriptor(option: .artist)
-    @AppStorage(Setting.artistSortOption) private var artistSort = SortDescriptor(option: .artist)
-    @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor(option: .album)
+    @AppStorage(Setting.albumSortOption) private var albumSort = SortDescriptor.default
+    @AppStorage(Setting.artistSortOption) private var artistSort = SortDescriptor.default
+    @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor.default
 
     @Binding var isSearchFieldExpanded: Bool
 
@@ -88,7 +88,7 @@ struct CategoryDatabaseView: View {
         case .albums: albumSort
         case .artists: artistSort
         case .songs: songSort
-        default: SortDescriptor(option: .artist)
+        default: SortDescriptor.default
         }
     }
 

@@ -901,8 +901,8 @@ extension ConnectionManager {
     ///                   direction for sorting albums.
     /// - Returns: An array of unique `Album` objects.
     /// - Throws: An error if the command fails or the response is malformed.
-    func getAlbums(sort: SortDescriptor = SortDescriptor(option: .artist)) async
-        throws -> [Album]
+    func getAlbums(sort: SortDescriptor = SortDescriptor.default) async throws
+        -> [Album]
     {
         let lines = try await run(["find \(filter(key: "track", value: "1")) sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
 
@@ -969,8 +969,8 @@ extension ConnectionManager {
     ///                   indirectly affects the artist order.
     /// - Returns: An array of unique `Artist` objects.
     /// - Throws: An error if the underlying album lookup fails.
-    func getArtists(sort: SortDescriptor = SortDescriptor(option: .artist))
-        async throws -> [Artist]
+    func getArtists(sort: SortDescriptor = SortDescriptor.default) async throws
+        -> [Artist]
     {
         let albums = try await getAlbums(sort: sort)
 
@@ -999,8 +999,8 @@ extension ConnectionManager {
     /// - Returns: An array of `Song` objects from the specified source.
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
-    func getSongs(from source: Source, sort: SortDescriptor = SortDescriptor(
-        option: .artist)) async throws -> [Song]
+    func getSongs(from source: Source, sort: SortDescriptor = SortDescriptor
+        .default) async throws -> [Song]
     {
         let lines = switch source {
         case .database:

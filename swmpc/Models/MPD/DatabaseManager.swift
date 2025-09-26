@@ -29,7 +29,7 @@ import SwiftUI
     private(set) var type: MediaType = .album
 
     /// The current sort option being used.
-    private(set) var sort: SortDescriptor = .init(option: .artist)
+    private(set) var sort: SortDescriptor = .default
 
     /// Sets the media type and/or sort descriptor and fetches corresponding
     /// media from MPD.
