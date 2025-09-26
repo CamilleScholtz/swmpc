@@ -21,7 +21,11 @@ import SwiftUI
 #endif
 
 struct SettingsView: View {
-    enum SettingCategory: String, Identifiable {
+    #if os(macOS)
+        @State private var selection: SettingCategory? = .connection
+    #endif
+
+    private enum SettingCategory: String, Identifiable {
         case connection = "Connection"
         #if os(macOS)
             case behavior = "Behavior"
@@ -52,28 +56,25 @@ struct SettingsView: View {
             }
         }
 
-        var view: AnyView {
+        @ViewBuilder
+        var view: some View {
             switch self {
             case .connection:
-                AnyView(ConnectionView())
+                ConnectionView()
             #if os(macOS)
                 case .behavior:
-                    AnyView(BehaviorView())
+                    BehaviorView()
             #endif
             case .intelligence:
-                AnyView(IntelligenceView())
+                IntelligenceView()
             }
         }
     }
 
-    #if os(macOS)
-        @State private var selection: SettingCategory? = .connection
-    #endif
-
     var body: some View {
         #if os(iOS)
-            NavigationView {
-                Form {
+            NavigationStack {
+                List {
                     ForEach(SettingCategory.allCases) { category in
                         NavigationLink(destination: category.view
                             .navigationTitle(category.title)
@@ -182,7 +183,7 @@ struct SettingsView: View {
                             )
                     }
                 } footer: {
-                    Text("Leave passwrod field empty if no password is set. Click Connect to test the connection and apply changes.")
+                    Text("Leave password field empty if no password is set. Click Connect to test the connection and apply changes.")
                     #if os(macOS)
                         .font(.caption)
                         .foregroundColor(.secondary)

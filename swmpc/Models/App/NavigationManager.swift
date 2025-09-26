@@ -25,6 +25,11 @@ import SwiftUI
         }
     }
 
+    #if os(iOS)
+        /// Controls the presentation of the settings sheet on iOS.
+        var showSettingsSheet = false
+    #endif
+
     /// Tracks the content destinations in the path for duplicate prevention.
     private var pathContents: [ContentDestination] = []
 
@@ -72,6 +77,18 @@ import SwiftUI
         path = NavigationPath()
         pathContents = []
     }
+
+    #if os(iOS)
+        /// Shows the settings sheet on iOS.
+        func showSettings() {
+            showSettingsSheet = true
+        }
+
+        /// Hides the settings sheet on iOS.
+        func hideSettings() {
+            showSettingsSheet = false
+        }
+    #endif
 
     /// Synchronizes the pathContents array with the actual NavigationPath count.
     /// This ensures our tracking stays in sync when SwiftUI modifies the path directly
@@ -210,3 +227,4 @@ enum ContentDestination: Identifiable, Hashable {
         case playlist(Playlist)
     #endif
 }
+

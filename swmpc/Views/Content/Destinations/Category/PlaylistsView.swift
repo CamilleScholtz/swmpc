@@ -144,7 +144,12 @@ struct PlaylistsView: View {
             .padding(.horizontal, Layout.Padding.large)
             .padding(.vertical, 10)
         }
-        .background(Color(.systemBackground))
+        .task {
+            mpd.state.isLoading = true
+
+            try? await Task.sleep(for: .milliseconds(200))
+            mpd.state.isLoading = false
+        }
         .alert("Delete Playlist", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {
                 playlistToDelete = nil
@@ -163,7 +168,20 @@ struct PlaylistsView: View {
             }
         } message: {
             if let playlist = playlistToDelete {
-                Text("Are you sure you want to delete playlist ’\(playlist.name)’?")
+                Text("Are you sure you want to delete playlist '\(playlist.name)'?")
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button {
+                        navigator.showSettings()
+                    } label: {
+                        Label("Settings", systemSymbol: .gearshape)
+                    }
+                } label: {
+                    Image(systemSymbol: .ellipsis)
+                }
             }
         }
     }

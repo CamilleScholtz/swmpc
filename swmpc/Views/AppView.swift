@@ -23,7 +23,6 @@ struct AppView: View {
 
     #if os(iOS)
         @State private var showDetailCover = false
-        @State private var showSettingsSheet = false
     #elseif os(macOS)
         @State private var showQueuePanel = false
     #endif
@@ -45,7 +44,7 @@ struct AppView: View {
                                 // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
                                 Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
                                     NavigationStack(path: $boundNavigator.path) {
-                                        CategoryDestinationView(showSettingsSheet: $showSettingsSheet)
+                                        CategoryDestinationView()
                                             .navigationDestination(for: ContentDestination.self) { destination in
                                                 ContentDestinationView(destination: destination)
                                             }
@@ -76,7 +75,7 @@ struct AppView: View {
                             .mediaListStyle()
                             .navigationTransition(.zoom(sourceID: 1, in: namespace))
                         }
-                        .sheet(isPresented: $showSettingsSheet) {
+                        .sheet(isPresented: $boundNavigator.showSettingsSheet) {
                             SettingsView()
                         }
                     #elseif os(macOS)

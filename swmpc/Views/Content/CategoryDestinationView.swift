@@ -15,10 +15,6 @@ struct CategoryDestinationView: View {
         @Environment(\.controlActiveState) private var controlActiveState
     #endif
 
-    #if os(iOS)
-        @Binding var showSettingsSheet: Bool
-    #endif
-
     @State private var isSearchFieldExpanded = false
 
     var body: some View {
@@ -31,11 +27,7 @@ struct CategoryDestinationView: View {
             default:
                 switch navigator.category.source {
                 case .database:
-                    #if os(iOS)
-                        CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded, showSettingsSheet: $showSettingsSheet)
-                    #elseif os(macOS)
-                        CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
-                    #endif
+                    CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
                 case .favorites:
                     CategoryPlaylistView(playlist: navigator.category.source.playlist!)
                 case .playlist:
@@ -78,10 +70,6 @@ struct CategoryDatabaseView: View {
     @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor(option: .album)
 
     @Binding var isSearchFieldExpanded: Bool
-
-    #if os(iOS)
-        @Binding var showSettingsSheet: Bool
-    #endif
 
     @State private var scrollTarget: ScrollTarget?
 
@@ -337,7 +325,7 @@ struct CategoryDatabaseView: View {
 
             #if os(iOS)
                 Button {
-                    showSettingsSheet = true
+                    navigator.showSettings()
                 } label: {
                     Label("Settings", systemSymbol: .gearshape)
                 }
