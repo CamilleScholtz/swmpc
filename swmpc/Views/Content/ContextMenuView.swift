@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import SFSafeSymbols
 import SwiftUI
 
 struct ContextMenuView<Media: Mediable>: View {
@@ -128,7 +129,7 @@ struct SourceToggleButton<Media: Mediable>: View {
         }
     }
 
-    private var actionName: LocalizedStringResource {
+    private var action: LocalizedStringResource {
         if let forceAction {
             switch forceAction {
             case .add: "Add"
@@ -139,23 +140,23 @@ struct SourceToggleButton<Media: Mediable>: View {
         }
     }
 
-    private var actionIcon: String {
+    private var symbol: SFSymbol {
         switch source {
         case .queue:
             if let forceAction {
                 switch forceAction {
-                case .add: "plus.circle"
-                case .remove: "minus.circle"
+                case .add: .plusCircle
+                case .remove: .minusCircle
                 }
             } else {
-                "music.note.list"
+                .musicNoteList
             }
         case .favorites:
-            "heart"
+            .heart
         case .playlist:
-            "music.note.list"
+            .musicNoteList
         default:
-            "plus.circle"
+            .plusCircle
         }
     }
 
@@ -166,14 +167,14 @@ struct SourceToggleButton<Media: Mediable>: View {
 
         return switch source {
         case .playlist:
-            String(localized: "\(String(localized: actionName)) \(String(localized: mediaTypeName)) from Playlist")
+            String(localized: "\(String(localized: action)) \(String(localized: mediaTypeName)) from Playlist")
         default:
-            String(localized: "\(String(localized: actionName)) \(String(localized: mediaTypeName)) from \(String(localized: sourceName))")
+            String(localized: "\(String(localized: action)) \(String(localized: mediaTypeName)) from \(String(localized: sourceName))")
         }
     }
 
     var body: some View {
-        AsyncButton(computedTitle, systemImage: actionIcon) {
+        AsyncButton(computedTitle, systemImage: symbol.rawValue) {
             let songs: [Song]
 
             switch media {

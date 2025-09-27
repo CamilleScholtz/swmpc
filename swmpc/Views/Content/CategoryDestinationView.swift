@@ -372,6 +372,8 @@ struct CategoryPlaylistView: View {
 
     private let fillIntelligencePlaylistNotification = NotificationCenter.default
         .publisher(for: .fillIntelligencePlaylistNotification)
+    private let playlistModifiedNotification = NotificationCenter.default
+        .publisher(for: .playlistModifiedNotification)
 
     var body: some View {
         Group {
@@ -439,6 +441,16 @@ struct CategoryPlaylistView: View {
             }
             playlistToEdit = playlist
             showIntelligencePlaylistSheet = true
+        }
+        .onReceive(playlistModifiedNotification) { _ in
+            Task(priority: .userInitiated) {
+                if playlist.name == "Favorites" {
+                    try? await mpd.playlists.set(idle: false)
+                    songs = mpd.playlists.favorites
+                } else {
+                    songs = try? await mpd.playlists.getSongs(for: playlist)
+                }
+            }
         }
         .sheet(isPresented: $showIntelligencePlaylistSheet) {
             IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
