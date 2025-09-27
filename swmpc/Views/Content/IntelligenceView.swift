@@ -191,38 +191,44 @@ struct IntelligenceView: View {
             }
         }
         .padding(Layout.Padding.large)
-        .frame(width: Layout.Size.intelligenceViewWidth, height: Layout.Size.intelligenceViewWidth / 1.68)
-        .background {
-            LinearGradient(
-                colors: colors.map { $0.opacity(colorScheme == .dark ? 0.6 : 0.8) },
-                startPoint: UnitPoint(x: colorOffset, y: 0),
-                endPoint: UnitPoint(
-                    x: CGFloat(colors.count) + colorOffset,
-                    y: 0,
-                ),
-            )
-            .mask(
-                RadialGradient(
-                    colors: [
-                        .black,
-                        .clear,
-                    ],
-                    center: .init(x: 0.5, y: 0.1),
-                    startRadius: 0,
-                    endRadius: Layout.Size.intelligenceViewWidth / 2 + 30,
-                )
-                .blur(radius: 50),
-            )
+        #if os(iOS)
+            .frame(maxHeight: .infinity)
+            .presentationDetents([.medium])
             .ignoresSafeArea()
-        }
-        .onAppear {
-            withAnimation(
-                .linear(duration: 15)
-                    .repeatForever(autoreverses: false),
-            ) {
-                colorOffset = -CGFloat(colors.count - 1)
+        #elseif os(macOS)
+            .frame(width: Layout.Size.intelligenceViewWidth, height: Layout.Size.intelligenceViewWidth / 1.68)
+        #endif
+            .background {
+                LinearGradient(
+                    colors: colors.map { $0.opacity(colorScheme == .dark ? 0.6 : 0.8) },
+                    startPoint: UnitPoint(x: colorOffset, y: 0),
+                    endPoint: UnitPoint(
+                        x: CGFloat(colors.count) + colorOffset,
+                        y: 0,
+                    ),
+                )
+                .mask(
+                    RadialGradient(
+                        colors: [
+                            .black,
+                            .clear,
+                        ],
+                        center: .init(x: 0.5, y: 0.1),
+                        startRadius: 0,
+                        endRadius: Layout.Size.intelligenceViewWidth / 2 + 30,
+                    )
+                    .blur(radius: 50),
+                )
+                .ignoresSafeArea()
             }
-        }
-        .animation(.spring, value: isLoading)
+            .onAppear {
+                withAnimation(
+                    .linear(duration: 15)
+                        .repeatForever(autoreverses: false),
+                ) {
+                    colorOffset = -CGFloat(colors.count - 1)
+                }
+            }
+            .animation(.spring, value: isLoading)
     }
 }
