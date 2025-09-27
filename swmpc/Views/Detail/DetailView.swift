@@ -89,7 +89,7 @@ struct DetailView: View {
                         Button("Fill Queue with AI", systemSymbol: .sparkles) {
                             NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
                         }
-                        .disabled(!IntelligenceManager.shared.isEnabled)
+                        .disabled(!IntelligenceManager.isEnabled)
                     }
                 }
 

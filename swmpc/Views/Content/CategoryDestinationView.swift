@@ -403,7 +403,7 @@ struct CategoryPlaylistView: View {
                     Button("Fill playlist with AI", systemSymbol: .sparkles) {
                         NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
                     }
-                    .disabled(!IntelligenceManager.shared.isEnabled)
+                    .disabled(!IntelligenceManager.isEnabled)
                 }
             } else {
                 ToolbarItem {

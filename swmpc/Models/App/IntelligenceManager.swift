@@ -29,7 +29,7 @@ enum IntelligenceTarget {
 }
 
 /// Configuration for an AI model provider.
-struct ModelConfig {
+nonisolated struct ModelConfig {
     /// Display name for the model provider.
     let name: String
     /// Specific model identifier to use.
@@ -45,7 +45,7 @@ struct ModelConfig {
 }
 
 /// Available AI model providers for generating playlists.
-enum IntelligenceModel: String, Identifiable, CaseIterable {
+nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
     var id: String { rawValue }
 
     case openAI
@@ -139,16 +139,17 @@ actor IntelligenceManager {
 
     private init() {}
 
-    /// Checks if intelligence mode is enabled (setting enabled and token not empty).
-    nonisolated var isEnabled: Bool {
-        MainActor.assumeIsolated {
-            let settingEnabled = UserDefaults.standard.bool(forKey: Setting.isIntelligenceEnabled)
-            let model = UserDefaults.standard.string(forKey: Setting.intelligenceModel)
-                .flatMap { IntelligenceModel(rawValue: $0) } ?? .openAI
-            let token = UserDefaults.standard.string(forKey: model.setting) ?? ""
+    /// Checks if intelligence mode is enabled (setting enabled and token not
+    /// empty).
+    static var isEnabled: Bool {
+        let settingEnabled = UserDefaults.standard.bool(forKey: Setting
+            .isIntelligenceEnabled)
+        let model = UserDefaults.standard.string(forKey: Setting
+            .intelligenceModel)
+            .flatMap { IntelligenceModel(rawValue: $0) } ?? .openAI
+        let token = UserDefaults.standard.string(forKey: model.setting) ?? ""
 
-            return settingEnabled && !token.isEmpty
-        }
+        return settingEnabled && !token.isEmpty
     }
 
     /// Creates an OpenAI client configured for the specified model provider.
@@ -159,21 +160,13 @@ actor IntelligenceManager {
     ///           intelligence is disabled,
     ///           `IntelligenceManagerError.missingToken` if API token is not
     ///           configured.
-    private func connect(using model: IntelligenceModel) async throws -> OpenAI {
-        guard isEnabled else {
+    private func connect(using model: IntelligenceModel) throws -> OpenAI {
+        guard Self.isEnabled else {
             throw IntelligenceManagerError.intelligenceDisabled
         }
 
-        let token = await MainActor.run {
-            UserDefaults.standard.string(forKey: model.setting) ?? ""
-        }
-
-        guard !token.isEmpty else {
-            throw IntelligenceManagerError.missingToken
-        }
-
-        return await OpenAI(configuration: OpenAI.Configuration(
-            token: token,
+        return OpenAI(configuration: OpenAI.Configuration(
+            token: UserDefaults.standard.string(forKey: model.setting) ?? "",
             host: model.host,
             basePath: model.path,
             parsingOptions: .fillRequiredFieldIfKeyNotFound,

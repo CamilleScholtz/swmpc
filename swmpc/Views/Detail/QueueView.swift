@@ -107,7 +107,7 @@ struct QueueView: View {
                         } label: {
                             Image(systemSymbol: .sparkles)
                         }
-                        .disabled(!IntelligenceManager.shared.isEnabled)
+                        .disabled(!IntelligenceManager.isEnabled)
                     }
                 }
                 .buttonStyle(.glass)
