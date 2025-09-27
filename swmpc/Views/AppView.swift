@@ -75,9 +75,6 @@ struct AppView: View {
                             .mediaListStyle()
                             .navigationTransition(.zoom(sourceID: 1, in: namespace))
                         }
-                        .sheet(isPresented: $boundNavigator.showSettingsSheet) {
-                            SettingsView()
-                        }
                     #elseif os(macOS)
                         NavigationSplitView {
                             SidebarView()
@@ -149,7 +146,11 @@ struct AppView: View {
         .onDisappear {
             mpd.status.stopTrackingElapsed()
         }
-        #if os(macOS)
+        #if os(iOS)
+        .sheet(isPresented: $boundNavigator.showSettingsSheet) {
+            SettingsView()
+        }
+        #elseif os(macOS)
         .frame(minWidth: Layout.Size.sidebarWidth + Layout.Size.contentWidth + Layout.Size.detailWidth, minHeight: Layout.Size.detailWidth)
         #endif
     }

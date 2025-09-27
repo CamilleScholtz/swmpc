@@ -105,6 +105,9 @@ struct SettingsView: View {
 
     struct ConnectionView: View {
         @Environment(MPD.self) private var mpd
+        #if os(iOS)
+            @Environment(NavigationManager.self) private var navigator
+        #endif
 
         @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
@@ -153,7 +156,13 @@ struct SettingsView: View {
                         SettingsLabel("MPD Password")
                     })
                     .help("Password for MPD server authentication")
+                } footer: {
+                    #if os(iOS)
+                        Text("Leave empty if no password is set.")
+                    #endif
+                }
 
+                Section {
                     HStack {
                         AsyncButton("Connect") {
                             connectionStatus = .connecting
@@ -167,6 +176,10 @@ struct SettingsView: View {
 
                             updateConnectionStatus()
                         }
+
+                        #if os(iOS)
+                            Spacer()
+                        #endif
 
                         Circle()
                             .fill(connectionStatus.color)
@@ -189,12 +202,14 @@ struct SettingsView: View {
                             )
                     }
                 } footer: {
-                    Text("Leave password field empty if no password is set. Click Connect to test the connection and apply changes.")
-                    #if os(macOS)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 1)
+                    #if os(iOS)
+                        Text("Test connection and apply settings.")
+                    #elseif os(macOS)
+                        Text("Leave password field empty if no password is set. Click Connect to test the connection and apply changes.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 1)
                     #endif
                 }
 
@@ -209,7 +224,9 @@ struct SettingsView: View {
                         Text("Embedded").tag(ArtworkGetter.embedded)
                     }
                     .help("Choose how to retrieve album artwork")
-                    #if os(macOS)
+                    #if os(iOS)
+                        .pickerStyle(.navigationLink)
+                    #else
                         .pickerStyle(.inline)
                     #endif
                 } footer: {
@@ -298,7 +315,7 @@ struct SettingsView: View {
                     }
                     .help("Enable AI-powered features for playlist generation")
                 } footer: {
-                    Text("Currently used for smart playlist and queue generation.")
+                    Text("Powers smart playlist and queue generation using AI.")
                     #if os(macOS)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -315,17 +332,29 @@ struct SettingsView: View {
                 Section {
                     Picker(selection: $intelligenceModel, label: SettingsLabel("Model")) {
                         ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
-                            HStack {
-                                Text(model.name)
-                                Text(model.model)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .tag(model)
+                            #if os(iOS)
+                                VStack(alignment: .leading) {
+                                    Text(model.name)
+                                    Text(model.model)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .tag(model)
+                            #elseif os(macOS)
+                                HStack {
+                                    Text(model.name)
+                                    Text(model.model)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .tag(model)
+                            #endif
                         }
                     }
                     .help("Select the AI model to use for intelligent features")
-                    #if os(macOS)
+                    #if os(iOS)
+                        .pickerStyle(.navigationLink)
+                    #elseif os(macOS)
                         .pickerStyle(.inline)
                     #endif
                         .disabled(!isIntelligenceEnabled)
@@ -338,6 +367,9 @@ struct SettingsView: View {
                     .disabled(!isIntelligenceEnabled)
                 }
             }
+            #if os(iOS)
+            .listStyle(.insetGrouped)
+            #endif
             .onAppear {
                 @AppStorage(intelligenceModel.setting) var token = ""
                 intelligenceToken = token
