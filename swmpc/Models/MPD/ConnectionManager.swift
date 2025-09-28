@@ -13,46 +13,27 @@ import SwiftUI
 /// MPD server. Each mode can have different performance characteristics and
 /// buffer sizes.
 protocol ConnectionMode: Sendable {
-    /// A label identifying the connection mode.
-    nonisolated static var label: String { get }
-    /// Whether to enable TCP keepalive for this connection.
-    nonisolated static var enableKeepalive: Bool { get }
     /// The buffer size to use for reading data.
     nonisolated static var bufferSize: Int { get }
-    /// The dispatch queue attributes for this connection mode.
-    nonisolated static var queueAttributes: DispatchQueue.Attributes { get }
-    /// The quality of service level for operations.
-    nonisolated static var qos: DispatchQoS { get }
+
 }
 
 /// Connection mode for idle operations that listen for MPD server events.
 /// Uses keepalive to maintain long-lived connections.
 nonisolated enum IdleMode: ConnectionMode {
-    static let label = "idle"
-    static let enableKeepalive = true
     static let bufferSize = 4096
-    static let queueAttributes: DispatchQueue.Attributes = []
-    static let qos: DispatchQoS = .utility
 }
 
 /// Connection mode for artwork retrieval operations.
 /// Uses larger buffers and concurrent queue for efficient image data transfer.
 nonisolated enum ArtworkMode: ConnectionMode {
-    static let label = "artwork"
-    static let enableKeepalive = false
     static let bufferSize = 8192
-    static let queueAttributes: DispatchQueue.Attributes = []
-    static let qos: DispatchQoS = .utility
 }
 
 /// Connection mode for executing MPD commands.
 /// Optimized for quick command execution with higher priority.
 nonisolated enum CommandMode: ConnectionMode {
-    static let label = "command"
-    static let enableKeepalive = false
     static let bufferSize = 4096
-    static let queueAttributes: DispatchQueue.Attributes = []
-    static let qos: DispatchQoS = .userInitiated
 }
 
 /// Errors that can occur during MPD connection management.
@@ -108,17 +89,8 @@ enum ConnectionManagerError: LocalizedError {
 /// - Thread-safe operation using Swift actors
 actor ConnectionManager<Mode: ConnectionMode> {
     /// The underlying network connection to the MPD server.
-    private var connection: NWConnection?
-
-    /// Dispatch queue for network operations configured based on the connection
-    /// mode.
-    private let connectionQueue = DispatchQueue(
-        label: "com.camille.swmpc.connection.\(Mode.label)",
-        qos: Mode.qos,
-        attributes: Mode.queueAttributes,
-        target: .global(qos: Mode.qos.qosClass),
-    )
-
+    private var connection: NetworkConnection<TCP>?
+    
     /// Buffer for accumulating incoming data from the network connection.
     private var buffer = Deque<UInt8>()
 
@@ -129,8 +101,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     // to actor-isolated instance method 'disconnect()' in a synchronous
     // nonisolated context` error. The existing approach is reasonable.
     deinit {
-        connection?.stateUpdateHandler = nil
-        connection?.cancel()
         connection = nil
 
         buffer.removeAll(keepingCapacity: false)
@@ -139,9 +109,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Establishes a TCP connection to the MPD server.
     ///
     /// This asynchronous function sets up a new network connection using
-    /// `NWConnection` with TCP options configured for no-delay, and keepalive
-    /// depending on the `ConnectionMode`. If a connection is already active
-    /// (i.e. in the `.ready` state), the function returns immediately.
+    /// `NetworkConnection` with TCP options configured for no-delay.
     ///
     /// - Throws: `ConnectionManagerError.invalidPort` if the port is
     ///           invalid, `ConnectionManagerError.connectionSetupFailed` if the
@@ -150,40 +118,31 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///           `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
     func connect() async throws {
-        guard connection?.state != .ready else {
+        guard connection == nil else {
             return
         }
 
-        let options = NWProtocolTCP.Options()
-        options.noDelay = true
-        options.enableKeepalive = Mode.enableKeepalive
-
-        var portNumber = UserDefaults.standard.integer(forKey: Setting.port)
-        portNumber = portNumber == 0 ? 6600 : portNumber
-        guard portNumber > 0, portNumber <= 65535,
-              let port = NWEndpoint.Port(rawValue: UInt16(portNumber))
-        else {
+        let port = UserDefaults.standard.integer(forKey: Setting.port)
+        guard port > 0, port <= 65535 else {
             throw ConnectionManagerError.invalidPort
         }
 
-        let host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
-        connection = NWConnection(
-            host: NWEndpoint.Host(host),
-            port: port,
-            using: NWParameters(tls: nil, tcp: options),
-        )
-        guard let connection else {
-            throw ConnectionManagerError.connectionSetupFailed
+        let host = UserDefaults.standard.string(forKey: Setting.host)
+            ?? "localhost"
+
+        connection = NetworkConnection(to: .hostPort(host: NWEndpoint.Host(
+            host), port: NWEndpoint.Port(integerLiteral: UInt16(port))))
+        {
+            TCP()
+                .noDelay(true)
+                .connectionTimeout(5)
         }
 
-        connection.start(queue: connectionQueue)
-        do {
-            try await waitForConnectionReady()
-        } catch {
+        guard connection != nil else {
             disconnect()
-            throw error
+            throw ConnectionManagerError.connectionUnexpectedClosure
         }
-
+        
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
             throw ConnectionManagerError.connectionSetupFailed
@@ -201,8 +160,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// buffered data, and resets the server version. This method should be
     /// called to cleanly terminate the connection.
     func disconnect() {
-        connection?.stateUpdateHandler = nil
-        connection?.cancel()
         connection = nil
 
         buffer.removeAll(keepingCapacity: false)
@@ -212,17 +169,15 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     /// Ensures that the current network connection is available and ready.
     ///
-    /// This function checks if there is an active `NWConnection` that is in the
-    /// `.ready` state. If the connection is valid and ready, it returns the
-    /// connection for use. Otherwise, it throws a
-    /// `ConnectionManagerError.connectionUnexpectedClosure` error indicating
-    /// that the connection is either not established or not ready.
+    /// This function checks if there is an active `NetworkConnection`.
+    /// NetworkConnection automatically handles state management, so if the
+    /// connection exists, it will wait for ready state when used.
     ///
     /// - Throws: `ConnectionManagerError.connectionUnexpectedClosure` if there
-    ///           is no active connection or if the connection is not ready.
-    /// - Returns: A ready-to-use `NWConnection` instance.
-    func ensureConnectionReady() throws -> NWConnection {
-        guard let connection, connection.state == .ready else {
+    ///           is no active connection.
+    /// - Returns: A ready-to-use `NetworkConnection` instance.
+    func ensureConnectionReady() throws -> NetworkConnection<TCP> {
+        guard let connection else {
             throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
@@ -295,81 +250,14 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     // MARK: - Connection lifecycle
 
-    /// Asynchronously waits for the connection to be ready.
-    ///
-    /// This function uses a task group to monitor the connection state and
-    /// handle timeouts. It listens for the connection state updates and checks
-    /// if the connection is ready. If the connection fails or is cancelled,
-    /// appropriate errors are thrown. The function also includes a timeout
-    /// mechanism that throws a `ConnectionManagerError.connectionTimeout` error
-    /// if the connection does not become ready within a specified duration.
-    ///
-    /// - Throws: `ConnectionManagerError.connectionUnexpectedClosure` if the
-    ///           connection is closed unexpectedly, `ConnectionManagerError`
-    ///           `connectionTimeout` if the connection does not become ready
-    ///           within the specified duration, or any other error encountered
-    ///           during the connection state updates.
-    private func waitForConnectionReady() async throws {
-        guard let connection else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
-        }
-
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask { [weak self, connection] in
-                guard self != nil else {
-                    throw CancellationError()
-                }
-
-                let states = AsyncStream<NWConnection.State> { continuation in
-                    connection.stateUpdateHandler = { state in
-                        continuation.yield(state)
-                        switch state {
-                        case .ready, .failed, .cancelled:
-                            continuation.finish()
-                        default:
-                            break
-                        }
-                    }
-                }
-
-                for await state in states {
-                    try Task.checkCancellation()
-
-                    switch state {
-                    case .ready:
-                        return
-                    case let .failed(error):
-                        throw error
-                    case .cancelled:
-                        throw ConnectionManagerError.connectionUnexpectedClosure
-                    default:
-                        continue
-                    }
-                }
-
-                throw ConnectionManagerError.connectionUnexpectedClosure
-            }
-
-            group.addTask {
-                try await Task.sleep(for: .seconds(4))
-                throw ConnectionManagerError.connectionTimeout
-            }
-
-            try await group.next()
-
-            group.cancelAll()
-        }
-    }
-
     // MARK: - Writing
 
     /// Asynchronously writes a single line to the network connection.
     ///
     /// This function ensures that the connection is in a ready state, then
     /// appends a newline character to the provided string, converts it to UTF-8
-    /// encoded data, and sends it over the connection. It uses a continuation
-    /// to await the completion of the send operation, throwing an error if the
-    /// operation fails.
+    /// encoded data, and sends it over the connection. NetworkConnection's send
+    /// method is async, so we can await it directly.
     ///
     /// - Parameter line: The string to be sent over the connection.
     /// - Throws: An error if the connection is not ready or if the send
@@ -382,17 +270,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 "Failed to encode command to UTF-8.")
         }
 
-        try await withCheckedThrowingContinuation { (continuation:
-            CheckedContinuation<Void, Error>) in
-            connection.send(content: data, completion: .contentProcessed {
-                error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
-            })
-        }
+        try await connection.send(data)
     }
 
     /// Escapes a given string for safe inclusion in MPD commands.
@@ -550,27 +428,17 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Asynchronously receives a chunk of data from the network connection.
     ///
     /// This function first ensures that the connection is ready. It then
-    /// initiates an asynchronous receive operation.
+    /// initiates an asynchronous receive operation using NetworkConnection's
+    /// async receive method.
     ///
     /// - Throws: An error if the connection is not ready or if the receive
     ///           operation encounters an error.
     private func receiveDataChunk() async throws {
         let connection = try ensureConnectionReady()
 
-        guard let chunk = try await withCheckedThrowingContinuation({ (
-            continuation: CheckedContinuation<Data?, Error>) in
-            connection.receive(minimumIncompleteLength: 1,
-                               maximumLength: Mode.bufferSize)
-            { data, _, isComplete, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else if isComplete {
-                    continuation.resume(returning: data ?? Data())
-                } else {
-                    continuation.resume(returning: data)
-                }
-            }
-        }) else {
+        let chunk = try await connection.receive(atLeast: 1, atMost: Mode.bufferSize).content
+
+        if chunk.isEmpty {
             throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
