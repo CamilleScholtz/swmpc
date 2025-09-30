@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import Network
 import SFSafeSymbols
 import SwiftUI
 
@@ -115,19 +116,57 @@ struct SettingsView: View {
         @State private var port = UserDefaults.standard.integer(forKey: Setting.port) == 0 ? 6600 : UserDefaults.standard.integer(forKey: Setting.port)
         @State private var password = UserDefaults.standard.string(forKey: Setting.password) ?? ""
 
-        @State private var connectionStatus: ConnectionStatus = .connecting
+        private var connectionColor: Color {
+            guard let state = mpd.state.connectionState else {
+                return .gray
+            }
 
-        private enum ConnectionStatus {
-            case connecting
-            case success
-            case failure
-
-            var color: Color {
-                switch self {
-                case .connecting: .yellow
-                case .success: .green
-                case .failure: .red
+            switch state {
+            case .ready:
+                if mpd.status.state != nil {
+                    return .green
+                } else {
+                    return .yellow
                 }
+            case .failed:
+                return .red
+            case .waiting:
+                return .yellow
+            case .preparing:
+                return .yellow
+            case .setup:
+                return .gray
+            case .cancelled:
+                return .gray
+            @unknown default:
+                return .gray
+            }
+        }
+
+        private var connectionStatusDescription: String {
+            guard let state = mpd.state.connectionState else {
+                return "Connection not initialized"
+            }
+
+            switch state {
+            case .ready:
+                if mpd.status.state != nil {
+                    return "Connected and ready"
+                } else {
+                    return "Connected, waiting for status"
+                }
+            case let .failed(error):
+                return "Connection failed: \(error.localizedDescription)"
+            case let .waiting(error):
+                return "Waiting to connect: \(error.localizedDescription)"
+            case .preparing:
+                return "Establishing connection..."
+            case .setup:
+                return "Setting up connection"
+            case .cancelled:
+                return "Connection cancelled"
+            @unknown default:
+                return "Unknown state"
             }
         }
 
@@ -165,16 +204,12 @@ struct SettingsView: View {
                 Section {
                     HStack {
                         AsyncButton("Connect") {
-                            connectionStatus = .connecting
-
                             UserDefaults.standard.set(host, forKey: Setting.host)
                             UserDefaults.standard.set(port, forKey: Setting.port)
                             UserDefaults.standard.set(password, forKey: Setting.password)
 
                             await mpd.reinitialize()
                             try? await Task.sleep(for: .seconds(2))
-
-                            updateConnectionStatus()
                         }
 
                         #if os(iOS)
@@ -182,11 +217,12 @@ struct SettingsView: View {
                         #endif
 
                         Circle()
-                            .fill(connectionStatus.color)
+                            .fill(connectionColor)
                             .frame(width: 10, height: 10)
+                            .help(connectionStatusDescription)
                     }
 
-                    if case .failure = connectionStatus, let error = mpd.error {
+                    if !mpd.state.isConnectionReady, let error = mpd.state.error {
                         Text(error.localizedDescription)
                             .font(.caption)
                             .monospaced()
@@ -238,25 +274,6 @@ struct SettingsView: View {
                         .padding(.top, 1)
                     #endif
                 }
-            }
-            .onAppear {
-                updateConnectionStatus()
-            }
-            .onChange(of: mpd.status.state) {
-                updateConnectionStatus()
-            }
-            .onChange(of: mpd.error) {
-                updateConnectionStatus()
-            }
-        }
-
-        private func updateConnectionStatus() {
-            if mpd.error != nil {
-                connectionStatus = .failure
-            } else if mpd.status.state != nil {
-                connectionStatus = .success
-            } else {
-                connectionStatus = .connecting
             }
         }
     }

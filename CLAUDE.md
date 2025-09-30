@@ -51,7 +51,12 @@ This project adopts Swift 6.2's modern concurrency settings. This fundamentally 
 
 ## Architecture
 
-The app follows an MVVM-style architecture using SwiftUI and the Observation framework. The main entry point is `swmpc/Delegate.swift` which sets up the app for both platforms.
+The app follows an MVVM-style architecture using SwiftUI. The main entry point is `swmpc/Delegate.swift` which sets up the app for both platforms.
+
+This project uses cutting edge technologies, use the Apple documentation for possible clarification:
+- The aforementioned Approachable Concurrency (introduced in 2025)
+- The Observation framework (instead of the old Observable Object - introduced in 2023)
+- NetworkConnection (instead of the old NWConnection - introduced in 2025)
 
 ### Core Components
 

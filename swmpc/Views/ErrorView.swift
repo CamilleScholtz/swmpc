@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 27/03/2025.
 //
 
+import Network
 import SwiftUI
 
 struct ErrorView: View {
@@ -48,7 +49,7 @@ struct ErrorView: View {
                         .foregroundColor(.secondary)
                 }
 
-                if let error = mpd.error {
+                if let error = mpd.state.error {
                     Text(error.localizedDescription)
                         .font(.caption)
                         .monospaced()
