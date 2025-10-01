@@ -9,7 +9,7 @@ import OpenAI
 import SwiftUI
 
 /// Errors that can occur during intelligence operations.
-enum IntelligenceManagerError: Error {
+enum IntelligenceManagerError: LocalizedError {
     /// Intelligence feature is disabled in settings.
     case intelligenceDisabled
     /// API token is missing or empty.
@@ -18,6 +18,19 @@ enum IntelligenceManagerError: Error {
     case noResponse
     /// The operation timed out.
     case timeout
+
+    var errorDescription: String? {
+        switch self {
+        case .intelligenceDisabled:
+            "AI features are disabled: Enable in settings"
+        case .missingToken:
+            "API token missing: Add token in settings"
+        case .noResponse:
+            "No response received from AI service"
+        case .timeout:
+            "Request timed out: Try again or check network connection"
+        }
+    }
 }
 
 /// Target destination for intelligence-generated songs.

@@ -13,56 +13,36 @@ import SwiftUI
 /// MPD server. Each mode can have different performance characteristics and
 /// buffer sizes.
 protocol ConnectionMode: Sendable {
-    /// A label identifying the connection mode.
-    nonisolated static var label: String { get }
-    /// Whether to enable TCP keepalive for this connection.
-    nonisolated static var enableKeepalive: Bool { get }
     /// The buffer size to use for reading data.
     nonisolated static var bufferSize: Int { get }
-    /// The dispatch queue attributes for this connection mode.
-    nonisolated static var queueAttributes: DispatchQueue.Attributes { get }
-    /// The quality of service level for operations.
-    nonisolated static var qos: DispatchQoS { get }
 }
 
 /// Connection mode for idle operations that listen for MPD server events.
 /// Uses keepalive to maintain long-lived connections.
 nonisolated enum IdleMode: ConnectionMode {
-    static let label = "idle"
-    static let enableKeepalive = true
     static let bufferSize = 4096
-    static let queueAttributes: DispatchQueue.Attributes = []
-    static let qos: DispatchQoS = .utility
 }
 
 /// Connection mode for artwork retrieval operations.
 /// Uses larger buffers and concurrent queue for efficient image data transfer.
 nonisolated enum ArtworkMode: ConnectionMode {
-    static let label = "artwork"
-    static let enableKeepalive = false
     static let bufferSize = 8192
-    static let queueAttributes: DispatchQueue.Attributes = []
-    static let qos: DispatchQoS = .utility
 }
 
 /// Connection mode for executing MPD commands.
 /// Optimized for quick command execution with higher priority.
 nonisolated enum CommandMode: ConnectionMode {
-    static let label = "command"
-    static let enableKeepalive = false
     static let bufferSize = 4096
-    static let queueAttributes: DispatchQueue.Attributes = []
-    static let qos: DispatchQoS = .userInitiated
 }
 
 /// Errors that can occur during MPD connection management.
-enum ConnectionManagerError: LocalizedError {
+enum ConnectionManagerError: LocalizedError, Equatable {
+    case invalidHost
     case invalidPort
     case unsupportedServerVersion
 
-    case connectionSetupFailed
+    case connectionFailure(String)
     case connectionUnexpectedClosure
-    case connectionTimeout
 
     case readUntilConditionNotMet
 
@@ -72,16 +52,16 @@ enum ConnectionManagerError: LocalizedError {
 
     nonisolated var errorDescription: String? {
         switch self {
+        case .invalidHost:
+            "Invalid host provided."
         case .invalidPort:
             "Invalid port provided. Port must be between 1 and 65535."
         case .unsupportedServerVersion:
             "Unsupported MPD server version. Minimum required version is 0.22."
-        case .connectionSetupFailed:
-            "Failed to establish network connection to MPD server."
+        case let .connectionFailure(details):
+            "Network connection returned an error: \(details)"
         case .connectionUnexpectedClosure:
             "Network connection was closed unexpectedly during operation."
-        case .connectionTimeout:
-            "Connection attempt timed out."
         case .readUntilConditionNotMet:
             "Failed to locate expected response termination sequence."
         case let .protocolViolation(details):
@@ -108,16 +88,7 @@ enum ConnectionManagerError: LocalizedError {
 /// - Thread-safe operation using Swift actors
 actor ConnectionManager<Mode: ConnectionMode> {
     /// The underlying network connection to the MPD server.
-    private var connection: NWConnection?
-
-    /// Dispatch queue for network operations configured based on the connection
-    /// mode.
-    private let connectionQueue = DispatchQueue(
-        label: "com.camille.swmpc.connection.\(Mode.label)",
-        qos: Mode.qos,
-        attributes: Mode.queueAttributes,
-        target: .global(qos: Mode.qos.qosClass),
-    )
+    private var connection: NetworkConnection<TCP>?
 
     /// Buffer for accumulating incoming data from the network connection.
     private var buffer = Deque<UInt8>()
@@ -125,73 +96,62 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The version of the MPD server obtained during connection handshake.
     private(set) var version: String?
 
-    // TODO: I want to just use `disconnect()` here, but that gives me an `Call
-    // to actor-isolated instance method 'disconnect()' in a synchronous
-    // nonisolated context` error. The existing approach is reasonable.
-    deinit {
-        connection?.stateUpdateHandler = nil
-        connection?.cancel()
-        connection = nil
-
-        buffer.removeAll(keepingCapacity: false)
-    }
+    /// The last error that occurred during the connection's lifetime.
+    private(set) var error: ConnectionManagerError?
 
     /// Establishes a TCP connection to the MPD server.
     ///
     /// This asynchronous function sets up a new network connection using
-    /// `NWConnection` with TCP options configured for no-delay, and keepalive
-    /// depending on the `ConnectionMode`. If a connection is already active
-    /// (i.e. in the `.ready` state), the function returns immediately.
+    /// `NetworkConnection` with TCP options configured for no-delay.
     ///
+    /// - Parameter onStateUpdate: Optional closure called when connection state changes.
+    ///                           Receives the connection and the new state.
     /// - Throws: `ConnectionManagerError.invalidPort` if the port is
     ///           invalid, `ConnectionManagerError.connectionSetupFailed` if the
     ///           connection cannot be created, the connection fails to become
     ///           ready, or the expected server greeting is not received,
     ///           `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
-    func connect() async throws {
-        guard connection?.state != .ready else {
+    func connect(onStateUpdate: (@Sendable (NetworkConnection<TCP>,
+                                            NetworkConnection<TCP>.State) ->
+            Void)? = nil) async throws
+    {
+        guard connection == nil else {
             return
         }
 
-        let options = NWProtocolTCP.Options()
-        options.noDelay = true
-        options.enableKeepalive = Mode.enableKeepalive
-
-        var portNumber = UserDefaults.standard.integer(forKey: Setting.port)
-        portNumber = portNumber == 0 ? 6600 : portNumber
-        guard portNumber > 0, portNumber <= 65535,
-              let port = NWEndpoint.Port(rawValue: UInt16(portNumber))
-        else {
-            throw ConnectionManagerError.invalidPort
+        let host = UserDefaults.standard.string(forKey: Setting.host)
+        guard host != nil, !host!.isEmpty else {
+            try recordAndThrow(ConnectionManagerError.invalidHost)
         }
 
-        let host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
-        connection = NWConnection(
-            host: NWEndpoint.Host(host),
-            port: port,
-            using: NWParameters(tls: nil, tcp: options),
-        )
-        guard let connection else {
-            throw ConnectionManagerError.connectionSetupFailed
+        let port = UserDefaults.standard.integer(forKey: Setting.port)
+        guard port > 0, port <= 65535 else {
+            try recordAndThrow(ConnectionManagerError.invalidPort)
         }
 
-        connection.start(queue: connectionQueue)
-        do {
-            try await waitForConnectionReady()
-        } catch {
-            disconnect()
-            throw error
+        connection = NetworkConnection(to: .hostPort(host: NWEndpoint.Host(
+            host!), port: NWEndpoint.Port(integerLiteral: UInt16(port))))
+        {
+            TCP()
+                .noDelay(true)
+                .connectionTimeout(5)
+        }
+
+        if let onStateUpdate {
+            connection?.onStateUpdate(onStateUpdate)
         }
 
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
-            throw ConnectionManagerError.connectionSetupFailed
+            try recordAndThrow(ConnectionManagerError.connectionFailure(
+                "Missing OK MPD line from server greeting",
+            ))
         }
 
         version = lines.first?.split(separator: " ").last.map(String.init)
         try ensureVersionSupported()
-        try await ensureAuthenticated()
+        try await ensureAuthentication()
     }
 
     /// Disconnects from the current network connection and clears internal
@@ -200,30 +160,34 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Cancels any active connection, sets the connection to `nil`, removes all
     /// buffered data, and resets the server version. This method should be
     /// called to cleanly terminate the connection.
-    func disconnect() {
-        connection?.stateUpdateHandler = nil
-        connection?.cancel()
+    func disconnect() async {
         connection = nil
+        version = nil
+        error = nil
 
         buffer.removeAll(keepingCapacity: false)
-
-        version = nil
     }
 
-    /// Ensures that the current network connection is available and ready.
+    /// Records an error as the last error and throws it.
     ///
-    /// This function checks if there is an active `NWConnection` that is in the
-    /// `.ready` state. If the connection is valid and ready, it returns the
-    /// connection for use. Otherwise, it throws a
-    /// `ConnectionManagerError.connectionUnexpectedClosure` error indicating
-    /// that the connection is either not established or not ready.
+    /// - Parameters:
+    ///   - error: The error to record and throw
+    private func recordAndThrow(_ error: ConnectionManagerError) throws
+        -> Never
+    {
+        self.error = error
+        throw error
+    }
+
+    /// Ensures that the current network connection is available.
     ///
     /// - Throws: `ConnectionManagerError.connectionUnexpectedClosure` if there
-    ///           is no active connection or if the connection is not ready.
-    /// - Returns: A ready-to-use `NWConnection` instance.
-    func ensureConnectionReady() throws -> NWConnection {
-        guard let connection, connection.state == .ready else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
+    ///           is no active connection.
+    /// - Returns: A ready-to-use `NetworkConnection` instance.
+    @discardableResult
+    func ensureConnection() throws -> NetworkConnection<TCP> {
+        guard let connection else {
+            try recordAndThrow(ConnectionManagerError.connectionUnexpectedClosure)
         }
 
         return connection
@@ -241,7 +205,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         guard version?.compare("0.22", options: .numeric) !=
             .orderedAscending
         else {
-            throw ConnectionManagerError.unsupportedServerVersion
+            try recordAndThrow(ConnectionManagerError.unsupportedServerVersion)
         }
     }
 
@@ -251,8 +215,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// authentication. If no password is set, the function returns immediately.
     ///
     /// - Throws: An error if the authentication command fails.
-    func ensureAuthenticated() async throws {
-        let password = UserDefaults.standard.string(forKey: Setting.password) ?? ""
+    func ensureAuthentication() async throws {
+        let password = UserDefaults.standard.string(forKey: Setting.password)
+            ?? ""
         guard !password.isEmpty else {
             return
         }
@@ -293,106 +258,27 @@ actor ConnectionManager<Mode: ConnectionMode> {
         return try await readUntilOK()
     }
 
-    // MARK: - Connection lifecycle
-
-    /// Asynchronously waits for the connection to be ready.
-    ///
-    /// This function uses a task group to monitor the connection state and
-    /// handle timeouts. It listens for the connection state updates and checks
-    /// if the connection is ready. If the connection fails or is cancelled,
-    /// appropriate errors are thrown. The function also includes a timeout
-    /// mechanism that throws a `ConnectionManagerError.connectionTimeout` error
-    /// if the connection does not become ready within a specified duration.
-    ///
-    /// - Throws: `ConnectionManagerError.connectionUnexpectedClosure` if the
-    ///           connection is closed unexpectedly, `ConnectionManagerError`
-    ///           `connectionTimeout` if the connection does not become ready
-    ///           within the specified duration, or any other error encountered
-    ///           during the connection state updates.
-    private func waitForConnectionReady() async throws {
-        guard let connection else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
-        }
-
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask { [weak self, connection] in
-                guard self != nil else {
-                    throw CancellationError()
-                }
-
-                let states = AsyncStream<NWConnection.State> { continuation in
-                    connection.stateUpdateHandler = { state in
-                        continuation.yield(state)
-                        switch state {
-                        case .ready, .failed, .cancelled:
-                            continuation.finish()
-                        default:
-                            break
-                        }
-                    }
-                }
-
-                for await state in states {
-                    try Task.checkCancellation()
-
-                    switch state {
-                    case .ready:
-                        return
-                    case let .failed(error):
-                        throw error
-                    case .cancelled:
-                        throw ConnectionManagerError.connectionUnexpectedClosure
-                    default:
-                        continue
-                    }
-                }
-
-                throw ConnectionManagerError.connectionUnexpectedClosure
-            }
-
-            group.addTask {
-                try await Task.sleep(for: .seconds(4))
-                throw ConnectionManagerError.connectionTimeout
-            }
-
-            try await group.next()
-
-            group.cancelAll()
-        }
-    }
-
     // MARK: - Writing
 
     /// Asynchronously writes a single line to the network connection.
     ///
     /// This function ensures that the connection is in a ready state, then
     /// appends a newline character to the provided string, converts it to UTF-8
-    /// encoded data, and sends it over the connection. It uses a continuation
-    /// to await the completion of the send operation, throwing an error if the
-    /// operation fails.
+    /// encoded data, and sends it over the connection. NetworkConnection's send
+    /// method is async, so we can await it directly.
     ///
     /// - Parameter line: The string to be sent over the connection.
     /// - Throws: An error if the connection is not ready or if the send
     ///           operation encounters an error.
     private func writeLine(_ line: String) async throws {
-        let connection = try ensureConnectionReady()
+        let connection = try ensureConnection()
 
         guard let data = (line + "\n").data(using: .utf8) else {
-            throw ConnectionManagerError.protocolViolation(
-                "Failed to encode command to UTF-8.")
+            try recordAndThrow(ConnectionManagerError.protocolViolation(
+                "Failed to encode command to UTF-8."))
         }
 
-        try await withCheckedThrowingContinuation { (continuation:
-            CheckedContinuation<Void, Error>) in
-            connection.send(content: data, completion: .contentProcessed {
-                error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
-            })
-        }
+        try await connection.send(data)
     }
 
     /// Escapes a given string for safe inclusion in MPD commands.
@@ -473,7 +359,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         while true {
             if let line = try extractLineFromBuffer() {
                 if line.hasPrefix("ACK") {
-                    throw ConnectionManagerError.protocolViolation(line)
+                    try recordAndThrow(ConnectionManagerError.protocolViolation(
+                        line))
                 }
 
                 return line
@@ -487,17 +374,18 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// buffer.
     ///
     /// This function accumulates exactly `length` bytes by reading from the
-    /// internal buffer. If the buffer does not contain enough data, it awaits
-    /// additional data chunks via `receiveDataChunk()`. The function continues
-    /// reading until the specified number of bytes have been collected.
+    /// internal buffer. If the buffer does not contain enough data, it fetches
+    /// additional data from the connection using optimized receive calls.
+    /// The function continues reading until the specified number of bytes have
+    /// been collected.
     ///
     /// - Parameter length: The total number of bytes to read.
     /// - Returns: A `Data` object containing exactly `length` bytes.
     /// - Throws: An error if receiving additional data fails.
     private func readFixedLengthData(_ length: Int) async throws -> Data {
         guard length >= 0 else {
-            throw ConnectionManagerError.malformedResponse(
-                "Invalid data length requested: \(length)")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Invalid data length requested: \(length)"))
         }
 
         guard length > 0 else {
@@ -505,11 +393,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         while buffer.count < length {
-            try await receiveDataChunk()
+            try await receiveDataChunk(remaining: length - buffer.count)
         }
 
         guard buffer.count >= length else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
+            try recordAndThrow(ConnectionManagerError.connectionUnexpectedClosure)
         }
 
         let data = Data(buffer.prefix(length))
@@ -540,8 +428,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         buffer.removeFirst(index + 1)
 
         guard let string = String(data: data, encoding: .utf8) else {
-            throw ConnectionManagerError.malformedResponse(
-                "Failed to decode line from buffer (invalid UTF-8)")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Failed to decode line from buffer (invalid UTF-8)"))
         }
 
         return string
@@ -550,28 +438,28 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Asynchronously receives a chunk of data from the network connection.
     ///
     /// This function first ensures that the connection is ready. It then
-    /// initiates an asynchronous receive operation.
+    /// initiates an asynchronous receive operation using NetworkConnection's
+    /// async receive method. Uses the mode's buffer size to optimize for
+    /// different connection types.
     ///
+    /// - Parameter remaining: Optional number of bytes we still need. If provided
+    ///                       and less than or equal to the buffer size, we'll try to
+    ///                       receive exactly that amount for efficiency.
     /// - Throws: An error if the connection is not ready or if the receive
     ///           operation encounters an error.
-    private func receiveDataChunk() async throws {
-        let connection = try ensureConnectionReady()
+    private func receiveDataChunk(remaining: Int? = nil) async throws {
+        let connection = try ensureConnection()
 
-        guard let chunk = try await withCheckedThrowingContinuation({ (
-            continuation: CheckedContinuation<Data?, Error>) in
-            connection.receive(minimumIncompleteLength: 1,
-                               maximumLength: Mode.bufferSize)
-            { data, _, isComplete, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else if isComplete {
-                    continuation.resume(returning: data ?? Data())
-                } else {
-                    continuation.resume(returning: data)
-                }
-            }
-        }) else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
+        let chunk: Data = if let remaining, remaining <= Mode.bufferSize {
+            try await connection.receive(atLeast: 1, atMost:
+                remaining).content
+        } else {
+            try await connection.receive(atLeast: 1, atMost:
+                Mode.bufferSize).content
+        }
+
+        if chunk.isEmpty {
+            try recordAndThrow(ConnectionManagerError.connectionUnexpectedClosure)
         }
 
         buffer.append(contentsOf: chunk)
@@ -642,7 +530,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             }
         }
 
-        throw ConnectionManagerError.readUntilConditionNotMet
+        try recordAndThrow(ConnectionManagerError.readUntilConditionNotMet)
     }
 
     /// Reads lines from the connection until a line starting with `OK` is
@@ -678,16 +566,16 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            second element is the value.
     /// - Throws: `ConnectionManagerError.malformedResponse` if the line does
     ///           not contain exactly one colon.
-    private nonisolated func parseLine(_ line: String) throws -> (String,
-                                                                  String)
+    private func parseLine(_ line: String) throws -> (String,
+                                                      String)
     {
         let parts = line.split(separator: ":", maxSplits: 1).map {
             $0.trimmingCharacters(in: .whitespaces)
         }
 
         guard parts.count == 2 else {
-            throw ConnectionManagerError.malformedResponse(
-                "Line does not contain exactly one colon")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Line does not contain exactly one colon"))
         }
 
         return (parts[0].lowercased(), parts[1])
@@ -698,10 +586,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Parameter value: The value to be cast.
     /// - Returns: The value cast to type `T`.
     /// - Throws: `ConnectionManagerError.malformedResponse` if the cast fails.
-    private nonisolated func castResult<T>(_ value: some Any) throws -> T {
+    private func castResult<T>(_ value: some Any) throws -> T {
         guard let result = value as? T else {
-            throw ConnectionManagerError.malformedResponse(
-                "Type mismatch: expected \(T.self) but created \(type(of: value))")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Type mismatch: expected \(T.self) but created \(type(of: value))"))
         }
 
         return result
@@ -723,7 +611,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
     ///           are missing, the response is improperly formatted, or the
     ///           created object cannot be cast to `T`.
-    private nonisolated func parseMediaResponse<T>(_ lines: [String], as type:
+    private func parseMediaResponse<T>(_ lines: [String], as type:
         MediaType, index: Int? = nil) throws -> T
     {
         var fields: [String: String] = [:]
@@ -733,8 +621,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard let file = fields["file"] else {
-            throw ConnectionManagerError.malformedResponse(
-                "Missing or invalid file field")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Missing or invalid file field"))
         }
 
         let artistName = fields["albumartist"] ?? fields["artist"]
@@ -785,8 +673,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
             return try castResult(artist)
         default:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Unsupported media type: \(type)")
+            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                "Unsupported media type: \(type)"))
         }
     }
 
@@ -806,9 +694,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            song's position.
     /// - Returns: An array of media objects, each cast to the generic type `T`.
     /// - Throws: An error if parsing of any chunk fails.
-    private nonisolated func parseMediaResponseArray<T>(_ lines: [String],
-                                                        as type: MediaType,
-                                                        index: Bool = false)
+    private func parseMediaResponseArray<T>(_ lines: [String],
+                                            as type: MediaType,
+                                            index: Bool = false)
         throws -> [T]
     {
         let chunks = chunkLines(lines, startingWith: "file")
@@ -865,8 +753,8 @@ extension ConnectionManager {
             case "pause": state = .pause
             case "stop": state = .stop
             default:
-                throw ConnectionManagerError.malformedResponse(
-                    "Invalid player state: \(stateValue)")
+                try recordAndThrow(ConnectionManagerError.malformedResponse(
+                    "Invalid player state: \(stateValue)"))
             }
         } else {
             state = nil
@@ -941,8 +829,8 @@ extension ConnectionManager {
         case .queue:
             lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name)) sort date"])
         default:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Only database and queue sources are supported for retrieving albums by artist")
+            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                "Only database and queue sources are supported for retrieving albums by artist"))
         }
 
         let albums: [Album] = try parseMediaResponseArray(lines, as: .album)
@@ -1032,8 +920,8 @@ extension ConnectionManager {
         case .queue:
             try await run(["playlistfind \(filters)"])
         default:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Only database and queue sources are supported for retrieving songs in an album")
+            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                "Only database and queue sources are supported for retrieving songs in an album"))
         }
 
         return try parseMediaResponseArray(lines, as: .song)
@@ -1089,14 +977,14 @@ extension ConnectionManager where Mode == IdleMode {
         guard let changedLine = lines.first(where: { $0.hasPrefix(
             "changed: ") })
         else {
-            throw ConnectionManagerError.malformedResponse(
-                "Missing 'changed' line")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Missing 'changed' line"))
         }
 
         let changed = String(changedLine.dropFirst("changed: ".count))
         guard let event = IdleEvent(rawValue: changed) else {
-            throw ConnectionManagerError.malformedResponse(
-                "Received unknown idle event: \(changed)")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Received unknown idle event: \(changed)"))
         }
 
         return event
@@ -1119,6 +1007,10 @@ extension ConnectionManager where Mode == ArtworkMode {
 
     /// Retrieves the complete artwork data for a given file by fetching it in
     /// chunks from the media server.
+    ///
+    /// This method uses optimized receive calls to efficiently fetch artwork
+    /// data, taking advantage of the ArtworkMode's larger buffer size for
+    /// improved performance when transferring image data.
     ///
     /// - Parameter file: The file path representing the artwork resource on
     ///                   the server.
@@ -1154,8 +1046,8 @@ extension ConnectionManager where Mode == ArtworkMode {
             }
 
             guard let chunkSize else {
-                throw ConnectionManagerError.malformedResponse(
-                    "Missing chunk size")
+                try recordAndThrow(ConnectionManagerError.malformedResponse(
+                    "Missing chunk size"))
             }
 
             let binaryChunk = try await readFixedLengthData(chunkSize)
@@ -1173,7 +1065,8 @@ extension ConnectionManager where Mode == ArtworkMode {
                 }
             }
 
-            throw ConnectionManagerError.malformedResponse("Missing 'OK' line")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Missing 'OK' line"))
         }
     }
 }
@@ -1292,16 +1185,16 @@ extension ConnectionManager where Mode == CommandMode {
             }
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
-                throw ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for this operation")
+                try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                    "Playlist is required for this operation"))
             }
 
             commands = songsToAdd.map {
                 "playlistadd \(playlist.name) \(escape($0.file))"
             }
         case .database:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Cannot add songs to the database")
+            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                "Cannot add songs to the database"))
         }
 
         try await run(commands)
@@ -1359,8 +1252,8 @@ extension ConnectionManager where Mode == CommandMode {
                     }
                 }
             default:
-                throw ConnectionManagerError.unsupportedOperation(
-                    "Only queue and playlist sources are supported for removing songs")
+                try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                    "Only queue and playlist sources are supported for removing songs"))
             }
 
             i += 1
@@ -1382,8 +1275,8 @@ extension ConnectionManager where Mode == CommandMode {
     ///           position info.
     func move(_ song: Song, to position: Int, in source: Source) async throws {
         guard let currentPosition = song.position else {
-            throw ConnectionManagerError.unsupportedOperation(
-                "Cannot move song without a position")
+            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                "Cannot move song without a position"))
         }
 
         switch source {
@@ -1391,14 +1284,14 @@ extension ConnectionManager where Mode == CommandMode {
             try await run(["move \(currentPosition) \(position)"])
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
-                throw ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for this operation")
+                try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                    "Playlist is required for this operation"))
             }
 
             try await run(["playlistmove \(escape(playlist.name)) \(currentPosition) \(position)"])
         default:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Only queue and playlist sources are supported for moving media")
+            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                "Only queue and playlist sources are supported for moving media"))
         }
     }
 
@@ -1431,13 +1324,13 @@ extension ConnectionManager where Mode == CommandMode {
         case let song as Song:
             songs = [song]
         default:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Only Album, Artist, and Song types are supported for playback")
+            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
+                "Only Album, Artist, and Song types are supported for playback"))
         }
 
         guard !songs.isEmpty else {
-            throw ConnectionManagerError.malformedResponse(
-                "No songs found for the specified media")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "No songs found for the specified media"))
         }
 
         let queue = try await getSongs(from: .queue)
@@ -1469,8 +1362,8 @@ extension ConnectionManager where Mode == CommandMode {
         }
 
         guard let id else {
-            throw ConnectionManagerError.malformedResponse(
-                "Failed to determine song ID to play")
+            try recordAndThrow(ConnectionManagerError.malformedResponse(
+                "Failed to determine song ID to play"))
         }
 
         try await run(["playid \(id)"])

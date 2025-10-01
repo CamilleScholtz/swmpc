@@ -9,9 +9,9 @@ import SwiftUI
 
 /// Manages playlist operations for the MPD client.
 @Observable final class PlaylistManager {
-    private let state: LoadingState
+    private let state: StateManager
 
-    init(state: LoadingState) {
+    init(state: StateManager) {
         self.state = state
     }
 

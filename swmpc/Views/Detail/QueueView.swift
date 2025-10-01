@@ -171,12 +171,8 @@ private struct MediaList: View {
 
         let song = mpd.queue.songs[sourceIndex]
 
-        do {
-            try await ConnectionManager.command().move(song, to: destination, in: .queue)
-            try await mpd.queue.set()
-        } catch {
-            print("Failed to reorder song: \(error)")
-        }
+        try? await ConnectionManager.command().move(song, to: destination, in: .queue)
+        try? await mpd.queue.set()
     }
 }
 

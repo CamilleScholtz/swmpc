@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import Network
 import SwiftUI
 
 /// The main MPD client class that manages the connection and state
@@ -15,6 +16,9 @@ import SwiftUI
 /// uses the idle command to listen for changes and automatically updates the
 /// relevant state when changes occur.
 @Observable final class MPD {
+    /// The state manager handling loading and connection states.
+    let state = StateManager()
+
     /// The MPD status manager, tracking playback state and current song.
     let status = StatusManager()
 
@@ -26,12 +30,6 @@ import SwiftUI
 
     /// The playlist manager, handling playlist operations.
     let playlists: PlaylistManager
-
-    /// The loading state of the MPD client.
-    let state = LoadingState()
-
-    /// The most recent connection or communication error, if any.
-    var error: EquatableError?
 
     /// The background task that maintains the connection and listens for
     /// changes.
@@ -54,8 +52,9 @@ import SwiftUI
 
         await ConnectionManager.idle.disconnect()
 
-        error = nil
-        status.state = nil
+        state.error = nil
+
+        try? await Task.sleep(for: .seconds(1))
 
         updateLoopTask = Task { [weak self] in
             await self?.updateLoop()
@@ -70,13 +69,31 @@ import SwiftUI
     private func connect() async {
         while !Task.isCancelled {
             do {
-                try await ConnectionManager.idle.connect()
-                error = nil
+                try await ConnectionManager.idle.connect { [weak self] _,
+                    state in
+                    Task { @MainActor [weak self] in
+                        self?.state.connectionState = state
+
+                        switch state {
+                        case let .failed(details):
+                            self?.state.error = NSError(domain: "MPD", code: 0,userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"])
+                        case let .waiting(details):
+                            self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(details.localizedDescription)"])
+                        case .cancelled:
+                            self?.state.error = nil
+                        case .ready:
+                            self?.state.error = nil
+                        case .preparing, .setup:
+                            break
+                        @unknown default:
+                            break
+                        }
+                    }
+                }
 
                 return
             } catch {
-                self.error = EquatableError(error)
-                status.state = nil
+                state.error = error
 
                 try? await Task.sleep(for: .seconds(2))
             }

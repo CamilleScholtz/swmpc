@@ -33,7 +33,7 @@ struct AppView: View {
         @Bindable var boundNavigator = navigator
 
         Group {
-            if mpd.status.state == nil {
+            if !mpd.state.isConnectionReady {
                 ErrorView()
             } else {
                 Group {
