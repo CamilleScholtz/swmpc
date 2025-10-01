@@ -13,11 +13,12 @@ struct AlbumSongsView: View {
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
+    private let album: Album
+    
     init(for album: Album) {
-        _album = State(initialValue: album)
+        self.album = album
     }
 
-    @State private var album: Album
     @State private var artwork: PlatformImage?
     @State private var songs: [Int: [Song]]?
 
