@@ -132,7 +132,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         {
             TCP()
                 .noDelay(true)
-                .connectionTimeout(5)
+                .connectionTimeout(3)
         }
 
         if let onStateUpdate {

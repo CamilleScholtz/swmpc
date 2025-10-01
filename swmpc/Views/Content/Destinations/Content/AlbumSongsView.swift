@@ -14,7 +14,7 @@ struct AlbumSongsView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private let album: Album
-    
+
     init(for album: Album) {
         self.album = album
     }

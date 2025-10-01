@@ -16,7 +16,6 @@ actor ArtworkManager {
     static let shared = ArtworkManager()
 
     private let cache = NSCache<NSString, NSData>()
-    private var tasks: [String: Task<Data, Error>] = [:]
 
     /// Private initializer to enforce singleton pattern. Sets up the cache with
     /// a 64MB memory limit.
@@ -47,15 +46,8 @@ actor ArtworkManager {
             return data as Data
         }
 
-        if let existingTask = tasks[file] {
-            return try await existingTask.value
-        }
-
         let task = createFetchTask(for: file, priority: .high,
                                    shouldCache: shouldCache)
-        tasks[file] = task
-
-        defer { tasks.removeValue(forKey: file) }
 
         return try await task.value
     }
