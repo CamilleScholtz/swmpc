@@ -173,7 +173,7 @@ struct SettingsView: View {
                             .monospaced()
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(7)
                             .background(
                                 RoundedRectangle(cornerRadius: 7)
