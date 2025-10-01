@@ -116,52 +116,6 @@ struct SettingsView: View {
         @State private var port = UserDefaults.standard.integer(forKey: Setting.port) == 0 ? 6600 : UserDefaults.standard.integer(forKey: Setting.port)
         @State private var password = UserDefaults.standard.string(forKey: Setting.password) ?? ""
 
-        private var connectionColor: Color {
-            guard let state = mpd.state.connectionState else {
-                return .gray
-            }
-
-            switch state {
-            case .ready:
-                return .green
-            case .failed:
-                return .red
-            case .waiting:
-                return .yellow
-            case .preparing:
-                return .yellow
-            case .setup:
-                return .gray
-            case .cancelled:
-                return .gray
-            @unknown default:
-                return .gray
-            }
-        }
-
-        private var connectionStatusDescription: String {
-            guard let state = mpd.state.connectionState else {
-                return "Connection not initialized"
-            }
-
-            switch state {
-            case .ready:
-                return "Connected and ready"
-            case let .failed(error):
-                return "Connection failed: \(error.localizedDescription)"
-            case let .waiting(error):
-                return "Waiting to connect: \(error.localizedDescription)"
-            case .preparing:
-                return "Establishing connection..."
-            case .setup:
-                return "Setting up connection"
-            case .cancelled:
-                return "Connection cancelled"
-            @unknown default:
-                return "Unknown state"
-            }
-        }
-
         var body: some View {
             Form {
                 Section {
@@ -208,9 +162,9 @@ struct SettingsView: View {
                         #endif
 
                         Circle()
-                            .fill(connectionColor)
+                            .fill(mpd.state.connectionColor)
                             .frame(width: 10, height: 10)
-                            .help(connectionStatusDescription)
+                            .help(mpd.state.connectionDescription)
                     }
 
                     if !mpd.state.isConnectionReady, let error = mpd.state.error {

@@ -74,10 +74,10 @@ import SwiftUI
                         self?.state.connectionState = connectionState
 
                         switch connectionState {
-                        case let .failed(error):
-                            self?.state.error = EquatableError(error)
-                        case let .waiting(error):
-                            self?.state.error = EquatableError(error)
+                        case let .failed(details):
+                            self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"])
+                        case let .waiting(details):
+                            self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(details.localizedDescription)"])
                         case .cancelled:
                             self?.state.error = nil
                         case .ready:
@@ -92,7 +92,7 @@ import SwiftUI
 
                 return
             } catch {
-                state.error = EquatableError(error)
+                state.error = error
 
                 try? await Task.sleep(for: .seconds(2))
             }
