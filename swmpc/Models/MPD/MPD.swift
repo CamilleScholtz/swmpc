@@ -54,7 +54,7 @@ import SwiftUI
 
         state.error = nil
 
-        try? await Task.sleep(for: .milliseconds(500))
+        try? await Task.sleep(for: .seconds(1))
 
         updateLoopTask = Task { [weak self] in
             await self?.updateLoop()
@@ -69,13 +69,14 @@ import SwiftUI
     private func connect() async {
         while !Task.isCancelled {
             do {
-                try await ConnectionManager.idle.connect { [weak self] _, connectionState in
+                try await ConnectionManager.idle.connect { [weak self] _,
+                    state in
                     Task { @MainActor [weak self] in
-                        self?.state.connectionState = connectionState
+                        self?.state.connectionState = state
 
-                        switch connectionState {
+                        switch state {
                         case let .failed(details):
-                            self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"])
+                            self?.state.error = NSError(domain: "MPD", code: 0,userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"])
                         case let .waiting(details):
                             self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(details.localizedDescription)"])
                         case .cancelled:
