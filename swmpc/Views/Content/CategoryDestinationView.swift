@@ -491,12 +491,8 @@ struct CategoryPlaylistView: View {
 
         let song = songs[sourceIndex]
 
-        do {
-            try await ConnectionManager.command().move(song, to: destination, in: navigator.category.source)
-            self.songs = try await mpd.playlists.getSongs(for: playlist)
-        } catch {
-            print("Failed to reorder song in playlist: \(error)")
-        }
+        try? await ConnectionManager.command().move(song, to: destination, in: navigator.category.source)
+        self.songs = try? await mpd.playlists.getSongs(for: playlist)
     }
 }
 

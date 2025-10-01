@@ -123,11 +123,7 @@ struct SettingsView: View {
 
             switch state {
             case .ready:
-                if mpd.status.state != nil {
-                    return .green
-                } else {
-                    return .yellow
-                }
+                return .green
             case .failed:
                 return .red
             case .waiting:
@@ -150,11 +146,7 @@ struct SettingsView: View {
 
             switch state {
             case .ready:
-                if mpd.status.state != nil {
-                    return "Connected and ready"
-                } else {
-                    return "Connected, waiting for status"
-                }
+                return "Connected and ready"
             case let .failed(error):
                 return "Connection failed: \(error.localizedDescription)"
             case let .waiting(error):
@@ -209,7 +201,6 @@ struct SettingsView: View {
                             UserDefaults.standard.set(password, forKey: Setting.password)
 
                             await mpd.reinitialize()
-                            try? await Task.sleep(for: .seconds(2))
                         }
 
                         #if os(iOS)
@@ -227,6 +218,8 @@ struct SettingsView: View {
                             .font(.caption)
                             .monospaced()
                             .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
                             .padding(7)
                             .background(
                                 RoundedRectangle(cornerRadius: 7)
