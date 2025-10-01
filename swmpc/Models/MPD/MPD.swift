@@ -76,7 +76,7 @@ import SwiftUI
 
                         switch state {
                         case let .failed(details):
-                            self?.state.error = NSError(domain: "MPD", code: 0,userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"])
+                            self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"])
                         case let .waiting(details):
                             self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(details.localizedDescription)"])
                         case .cancelled:
