@@ -96,9 +96,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The version of the MPD server obtained during connection handshake.
     private(set) var version: String?
 
-    /// The last error that occurred during the connection's lifetime.
-    private(set) var error: ConnectionManagerError?
-
     /// Establishes a TCP connection to the MPD server.
     ///
     /// This asynchronous function sets up a new network connection using
@@ -122,12 +119,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         let host = UserDefaults.standard.string(forKey: Setting.host)
         guard host != nil, !host!.isEmpty else {
-            try recordAndThrow(ConnectionManagerError.invalidHost)
+            throw ConnectionManagerError.invalidHost
         }
 
         let port = UserDefaults.standard.integer(forKey: Setting.port)
         guard port > 0, port <= 65535 else {
-            try recordAndThrow(ConnectionManagerError.invalidPort)
+            throw ConnectionManagerError.invalidPort
         }
 
         connection = NetworkConnection(to: .hostPort(host: NWEndpoint.Host(
@@ -144,9 +141,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
-            try recordAndThrow(ConnectionManagerError.connectionFailure(
+            throw ConnectionManagerError.connectionFailure(
                 "Missing OK MPD line from server greeting",
-            ))
+            )
         }
 
         version = lines.first?.split(separator: " ").last.map(String.init)
@@ -163,20 +160,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     func disconnect() async {
         connection = nil
         version = nil
-        error = nil
 
         buffer.removeAll(keepingCapacity: false)
-    }
-
-    /// Records an error as the last error and throws it.
-    ///
-    /// - Parameters:
-    ///   - error: The error to record and throw
-    private func recordAndThrow(_ error: ConnectionManagerError) throws
-        -> Never
-    {
-        self.error = error
-        throw error
     }
 
     /// Ensures that the current network connection is available.
@@ -187,7 +172,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     @discardableResult
     func ensureConnection() throws -> NetworkConnection<TCP> {
         guard let connection else {
-            try recordAndThrow(ConnectionManagerError.connectionUnexpectedClosure)
+            throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
         return connection
@@ -205,7 +190,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         guard version?.compare("0.22", options: .numeric) !=
             .orderedAscending
         else {
-            try recordAndThrow(ConnectionManagerError.unsupportedServerVersion)
+            throw ConnectionManagerError.unsupportedServerVersion
         }
     }
 
@@ -274,8 +259,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         let connection = try ensureConnection()
 
         guard let data = (line + "\n").data(using: .utf8) else {
-            try recordAndThrow(ConnectionManagerError.protocolViolation(
-                "Failed to encode command to UTF-8."))
+            throw ConnectionManagerError.protocolViolation(
+                "Failed to encode command to UTF-8.")
         }
 
         try await connection.send(data)
@@ -359,8 +344,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         while true {
             if let line = try extractLineFromBuffer() {
                 if line.hasPrefix("ACK") {
-                    try recordAndThrow(ConnectionManagerError.protocolViolation(
-                        line))
+                    throw ConnectionManagerError.protocolViolation(line)
                 }
 
                 return line
@@ -384,8 +368,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: An error if receiving additional data fails.
     private func readFixedLengthData(_ length: Int) async throws -> Data {
         guard length >= 0 else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Invalid data length requested: \(length)"))
+            throw ConnectionManagerError.malformedResponse(
+                "Invalid data length requested: \(length)")
         }
 
         guard length > 0 else {
@@ -397,7 +381,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard buffer.count >= length else {
-            try recordAndThrow(ConnectionManagerError.connectionUnexpectedClosure)
+            throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
         let data = Data(buffer.prefix(length))
@@ -428,8 +412,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         buffer.removeFirst(index + 1)
 
         guard let string = String(data: data, encoding: .utf8) else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Failed to decode line from buffer (invalid UTF-8)"))
+            throw ConnectionManagerError.malformedResponse(
+                "Failed to decode line from buffer (invalid UTF-8)")
         }
 
         return string
@@ -459,7 +443,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         if chunk.isEmpty {
-            try recordAndThrow(ConnectionManagerError.connectionUnexpectedClosure)
+            throw ConnectionManagerError.connectionUnexpectedClosure
         }
 
         buffer.append(contentsOf: chunk)
@@ -530,7 +514,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             }
         }
 
-        try recordAndThrow(ConnectionManagerError.readUntilConditionNotMet)
+        throw ConnectionManagerError.readUntilConditionNotMet
     }
 
     /// Reads lines from the connection until a line starting with `OK` is
@@ -574,8 +558,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard parts.count == 2 else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Line does not contain exactly one colon"))
+            throw ConnectionManagerError.malformedResponse(
+                "Line does not contain exactly one colon")
         }
 
         return (parts[0].lowercased(), parts[1])
@@ -588,8 +572,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: `ConnectionManagerError.malformedResponse` if the cast fails.
     private func castResult<T>(_ value: some Any) throws -> T {
         guard let result = value as? T else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Type mismatch: expected \(T.self) but created \(type(of: value))"))
+            throw ConnectionManagerError.malformedResponse(
+                "Type mismatch: expected \(T.self) but created \(type(of: value))")
         }
 
         return result
@@ -621,8 +605,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         guard let file = fields["file"] else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Missing or invalid file field"))
+            throw ConnectionManagerError.malformedResponse(
+                "Missing or invalid file field")
         }
 
         let artistName = fields["albumartist"] ?? fields["artist"]
@@ -673,8 +657,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
             return try castResult(artist)
         default:
-            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                "Unsupported media type: \(type)"))
+            throw ConnectionManagerError.unsupportedOperation(
+                "Unsupported media type: \(type)")
         }
     }
 
@@ -753,8 +737,8 @@ extension ConnectionManager {
             case "pause": state = .pause
             case "stop": state = .stop
             default:
-                try recordAndThrow(ConnectionManagerError.malformedResponse(
-                    "Invalid player state: \(stateValue)"))
+                throw ConnectionManagerError.malformedResponse(
+                    "Invalid player state: \(stateValue)")
             }
         } else {
             state = nil
@@ -829,8 +813,8 @@ extension ConnectionManager {
         case .queue:
             lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name)) sort date"])
         default:
-            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                "Only database and queue sources are supported for retrieving albums by artist"))
+            throw ConnectionManagerError.unsupportedOperation(
+                "Only database and queue sources are supported for retrieving albums by artist")
         }
 
         let albums: [Album] = try parseMediaResponseArray(lines, as: .album)
@@ -920,8 +904,8 @@ extension ConnectionManager {
         case .queue:
             try await run(["playlistfind \(filters)"])
         default:
-            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                "Only database and queue sources are supported for retrieving songs in an album"))
+            throw ConnectionManagerError.unsupportedOperation(
+                "Only database and queue sources are supported for retrieving songs in an album")
         }
 
         return try parseMediaResponseArray(lines, as: .song)
@@ -977,14 +961,14 @@ extension ConnectionManager where Mode == IdleMode {
         guard let changedLine = lines.first(where: { $0.hasPrefix(
             "changed: ") })
         else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Missing 'changed' line"))
+            throw ConnectionManagerError.malformedResponse(
+                "Missing 'changed' line")
         }
 
         let changed = String(changedLine.dropFirst("changed: ".count))
         guard let event = IdleEvent(rawValue: changed) else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Received unknown idle event: \(changed)"))
+            throw ConnectionManagerError.malformedResponse(
+                "Received unknown idle event: \(changed)")
         }
 
         return event
@@ -1046,8 +1030,8 @@ extension ConnectionManager where Mode == ArtworkMode {
             }
 
             guard let chunkSize else {
-                try recordAndThrow(ConnectionManagerError.malformedResponse(
-                    "Missing chunk size"))
+                throw ConnectionManagerError.malformedResponse(
+                    "Missing chunk size")
             }
 
             let binaryChunk = try await readFixedLengthData(chunkSize)
@@ -1065,8 +1049,7 @@ extension ConnectionManager where Mode == ArtworkMode {
                 }
             }
 
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Missing 'OK' line"))
+            throw ConnectionManagerError.malformedResponse("Missing 'OK' line")
         }
     }
 }
@@ -1185,16 +1168,16 @@ extension ConnectionManager where Mode == CommandMode {
             }
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
-                try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for this operation"))
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Playlist is required for this operation")
             }
 
             commands = songsToAdd.map {
                 "playlistadd \(playlist.name) \(escape($0.file))"
             }
         case .database:
-            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                "Cannot add songs to the database"))
+            throw ConnectionManagerError.unsupportedOperation(
+                "Cannot add songs to the database")
         }
 
         try await run(commands)
@@ -1252,8 +1235,8 @@ extension ConnectionManager where Mode == CommandMode {
                     }
                 }
             default:
-                try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                    "Only queue and playlist sources are supported for removing songs"))
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Only queue and playlist sources are supported for removing songs")
             }
 
             i += 1
@@ -1275,8 +1258,8 @@ extension ConnectionManager where Mode == CommandMode {
     ///           position info.
     func move(_ song: Song, to position: Int, in source: Source) async throws {
         guard let currentPosition = song.position else {
-            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                "Cannot move song without a position"))
+            throw ConnectionManagerError.unsupportedOperation(
+                "Cannot move song without a position")
         }
 
         switch source {
@@ -1284,14 +1267,14 @@ extension ConnectionManager where Mode == CommandMode {
             try await run(["move \(currentPosition) \(position)"])
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
-                try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for this operation"))
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Playlist is required for this operation")
             }
 
             try await run(["playlistmove \(escape(playlist.name)) \(currentPosition) \(position)"])
         default:
-            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                "Only queue and playlist sources are supported for moving media"))
+            throw ConnectionManagerError.unsupportedOperation(
+                "Only queue and playlist sources are supported for moving media")
         }
     }
 
@@ -1324,13 +1307,13 @@ extension ConnectionManager where Mode == CommandMode {
         case let song as Song:
             songs = [song]
         default:
-            try recordAndThrow(ConnectionManagerError.unsupportedOperation(
-                "Only Album, Artist, and Song types are supported for playback"))
+            throw ConnectionManagerError.unsupportedOperation(
+                "Only Album, Artist, and Song types are supported for playback")
         }
 
         guard !songs.isEmpty else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "No songs found for the specified media"))
+            throw ConnectionManagerError.malformedResponse(
+                "No songs found for the specified media")
         }
 
         let queue = try await getSongs(from: .queue)
@@ -1362,8 +1345,8 @@ extension ConnectionManager where Mode == CommandMode {
         }
 
         guard let id else {
-            try recordAndThrow(ConnectionManagerError.malformedResponse(
-                "Failed to determine song ID to play"))
+            throw ConnectionManagerError.malformedResponse(
+                "Failed to determine song ID to play")
         }
 
         try await run(["playid \(id)"])
