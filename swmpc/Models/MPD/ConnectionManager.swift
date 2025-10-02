@@ -101,8 +101,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// This asynchronous function sets up a new network connection using
     /// `NetworkConnection` with TCP options configured for no-delay.
     ///
-    /// - Parameter onStateUpdate: Optional closure called when connection state changes.
-    ///                           Receives the connection and the new state.
+    /// - Parameter onStateUpdate: Optional closure called when connection state
+    ///                            changes. Receives the connection and the new
+    ///                            state.
     /// - Throws: `ConnectionManagerError.invalidPort` if the port is
     ///           invalid, `ConnectionManagerError.connectionSetupFailed` if the
     ///           connection cannot be created, the connection fails to become
@@ -157,7 +158,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Cancels any active connection, sets the connection to `nil`, removes all
     /// buffered data, and resets the server version. This method should be
     /// called to cleanly terminate the connection.
-    func disconnect() async {
+    func disconnect() {
         connection = nil
         version = nil
 

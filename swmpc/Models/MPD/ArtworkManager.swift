@@ -41,8 +41,8 @@ actor ArtworkManager {
             return data as Data
         }
 
-        let connection = try await ConnectionManager<ArtworkMode>.artwork()
-        let data = try await connection.getArtworkData(for: file)
+        let data = try await ConnectionManager<ArtworkMode>.artwork()
+            .getArtworkData(for: file)
 
         if shouldCache {
             cache.setObject(data as NSData, forKey: file as NSString, cost: data.count)
