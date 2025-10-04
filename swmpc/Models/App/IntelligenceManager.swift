@@ -204,14 +204,12 @@ actor IntelligenceManager {
 
             let client = try await self.connect(using: model)
 
-            if case .playlist = target {
-                try await ConnectionManager.command {
-                    try await $0.loadPlaylist()
+            let albums = try await ConnectionManager.command { manager in
+                if case .playlist = target {
+                    try await manager.loadPlaylist()
                 }
-            }
 
-            let albums = try await ConnectionManager.command {
-                try await $0.getAlbums()
+                return try await manager.getAlbums()
             }
             let albumDescriptions = albums.map(\.description).joined(
                 separator: "\n")
@@ -259,11 +257,15 @@ actor IntelligenceManager {
     ///   - albums: Available albums from MPD library.
     /// - Returns: Array of songs from matched albums.
     /// - Throws: Errors from fetching album songs.
-    private func collectSongs(from playlist: [String], albums: [Album]) async throws -> [Song] {
+    private func collectSongs(from playlist: [String], albums: [Album]) async
+        throws -> [Song]
+    {
         var songs: [Song] = []
 
         for albumName in playlist {
-            guard let album = albums.first(where: { $0.description == albumName }) else {
+            guard let album = albums.first(where: { $0.description ==
+                    albumName
+            }) else {
                 continue
             }
 
@@ -282,12 +284,13 @@ actor IntelligenceManager {
     private func addSongs(_ songs: [Song], to target: IntelligenceTarget) async throws {
         switch target {
         case let .playlist(playlist):
-            guard let playlist = playlist.wrappedValue else { return }
-            try await ConnectionManager.command {
-                try await $0.add(songs: songs, to: .playlist(playlist))
+            guard let playlist = playlist.wrappedValue else {
+                return
             }
-            try await ConnectionManager.command {
-                try await $0.loadPlaylist(playlist)
+
+            try await ConnectionManager.command { manager in
+                try await manager.add(songs: songs, to: .playlist(playlist))
+                try await manager.loadPlaylist(playlist)
             }
         case .queue:
             try await ConnectionManager.command {
@@ -302,8 +305,8 @@ actor IntelligenceManager {
     ///   - seconds: Maximum time to wait before cancelling.
     ///   - operation: The async operation to execute.
     /// - Returns: Result from the operation if completed within timeout.
-    /// - Throws: `IntelligenceManagerError.timeout` if operation exceeds time limit,
-    ///           or any error thrown by the operation itself.
+    /// - Throws: `IntelligenceManagerError.timeout` if operation exceeds time
+    ///           limit, or any error thrown by the operation itself.
     private func withTimeout<T: Sendable>(
         seconds: TimeInterval,
         operation: @escaping @Sendable () async throws -> T,
