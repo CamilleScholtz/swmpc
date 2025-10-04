@@ -86,8 +86,7 @@ enum Source: Equatable, Hashable {
             [.title, .artist, .genre, .composer, .performer, .conductor,
              .ensemble, .mood, .comment]
         case .playlist:
-            [.title, .artist, .genre, .composer, .performer, .conductor,
-             .ensemble, .mood, .comment]
+            []
         }
     }
 
@@ -103,7 +102,7 @@ enum Source: Equatable, Hashable {
         case .song:
             SearchFields(fields: [.title, .artist])
         case .playlist:
-            SearchFields(fields: [.title, .artist])
+            SearchFields.default
         }
     }
 

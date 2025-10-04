@@ -147,12 +147,9 @@ struct CategoryDatabaseView: View {
     }
 
     var body: some View {
-        ZStack {
-            if let searchResults {
-                mediaList(for: searchResults)
-                    .id(mpd.database.type)
-            } else if let media = mpd.database.media, !media.isEmpty {
-                mediaList(for: media)
+        Group {
+            if let media = mpd.database.media, !media.isEmpty {
+                mediaList(for: searchResults ?? media)
                     .id(mpd.database.type)
             } else {
                 EmptyCategoryView(destination: navigator.category)
