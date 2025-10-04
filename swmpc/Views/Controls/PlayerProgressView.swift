@@ -33,7 +33,9 @@ struct PlayerProgressView: View {
                         isEditing = true
                     } else {
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command().seek(sliderValue)
+                            try? await ConnectionManager.command {
+                                try await $0.seek(sliderValue)
+                            }
                             try? await Task.sleep(for: .milliseconds(500))
                             isEditing = false
                         }

@@ -28,6 +28,8 @@ import SwiftUI
 
         songs = try await idle
             ? ConnectionManager.idle.getSongs(from: .queue)
-            : ConnectionManager.command().getSongs(from: .queue)
+            : ConnectionManager.command {
+                try await $0.getSongs(from: .queue)
+            }
     }
 }

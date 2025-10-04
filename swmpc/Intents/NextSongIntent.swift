@@ -13,7 +13,9 @@ struct NextSongIntent: AppIntent, AudioPlaybackIntent {
     static let description = IntentDescription("Skip to the next song in the queue")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        try await ConnectionManager.command().next()
+        try await ConnectionManager.command {
+            try await $0.next()
+        }
 
         guard let song = await mpd.status.song else {
             return .result(dialog: IntentDialog("Playing next song"))

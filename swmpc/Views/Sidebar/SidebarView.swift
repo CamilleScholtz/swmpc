@@ -68,7 +68,9 @@ struct SidebarView: View {
                             }
                             .onSubmit {
                                 Task(priority: .userInitiated) {
-                                    try await ConnectionManager.command().renamePlaylist(playlist, to: playlistName)
+                                    try await ConnectionManager.command {
+                                        try await $0.renamePlaylist(playlist, to: playlistName)
+                                    }
 
                                     isRenamingPlaylist = false
                                     playlistToRename = nil
@@ -118,7 +120,9 @@ struct SidebarView: View {
                         }
                         .onSubmit {
                             Task(priority: .userInitiated) {
-                                try? await ConnectionManager.command().createPlaylist(named: playlistName)
+                                try? await ConnectionManager.command {
+                                    try await $0.createPlaylist(named: playlistName)
+                                }
 
                                 isCreatingPlaylist = false
                                 playlistName = ""
@@ -148,7 +152,9 @@ struct SidebarView: View {
                     throw ViewError.missingData
                 }
 
-                try await ConnectionManager.command().removePlaylist(playlist)
+                try await ConnectionManager.command {
+                    try await $0.removePlaylist(playlist)
+                }
 
                 playlistToDelete = nil
                 showDeleteAlert = false

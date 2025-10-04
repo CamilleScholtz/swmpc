@@ -13,7 +13,9 @@ struct ToggleRepeatIntent: AppIntent, AudioPlaybackIntent {
     static let description = IntentDescription("Enable or disable repeat mode")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
+        try await ConnectionManager.command {
+            try await $0.repeat(!(mpd.status.isRepeat ?? false))
+        }
 
         return await .result(dialog: IntentDialog(!(mpd.status.isRepeat ?? false) ? "Repeat enabled" : "Repeat disabled"))
     }

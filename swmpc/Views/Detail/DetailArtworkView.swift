@@ -113,7 +113,9 @@ struct DetailArtworkView: View {
                         }
 
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command().next()
+                            try? await ConnectionManager.command {
+                                try await $0.next()
+                            }
                         }
                     },
                     onSwipeRight: {
@@ -122,7 +124,9 @@ struct DetailArtworkView: View {
                         }
 
                         Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command().previous()
+                            try? await ConnectionManager.command {
+                                try await $0.previous()
+                            }
                         }
                     },
                 )

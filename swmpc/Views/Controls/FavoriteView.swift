@@ -22,9 +22,13 @@ struct FavoriteView: View {
             isFavorited.toggle()
 
             if isFavorited {
-                try await ConnectionManager.command().add(songs: [song], to: .favorites)
+                try await ConnectionManager.command {
+                    try await $0.add(songs: [song], to: .favorites)
+                }
             } else {
-                try await ConnectionManager.command().remove(songs: [song], from: .favorites)
+                try await ConnectionManager.command {
+                    try await $0.remove(songs: [song], from: .favorites)
+                }
             }
         } label: {
             Image(systemSymbol: .heartFill)

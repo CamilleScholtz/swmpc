@@ -37,7 +37,9 @@ struct NextView: View {
                 }
             }
 
-            try await ConnectionManager.command().next()
+            try await ConnectionManager.command {
+                try await $0.next()
+            }
         } label: {
             VStack(alignment: .leading) {
                 HStack(spacing: -5) {

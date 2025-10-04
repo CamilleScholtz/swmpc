@@ -76,7 +76,9 @@ struct AlbumView: View, Equatable {
             #endif
             .onTapGesture {
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().play(album)
+                    try? await ConnectionManager.command {
+                        try await $0.play(album)
+                    }
                 }
             }
 

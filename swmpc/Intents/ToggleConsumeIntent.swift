@@ -13,7 +13,9 @@ struct ToggleConsumeIntent: AppIntent, AudioPlaybackIntent {
     static let description = IntentDescription("Enable or disable consume mode")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        try await ConnectionManager.command().consume(!(mpd.status.isConsume ?? false))
+        try await ConnectionManager.command {
+            try await $0.consume(!(mpd.status.isConsume ?? false))
+        }
 
         return await .result(dialog: IntentDialog(!(mpd.status.isConsume ?? false) ? "Consume enabled" : "Consume disabled"))
     }

@@ -44,17 +44,23 @@ struct Delegate: App {
         .commands {
             CommandMenu("Controls") {
                 AsyncButton(appDelegate.mpd.status.isPlaying ? "Pause" : "Play", systemImage: appDelegate.mpd.status.isPlaying == true ? "pause.fill" : "play.fill") {
-                    try await ConnectionManager.command().pause(appDelegate.mpd.status.isPlaying)
+                    try await ConnectionManager.command {
+                        try await $0.pause(appDelegate.mpd.status.isPlaying)
+                    }
                 }
                 .keyboardShortcut(.space)
 
                 AsyncButton("Next Song", systemImage: "forward.fill") {
-                    try await ConnectionManager.command().next()
+                    try await ConnectionManager.command {
+                        try await $0.next()
+                    }
                 }
                 .keyboardShortcut(.downArrow, modifiers: [.command])
 
                 AsyncButton("Previous Song", systemImage: "backward.fill") {
-                    try await ConnectionManager.command().previous()
+                    try await ConnectionManager.command {
+                        try await $0.previous()
+                    }
                 }
                 .keyboardShortcut(.upArrow, modifiers: [.command])
 
@@ -68,9 +74,13 @@ struct Delegate: App {
                     let isFavorited = appDelegate.mpd.playlists.favorites.contains { $0.file == song.file }
 
                     if isFavorited {
-                        try await ConnectionManager.command().remove(songs: [song], from: .favorites)
+                        try await ConnectionManager.command {
+                            try await $0.remove(songs: [song], from: .favorites)
+                        }
                     } else {
-                        try await ConnectionManager.command().add(songs: [song], to: .favorites)
+                        try await ConnectionManager.command {
+                            try await $0.add(songs: [song], to: .favorites)
+                        }
                     }
                 }
                 .keyboardShortcut("l", modifiers: [.command, .option])
@@ -83,19 +93,25 @@ struct Delegate: App {
                 Divider()
 
                 AsyncButton("Toggle Repeat", systemImage: "repeat") {
-                    try await ConnectionManager.command().repeat(!(appDelegate.mpd.status.isRepeat ?? false))
+                    try await ConnectionManager.command {
+                        try await $0.repeat(!(appDelegate.mpd.status.isRepeat ?? false))
+                    }
                 }
                 .keyboardShortcut("r", modifiers: [.command])
 
                 AsyncButton("Toggle Shuffle", systemImage: "shuffle") {
-                    try await ConnectionManager.command().random(!(appDelegate.mpd.status.isRandom ?? false))
+                    try await ConnectionManager.command {
+                        try await $0.random(!(appDelegate.mpd.status.isRandom ?? false))
+                    }
                 }
                 .keyboardShortcut("s", modifiers: [.command])
 
                 Divider()
 
                 AsyncButton("Toggle Consume", systemImage: "flame") {
-                    try await ConnectionManager.command().consume(!(appDelegate.mpd.status.isConsume ?? false))
+                    try await ConnectionManager.command {
+                        try await $0.consume(!(appDelegate.mpd.status.isConsume ?? false))
+                    }
                 }
 
                 Button("Clear Queue", systemSymbol: .trash) {
@@ -106,7 +122,9 @@ struct Delegate: App {
                 Divider()
 
                 AsyncButton("Reload Library", systemImage: "arrow.clockwise") {
-                    try await ConnectionManager.command().update()
+                    try await ConnectionManager.command {
+                        try await $0.update()
+                    }
                     try await appDelegate.mpd.database.set()
                 }
                 .keyboardShortcut("r", modifiers: [.command, .option])
@@ -117,7 +135,9 @@ struct Delegate: App {
                     Menu("Load Playlist", systemImage: "music.note.list") {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
-                                try await ConnectionManager.command().loadPlaylist(playlist)
+                                try await ConnectionManager.command {
+                                    try await $0.loadPlaylist(playlist)
+                                }
                             }
                         }
                     }
@@ -344,7 +364,9 @@ struct Delegate: App {
             switch event.type {
             case .rightMouseDown:
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().pause(mpd.status.isPlaying)
+                    try? await ConnectionManager.command {
+                        try await $0.pause(mpd.status.isPlaying)
+                    }
                 }
             default:
                 togglePopover(sender)
@@ -359,19 +381,27 @@ struct Delegate: App {
             switch action {
             case .play:
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().pause(false)
+                    try? await ConnectionManager.command {
+                        try await $0.pause(false)
+                    }
                 }
             case .pause:
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().pause(true)
+                    try? await ConnectionManager.command {
+                        try await $0.pause(true)
+                    }
                 }
             case .nextSong:
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().next()
+                    try? await ConnectionManager.command {
+                        try await $0.next()
+                    }
                 }
             case .previousSong:
                 Task(priority: .userInitiated) {
-                    try? await ConnectionManager.command().previous()
+                    try? await ConnectionManager.command {
+                        try await $0.previous()
+                    }
                 }
             case .addToFavorites:
                 Task(priority: .userInitiated) {
@@ -382,9 +412,13 @@ struct Delegate: App {
                     let isFavorited = mpd.playlists.favorites.contains { $0.file == song.file }
 
                     if isFavorited {
-                        try? await ConnectionManager.command().remove(songs: [song], from: .favorites)
+                        try? await ConnectionManager.command {
+                            try await $0.remove(songs: [song], from: .favorites)
+                        }
                     } else {
-                        try? await ConnectionManager.command().add(songs: [song], to: .favorites)
+                        try? await ConnectionManager.command {
+                            try await $0.add(songs: [song], to: .favorites)
+                        }
                     }
                 }
             }

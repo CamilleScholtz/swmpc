@@ -42,7 +42,9 @@ import SwiftUI
     private func fetchPlaylists(idle: Bool) async throws -> ([Playlist], [Song]) {
         let allPlaylists = try await idle
             ? ConnectionManager.idle.getPlaylists()
-            : ConnectionManager.command().getPlaylists()
+            : ConnectionManager.command {
+                try await $0.getPlaylists()
+            }
 
         guard let favoritePlaylist = allPlaylists.first(where: {
             $0.name == "Favorites"
@@ -52,7 +54,9 @@ import SwiftUI
 
         let favorites = try await idle
             ? ConnectionManager.idle.getSongs(from: .playlist(favoritePlaylist))
-            : ConnectionManager.command().getSongs(from: .playlist(favoritePlaylist))
+            : ConnectionManager.command {
+                try await $0.getSongs(from: .playlist(favoritePlaylist))
+            }
 
         return (allPlaylists, favorites)
     }
@@ -61,6 +65,8 @@ import SwiftUI
     func getSongs(for playlist: Playlist) async throws -> [Song] {
         defer { state.isLoading = false }
 
-        return try await ConnectionManager.command().getSongs(from: .playlist(playlist))
+        return try await ConnectionManager.command {
+            try await $0.getSongs(from: .playlist(playlist))
+        }
     }
 }

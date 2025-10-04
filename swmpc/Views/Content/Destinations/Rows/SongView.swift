@@ -93,7 +93,9 @@ struct SongView: View, Equatable {
             #endif
                 .onTapGesture {
                     Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command().play(song)
+                        try? await ConnectionManager.command {
+                            try await $0.play(song)
+                        }
                     }
                 }
                 .contextMenu {

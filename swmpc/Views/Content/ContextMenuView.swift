@@ -201,7 +201,9 @@ struct SourceToggleButton<Media: Mediable>: View {
             case .favorites:
                 mpd.playlists.favorites
             case .playlist:
-                try await ConnectionManager.command().getSongs(from: source)
+                try await ConnectionManager.command {
+                    try await $0.getSongs(from: source)
+                }
             default:
                 throw ViewError.missingData
             }
@@ -215,9 +217,13 @@ struct SourceToggleButton<Media: Mediable>: View {
             }
 
             if shouldRemove {
-                try await ConnectionManager.command().remove(songs: songs, from: source)
+                try await ConnectionManager.command {
+                    try await $0.remove(songs: songs, from: source)
+                }
             } else {
-                try await ConnectionManager.command().add(songs: songs, to: source)
+                try await ConnectionManager.command {
+                    try await $0.add(songs: songs, to: source)
+                }
             }
 
             switch source {

@@ -72,7 +72,9 @@ struct DetailView: View {
 
                 ToolbarItem {
                     AsyncButton(mpd.status.isConsume ?? false ? "Disable Consume" : "Enable Consume", systemImage: mpd.status.isConsume ?? false ? SFSymbol.flameFill.rawValue : SFSymbol.flame.rawValue) {
-                        try await ConnectionManager.command().consume(!(mpd.status.isConsume ?? false))
+                        try await ConnectionManager.command {
+                            try await $0.consume(!(mpd.status.isConsume ?? false))
+                        }
                     }
                 }
 

@@ -83,7 +83,9 @@ import SwiftUI
     func set(idle: Bool = true) async throws {
         let data = try await idle
             ? ConnectionManager.idle.getStatusData()
-            : ConnectionManager.command().getStatusData()
+            : ConnectionManager.command {
+                try await $0.getStatusData()
+            }
 
         if state.update(to: data.state) {
             #if os(macOS)
@@ -153,7 +155,9 @@ import SwiftUI
     /// - Throws: An error if fetching the current status fails.
     func startTrackingElapsed() async throws {
         if !trackElapsed {
-            let data = try await ConnectionManager.command().getStatusData()
+            let data = try await ConnectionManager.command {
+                try await $0.getStatusData()
+            }
             _ = elapsed.update(to: data.elapsed ?? 0)
         }
 

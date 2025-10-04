@@ -54,7 +54,9 @@ struct VolumeSliderView: View {
 
                     if !editing {
                         Task {
-                            try? await ConnectionManager.command().setVolume(Int(volume))
+                            try? await ConnectionManager.command {
+                                try await $0.setVolume(Int(volume))
+                            }
                         }
                     }
                 }

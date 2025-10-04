@@ -57,7 +57,9 @@ struct QueueView: View {
             Button("Cancel", role: .cancel) {}
 
             AsyncButton("Clear", role: .destructive) {
-                try await ConnectionManager.command().clearQueue()
+                try await ConnectionManager.command {
+                    try await $0.clearQueue()
+                }
             }
         } message: {
             Text("Are you sure you want to clear the queue?")
@@ -90,7 +92,9 @@ struct QueueView: View {
 
                 HStack(spacing: Layout.Spacing.medium) {
                     AsyncButton {
-                        try await ConnectionManager.command().consume(!(mpd.status.isConsume ?? false))
+                        try await ConnectionManager.command {
+                            try await $0.consume(!(mpd.status.isConsume ?? false))
+                        }
                     } label: {
                         Image(systemSymbol: mpd.status.isConsume ?? false ? .flameFill : .flame)
                     }
@@ -171,7 +175,9 @@ private struct MediaList: View {
 
         let song = mpd.queue.songs[sourceIndex]
 
-        try? await ConnectionManager.command().move(song, to: destination, in: .queue)
+        try? await ConnectionManager.command {
+            try await $0.move(song, to: destination, in: .queue)
+        }
         try? await mpd.queue.set()
     }
 }

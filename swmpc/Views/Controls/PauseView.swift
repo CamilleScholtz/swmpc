@@ -16,7 +16,9 @@ struct PauseView: View {
 
     var body: some View {
         AsyncButton {
-            try await ConnectionManager.command().pause(mpd.status.isPlaying)
+            try await ConnectionManager.command {
+                try await $0.pause(mpd.status.isPlaying)
+            }
         } label: {
             ZStack {
                 Image(systemSymbol: .pauseFill)

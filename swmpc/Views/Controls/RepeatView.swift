@@ -13,7 +13,9 @@ struct RepeatView: View {
 
     var body: some View {
         AsyncButton {
-            try await ConnectionManager.command().repeat(!(mpd.status.isRepeat ?? false))
+            try await ConnectionManager.command {
+                try await $0.repeat(!(mpd.status.isRepeat ?? false))
+            }
         } label: {
             ZStack {
                 Image(systemSymbol: .repeat)

@@ -474,7 +474,9 @@ struct CategoryPlaylistView: View {
             Button("Cancel", role: .cancel) {}
 
             AsyncButton("Replace", role: .destructive) {
-                try await ConnectionManager.command().loadPlaylist(playlist)
+                try await ConnectionManager.command {
+                    try await $0.loadPlaylist(playlist)
+                }
             }
         } message: {
             Text("Are you sure you want to replace the current queue with this playlist?")
@@ -506,7 +508,9 @@ struct CategoryPlaylistView: View {
 
         let song = songs[sourceIndex]
 
-        try? await ConnectionManager.command().move(song, to: destination, in: navigator.category.source)
+        try? await ConnectionManager.command {
+            try await $0.move(song, to: destination, in: navigator.category.source)
+        }
         self.songs = try? await mpd.playlists.getSongs(for: playlist)
     }
 }

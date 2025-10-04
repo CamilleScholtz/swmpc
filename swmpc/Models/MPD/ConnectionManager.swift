@@ -96,6 +96,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The version of the MPD server obtained during connection handshake.
     private(set) var version: String?
 
+    /// Cleanup when the connection manager is deallocated.
+    deinit {
+        connection = nil
+        buffer.removeAll(keepingCapacity: false)
+    }
+
     /// Establishes a TCP connection to the MPD server.
     ///
     /// This asynchronous function sets up a new network connection using
@@ -985,15 +991,26 @@ extension ConnectionManager where Mode == IdleMode {
 // MARK: - Artwork mode commands
 
 extension ConnectionManager where Mode == ArtworkMode {
-    /// Creates and connects a new `ConnectionManager` for artwork operations.
+    /// Executes an artwork operation with automatic connection cleanup.
     ///
-    /// - Returns: A connected `ConnectionManager<ArtworkMode>` instance.
-    /// - Throws: An error if the connection fails.
-    static func artwork() async throws -> ConnectionManager<ArtworkMode> {
+    /// This method creates a new connection, executes the provided closure with
+    /// the connection manager, and ensures the connection is properly
+    /// disconnected when the operation completes (whether it succeeds or
+    /// throws).
+    ///
+    /// - Parameter operation: A closure that receives a connected
+    ///                        `ConnectionManager<ArtworkMode>` and performs
+    ///                        operations on it.
+    /// - Returns: The result of the operation closure.
+    /// - Throws: An error if the connection fails or if the operation throws.
+    static func artwork<T>(_ operation: (ConnectionManager<ArtworkMode>) async
+        throws -> T) async throws -> T
+    {
         let manager = ConnectionManager<ArtworkMode>()
         try await manager.connect()
+        defer { Task { await manager.disconnect() } }
 
-        return manager
+        return try await operation(manager)
     }
 
     /// Retrieves the complete artwork data for a given file by fetching it in
@@ -1064,18 +1081,26 @@ extension ConnectionManager where Mode == ArtworkMode {
 // MARK: - Command mode commands
 
 extension ConnectionManager where Mode == CommandMode {
-    /// Creates and connects a new `ConnectionManager` for command execution.
+    /// Executes a command operation with automatic connection cleanup.
     ///
-    /// This factory method provides a convenient way to get a ready-to-use
-    /// connection manager instance pre-configured for sending commands.
+    /// This method creates a new connection, executes the provided closure with
+    /// the connection manager, and ensures the connection is properly
+    /// disconnected when the operation completes (whether it succeeds or
+    /// throws).
     ///
-    /// - Returns: A connected `ConnectionManager<CommandMode>` instance.
-    /// - Throws: An error if the connection fails.
-    static func command() async throws -> ConnectionManager<CommandMode> {
+    /// - Parameter operation: A closure that receives a connected
+    ///                        `ConnectionManager<CommandMode>` and performs
+    ///                        operations on it.
+    /// - Returns: The result of the operation closure.
+    /// - Throws: An error if the connection fails or if the operation throws.
+    static func command<T>(_ operation: (ConnectionManager<CommandMode>) async
+        throws -> T) async throws -> T
+    {
         let manager = ConnectionManager<CommandMode>()
         try await manager.connect()
+        defer { Task { await manager.disconnect() } }
 
-        return manager
+        return try await operation(manager)
     }
 
     /// Loads a playlist into the queue.

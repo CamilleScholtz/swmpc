@@ -40,7 +40,9 @@ struct PreviousView: View {
                 }
             }
 
-            try await ConnectionManager.command().previous()
+            try await ConnectionManager.command {
+                try await $0.previous()
+            }
         } label: {
             VStack(alignment: .trailing) {
                 HStack(spacing: -5) {

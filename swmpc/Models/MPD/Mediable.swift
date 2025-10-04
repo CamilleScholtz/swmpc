@@ -98,8 +98,9 @@ nonisolated struct Artist: Mediable {
     /// - Returns: An array of `Album` objects associated with this artist.
     /// - Throws: An error if the database query fails.
     func getAlbums() async throws -> [Album] {
-        try await ConnectionManager.command().getAlbums(by: self, from:
-            .database)
+        try await ConnectionManager.command {
+            try await $0.getAlbums(by: self, from: .database)
+        }
     }
 }
 
@@ -134,8 +135,9 @@ nonisolated struct Album: Mediable, Artworkable {
     /// - Returns: An array of `Song` objects belonging to this album.
     /// - Throws: An error if the database query fails.
     func getSongs() async throws -> [Song] {
-        try await ConnectionManager.command().getSongs(in: self, from:
-            .database)
+        try await ConnectionManager.command {
+            try await $0.getSongs(in: self, from: .database)
+        }
     }
 
     /// Albums cache their artwork for performance optimization.

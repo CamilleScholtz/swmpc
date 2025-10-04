@@ -13,7 +13,9 @@ struct ToggleShuffleIntent: AppIntent, AudioPlaybackIntent {
     static let description = IntentDescription("Enable or disable shuffle mode")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        try await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
+        try await ConnectionManager.command {
+            try await $0.random(!(mpd.status.isRandom ?? false))
+        }
 
         return await .result(dialog: IntentDialog(!(mpd.status.isRandom ?? false) ? "Shuffle enabled" : "Shuffle disabled"))
     }

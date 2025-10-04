@@ -185,7 +185,9 @@ struct AlbumSongsView: View {
 
                             if isHovering, !(mpd.status.song?.isIn(album) ?? false) {
                                 AsyncButton {
-                                    try await ConnectionManager.command().play(album)
+                                    try await ConnectionManager.command {
+                                        try await $0.play(album)
+                                    }
                                 } label: {
                                     Image(systemSymbol: .playFill)
                                         .font(.title2)

@@ -61,17 +61,23 @@ import SwiftUI
         case .album:
             try await idle
                 ? ConnectionManager.idle.getAlbums(sort: sort ?? self.sort)
-                : ConnectionManager.command().getAlbums(sort: sort ?? self.sort)
+                : ConnectionManager.command {
+                    try await $0.getAlbums(sort: sort ?? self.sort)
+                }
         case .artist:
             try await idle
                 ? ConnectionManager.idle.getArtists(sort: sort ?? self.sort)
-                : ConnectionManager.command().getArtists(sort: sort ?? self.sort)
+                : ConnectionManager.command {
+                    try await $0.getArtists(sort: sort ?? self.sort)
+                }
         case .song:
             try await idle
                 ? ConnectionManager.idle.getSongs(from: Source.database,
                                                   sort: sort ?? self.sort)
-                : ConnectionManager.command().getSongs(from: Source.database,
-                                                       sort: sort ?? self.sort)
+                : ConnectionManager.command {
+                    try await $0.getSongs(from: Source.database, sort: sort
+                        ?? self.sort)
+                }
         case .playlist:
             nil
         }

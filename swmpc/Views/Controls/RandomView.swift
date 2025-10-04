@@ -13,7 +13,9 @@ struct RandomView: View {
 
     var body: some View {
         AsyncButton {
-            try await ConnectionManager.command().random(!(mpd.status.isRandom ?? false))
+            try await ConnectionManager.command {
+                try await $0.random(!(mpd.status.isRandom ?? false))
+            }
         } label: {
             ZStack {
                 Image(systemSymbol: .shuffle)
