@@ -65,6 +65,10 @@ struct CategoryDatabaseView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
+    @AppStorage(Setting.albumSearchFields) private var albumSearchFields = SearchFields.default
+    @AppStorage(Setting.artistSearchFields) private var artistSearchFields = SearchFields.default
+    @AppStorage(Setting.songSearchFields) private var songSearchFields = SearchFields.default
+
     @AppStorage(Setting.albumSortOption) private var albumSort = SortDescriptor.default
     @AppStorage(Setting.artistSortOption) private var artistSort = SortDescriptor.default
     @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor.default
@@ -73,7 +77,6 @@ struct CategoryDatabaseView: View {
 
     @State private var scrollTarget: ScrollTarget?
 
-    @State private var searchFields = SearchFields()
     @State private var searchQuery = ""
     @State private var searchResults: [any Mediable]?
 
@@ -82,6 +85,21 @@ struct CategoryDatabaseView: View {
     #endif
 
     @FocusState private var isSearchFieldFocused: Bool
+
+    private var searchFields: SearchFields {
+        let fields = switch navigator.category {
+        case .albums: albumSearchFields
+        case .artists: artistSearchFields
+        case .songs: songSearchFields
+        default: SearchFields.default
+        }
+
+        if fields.isEmpty {
+            return navigator.category.source.defaultSearchFields(for: navigator.category.type)
+        }
+
+        return fields
+    }
 
     private var sort: SortDescriptor {
         switch navigator.category {
@@ -217,7 +235,6 @@ struct CategoryDatabaseView: View {
 
             searchQuery = ""
             searchResults = nil
-            searchFields = SearchFields.defaultFields(for: navigator.category.type)
 
             scrollToCurrentMedia()
             try? await Task.sleep(for: .milliseconds(200))
@@ -260,22 +277,23 @@ struct CategoryDatabaseView: View {
     @ViewBuilder
     private var searchFieldsMenu: some View {
         Menu {
-            ForEach(SearchFields.availableFields(for: mpd.database.type), id: \.self) { field in
+            ForEach(navigator.category.source.availableSearchFields(for: mpd.database.type), id: \.self) { field in
                 Toggle(isOn: Binding(
                     get: { searchFields.contains(field) },
-                    set: { _ in searchFields.toggle(field) },
+                    set: { _ in
+                        var newFields = searchFields
+                        newFields.toggle(field)
+
+                        switch navigator.category {
+                        case .albums: albumSearchFields = newFields
+                        case .artists: artistSearchFields = newFields
+                        case .songs: songSearchFields = newFields
+                        default: break
+                        }
+                    },
                 )) {
                     Label {
-                        switch field {
-                        case .title:
-                            Text("Title")
-                        case .artist:
-                            Text("Artist")
-                        case .album:
-                            Text("Album")
-                        case .genre:
-                            Text("Genre")
-                        }
+                        Text(field.label)
                     } icon: {
                         Image(systemSymbol: field.symbol)
                     }
@@ -291,7 +309,7 @@ struct CategoryDatabaseView: View {
     private var sortMenu: some View {
         Menu {
             if navigator.category.source.isSortable {
-                ForEach(navigator.category.type.availableSortOptions, id: \.self) { option in
+                ForEach(navigator.category.source.availableSortOptions(for: navigator.category.type), id: \.self) { option in
                     Button {
                         let newSort = if sort.option == option {
                             SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)

@@ -177,6 +177,24 @@ nonisolated struct Song: Mediable, Artworkable {
     /// The genre of the song.
     let genre: String?
 
+    /// The composer of the song.
+    let composer: String?
+
+    /// The performer of the song.
+    let performer: String?
+
+    /// The conductor of the song.
+    let conductor: String?
+
+    /// The ensemble performing the song.
+    let ensemble: String?
+
+    /// The mood of the song.
+    let mood: String?
+
+    /// Additional comments about the song.
+    let comment: String?
+
     /// The album this song belongs to.
     let album: Album
 
@@ -218,61 +236,4 @@ nonisolated struct Playlist: Identifiable, Equatable, Hashable, Codable,
 
     /// The name of the playlist.
     let name: String
-}
-
-/// Represents a complete sort descriptor combining a sort option with a
-/// direction.
-///
-/// Used to specify how collections of media items should be sorted. The
-/// descriptor can be serialized to and from a string representation for
-/// persistence.
-nonisolated struct SortDescriptor: RawRepresentable, Equatable, Hashable {
-    /// The field or property to sort by.
-    let option: SortOption
-
-    /// The direction of the sort (ascending or descending).
-    let direction: SortDirection
-
-    /// The default sort descriptor, sorting by artist in ascending order.
-    static let `default` = SortDescriptor(option: .artist, direction:
-        .ascending)
-
-    /// Creates a sort descriptor with the specified option and direction.
-    ///
-    /// - Parameters:
-    ///   - option: The field to sort by.
-    ///   - direction: The sort direction. Defaults to `.ascending`.
-    init(option: SortOption, direction: SortDirection = .ascending) {
-        self.option = option
-        self.direction = direction
-    }
-
-    /// Creates a sort descriptor from its string representation.
-    ///
-    /// The expected format is "option_direction" where direction is either
-    /// "ascending" or "descending". If direction is omitted, defaults to
-    /// ascending. Returns the default descriptor if parsing fails.
-    ///
-    /// - Parameter rawValue: The string representation of the sort descriptor.
-    init(rawValue: String) {
-        let components = rawValue.split(separator: "_")
-        guard let first = components.first,
-              let option = SortOption(rawValue: String(first))
-        else {
-            self = .default
-
-            return
-        }
-
-        self.option = option
-        direction = components.count == 2 && components[1] == "descending" ?
-            .descending : .ascending
-    }
-
-    /// The string representation of this sort descriptor.
-    ///
-    /// Returns a string in the format "option_direction" for serialization.
-    var rawValue: String {
-        "\(option.rawValue)_\(direction == .ascending ? "ascending" : "descending")"
-    }
 }

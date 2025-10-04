@@ -103,9 +103,8 @@ import SwiftUI
             return []
         }
 
-        let searchFields = fields.fields
         return media.filter { item in
-            matches(item: item, query: query, fields: searchFields)
+            matches(item: item, query: query, fields: fields.fields)
         }
     }
 
@@ -127,7 +126,13 @@ import SwiftUI
             (fields.contains("title") && contains(song.title, query)) ||
                 (fields.contains("artist") && contains(song.artist, query)) ||
                 (fields.contains("album") && contains(song.album.title, query)) ||
-                (fields.contains("genre") && song.genre != nil && contains(song.genre!, query))
+                (fields.contains("genre") && song.genre != nil && contains(song.genre!, query)) ||
+                (fields.contains("composer") && song.composer != nil && contains(song.composer!, query)) ||
+                (fields.contains("performer") && song.performer != nil && contains(song.performer!, query)) ||
+                (fields.contains("conductor") && song.conductor != nil && contains(song.conductor!, query)) ||
+                (fields.contains("ensemble") && song.ensemble != nil && contains(song.ensemble!, query)) ||
+                (fields.contains("mood") && song.mood != nil && contains(song.mood!, query)) ||
+                (fields.contains("comment") && song.comment != nil && contains(song.comment!, query))
         case let album as Album:
             (fields.contains("title") && contains(album.title, query)) ||
                 (fields.contains("artist") && contains(album.artist.name,

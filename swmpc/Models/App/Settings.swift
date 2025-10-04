@@ -26,6 +26,10 @@ nonisolated enum Setting {
 
     static let artworkGetter = "artwork_getter"
 
+    static let albumSearchFields = "album_search_fields"
+    static let artistSearchFields = "artist_search_fields"
+    static let songSearchFields = "song_search_fields"
+
     static let albumSortOption = "album_sort_option"
     static let artistSortOption = "artist_sort_option"
     static let songSortOption = "song_sort_option"

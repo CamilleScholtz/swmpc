@@ -626,6 +626,12 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 disc: fields["disc"].flatMap { Int($0) } ?? 1,
                 track: fields["track"].flatMap { Int($0) } ?? 1,
                 genre: fields["genre"],
+                composer: fields["composer"],
+                performer: fields["performer"],
+                conductor: fields["conductor"],
+                ensemble: fields["ensemble"],
+                mood: fields["mood"],
+                comment: fields["comment"],
                 album: Album(
                     file: file,
                     title: fields["album"] ?? "Unknown Album",

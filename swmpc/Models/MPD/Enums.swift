@@ -28,20 +28,6 @@ enum MediaType {
     case song
     /// A user-created playlist of songs.
     case playlist
-
-    /// Returns the available sort options for this media type.
-    var availableSortOptions: [SortOption] {
-        switch self {
-        case .album:
-            [.artist, .album, .modified]
-        case .artist:
-            [.artist, .modified]
-        case .song:
-            [.album, .song, .artist, .modified]
-        case .playlist:
-            []
-        }
-    }
 }
 
 /// Specifies the source of media items.
@@ -86,6 +72,56 @@ enum Source: Equatable, Hashable {
             true
         }
     }
+
+    /// Returns available search fields for the given media type.
+    nonisolated func availableSearchFields(for mediaType: MediaType) ->
+        [SearchField]
+    {
+        switch mediaType {
+        case .album:
+            [.title, .artist, .genre]
+        case .artist:
+            [.artist]
+        case .song:
+            [.title, .artist, .genre, .composer, .performer, .conductor,
+             .ensemble, .mood, .comment]
+        case .playlist:
+            [.title, .artist, .genre, .composer, .performer, .conductor,
+             .ensemble, .mood, .comment]
+        }
+    }
+
+    /// Returns default search fields for the given media type.
+    nonisolated func defaultSearchFields(for mediaType: MediaType) ->
+        SearchFields
+    {
+        switch mediaType {
+        case .album:
+            SearchFields(fields: [.title, .artist])
+        case .artist:
+            SearchFields(fields: [.artist])
+        case .song:
+            SearchFields(fields: [.title, .artist])
+        case .playlist:
+            SearchFields(fields: [.title, .artist])
+        }
+    }
+
+    /// Returns the available sort options for the given media type.
+    nonisolated func availableSortOptions(for mediaType: MediaType) ->
+        [SortOption]
+    {
+        switch mediaType {
+        case .album:
+            [.artist, .album, .modified]
+        case .artist:
+            [.artist, .modified]
+        case .song:
+            [.album, .song, .artist, .modified]
+        case .playlist:
+            []
+        }
+    }
 }
 
 /// Represents the different subsystems that MPD monitors for changes.
@@ -104,6 +140,14 @@ enum IdleEvent: String {
     case player
     /// The mixer volume has changed.
     case mixer
+}
+
+/// Specifies the method for retrieving artwork from MPD.
+enum ArtworkGetter: String {
+    /// Retrieve artwork from the music library folder structure.
+    case library = "albumart"
+    /// Retrieve artwork embedded in the audio file.
+    case embedded = "readpicture"
 }
 
 /// Represents a sort descriptor for media items.
@@ -147,115 +191,5 @@ enum SortDirection: String {
         case .descending:
             "Descending"
         }
-    }
-}
-
-/// Specifies the method for retrieving artwork from MPD.
-enum ArtworkGetter: String {
-    /// Retrieve artwork from the music library folder structure.
-    case library = "albumart"
-    /// Retrieve artwork embedded in the audio file.
-    case embedded = "readpicture"
-}
-
-/// Represents individual search fields that can be selected.
-enum SearchField: String, CaseIterable {
-    case title = "Title"
-    case artist = "Artist"
-    case album = "Album"
-    case genre = "Genre"
-
-    /// Returns the localized display label for this search field.
-    var label: LocalizedStringResource {
-        switch self {
-        case .title:
-            "Title"
-        case .artist:
-            "Artist"
-        case .album:
-            "Album"
-        case .genre:
-            "Genre"
-        }
-    }
-
-    /// Returns the SF Symbol icon associated with this search field.
-    var symbol: SFSymbol {
-        switch self {
-        case .title:
-            .textformatCharacters
-        case .artist:
-            .person
-        case .album:
-            .squareStack
-        case .genre:
-            .musicNote
-        }
-    }
-}
-
-/// Manages the selected search fields for searching media.
-struct SearchFields: Equatable {
-    private var selectedFields: Set<SearchField>
-
-    /// Initializes search fields with an optional set of pre-selected fields.
-    /// - Parameter fields: The set of search fields to initially select.
-    init(fields: Set<SearchField> = []) {
-        selectedFields = fields
-    }
-
-    /// Creates default search fields based on the media type.
-    static func defaultFields(for mediaType: MediaType) -> SearchFields {
-        switch mediaType {
-        case .album:
-            SearchFields(fields: [.title, .artist])
-        case .artist:
-            SearchFields(fields: [.artist])
-        case .song:
-            SearchFields(fields: [.title, .artist])
-        case .playlist:
-            SearchFields(fields: [.title, .artist])
-        }
-    }
-
-    /// Returns available search fields for the given media type.
-    static func availableFields(for mediaType: MediaType) -> [SearchField] {
-        switch mediaType {
-        case .album:
-            [.title, .artist, .genre]
-        case .artist:
-            [.artist]
-        case .song:
-            [.title, .artist, .genre]
-        case .playlist:
-            [.title, .artist, .genre]
-        }
-    }
-
-    /// Toggles the selection state of a search field.
-    /// - Parameter field: The search field to toggle.
-    mutating func toggle(_ field: SearchField) {
-        if selectedFields.contains(field) {
-            selectedFields.remove(field)
-        } else {
-            selectedFields.insert(field)
-        }
-    }
-
-    /// Checks if a specific search field is selected.
-    /// - Parameter field: The search field to check.
-    /// - Returns: `true` if the field is selected, `false` otherwise.
-    func contains(_ field: SearchField) -> Bool {
-        selectedFields.contains(field)
-    }
-
-    /// Indicates whether no search fields are selected.
-    var isEmpty: Bool {
-        selectedFields.isEmpty
-    }
-
-    /// Returns the selected fields as a set of lowercase string values for MPD queries.
-    var fields: Set<String> {
-        Set(selectedFields.map { $0.rawValue.lowercased() })
     }
 }
