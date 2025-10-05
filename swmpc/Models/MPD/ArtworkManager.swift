@@ -24,12 +24,14 @@ actor ArtworkManager {
         cache.totalCostLimit = 64 * 1024 * 1024
     }
 
-    /// Fetches artwork data for a given file, handling caching and debouncing.
+    /// Fetches artwork data for a given file, handling caching and request
+    /// deduplication.
     ///
     /// This function first checks the in-memory cache for the artwork. If not
-    /// found, it debounces the request by waiting 20ms before fetching. If a new
-    /// request comes in for the same file during this delay, the previous request
-    /// is cancelled. This prevents excessive fetching during fast scrolling.
+    /// found, it deduplicates concurrent requests for the same file by sharing
+    /// a single fetch task. Multiple simultaneous requests for the same file
+    /// will await the same underlying network operation, preventing redundant
+    /// fetches.
     ///
     /// - Parameters:
     ///   - file: The file path of the artwork to fetch.
@@ -46,9 +48,6 @@ actor ArtworkManager {
 
         let task = tasks[file, default: Task {
             defer { tasks[file] = nil }
-
-            try await Task.sleep(for: .milliseconds(25))
-            try Task.checkCancellation()
 
             let data = try await ConnectionManager.artwork {
                 try await $0.getArtworkData(for: file)
