@@ -16,6 +16,7 @@ actor ArtworkManager {
     static let shared = ArtworkManager()
 
     private let cache = NSCache<NSString, NSData>()
+    private var tasks: [String: Task<Data, Error>] = [:]
 
     /// Private initializer to enforce singleton pattern. Sets up the cache with
     /// a 64MB memory limit.
@@ -23,10 +24,12 @@ actor ArtworkManager {
         cache.totalCostLimit = 64 * 1024 * 1024
     }
 
-    /// Fetches artwork data for a given file, handling caching.
+    /// Fetches artwork data for a given file, handling caching and debouncing.
     ///
     /// This function first checks the in-memory cache for the artwork. If not
-    /// found, it creates a new connection to fetch the data from the MPD server.
+    /// found, it debounces the request by waiting 20ms before fetching. If a new
+    /// request comes in for the same file during this delay, the previous request
+    /// is cancelled. This prevents excessive fetching during fast scrolling.
     ///
     /// - Parameters:
     ///   - file: The file path of the artwork to fetch.
@@ -41,14 +44,23 @@ actor ArtworkManager {
             return data as Data
         }
 
-        let data = try await ConnectionManager.artwork {
-            try await $0.getArtworkData(for: file)
-        }
+        let task = tasks[file, default: Task {
+            defer { tasks[file] = nil }
 
-        if shouldCache {
-            cache.setObject(data as NSData, forKey: file as NSString, cost: data.count)
-        }
+            try await Task.sleep(for: .milliseconds(25))
+            try Task.checkCancellation()
 
-        return data
+            let data = try await ConnectionManager.artwork {
+                try await $0.getArtworkData(for: file)
+            }
+
+            if shouldCache {
+                cache.setObject(data as NSData, forKey: file as NSString, cost: data.count)
+            }
+
+            return data
+        }]
+
+        return try await task.value
     }
 }

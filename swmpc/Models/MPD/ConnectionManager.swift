@@ -96,12 +96,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// The version of the MPD server obtained during connection handshake.
     private(set) var version: String?
 
-    /// Cleanup when the connection manager is deallocated.
-    deinit {
-        connection = nil
-        buffer.removeAll(keepingCapacity: false)
-    }
-
     /// Establishes a TCP connection to the MPD server.
     ///
     /// This asynchronous function sets up a new network connection using
@@ -641,7 +635,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 album: Album(
                     file: file,
                     title: fields["album"] ?? "Unknown Album",
-                    genre: fields["genre"],
                     artist: Artist(
                         file: file,
                         name: artistName,
@@ -654,7 +647,6 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let album = Album(
                 file: file,
                 title: fields["album"] ?? "Unknown Album",
-                genre: fields["genre"],
                 artist: Artist(
                     file: file,
                     name: artistName,
@@ -1008,9 +1000,17 @@ extension ConnectionManager where Mode == ArtworkMode {
     {
         let manager = ConnectionManager<ArtworkMode>()
         try await manager.connect()
-        defer { Task { await manager.disconnect() } }
 
-        return try await operation(manager)
+        do {
+            let result = try await operation(manager)
+            await manager.disconnect()
+
+            return result
+        } catch {
+            await manager.disconnect()
+
+            throw error
+        }
     }
 
     /// Retrieves the complete artwork data for a given file by fetching it in
@@ -1098,9 +1098,17 @@ extension ConnectionManager where Mode == CommandMode {
     {
         let manager = ConnectionManager<CommandMode>()
         try await manager.connect()
-        defer { Task { await manager.disconnect() } }
 
-        return try await operation(manager)
+        do {
+            let result = try await operation(manager)
+            await manager.disconnect()
+
+            return result
+        } catch {
+            await manager.disconnect()
+
+            throw error
+        }
     }
 
     /// Loads a playlist into the queue.

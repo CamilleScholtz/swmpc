@@ -119,9 +119,6 @@ nonisolated struct Album: Mediable, Artworkable {
     /// The title of the album.
     let title: String
 
-    /// The genre of the album.
-    let genre: String?
-
     /// The artist who created this album.
     let artist: Artist
 

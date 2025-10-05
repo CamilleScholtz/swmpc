@@ -79,7 +79,7 @@ enum Source: Equatable, Hashable {
     {
         switch mediaType {
         case .album:
-            [.title, .artist, .genre]
+            [.title, .artist]
         case .artist:
             [.artist]
         case .song:

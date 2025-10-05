@@ -142,8 +142,7 @@ import SwiftUI
         case let album as Album:
             (fields.contains("title") && contains(album.title, query)) ||
                 (fields.contains("artist") && contains(album.artist.name,
-                                                       query)) ||
-                (fields.contains("genre") && album.genre != nil && contains(album.genre!, query))
+                                                       query))
         case let artist as Artist:
             fields.contains("artist") && contains(artist.name, query)
         default:
