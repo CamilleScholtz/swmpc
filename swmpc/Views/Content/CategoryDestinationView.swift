@@ -77,6 +77,7 @@ struct CategoryDatabaseView: View {
 
     @State private var scrollTarget: ScrollTarget?
 
+    @State private var searchTask: Task<Void, Never>?
     @State private var searchQuery = ""
     @State private var searchResults: [any Mediable]?
 
@@ -202,6 +203,7 @@ struct CategoryDatabaseView: View {
                     isSearchFieldExpanded.toggle()
 
                     if !isSearchFieldExpanded {
+                        searchTask?.cancel()
                         searchQuery = ""
                         searchResults = nil
                         isSearchFieldFocused = false
@@ -230,6 +232,7 @@ struct CategoryDatabaseView: View {
             mpd.state.isLoading = true
             try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
+            searchTask?.cancel()
             searchQuery = ""
             searchResults = nil
 
@@ -256,18 +259,33 @@ struct CategoryDatabaseView: View {
             scrollToCurrentMedia()
         }
         .onChange(of: searchQuery) { _, query in
-            if query.isEmpty {
-                searchResults = nil
-            } else if !searchFields.isEmpty {
-                searchResults = mpd.database.search(query: query, fields: searchFields)
-            }
+            performSearch(query: query, fields: searchFields)
         }
-        .onChange(of: searchFields) { _, _ in
-            if !searchQuery.isEmpty, !searchFields.isEmpty {
-                searchResults = mpd.database.search(query: searchQuery, fields: searchFields)
-            } else if searchFields.isEmpty {
-                searchResults = nil
+        .onChange(of: searchFields) { _, fields in
+            performSearch(query: searchQuery, fields: fields)
+        }
+    }
+
+    private func performSearch(query: String, fields: SearchFields) {
+        searchTask?.cancel()
+
+        guard query.count >= 2, !fields.isEmpty else {
+            searchResults = nil
+            return
+        }
+
+        searchTask = Task {
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled else {
+                return
             }
+
+            let results = await mpd.database.search(query, fields: fields)
+            guard !Task.isCancelled else {
+                return
+            }
+
+            searchResults = results
         }
     }
 

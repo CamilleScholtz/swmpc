@@ -94,7 +94,7 @@ import SwiftUI
         media = newMedia
     }
 
-    /// Searches through the locally cached media library.
+    /// Searches through the locally cached media library on a background thread.
     ///
     /// This function performs a localized case-insensitive search through the
     /// cached media, matching the query against fields determined by the search
@@ -104,19 +104,21 @@ import SwiftUI
     ///   - query: The search query string to match against the selected fields.
     ///   - fields: The search fields that determine which fields to search.
     /// - Returns: An array of media items matching the search criteria.
-    func search(query: String, fields: SearchFields) -> [any Mediable] {
+    func search(_ query: String, fields: SearchFields) async
+        -> [any Mediable]
+    {
         guard !query.isEmpty, !fields.isEmpty, let media else {
             return []
         }
 
-        return media.filter { item in
-            matches(item: item, query: query, fields: fields.fields)
-        }
+        return await Task { @concurrent in
+            media.filter { item in
+                matches(item: item, query: query, fields: fields.fields)
+            }
+        }.value
     }
 
     /// Checks if a media item matches the search query against specified fields.
-    ///
-    /// Performs case-insensitive matching based on the media item type and fields.
     ///
     /// - Parameters:
     ///   - item: The media item to check (Song, Album, or Artist).
@@ -124,8 +126,8 @@ import SwiftUI
     ///   - fields: Set of field names to search ("title", "artist", "album").
     /// - Returns: `true` if the item matches the query in any of the specified
     ///            fields.
-    private func matches(item: any Mediable, query: String, fields: Set<String>)
-        -> Bool
+    private nonisolated func matches(item: any Mediable, query: String,
+                                     fields: Set<String>) -> Bool
     {
         switch item {
         case let song as Song:
@@ -157,7 +159,7 @@ import SwiftUI
     ///   - text: The text to search within.
     ///   - query: The query string to search for.
     /// - Returns: `true` if the text contains the query (case-insensitive).
-    private func contains(_ text: String, _ query: String) -> Bool {
+    private nonisolated func contains(_ text: String, _ query: String) -> Bool {
         text.localizedCaseInsensitiveContains(query)
     }
 }
