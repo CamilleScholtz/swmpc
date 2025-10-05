@@ -30,7 +30,7 @@ struct AppView: View {
     @State private var artwork: PlatformImage?
 
     var body: some View {
-        @Bindable var boundNavigator = navigator
+        @Bindable var navigator = navigator
 
         Group {
             if !mpd.state.isConnectionReady {
@@ -38,12 +38,12 @@ struct AppView: View {
             } else {
                 Group {
                     #if os(iOS)
-                        TabView(selection: $boundNavigator.category) {
+                        TabView(selection: $navigator.category) {
                             ForEach(CategoryDestination.categories) { category in
                                 // NOTE: Use SFSafeSymbols version when it is available.
                                 // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
                                 Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
-                                    NavigationStack(path: $boundNavigator.path) {
+                                    NavigationStack(path: $navigator.path) {
                                         CategoryDestinationView()
                                             .navigationDestination(for: ContentDestination.self) { destination in
                                                 ContentDestinationView(destination: destination)
@@ -80,7 +80,7 @@ struct AppView: View {
                             SidebarView()
                                 .navigationSplitViewColumnWidth(Layout.Size.sidebarWidth)
                         } content: {
-                            NavigationStack(path: $boundNavigator.path) {
+                            NavigationStack(path: $navigator.path) {
                                 CategoryDestinationView()
                                     .navigationDestination(for: ContentDestination.self) { destination in
                                         ContentDestinationView(destination: destination)
@@ -147,7 +147,7 @@ struct AppView: View {
             mpd.status.stopTrackingElapsed()
         }
         #if os(iOS)
-        .sheet(isPresented: $boundNavigator.showSettingsSheet) {
+        .sheet(isPresented: $navigator.showSettingsSheet) {
             SettingsView()
         }
         #elseif os(macOS)

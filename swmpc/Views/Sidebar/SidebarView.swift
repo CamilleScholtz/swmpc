@@ -33,9 +33,9 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        @Bindable var boundNavigator = navigator
+        @Bindable var navigator = navigator
 
-        List(selection: $boundNavigator.category) {
+        List(selection: $navigator.category) {
             Text("swmpc")
                 .font(.system(size: 18))
                 .foregroundStyle(.secondary)
