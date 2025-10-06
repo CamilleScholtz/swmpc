@@ -101,12 +101,6 @@ struct SongView: View, Equatable {
                 .contextMenu {
                     ContextMenuView(for: song, source: source)
                 }
-                .onChange(of: song) { _, _ in
-                    #if os(macOS)
-                        isHovering = false
-                        isHoveringHandle = false
-                    #endif
-                }
 
             #if os(macOS)
                 if source?.isReorderable ?? false {

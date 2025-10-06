@@ -94,7 +94,8 @@ import SwiftUI
         media = newMedia
     }
 
-    /// Searches through the locally cached media library on a background thread.
+    /// Searches through the locally cached media library on a background
+    /// thread.
     ///
     /// This function performs a localized case-insensitive search through the
     /// cached media, matching the query against fields determined by the search
@@ -118,7 +119,8 @@ import SwiftUI
         }.value
     }
 
-    /// Checks if a media item matches the search query against specified fields.
+    /// Checks if a media item matches the search query against specified
+    /// fields.
     ///
     /// - Parameters:
     ///   - item: The media item to check (Song, Album, or Artist).
@@ -134,17 +136,16 @@ import SwiftUI
             (fields.contains("title") && contains(song.title, query)) ||
                 (fields.contains("artist") && contains(song.artist, query)) ||
                 (fields.contains("album") && contains(song.album.title, query)) ||
-                (fields.contains("genre") && song.genre != nil && contains(song.genre!, query)) ||
-                (fields.contains("composer") && song.composer != nil && contains(song.composer!, query)) ||
-                (fields.contains("performer") && song.performer != nil && contains(song.performer!, query)) ||
-                (fields.contains("conductor") && song.conductor != nil && contains(song.conductor!, query)) ||
-                (fields.contains("ensemble") && song.ensemble != nil && contains(song.ensemble!, query)) ||
-                (fields.contains("mood") && song.mood != nil && contains(song.mood!, query)) ||
-                (fields.contains("comment") && song.comment != nil && contains(song.comment!, query))
+                (fields.contains("genre") && contains(song.genre, query)) ||
+                (fields.contains("composer") && contains(song.composer, query)) ||
+                (fields.contains("performer") && contains(song.performer, query)) ||
+                (fields.contains("conductor") && contains(song.conductor, query)) ||
+                (fields.contains("ensemble") && contains(song.ensemble, query)) ||
+                (fields.contains("mood") && contains(song.mood, query)) ||
+                (fields.contains("comment") && contains(song.comment, query))
         case let album as Album:
             (fields.contains("title") && contains(album.title, query)) ||
-                (fields.contains("artist") && contains(album.artist.name,
-                                                       query))
+                (fields.contains("artist") && contains(album.artist.name, query))
         case let artist as Artist:
             fields.contains("artist") && contains(artist.name, query)
         default:
@@ -156,10 +157,14 @@ import SwiftUI
     /// contains query.
     ///
     /// - Parameters:
-    ///   - text: The text to search within.
-    ///   - query: The query string to search for.
-    /// - Returns: `true` if the text contains the query (case-insensitive).
-    private nonisolated func contains(_ text: String, _ query: String) -> Bool {
-        text.localizedCaseInsensitiveContains(query)
+    ///   - text: The optional text to search within.
+    ///   - query: The normalized query string.
+    /// - Returns: `true` if the text contains the query (diacritic and case-insensitive).
+    private nonisolated func contains(_ text: String?, _ query: String) -> Bool {
+        guard let text else {
+            return false
+        }
+
+        return text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil).contains(query)
     }
 }
