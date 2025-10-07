@@ -427,7 +427,6 @@ struct CategoryPlaylistView: View {
                 .mediaListStyle(rowHeight: Layout.RowHeight.song)
                 .scrollToItem($scrollTarget)
                 .id(playlist)
-                .ignoresSafeArea(edges: .vertical)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
