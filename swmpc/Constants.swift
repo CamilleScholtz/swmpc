@@ -35,7 +35,7 @@ enum Layout {
 
     enum Size {
         #if os(macOS)
-            static let sidebarWidth: CGFloat = 180
+            static let sidebarWidth: CGFloat = 190
             static let contentWidth: CGFloat = 310
             static let detailWidth: CGFloat = 650
         #endif
