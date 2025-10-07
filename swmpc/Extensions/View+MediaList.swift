@@ -12,7 +12,7 @@ extension View {
     func mediaListStyle(rowHeight: CGFloat? = nil, bottomMargin: CGFloat = Layout.Spacing.small) -> some View {
         if let rowHeight {
             listStyle(.plain)
-                .contentMargins(.bottom, bottomMargin)
+                .safeAreaPadding(.bottom, bottomMargin)
             #if os(iOS)
                 .environment(\.defaultMinListRowHeight, rowHeight + (Layout.Padding.medium * 2))
             #elseif os(macOS)
@@ -20,7 +20,7 @@ extension View {
             #endif
         } else {
             listStyle(.plain)
-                .contentMargins(.bottom, bottomMargin)
+                .safeAreaPadding(.bottom, bottomMargin)
         }
     }
 
