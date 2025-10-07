@@ -150,8 +150,13 @@ struct CategoryDatabaseView: View {
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
-                mediaList(for: searchResults ?? media)
-                    .id(mpd.database.type)
+                mediaList(for: media)
+                    .id(navigator.category)
+                    .overlay {
+                        if let searchResults {
+                            mediaList(for: searchResults)
+                        }
+                    }
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
