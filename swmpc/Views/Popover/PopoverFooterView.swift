@@ -8,20 +8,12 @@
 import ButtonKit
 import SwiftUI
 
-private extension Layout.Size {
-    static let progressSeparatorHeight: CGFloat = 9
-    static let popoverPauseIcon: CGFloat = 36
-}
-
 struct PopoverFooterView: View {
-    @Environment(MPD.self) private var mpd
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
-        VStack(spacing: Layout.Spacing.large) {
+        VStack(alignment: .center, spacing: Layout.Spacing.small) {
             PlayerProgressView(showTimestamps: false)
-                .frame(height: Layout.Size.progressSeparatorHeight)
                 .padding(.horizontal, Layout.Padding.large)
+                .padding(.top, Layout.Padding.small)
 
             HStack(alignment: .center, spacing: 0) {
                 RepeatView()
@@ -60,7 +52,7 @@ struct PopoverFooterView: View {
                 ZStack {
                     Circle()
                         .fill(.primary)
-                        .frame(width: Layout.Size.popoverPauseIcon, height: Layout.Size.popoverPauseIcon)
+                        .frame(width: 36, height: 36)
 
                     ZStack {
                         Image(systemSymbol: .pauseFill)
