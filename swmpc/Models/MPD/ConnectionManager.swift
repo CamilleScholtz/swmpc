@@ -118,18 +118,19 @@ actor ConnectionManager<Mode: ConnectionMode> {
             return
         }
 
-        let host = UserDefaults.standard.string(forKey: Setting.host)
-        guard host != nil, !host!.isEmpty else {
+        let host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
+        guard !host.isEmpty else {
             throw ConnectionManagerError.invalidHost
         }
 
-        let port = UserDefaults.standard.integer(forKey: Setting.port)
+        var port = UserDefaults.standard.integer(forKey: Setting.port)
+        port = port == 0 ? 6600 : port
         guard port > 0, port <= 65535 else {
             throw ConnectionManagerError.invalidPort
         }
 
         connection = NetworkConnection(to: .hostPort(host: NWEndpoint.Host(
-            host!), port: NWEndpoint.Port(integerLiteral: UInt16(port))))
+            host), port: NWEndpoint.Port(integerLiteral: UInt16(port))))
         {
             TCP()
                 .noDelay(true)
