@@ -133,9 +133,9 @@ import SwiftUI
     {
         switch item {
         case let song as Song:
-            (fields.contains("title") && contains(song.title, query)) ||
-                (fields.contains("artist") && contains(song.artist, query)) ||
-                (fields.contains("album") && contains(song.album.title, query)) ||
+            (fields.contains("title") && (contains(song.title, query) || contains(song.titleSort, query))) ||
+                (fields.contains("artist") && (contains(song.artist, query) || contains(song.artistSort, query))) ||
+                (fields.contains("album") && (contains(song.album.title, query) || contains(song.album.titleSort, query))) ||
                 (fields.contains("genre") && contains(song.genre, query)) ||
                 (fields.contains("composer") && contains(song.composer, query)) ||
                 (fields.contains("performer") && contains(song.performer, query)) ||
@@ -144,10 +144,10 @@ import SwiftUI
                 (fields.contains("mood") && contains(song.mood, query)) ||
                 (fields.contains("comment") && contains(song.comment, query))
         case let album as Album:
-            (fields.contains("title") && contains(album.title, query)) ||
-                (fields.contains("artist") && contains(album.artist.name, query))
+            (fields.contains("title") && (contains(album.title, query) || contains(album.titleSort, query))) ||
+                (fields.contains("artist") && (contains(album.artist.name, query) || contains(album.artist.nameSort, query)))
         case let artist as Artist:
-            fields.contains("artist") && contains(artist.name, query)
+            fields.contains("artist") && (contains(artist.name, query) || contains(artist.nameSort, query))
         default:
             false
         }

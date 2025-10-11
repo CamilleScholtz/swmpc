@@ -93,6 +93,10 @@ nonisolated struct Artist: Mediable {
     /// The name of the artist.
     let name: String
 
+    /// The sort name for the artist (used for sorting/searching, often contains romanized versions of
+    /// non-Latin names).
+    let nameSort: String?
+
     /// Fetches all albums by this artist from the MPD database.
     ///
     /// - Returns: An array of `Album` objects associated with this artist.
@@ -118,6 +122,10 @@ nonisolated struct Album: Mediable, Artworkable {
 
     /// The title of the album.
     let title: String
+
+    /// The sort name for the album title (used for sorting/searching, often contains romanized versions of
+    /// non-Latin names).
+    let titleSort: String?
 
     /// The artist who created this album.
     let artist: Artist
@@ -161,8 +169,16 @@ nonisolated struct Song: Mediable, Artworkable {
     /// The name of the artist performing this song.
     let artist: String
 
+    /// The sort name for the artist (used for sorting/searching, often contains romanized versions of
+    /// non-Latin names).
+    let artistSort: String?
+
     /// The title of the song.
     let title: String
+
+    /// The sort name for the title (used for sorting/searching, often contains romanized versions of
+    /// non-Latin names).
+    let titleSort: String?
 
     /// The duration of the song in seconds.
     let duration: Double

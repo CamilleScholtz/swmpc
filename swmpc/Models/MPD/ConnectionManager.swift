@@ -622,7 +622,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 position: fields["pos"].flatMap { UInt32($0) }
                     ?? index.map { UInt32($0) },
                 artist: fields["artist"] ?? "Unknown Artist",
+                artistSort: fields["artistsort"],
                 title: fields["title"] ?? "Unknown Title",
+                titleSort: fields["titlesort"],
                 duration: fields["duration"].flatMap { Double($0) } ?? 0,
                 disc: fields["disc"].flatMap { Int($0) } ?? 1,
                 track: fields["track"].flatMap { Int($0) } ?? 1,
@@ -636,9 +638,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 album: Album(
                     file: file,
                     title: fields["album"] ?? "Unknown Album",
+                    titleSort: fields["albumsort"],
                     artist: Artist(
                         file: file,
                         name: artistName,
+                        nameSort: fields["albumartistsort"],
                     ),
                 ),
             )
@@ -648,9 +652,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let album = Album(
                 file: file,
                 title: fields["album"] ?? "Unknown Album",
+                titleSort: fields["albumsort"],
                 artist: Artist(
                     file: file,
                     name: artistName,
+                    nameSort: fields["albumartistsort"],
                 ),
             )
 
@@ -659,6 +665,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let artist = Artist(
                 file: file,
                 name: artistName,
+                nameSort: fields["albumartistsort"],
             )
 
             return try castResult(artist)
