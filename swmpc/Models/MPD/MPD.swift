@@ -117,6 +117,7 @@ import SwiftUI
             await connect()
 
             let changes = try? await ConnectionManager.idle.idleForEvents(mask: [
+                .database,
                 .playlists,
                 .queue,
                 .player,

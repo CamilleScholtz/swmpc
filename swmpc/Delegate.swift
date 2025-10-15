@@ -125,8 +125,6 @@ struct Delegate: App {
                     try await ConnectionManager.command {
                         try await $0.update()
                     }
-
-                    await appDelegate.mpd.reinitialize()
                 }
                 .keyboardShortcut("r", modifiers: [.command, .option])
             }
