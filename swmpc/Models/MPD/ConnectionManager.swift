@@ -428,9 +428,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// async receive method. Uses the mode's buffer size to optimize for
     /// different connection types.
     ///
-    /// - Parameter remaining: Optional number of bytes we still need. If provided
-    ///                       and less than or equal to the buffer size, we'll try to
-    ///                       receive exactly that amount for efficiency.
+    /// - Parameter remaining: Optional number of bytes we still need. If
+    ///                        provided and less than or equal to the buffer
+    ///                        size, we'll try to receive exactly that amount
+    ///                        for efficiency.
     /// - Throws: An error if the connection is not ready or if the receive
     ///           operation encounters an error.
     private func receiveDataChunk(remaining: Int? = nil) async throws {
