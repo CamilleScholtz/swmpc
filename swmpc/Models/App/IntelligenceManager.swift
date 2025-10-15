@@ -103,7 +103,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
         ),
         .claude: ModelConfig(
             name: "Claude",
-            model: "claude-sonnet-4-0",
+            model: "claude-3-5-haiku-latest",
             host: "api.anthropic.com",
             path: "/v1/messages",
             setting: Setting.claudeToken,
@@ -211,7 +211,11 @@ actor IntelligenceManager {
 
                 return try await manager.getAlbums()
             }
-            let albumDescriptions = albums.map(\.description).joined(
+
+            let selectedAlbums = albums.count > 1000
+                ? Array(albums.shuffled().prefix(1000))
+                : albums
+            let albumDescriptions = selectedAlbums.map(\.description).joined(
                 separator: "\n")
 
             let result = try await client.chats(query: ChatQuery(
