@@ -23,13 +23,13 @@ struct ContextMenuView<Media: Mediable>: View {
     private var copyTitle: String {
         switch media {
         case is Song:
-            "Copy Song Title"
+            String(localized: "Copy Song Title")
         case is Album:
-            "Copy Album Title"
+            String(localized: "Copy Album Title")
         case is Artist:
-            "Copy Artist Name"
+            String(localized: "Copy Artist Name")
         default:
-            "Copy Title"
+            String(localized: "Copy Title")
         }
     }
 
@@ -48,13 +48,13 @@ struct ContextMenuView<Media: Mediable>: View {
 
     private var playlistMenuTitle: String {
         let mediaType = switch media {
-        case is Song: "Song"
-        case is Album: "Album"
-        case is Artist: "Artist"
+        case is Song: String(localized: "Song")
+        case is Album: String(localized: "Album")
+        case is Artist: String(localized: "Artist")
         default: ""
         }
 
-        return "Add or Remove \(mediaType) from Playlist"
+        return String(localized: "Add or Remove \(mediaType) from Playlist")
     }
 
     var body: some View {

@@ -204,7 +204,7 @@ struct SettingsView: View {
                 Section {
                     Picker(selection: $artworkGetter, label: SettingsLabel("Artwork retrieval")) {
                         Text("Library").tag(ArtworkGetter.library)
-                        Text("Embedded").tag(ArtworkGetter.embedded)
+                        Text("Metadata").tag(ArtworkGetter.metadata)
                     }
                     .help("Choose how to retrieve album artwork")
                     #if os(iOS)
@@ -213,7 +213,7 @@ struct SettingsView: View {
                         .pickerStyle(.inline)
                     #endif
                 } footer: {
-                    Text("Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Embedded will fetch the artwork from the song metadata. Using embedded is not recommended as it is generally much slower.")
+                    Text("Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Metadata will fetch the artwork from the song metadata. Using metadata is not recommended as it is generally much slower.")
                     #if os(macOS)
                         .font(.caption)
                         .foregroundColor(.secondary)

@@ -33,6 +33,11 @@ struct DetailView: View {
 
             return Float(elapsed / duration)
         }
+
+    #elseif os(macOS)
+        private var queueTextWidth: CGFloat {
+            String(localized: "Queue").width(withFont: NSFont.systemFont(ofSize: 15, weight: .semibold))
+        }
     #endif
 
     var body: some View {
@@ -66,7 +71,7 @@ struct DetailView: View {
                     Text("Queue")
                         .font(.system(size: 15))
                         .fontWeight(.semibold)
-                        .offset(x: -102)
+                        .offset(x: queueTextWidth - 148)
                 }
                 .sharedBackgroundVisibility(.hidden)
 

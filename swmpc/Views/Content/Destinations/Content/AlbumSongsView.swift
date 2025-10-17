@@ -107,15 +107,19 @@ struct AlbumSongsView: View {
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
-                                Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
+                                Button(String(localized: "Copy Artist Name"), systemSymbol: .documentOnDocument) {
                                     album.artist.name.copyToClipboard()
                                 }
                             }
 
                             if let songs {
                                 let flat = songs.values.flatMap(\.self)
+                                let count = flat.count == 1
+                                    ? String(localized: "1 song")
+                                    : String(localized: "\(flat.count) songs")
+
                                 Text(
-                                    String(localized: "\(flat.count) \(flat.count == 1 ? "song" : "songs")")
+                                    count
                                         + " • "
                                         + (flat.reduce(0) { $0 + $1.duration }.humanTimeString),
                                 )
@@ -226,15 +230,19 @@ struct AlbumSongsView: View {
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
-                                Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
+                                Button(String(localized: "Copy Artist Name"), systemSymbol: .documentOnDocument) {
                                     album.artist.name.copyToClipboard()
                                 }
                             }
 
                             if let songs {
                                 let flat = songs.values.flatMap(\.self)
+                                let count = flat.count == 1
+                                    ? String(localized: "1 song")
+                                    : String(localized: "\(flat.count) songs")
+
                                 Text(
-                                    String(localized: "\(flat.count) \(flat.count == 1 ? "song" : "songs")")
+                                    count
                                         + " • "
                                         + (flat.reduce(0) { $0 + $1.duration }.humanTimeString),
                                 )

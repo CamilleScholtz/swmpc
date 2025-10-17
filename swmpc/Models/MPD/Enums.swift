@@ -146,7 +146,7 @@ enum ArtworkGetter: String {
     /// Retrieve artwork from the music library folder structure.
     case library = "albumart"
     /// Retrieve artwork embedded in the audio file.
-    case embedded = "readpicture"
+    case metadata = "readpicture"
 }
 
 /// Represents a sort descriptor for media items.
