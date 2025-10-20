@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+#if os(macOS)
 extension String {
     /// Calculates the width of the string when rendered with a given font.
     ///
@@ -16,7 +17,6 @@ extension String {
     ///
     /// - Parameter font: The `NSFont` to use for calculating the width.
     /// - Returns: The width in points that the string occupies when rendered.
-    @available(macOS 26.0, *)
     func width(withFont font: NSFont) -> CGFloat {
         let attributes = [NSAttributedString.Key.font: font]
         let size = (self as NSString).size(withAttributes: attributes)
@@ -24,3 +24,4 @@ extension String {
         return size.width
     }
 }
+#endif
