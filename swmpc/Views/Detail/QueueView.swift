@@ -16,20 +16,16 @@ struct QueueView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var showClearQueueAlert = false
     @State private var showIntelligenceQueueSheet = false
 
     private let fillIntelligenceQueueNotification = NotificationCenter.default
         .publisher(for: .fillIntelligenceQueueNotification)
-    private let showClearQueueAlertNotification = NotificationCenter.default
-        .publisher(for: .showClearQueueAlertNotification)
 
     var body: some View {
         Group {
             #if os(iOS)
                 Group {
                     QueueHeaderView(
-                        showClearQueueAlert: $showClearQueueAlert,
                         showIntelligenceQueueSheet: $showIntelligenceQueueSheet,
                     )
                     .listRowSeparator(.visible)
@@ -53,22 +49,8 @@ struct QueueView: View {
                 .background(.background)
             #endif
         }
-        .alert("Clear Queue", isPresented: $showClearQueueAlert) {
-            Button("Cancel", role: .cancel) {}
-
-            AsyncButton("Clear", role: .destructive) {
-                try await ConnectionManager.command {
-                    try await $0.clearQueue()
-                }
-            }
-        } message: {
-            Text("Are you sure you want to clear the queue?")
-        }
         .onReceive(fillIntelligenceQueueNotification) { _ in
             showIntelligenceQueueSheet = true
-        }
-        .onReceive(showClearQueueAlertNotification) { _ in
-            showClearQueueAlert = true
         }
         .sheet(isPresented: $showIntelligenceQueueSheet) {
             IntelligenceView(target: .queue, showSheet: $showIntelligenceQueueSheet)
@@ -80,7 +62,6 @@ struct QueueView: View {
     private struct QueueHeaderView: View {
         @Environment(MPD.self) private var mpd
 
-        @Binding var showClearQueueAlert: Bool
         @Binding var showIntelligenceQueueSheet: Bool
 
         var body: some View {
@@ -101,7 +82,7 @@ struct QueueView: View {
 
                     if !mpd.queue.songs.isEmpty {
                         Button {
-                            showClearQueueAlert = true
+                            NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
                         } label: {
                             Image(systemSymbol: .trash)
                         }

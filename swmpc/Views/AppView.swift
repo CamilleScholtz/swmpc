@@ -132,6 +132,17 @@ struct AppView: View {
                 }
             }
         }
+        .notificationAlert(.showClearQueueAlertNotification, title: "Clear Queue") {
+            Button("Cancel", role: .cancel) {}
+
+            AsyncButton("Clear", role: .destructive) {
+                try await ConnectionManager.command {
+                    try await $0.clearQueue()
+                }
+            }
+        } message: {
+            Text("Are you sure you want to clear the queue?")
+        }
         .task(priority: .medium) {
             try? await mpd.status.startTrackingElapsed()
         }
