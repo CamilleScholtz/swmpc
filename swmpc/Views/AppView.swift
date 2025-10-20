@@ -28,6 +28,10 @@ struct AppView: View {
     #endif
 
     @State private var artwork: PlatformImage?
+    @State private var showClearQueueAlert = false
+
+    private let showClearQueueAlertNotification = NotificationCenter.default
+        .publisher(for: .showClearQueueAlertNotification)
 
     var body: some View {
         @Bindable var navigator = navigator
@@ -132,17 +136,6 @@ struct AppView: View {
                 }
             }
         }
-        .notificationAlert(.showClearQueueAlertNotification, title: "Clear Queue") {
-            Button("Cancel", role: .cancel) {}
-
-            AsyncButton("Clear", role: .destructive) {
-                try await ConnectionManager.command {
-                    try await $0.clearQueue()
-                }
-            }
-        } message: {
-            Text("Are you sure you want to clear the queue?")
-        }
         .task(priority: .medium) {
             try? await mpd.status.startTrackingElapsed()
         }
@@ -156,6 +149,20 @@ struct AppView: View {
         }
         .onDisappear {
             mpd.status.stopTrackingElapsed()
+        }
+        .alert("Clear Queue", isPresented: $showClearQueueAlert) {
+            Button("Cancel", role: .cancel) {}
+
+            AsyncButton("Clear", role: .destructive) {
+                try await ConnectionManager.command {
+                    try await $0.clearQueue()
+                }
+            }
+        } message: {
+            Text("Are you sure you want to clear the queue?")
+        }
+        .onReceive(showClearQueueAlertNotification) { _ in
+            showClearQueueAlert = true
         }
         #if os(iOS)
         .sheet(isPresented: $navigator.showSettingsSheet) {
