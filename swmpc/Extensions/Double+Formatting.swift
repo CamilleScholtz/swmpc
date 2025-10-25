@@ -34,7 +34,7 @@ extension Double {
             minuteFormatter.allowedUnits = [.minute]
             minuteFormatter.unitsStyle = .abbreviated
 
-            return minuteFormatter.string(from: self)!
+            return minuteFormatter.string(from: self) ?? ""
         }
 
         let formatter = DateComponentsFormatter()
@@ -44,6 +44,6 @@ extension Double {
         formatter.maximumUnitCount = 2
         formatter.allowsFractionalUnits = false
 
-        return formatter.string(from: self)!
+        return formatter.string(from: self) ?? ""
     }
 }

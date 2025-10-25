@@ -18,7 +18,7 @@ extension AppIntent {
         #if os(iOS)
             Delegate.mpd
         #elseif os(macOS)
-            AppDelegate.shared.mpd
+            AppDelegate.shared!.mpd
         #endif
     }
 }

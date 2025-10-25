@@ -98,7 +98,7 @@ import SwiftUI
                     "stop"
                 }
 
-                AppDelegate.shared.setPopoverAnchorImage(changed: image)
+                AppDelegate.shared?.setPopoverAnchorImage(changed: image)
             #endif
 
             if trackElapsed {
@@ -110,21 +110,21 @@ import SwiftUI
 
         if isConsume.update(to: data.isConsume ?? false) {
             #if os(macOS)
-                AppDelegate.shared.setPopoverAnchorImage(changed:
+                AppDelegate.shared?.setPopoverAnchorImage(changed:
                     data.isConsume ?? false ? "consume" : "preserve")
             #endif
         }
 
         if isRandom.update(to: data.isRandom ?? false) {
             #if os(macOS)
-                AppDelegate.shared.setPopoverAnchorImage(changed:
+                AppDelegate.shared?.setPopoverAnchorImage(changed:
                     data.isRandom ?? false ? "random" : "sequential")
             #endif
         }
 
         if isRepeat.update(to: data.isRepeat ?? false) {
             #if os(macOS)
-                AppDelegate.shared.setPopoverAnchorImage(changed:
+                AppDelegate.shared?.setPopoverAnchorImage(changed:
                     data.isRepeat ?? false ? "repeat" : "single")
             #endif
         }
@@ -139,7 +139,7 @@ import SwiftUI
 
         if song.update(to: data.song) {
             #if os(macOS)
-                AppDelegate.shared.setStatusItemTitle()
+                AppDelegate.shared?.setStatusItemTitle()
             #endif
         }
 

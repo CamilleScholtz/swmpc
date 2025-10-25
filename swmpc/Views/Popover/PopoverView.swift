@@ -113,7 +113,7 @@ struct PopoverView: View {
             mpd.status.stopTrackingElapsed()
         }
         .task(id: mpd.status.song) {
-            guard AppDelegate.shared.popover.isShown else {
+            guard AppDelegate.shared?.popover.isShown == true else {
                 return
             }
 

@@ -156,7 +156,7 @@ struct Delegate: App {
 
 #if os(macOS)
     final class AppDelegate: NSObject, NSApplicationDelegate {
-        private(set) static var shared: AppDelegate!
+        private(set) static var shared: AppDelegate?
 
         let mpd = MPD()
 
@@ -246,12 +246,20 @@ struct Delegate: App {
         }
 
         private func configureStatusItem() {
-            popoverAnchor.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
-            popoverAnchor.button!.action = #selector(handleButtonAction)
+            guard let anchorButton = popoverAnchor.button else {
+                return
+            }
+
+            anchorButton.sendAction(on: [.leftMouseDown, .rightMouseDown])
+            anchorButton.action = #selector(handleButtonAction)
 
             if showStatusBar {
-                statusItem.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
-                statusItem.button!.action = #selector(handleButtonAction)
+                guard let statusButton = statusItem.button else {
+                    return
+                }
+
+                statusButton.sendAction(on: [.leftMouseDown, .rightMouseDown])
+                statusButton.action = #selector(handleButtonAction)
             }
 
             setPopoverAnchorImage()
@@ -259,64 +267,67 @@ struct Delegate: App {
 
         private func configurePopover() {
             popover.behavior = .semitransient
-            popover.contentViewController = NSViewController()
-            popover.contentViewController!.view = NSHostingView(
+
+            let viewController = NSViewController()
+            viewController.view = NSHostingView(
                 rootView: PopoverView()
                     .environment(mpd),
             )
+            popover.contentViewController = viewController
         }
 
         func setPopoverAnchorImage(changed: String? = nil) {
-            guard showStatusBar else {
+            guard showStatusBar, let button = popoverAnchor.button else {
                 return
             }
 
             switch changed {
             case "play":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .playFill, accessibilityDescription: "play")
+                button.image = NSImage(systemSymbol: .playFill, accessibilityDescription: "play")
             case "pause":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .pauseFill, accessibilityDescription: "pause")
+                button.image = NSImage(systemSymbol: .pauseFill, accessibilityDescription: "pause")
             case "stop":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .stopFill, accessibilityDescription: "stop")
+                button.image = NSImage(systemSymbol: .stopFill, accessibilityDescription: "stop")
             case "consume":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .flame, accessibilityDescription: "consume")
+                button.image = NSImage(systemSymbol: .flame, accessibilityDescription: "consume")
             case "preserve":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .flame, accessibilityDescription: "preserve")
+                button.image = NSImage(systemSymbol: .flame, accessibilityDescription: "preserve")
             case "random":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .shuffle, accessibilityDescription: "random")
+                button.image = NSImage(systemSymbol: .shuffle, accessibilityDescription: "random")
             case "sequential":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .arrowUpArrowDown, accessibilityDescription: "sequential")
+                button.image = NSImage(systemSymbol: .arrowUpArrowDown, accessibilityDescription: "sequential")
             case "repeat":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .repeat, accessibilityDescription: "repeat")
+                button.image = NSImage(systemSymbol: .repeat, accessibilityDescription: "repeat")
             case "single":
-                popoverAnchor.button!.image = NSImage(systemSymbol: .return, accessibilityDescription: "single")
+                button.image = NSImage(systemSymbol: .return, accessibilityDescription: "single")
             default:
-                return popoverAnchor.button!.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
+                button.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
+                return
             }
 
             changeImageTask?.cancel()
-            changeImageTask = Task {
+            changeImageTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(0.8))
-                guard !Task.isCancelled else {
+                guard !Task.isCancelled, let self, let button = popoverAnchor.button else {
                     return
                 }
 
-                self.popoverAnchor.button!.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
+                button.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
             }
         }
 
         func setStatusItemTitle() {
-            guard showStatusBar else {
+            guard showStatusBar, let button = statusItem.button else {
                 return
             }
 
             guard showStatusbarSong else {
-                statusItem.button!.title = ""
+                button.title = ""
                 return
             }
 
             guard var description = mpd.status.song?.description else {
-                statusItem.button!.title = ""
+                button.title = ""
                 return
             }
 
@@ -324,7 +335,7 @@ struct Delegate: App {
                 description = String(description.prefix(80)) + "…"
             }
 
-            statusItem.button!.title = description
+            button.title = description
         }
 
         private func togglePopover(_ sender: NSStatusBarButton?) {
@@ -343,9 +354,13 @@ struct Delegate: App {
         }
 
         private func showPopover() {
+            guard let button = popoverAnchor.button else {
+                return
+            }
+
             popover.show(
-                relativeTo: popoverAnchor.button!.bounds,
-                of: popoverAnchor.button!,
+                relativeTo: button.bounds,
+                of: button,
                 preferredEdge: .maxY,
             )
         }

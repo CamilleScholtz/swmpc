@@ -29,9 +29,17 @@ struct CategoryDestinationView: View {
                 case .database:
                     CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
                 case .favorites:
-                    CategoryPlaylistView(playlist: navigator.category.source.playlist!)
+                    if let playlist = navigator.category.source.playlist {
+                        CategoryPlaylistView(playlist: playlist)
+                    } else {
+                        EmptyView()
+                    }
                 case .playlist:
-                    CategoryPlaylistView(playlist: navigator.category.source.playlist!)
+                    if let playlist = navigator.category.source.playlist {
+                        CategoryPlaylistView(playlist: playlist)
+                    } else {
+                        EmptyView()
+                    }
                 default:
                     EmptyView()
                 }
@@ -517,18 +525,22 @@ struct CategoryPlaylistView: View {
         guard let song, let songs else {
             return false
         }
+
         return songs.contains { $0.id == song.id }
     }
 
     private func handleReorder(indices: IndexSet, destination: Int) async {
-        guard let sourceIndex = indices.first,
-              let songs,
-              sourceIndex < songs.count
+        guard let index = indices.first,
+              let songs
         else {
             return
         }
 
-        let song = songs[sourceIndex]
+        guard index < songs.count else {
+            return
+        }
+
+        let song = songs[index]
 
         try? await ConnectionManager.command {
             try await $0.move(song, to: destination, in: navigator.category.source)

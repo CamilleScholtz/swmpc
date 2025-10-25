@@ -148,13 +148,16 @@ private struct MediaList: View {
     }
 
     private func handleReorder(indices: IndexSet, destination: Int) async {
-        guard let sourceIndex = indices.first,
-              sourceIndex < mpd.queue.songs.count
-        else {
+        guard let index = indices.first else {
             return
         }
 
-        let song = mpd.queue.songs[sourceIndex]
+        let songs = mpd.queue.songs
+        guard index < songs.count else {
+            return
+        }
+
+        let song = songs[index]
 
         try? await ConnectionManager.command {
             try await $0.move(song, to: destination, in: .queue)

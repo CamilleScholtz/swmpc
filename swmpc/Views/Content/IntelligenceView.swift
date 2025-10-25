@@ -25,7 +25,7 @@ struct IntelligenceView: View {
         self.target = target
         _showSheet = showSheet
 
-        _loadingSentence = State(initialValue: loadingSentences.randomElement()!)
+        _loadingSentence = State(initialValue: loadingSentences.randomElement() ?? "…")
     }
 
     @State private var prompt = ""
@@ -137,7 +137,7 @@ struct IntelligenceView: View {
                         Timer.publish(every: 1.5, on: .main, in: .common).autoconnect(),
                     ) { _ in
                         withAnimation(.spring) {
-                            loadingSentence = loadingSentences.randomElement()!
+                            loadingSentence = loadingSentences.randomElement() ?? "…"
                         }
                     }
 

@@ -113,7 +113,12 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
 
     /// Retrieves the configuration for this model.
     private var config: ModelConfig {
-        Self.configs[self]!
+        guard let config = Self.configs[self] else {
+            fatalError(
+                "Missing configuration for IntelligenceModel case: \(self)")
+        }
+
+        return config
     }
 
     /// Display name for the model provider.
@@ -325,7 +330,10 @@ actor IntelligenceManager {
                 throw IntelligenceManagerError.timeout
             }
 
-            let result = try await group.next()!
+            guard let result = try await group.next() else {
+                throw IntelligenceManagerError.timeout
+            }
+
             group.cancelAll()
 
             return result

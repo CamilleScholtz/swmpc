@@ -27,8 +27,11 @@ extension String {
 
             return String([first, last]).uppercased()
         default:
-            let first = words.first!.first!
-            let last = words.last!.first!
+            guard let first = words.first?.first,
+                  let last = words.last?.first
+            else {
+                return "?"
+            }
 
             return String([first, last]).uppercased()
         }

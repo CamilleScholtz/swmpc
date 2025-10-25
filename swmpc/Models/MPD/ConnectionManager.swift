@@ -888,13 +888,19 @@ extension ConnectionManager {
     func getSongs(from source: Source, sort: SortDescriptor = SortDescriptor
         .default) async throws -> [Song]
     {
-        let lines = switch source {
+        let lines: [String]
+        switch source {
         case .database:
-            try await run(["find \"(title != '')\" sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
+            lines = try await run(["find \"(title != '')\" sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
         case .queue:
-            try await run(["playlistinfo"])
+            lines = try await run(["playlistinfo"])
         case .playlist, .favorites:
-            try await run(["listplaylistinfo \(escape(source.playlist!.name))"])
+            guard let playlist = source.playlist else {
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Playlist source has no associated playlist")
+            }
+
+            lines = try await run(["listplaylistinfo \(escape(playlist.name))"])
         }
 
         return try parseMediaResponseArray(lines, as: .song, index: true)
@@ -1275,7 +1281,9 @@ extension ConnectionManager where Mode == CommandMode {
                     commands.append("delete \(end):\(start + 1)")
                 }
             case .playlist, .favorites:
-                let playlist = source.playlist!
+                guard let playlist = source.playlist else {
+                    continue
+                }
                 if start == end {
                     commands.append("playlistdelete \(escape(playlist.name)) \(start)")
                 } else {
