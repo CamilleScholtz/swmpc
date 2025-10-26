@@ -44,9 +44,7 @@ struct AppView: View {
                     #if os(iOS)
                         TabView(selection: $navigator.category) {
                             ForEach(CategoryDestination.categories) { category in
-                                // NOTE: Use SFSafeSymbols version when it is available.
-                                // https://github.com/SFSafeSymbols/SFSafeSymbols/issues/138
-                                Tab(String(localized: category.label), systemImage: category.symbol.rawValue, value: category) {
+                                Tab(String(localized: category.label), systemSymbol: category.symbol, value: category) {
                                     NavigationStack(path: $navigator.path) {
                                         CategoryDestinationView()
                                             .navigationDestination(for: ContentDestination.self) { destination in

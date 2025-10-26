@@ -451,7 +451,7 @@
 			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 6.2.0;
+				minimumVersion = 7.0.0;
 			};
 		};
 		91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */ = {
