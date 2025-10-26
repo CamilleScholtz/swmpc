@@ -75,7 +75,7 @@ struct ContextMenuView<Media: Mediable>: View {
         }
 
         if let playlists = mpd.playlists.playlists {
-            Menu(playlistMenuTitle, systemImage: "music.note.list") {
+            Menu(playlistMenuTitle, systemImage: SFSymbol.musicNoteList.rawValue) {
                 ForEach(playlists) { playlist in
                     let shouldSkip = if case let .playlist(currentPlaylist) = source {
                         currentPlaylist == playlist
@@ -174,7 +174,7 @@ struct SourceToggleButton<Media: Mediable>: View {
     }
 
     var body: some View {
-        AsyncButton(computedTitle, systemImage: symbol.rawValue) {
+        AsyncButton(computedTitle, systemSymbol: symbol) {
             let songs: [Song]
 
             switch media {

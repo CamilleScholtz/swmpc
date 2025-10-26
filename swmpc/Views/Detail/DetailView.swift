@@ -76,7 +76,7 @@ struct DetailView: View {
                 .sharedBackgroundVisibility(.hidden)
 
                 ToolbarItem {
-                    AsyncButton(mpd.status.isConsume ?? false ? "Disable Consume" : "Enable Consume", systemImage: mpd.status.isConsume ?? false ? SFSymbol.flameFill.rawValue : SFSymbol.flame.rawValue) {
+                    AsyncButton(mpd.status.isConsume ?? false ? "Disable Consume" : "Enable Consume", systemSymbol: mpd.status.isConsume ?? false ? SFSymbol.flameFill : SFSymbol.flame) {
                         try await ConnectionManager.command {
                             try await $0.consume(!(mpd.status.isConsume ?? false))
                         }

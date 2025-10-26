@@ -43,21 +43,21 @@ struct Delegate: App {
         #if os(macOS)
         .commands {
             CommandMenu("Controls") {
-                AsyncButton(appDelegate.mpd.status.isPlaying ? "Pause" : "Play", systemImage: appDelegate.mpd.status.isPlaying == true ? "pause.fill" : "play.fill") {
+                AsyncButton(appDelegate.mpd.status.isPlaying ? "Pause" : "Play", systemSymbol: appDelegate.mpd.status.isPlaying == true ? .pauseFill : .playFill) {
                     try await ConnectionManager.command {
                         try await $0.pause(appDelegate.mpd.status.isPlaying)
                     }
                 }
                 .keyboardShortcut(.space)
 
-                AsyncButton("Next Song", systemImage: "forward.fill") {
+                AsyncButton("Next Song", systemSymbol: .forwardFill) {
                     try await ConnectionManager.command {
                         try await $0.next()
                     }
                 }
                 .keyboardShortcut(.downArrow, modifiers: [.command])
 
-                AsyncButton("Previous Song", systemImage: "backward.fill") {
+                AsyncButton("Previous Song", systemSymbol: .backwardFill) {
                     try await ConnectionManager.command {
                         try await $0.previous()
                     }
@@ -66,7 +66,7 @@ struct Delegate: App {
 
                 Divider()
 
-                AsyncButton("Add Current Song to Favorites", systemImage: "heart.fill") {
+                AsyncButton("Add Current Song to Favorites", systemSymbol: .heartFill) {
                     guard let song = appDelegate.mpd.status.song else {
                         return
                     }
@@ -92,14 +92,14 @@ struct Delegate: App {
 
                 Divider()
 
-                AsyncButton("Toggle Repeat", systemImage: "repeat") {
+                AsyncButton("Toggle Repeat", systemSymbol: .repeat) {
                     try await ConnectionManager.command {
                         try await $0.repeat(!(appDelegate.mpd.status.isRepeat ?? false))
                     }
                 }
                 .keyboardShortcut("r", modifiers: [.command])
 
-                AsyncButton("Toggle Shuffle", systemImage: "shuffle") {
+                AsyncButton("Toggle Shuffle", systemSymbol: .shuffle) {
                     try await ConnectionManager.command {
                         try await $0.random(!(appDelegate.mpd.status.isRandom ?? false))
                     }
@@ -108,7 +108,7 @@ struct Delegate: App {
 
                 Divider()
 
-                AsyncButton("Toggle Consume", systemImage: "flame") {
+                AsyncButton("Toggle Consume", systemSymbol: .flame) {
                     try await ConnectionManager.command {
                         try await $0.consume(!(appDelegate.mpd.status.isConsume ?? false))
                     }
@@ -121,7 +121,7 @@ struct Delegate: App {
 
                 Divider()
 
-                AsyncButton("Reload Library", systemImage: "arrow.clockwise") {
+                AsyncButton("Reload Library", systemSymbol: .arrowClockwise) {
                     try await ConnectionManager.command {
                         try await $0.update()
                     }
@@ -131,7 +131,7 @@ struct Delegate: App {
 
             if let playlists = appDelegate.mpd.playlists.playlists {
                 CommandMenu("Playlists") {
-                    Menu("Load Playlist", systemImage: "music.note.list") {
+                    Menu("Load Playlist", systemImage: SFSymbol.musicNoteList.rawValue) {
                         ForEach(playlists) { playlist in
                             AsyncButton(playlist.name) {
                                 try await ConnectionManager.command {
