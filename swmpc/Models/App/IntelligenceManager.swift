@@ -267,7 +267,6 @@ actor IntelligenceManager {
                     """)!,
                     .init(role: .user, content: albumDescriptions)!,
                     .init(role: .assistant, content: prefill)!,
-
                 ],
                 model: model.model,
                 responseFormat: .jsonObject,
