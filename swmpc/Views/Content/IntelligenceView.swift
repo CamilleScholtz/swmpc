@@ -30,6 +30,7 @@ struct IntelligenceView: View {
 
     @State private var prompt = ""
     @State private var isLoading = false
+    @State private var error: Error?
 
     @State private var loadingSentence: LocalizedStringResource
     @State private var colorOffset: CGFloat = 0
@@ -174,14 +175,20 @@ struct IntelligenceView: View {
 
                     AsyncButton(String(localized: actionButtonTitle), role: .confirm) {
                         isLoading = true
+                        error = nil
 
-                        try? await IntelligenceManager.shared.fill(target: target, prompt: prompt)
-                        if case let .playlist(playlist) = target {
-                            playlist.wrappedValue = nil
+                        do {
+                            try await IntelligenceManager.shared.fill(target: target, prompt: prompt)
+                            if case let .playlist(playlist) = target {
+                                playlist.wrappedValue = nil
+                            }
+
+                            showSheet = false
+                        } catch {
+                            self.error = error
                         }
 
                         isLoading = false
-                        showSheet = false
                     }
                     .buttonStyle(.borderedProminent)
                     .asyncButtonStyle(.pulse)
@@ -209,10 +216,7 @@ struct IntelligenceView: View {
                 )
                 .mask(
                     RadialGradient(
-                        colors: [
-                            .black,
-                            .clear,
-                        ],
+                        colors: [.black, .clear],
                         center: .init(x: 0.5, y: 0.1),
                         startRadius: 0,
                         endRadius: Layout.Size.intelligenceViewWidth / 2 + 30,
@@ -230,5 +234,15 @@ struct IntelligenceView: View {
                 }
             }
             .animation(.spring, value: isLoading)
+            .alert("Something went wrong", isPresented: Binding(
+                get: { error != nil },
+                set: { if !$0 { error = nil } },
+            )) {
+                Button("OK", role: .cancel) {
+                    error = nil
+                }
+            } message: {
+                Text(error?.localizedDescription ?? "An unknown error occurred")
+            }
     }
 }

@@ -53,7 +53,7 @@ nonisolated struct ModelConfig {
     let path: String
     /// UserDefaults key for storing the API token.
     let setting: String
-    /// Whether the model supports structured output.
+    /// Whether the model is enabled.
     let isEnabled: Bool
 }
 
@@ -83,7 +83,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "api.deepseek.com",
             path: "/v1",
             setting: Setting.deepSeekToken,
-            isEnabled: false, // NOTE: Doesn't support structured output
+            isEnabled: true,
         ),
         .gemini: ModelConfig(
             name: "Gemini",
@@ -103,9 +103,9 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
         ),
         .claude: ModelConfig(
             name: "Claude",
-            model: "claude-3-5-haiku-latest",
+            model: "claude-haiku-4-5",
             host: "api.anthropic.com",
-            path: "/v1/messages",
+            path: "/v1",
             setting: Setting.claudeToken,
             isEnabled: true,
         ),
@@ -144,8 +144,8 @@ nonisolated struct IntelligenceResponse: JSONSchemaConvertible {
     /// Example response for schema generation.
     static let example: Self = .init(playlist: [
         "Philip Glass - Koyaanisqatsi",
-        "Philip Glass - Glassworks",
         "Philip Glass - Einstein on the Beach",
+        "Steve Reich - Music for 18 Musicians",
     ])
 }
 
@@ -223,29 +223,61 @@ actor IntelligenceManager {
             let albumDescriptions = selectedAlbums.map(\.description).joined(
                 separator: "\n")
 
+            let prefill = """
+            {
+              "playlist": [
+            """
+
             let result = try await client.chats(query: ChatQuery(
                 messages: [
                     .init(role: .system, content: """
-                    You are a music expert who knows every style, genre, artist, and album; from mainstream hits to obscure world music. You can sense any gathering's mood and craft the perfect playlist. Your job is to create a playlist that fits a short description we'll provide. The user will send you a list of available albums in the format `artist - title`.
+                    You are an expert music curator with comprehensive knowledge of artists, albums, genres, and styles across all eras and popularity levels.
 
-                    The description for the playlist your should create is: \(prompt)
+                    Your task is to analyze the playlist description below and select albums from the list provided by the user that best match the request.
+
+                    ## SELECTION CRITERIA
+
+                    - Only select albums that appear in the user's provided list
+                    - Match albums based on genre, mood, era, style, theme, or other relevant criteria
+                    - Prioritize strong matches over weak connections
+                    - Include 5-20 albums depending on the specificity of the request
+                    - Balance variety with coherence unless the description requires otherwise
+                    - If the description is broad (e.g., "best albums"), select diverse, highly-regarded works
+                    - If the description is specific (e.g., "ambient electronic from the 90s"), focus tightly on the criteria
+
+                    ## INPUT
+
+                    The user will send you a list of available albums in the format `[artist] - [title]`.
+
+                    ## OUTPUT
+
+                    You must respond with valid JSON matching this exact structure (example albums used):
+
+                    {
+                      "playlist": [
+                        "Philip Glass - Koyaanisqatsi",
+                        "Philip Glass - Einstein on the Beach",
+                        "Steve Reich - Music for 18 Musicians"
+                      ]
+                    }
+
+                    ## PLAYLIST DESCRIPTION
+
+                    \(prompt)
                     """)!,
                     .init(role: .user, content: albumDescriptions)!,
+                    .init(role: .assistant, content: prefill)!,
+
                 ],
                 model: model.model,
-                responseFormat: .jsonSchema(
-                    .init(
-                        name: "intelligence_response",
-                        description: nil,
-                        schema: .derivedJsonSchema(IntelligenceResponse.self),
-                        strict: true,
-                    ),
-                ),
+                responseFormat: .jsonObject,
             ))
 
-            guard let content = result.choices.first?.message.content,
-                  let data = content.data(using: .utf8)
-            else {
+            guard let content = result.choices.first?.message.content else {
+                throw IntelligenceManagerError.noResponse
+            }
+
+            guard let data = (prefill + content).data(using: .utf8) else {
                 throw IntelligenceManagerError.noResponse
             }
 
