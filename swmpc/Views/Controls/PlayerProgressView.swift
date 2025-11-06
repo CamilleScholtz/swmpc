@@ -10,7 +10,7 @@ import SwiftUI
 struct PlayerProgressView: View {
     @Environment(MPD.self) private var mpd
 
-    var showTimestamps: Bool = true
+    let showTimestamps: Bool
 
     @State private var sliderValue: Double = 0
     @State private var isEditing = false

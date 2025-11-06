@@ -32,7 +32,7 @@ struct DetailFooterView: View {
                     .offset(x: 4, y: 1)
             }
 
-            PlayerProgressView()
+            PlayerProgressView(showTimestamps: true)
         }
 
         VStack {
