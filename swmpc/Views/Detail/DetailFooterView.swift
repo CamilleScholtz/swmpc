@@ -41,9 +41,9 @@ struct DetailFooterView: View {
                     RepeatView()
 
                     HStack(spacing: Layout.Spacing.large) {
-                        PreviousView()
-                        PauseView()
-                        NextView()
+                        PreviousView(size: 18)
+                        PauseView(size: 30, button: true)
+                        NextView(size: 18)
                     }
 
                     RandomView()
@@ -54,9 +54,9 @@ struct DetailFooterView: View {
                     RepeatView()
 
                     HStack(spacing: 20) {
-                        PreviousView()
-                        PauseView()
-                        NextView()
+                        PreviousView(size: 18)
+                        PauseView(size: 30, button: true)
+                        NextView(size: 18)
                     }
 
                     RandomView()

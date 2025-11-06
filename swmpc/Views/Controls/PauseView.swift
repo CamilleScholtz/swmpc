@@ -11,8 +11,8 @@ import SwiftUI
 struct PauseView: View {
     @Environment(MPD.self) private var mpd
 
-    var size: CGFloat = 30
-    var button: Bool = true
+    let size: CGFloat
+    let button: Bool
 
     var body: some View {
         AsyncButton {
@@ -36,7 +36,7 @@ struct PauseView: View {
             .glassEffect(button ? .regular.interactive() : .identity)
             .contentShape(Circle())
         }
-        .styledButton(hoverScale: button ? 1.2 : 1.13)
+        .styledButton(hoverScale: 1.2)
         .disabled(mpd.status.song == nil)
         .help(mpd.status.isPlaying ? "Pause playback" : "Resume playback")
     }

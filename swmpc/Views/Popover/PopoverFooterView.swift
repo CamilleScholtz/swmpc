@@ -23,7 +23,8 @@ struct PopoverFooterView: View {
 
                 HStack(spacing: 2) {
                     PreviousView(size: 14)
-                    PopoverPauseView()
+                    PauseView(size: 24, button: false)
+                        .frame(width: 20, height: 20)
                     NextView(size: 14)
                 }
 
@@ -38,38 +39,5 @@ struct PopoverFooterView: View {
         }
         .frame(height: Layout.Size.popoverFooterHeight)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
-    }
-
-    struct PopoverPauseView: View {
-        @Environment(MPD.self) private var mpd
-
-        var body: some View {
-            AsyncButton {
-                try await ConnectionManager.command {
-                    try await $0.pause(mpd.status.isPlaying)
-                }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(.primary)
-                        .frame(width: 36, height: 36)
-
-                    ZStack {
-                        Image(systemSymbol: .pauseFill)
-                            .font(.system(size: 18))
-                            .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
-                            .opacity(mpd.status.isPlaying ? 1 : 0.1)
-
-                        Image(systemSymbol: .playFill)
-                            .font(.system(size: 18))
-                            .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
-                            .opacity(mpd.status.isPlaying ? 0.1 : 1)
-                    }
-                    .animation(.interactiveSpring(duration: 0.25), value: mpd.status.isPlaying)
-                    .blendMode(.destinationOut)
-                }
-            }
-            .styledButton(hoverScale: 1.1)
-        }
     }
 }

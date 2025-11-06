@@ -17,7 +17,7 @@ private extension Layout {
 struct NextView: View {
     @Environment(MPD.self) private var mpd
 
-    var size: CGFloat = 18
+    let size: CGFloat
 
     @State private var animating = false
 

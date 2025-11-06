@@ -8,11 +8,8 @@
 import ButtonKit
 import SwiftUI
 
-// MARK: - Layout Constants
-
 private extension Layout {
     enum Control {
-        static let previousButtonMultiplier: CGFloat = 2.0
         static let previousSizeAdjustment: CGFloat = 5
     }
 }
@@ -20,7 +17,7 @@ private extension Layout {
 struct PreviousView: View {
     @Environment(MPD.self) private var mpd
 
-    var size: CGFloat = 18
+    let size: CGFloat
 
     @State private var animating = false
 
