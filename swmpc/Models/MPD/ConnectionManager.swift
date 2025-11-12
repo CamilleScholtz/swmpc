@@ -617,14 +617,30 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
         switch type {
         case .song:
+            let artist: String
+            let title: String
+
+            if let name = fields["name"], fields["artist"] == nil, fields["title"] == nil {
+                if let separator = name.range(of: " - ") {
+                    artist = String(name[..<separator.lowerBound])
+                    title = String(name[separator.upperBound...])
+                } else {
+                    artist = "Unknown Artist"
+                    title = name
+                }
+            } else {
+                artist = fields["artist"] ?? "Unknown Artist"
+                title = fields["title"] ?? "Unknown Title"
+            }
+
             let song = Song(
                 file: file,
                 identifier: fields["id"].flatMap { UInt32($0) },
                 position: fields["pos"].flatMap { UInt32($0) }
                     ?? index.map { UInt32($0) },
-                artist: fields["artist"] ?? "Unknown Artist",
+                artist: artist,
                 artistSort: fields["artistsort"],
-                title: fields["title"] ?? "Unknown Title",
+                title: title,
                 titleSort: fields["titlesort"],
                 duration: fields["duration"].flatMap { Double($0) } ?? 0,
                 disc: fields["disc"].flatMap { Int($0) } ?? 1,
