@@ -25,6 +25,7 @@ struct AppView: View {
         @State private var showDetailCover = false
     #elseif os(macOS)
         @State private var showQueuePanel = false
+        @State private var columnVisibility: NavigationSplitViewVisibility = .all
     #endif
 
     @State private var artwork: PlatformImage?
@@ -78,7 +79,7 @@ struct AppView: View {
                             .navigationTransition(.zoom(sourceID: 1, in: namespace))
                         }
                     #elseif os(macOS)
-                        NavigationSplitView {
+                        NavigationSplitView(columnVisibility: $columnVisibility) {
                             SidebarView()
                                 .navigationSplitViewColumnWidth(Layout.Size.sidebarWidth)
                         } content: {
@@ -103,6 +104,12 @@ struct AppView: View {
                                 DetailView(artwork: artwork, showQueuePanel: $showQueuePanel)
                             }
                             .scrollEdgeEffectStyle(.soft, for: .vertical)
+                        }
+                        .onChange(of: columnVisibility) { _, value in
+                            // XXX: Little hacky, is there not some setting?
+                            if value != .all {
+                                columnVisibility = .all
+                            }
                         }
                         .simultaneousGesture(
                             TapGesture()
