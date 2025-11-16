@@ -114,15 +114,9 @@ struct AboutView: View {
                     .foregroundStyle(.accent)
                     .frame(height: 32)
 
-                if let value {
-                    Text(value)
-                        .font(.system(size: 20, weight: .semibold))
-                        .monospacedDigit()
-                } else {
-                    ProgressView()
-                        .controlSize(.small)
-                        .frame(height: 24)
-                }
+                Text(value ?? "?")
+                    .font(.system(size: 20, weight: .semibold))
+                    .monospacedDigit()
 
                 Text(label)
                     .font(.caption)
@@ -131,9 +125,8 @@ struct AboutView: View {
             .frame(maxWidth: .infinity)
             .padding()
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-                    .shadow(color: .black.opacity(0.05), radius: 2, y: 1),
+                RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
+                    .fill(Color(nsColor: .secondarySystemFill).opacity(0.4)),
             )
         }
     }
@@ -155,20 +148,15 @@ struct AboutView: View {
 
                 Spacer()
 
-                if let value {
-                    Text(value)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                } else {
-                    ProgressView()
-                        .controlSize(.small)
-                }
+                Text(value ?? "?")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
             .padding(.vertical, 4)
         }
     }
-    
+
     private func formatDate(_ timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()
