@@ -67,14 +67,14 @@ struct AboutView: View {
 
             VStack(spacing: Layout.Spacing.medium) {
                 HStack(spacing: Layout.Spacing.small) {
-                    StatCard(symbol: .person2Fill, label: "Artists", value: artists?.formatted())
                     StatCard(symbol: .squareStackFill, label: "Albums", value: albums?.formatted())
+                    StatCard(symbol: .musicMicrophone, label: "Artists", value: artists?.formatted())
                     StatCard(symbol: .musicNote, label: "Songs", value: songs?.formatted())
                 }
 
                 VStack(alignment: .leading, spacing: Layout.Spacing.small) {
                     VStack(spacing: Layout.Spacing.small) {
-                        StatRow(symbol: .clock, label: "Server Uptime", value: uptime.map { Double($0).humanTimeString })
+                        StatRow(symbol: .clockFill, label: "Server Uptime", value: uptime.map { Double($0).humanTimeString })
                         StatRow(symbol: .waveform, label: "Total Music Duration", value: playtime.map { Double($0).humanTimeString })
                         StatRow(symbol: .calendarBadgeClock, label: "Last Database Update", value: update.map(formatDate))
                     }
