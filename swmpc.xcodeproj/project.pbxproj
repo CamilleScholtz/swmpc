@@ -39,6 +39,7 @@
 				Views/Detail/DetailMiniView.swift = (ios, );
 				Views/Popover/PopoverFooterView.swift = (macos, );
 				Views/Popover/PopoverView.swift = (macos, );
+				Views/Settings/AboutView.swift = (macos, );
 				Views/Sidebar/SidebarView.swift = (macos, );
 			};
 			target = 91A141DF2CDE3988000A74BC /* swmpc */;

@@ -23,8 +23,8 @@ extension Double {
     /// Returns a human-readable string representation of time duration.
     ///
     /// For durations less than 60 seconds, shows as abbreviated minutes (e.g.,
-    /// "1m"). For longer durations, shows hours and minutes (e.g., "2h 30m").
-    /// Assumes the value represents time in seconds.
+    /// "1m"). For longer durations, shows days, hours and minutes (e.g.,
+    /// "2d 5h", "2h 30m"). Assumes the value represents time in seconds.
     ///
     /// - Returns: A localized, abbreviated string representing the duration.
     var humanTimeString: String {
@@ -39,7 +39,7 @@ extension Double {
 
         let formatter = DateComponentsFormatter()
 
-        formatter.allowedUnits = [.hour, .minute]
+        formatter.allowedUnits = [.day, .hour, .minute]
         formatter.unitsStyle = .abbreviated
         formatter.maximumUnitCount = 2
         formatter.allowsFractionalUnits = false

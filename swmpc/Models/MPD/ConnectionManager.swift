@@ -791,6 +791,43 @@ extension ConnectionManager {
         return (state, isConsume, isRandom, isRepeat, elapsed, song, volume)
     }
 
+    /// Retrieves statistics from the MPD server.
+    ///
+    /// This method fetches database and playback statistics from the MPD server,
+    /// including counts of artists, albums, and songs, as well as uptime and
+    /// playtime information.
+    ///
+    /// - Returns: A tuple containing:
+    ///   - `artists`: The number of artists in the database.
+    ///   - `albums`: The number of albums in the database.
+    ///   - `songs`: The number of songs in the database.
+    ///   - `uptime`: The daemon uptime in seconds.
+    ///   - `playtime`: The sum of all song times in the database in seconds.
+    ///   - `update`: The last database update in UNIX time.
+    /// - Throws: An error if the response is malformed or if the underlying
+    ///           command execution fails.
+    func getStatsData() async throws -> (artists: Int?, albums: Int?, songs: Int?,
+                                         uptime: Int?, playtime: Int?,
+                                         update: Int?)
+    {
+        let lines = try await run(["stats"])
+
+        var fields: [String: String] = [:]
+        for line in lines where line != "OK" {
+            let (key, value) = try parseLine(line)
+            fields[key] = value
+        }
+
+        let artists = fields["artists"].flatMap(Int.init)
+        let albums = fields["albums"].flatMap(Int.init)
+        let songs = fields["songs"].flatMap(Int.init)
+        let uptime = fields["uptime"].flatMap(Int.init)
+        let playtime = fields["db_playtime"].flatMap(Int.init)
+        let update = fields["db_update"].flatMap(Int.init)
+
+        return (artists, albums, songs, uptime, playtime, update)
+    }
+
     /// Retrieves all unique albums from the database, sorted as specified.
     ///
     /// This method fetches a list of songs (specifically, the first track of

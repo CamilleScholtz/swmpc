@@ -1,0 +1,181 @@
+//
+//  AboutView.swift
+//  swmpc
+//
+//  Created by Camille Scholtz on 16/11/2025.
+//
+
+import SFSafeSymbols
+import SwiftUI
+
+struct AboutView: View {
+    @State private var artists: Int?
+    @State private var albums: Int?
+    @State private var songs: Int?
+    @State private var uptime: Int?
+    @State private var playtime: Int?
+    @State private var update: Int?
+
+    var body: some View {
+        VStack(spacing: Layout.Spacing.large) {
+            VStack(spacing: Layout.Spacing.small) {
+                if let image = NSApp.applicationIconImage {
+                    Image(nsImage: image)
+                        .resizable()
+                        .frame(width: 64, height: 64)
+                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                }
+
+                Text("swmpc")
+                    .font(.headline)
+
+                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                    Text("Version \(version)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack(spacing: Layout.Spacing.medium) {
+                    Link(destination: URL(string: "https://github.com/CamilleScholtz/swmpc")!) {
+                        Label("Website", systemImage: "link")
+                            .font(.caption)
+                    }
+
+                    Text("·")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+
+                    Link(destination: URL(string: "https://github.com/CamilleScholtz/swmpc/issues/new?template=bug_report.md")!) {
+                        Label("Report Bug", systemImage: "exclamationmark.triangle")
+                            .font(.caption)
+                    }
+
+                    Text("·")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+
+                    Link(destination: URL(string: "https://github.com/CamilleScholtz/swmpc/issues/new?template=feature_request.md")!) {
+                        Label("Request Feature", systemImage: "lightbulb")
+                            .font(.caption)
+                    }
+                }
+                .padding(.top, Layout.Spacing.small)
+            }
+
+            Divider()
+                .padding(.horizontal)
+
+            VStack(spacing: Layout.Spacing.medium) {
+                HStack(spacing: Layout.Spacing.small) {
+                    StatCard(symbol: .person2Fill, label: "Artists", value: artists?.formatted())
+                    StatCard(symbol: .squareStackFill, label: "Albums", value: albums?.formatted())
+                    StatCard(symbol: .musicNote, label: "Songs", value: songs?.formatted())
+                }
+
+                VStack(alignment: .leading, spacing: Layout.Spacing.small) {
+                    VStack(spacing: Layout.Spacing.small) {
+                        StatRow(symbol: .clock, label: "Server Uptime", value: uptime.map { Double($0).humanTimeString })
+                        StatRow(symbol: .waveform, label: "Total Music Duration", value: playtime.map { Double($0).humanTimeString })
+                        StatRow(symbol: .calendarBadgeClock, label: "Last Database Update", value: update.map(formatDate))
+                    }
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical)
+        .frame(width: 420, height: 420)
+        .task {
+            let data = try? await ConnectionManager.command {
+                try await $0.getStatsData()
+            }
+
+            guard let data else {
+                return
+            }
+
+            artists = data.artists
+            albums = data.albums
+            songs = data.songs
+            uptime = data.uptime
+            playtime = data.playtime
+            update = data.update
+        }
+    }
+
+    struct StatCard: View {
+        let symbol: SFSymbol
+        let label: String
+        let value: String?
+
+        var body: some View {
+            VStack(spacing: 8) {
+                Image(systemSymbol: symbol)
+                    .font(.system(size: 24))
+                    .foregroundStyle(.accent)
+                    .frame(height: 32)
+
+                if let value {
+                    Text(value)
+                        .font(.system(size: 20, weight: .semibold))
+                        .monospacedDigit()
+                } else {
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(height: 24)
+                }
+
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .shadow(color: .black.opacity(0.05), radius: 2, y: 1),
+            )
+        }
+    }
+
+    struct StatRow: View {
+        let symbol: SFSymbol
+        let label: String
+        let value: String?
+
+        var body: some View {
+            HStack(spacing: 12) {
+                Image(systemSymbol: symbol)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.accent)
+                    .frame(width: 20)
+
+                Text(label)
+                    .font(.subheadline)
+
+                Spacer()
+
+                if let value {
+                    Text(value)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                } else {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+    
+    private func formatDate(_ timestamp: Int) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
+        let formatter = DateFormatter()
+
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+
+        return formatter.string(from: date)
+    }
+}

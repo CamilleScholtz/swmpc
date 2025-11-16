@@ -16,6 +16,7 @@ import SwiftUI
 struct Delegate: App {
     #if os(macOS)
         @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+        @Environment(\.openWindow) private var openWindow
     #endif
 
     #if os(iOS)
@@ -42,6 +43,11 @@ struct Delegate: App {
         }
         #if os(macOS)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About swmpc") {
+                    openWindow(id: "about")
+                }
+            }
             CommandMenu("Controls") {
                 AsyncButton(appDelegate.mpd.status.isPlaying ? "Pause" : "Play", systemSymbol: appDelegate.mpd.status.isPlaying == true ? .pauseFill : .playFill) {
                     try await ConnectionManager.command {
@@ -150,6 +156,17 @@ struct Delegate: App {
                 SettingsView()
                     .environment(appDelegate.mpd)
             }
+
+            Window("About swmpc", id: "about") {
+                AboutView()
+                    .environment(appDelegate.mpd)
+                    .toolbar(removing: .title)
+                    .toolbarBackground(.hidden, for: .windowToolbar)
+                    .windowMinimizeBehavior(.disabled)
+            }
+            .windowBackgroundDragBehavior(.enabled)
+            .windowResizability(.contentSize)
+            .restorationBehavior(.disabled)
         #endif
     }
 }
