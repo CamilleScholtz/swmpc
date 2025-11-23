@@ -13,7 +13,7 @@ struct DetailFooterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Layout.Spacing.small - 0.5) {
-            HStack(alignment: .center) {
+            HStack(alignment: .bottom) {
                 Text(mpd.status.song?.title ?? "No song playing")
                 #if os(iOS)
                     .font(.system(size: 22))
@@ -22,6 +22,7 @@ struct DetailFooterView: View {
                 #endif
                     .fontWeight(.semibold)
                     .fontDesign(.rounded)
+                    .lineLimit(2)
 
                 Spacer()
 

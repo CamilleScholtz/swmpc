@@ -71,6 +71,7 @@ struct VolumeSliderView: View {
                 .foregroundColor(Color(.systemFill))
                 .frame(width: 20)
         }
+        .padding(4)
         .animation(.spring, value: isHovering)
         .onHover { hovering in
             isHovering = hovering
