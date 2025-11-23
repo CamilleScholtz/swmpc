@@ -8,6 +8,9 @@
 import ButtonKit
 import SFSafeSymbols
 import SwiftUI
+#if os(macOS)
+    import SwiftUIIntrospect
+#endif
 
 struct CategoryDestinationView: View {
     @Environment(NavigationManager.self) private var navigator
@@ -91,10 +94,10 @@ struct CategoryDatabaseView: View {
 
     #if os(iOS)
         @State private var previousCategory: CategoryDestination?
+    #elseif os(macOS)
+        @State private var searchTextField: NSTextField?
     #endif
-
-    @FocusState private var isSearchFieldFocused: Bool
-
+    
     private var searchFields: SearchFields {
         let fields = switch navigator.category {
         case .albums: albumSearchFields
@@ -177,16 +180,15 @@ struct CategoryDatabaseView: View {
                         .frame(width: 195.5)
                     #endif
                         .padding(.leading, Layout.Padding.small)
-                        // XXX: This doesn't work for some reason.
-                        .focusEffectDisabled()
                         .autocorrectionDisabled()
-                        // XXX: This ALSO doesn't work.
-                        // See: https://developer.apple.com/forums/thread/797948
-                        // And: https://stackoverflow.com/questions/74245149/focusstate-textfield-not-working-within-toolbar-toolbaritem
-                        .focused($isSearchFieldFocused)
-                        .onAppear {
-                            isSearchFieldFocused = true
+                    #if os(macOS)
+                        .introspect(.textField, on: .macOS(.v26)) { textField in
+                            // XXX: Workaround for .focusEffectDisabled() not working in toolbar.
+                            textField.focusRingType = .none
+
+                            searchTextField = textField
                         }
+                    #endif
                 }
 
                 ToolbarItem {
@@ -219,7 +221,6 @@ struct CategoryDatabaseView: View {
                         searchTask?.cancel()
                         searchQuery = ""
                         searchResults = nil
-                        isSearchFieldFocused = false
                     }
                 }
                 .keyboardShortcut("f", modifiers: .command)
@@ -271,12 +272,22 @@ struct CategoryDatabaseView: View {
             try? await Task.sleep(for: .milliseconds(100))
             scrollToCurrentMedia()
         }
-        .onChange(of: searchQuery) { _, query in
-            performSearch(query: query, fields: searchFields)
+        .onChange(of: searchQuery) { _, value in
+            performSearch(query: value, fields: searchFields)
         }
-        .onChange(of: searchFields) { _, fields in
-            performSearch(query: searchQuery, fields: fields)
+        .onChange(of: searchFields) { _, value in
+            performSearch(query: searchQuery, fields: value)
         }
+        #if os(macOS)
+        // XXX: Workaround for @FocusState not working in toolbar.
+        .onChange(of: searchTextField) { _, value in
+            guard let value else {
+                return
+            }
+            
+            value.window?.makeFirstResponder(value)
+        }
+        #endif
     }
 
     private func performSearch(query: String, fields: SearchFields) {

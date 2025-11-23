@@ -96,10 +96,9 @@ struct AppView: View {
                             )
                             .scrollEdgeEffectStyle(.soft, for: .vertical)
                         } detail: {
-                            // XXX: The scrollview is a hack to hide the toolbar.
+                            // XXX: The scrollview is a hack to hide apply the .soft scroll edge effect.
                             ZStack {
                                 ScrollView {}
-                                    .scrollDisabled(true)
 
                                 DetailView(artwork: artwork, showQueuePanel: $showQueuePanel)
                             }

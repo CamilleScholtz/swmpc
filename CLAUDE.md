@@ -96,3 +96,13 @@ External packages (managed via Xcode's Swift Package Manager):
 - Connection modes optimize for different operations (idle listening, command execution, artwork fetching)
 - Uses MPD's idle command for real-time updates without polling
 - Binary protocol support for album artwork retrieval
+
+## MCPs
+
+### xcodebuild-mini
+
+The `xcodebuild-mini` MCP provides tools for building and managing Xcode projects. It includes various toolsets categorized by functionality. **Always** prefer using a `XcodeBuildMCP` tool over raw `xcodebuild` or shell commands if possible, as these tools provide better integration and error handling.
+
+### apple-docs
+
+The `apple-docs` MCP provides access to Apple's official documentation for APIs, frameworks, and developer guides. Use this MCP to look up specific classes, methods, or concepts related to Apple development.
