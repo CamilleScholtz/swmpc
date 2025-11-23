@@ -97,7 +97,7 @@ struct CategoryDatabaseView: View {
     #elseif os(macOS)
         @State private var searchTextField: NSTextField?
     #endif
-    
+
     private var searchFields: SearchFields {
         let fields = switch navigator.category {
         case .albums: albumSearchFields
@@ -284,7 +284,7 @@ struct CategoryDatabaseView: View {
             guard let value else {
                 return
             }
-            
+
             value.window?.makeFirstResponder(value)
         }
         #endif
