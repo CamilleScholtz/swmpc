@@ -33,61 +33,77 @@ struct VolumeSliderView: View {
     }
 
     var body: some View {
-        HStack(spacing: Layout.Spacing.small) {
-            if isHovering {
-                Slider(value: $percentage, in: 0 ... 1) {} currentValueLabel: {
-                    Text("\(Int(percentage * 100))%")
-                        .font(.subheadline)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                        .frame(width: 35, alignment: .trailing)
-                } ticks: {
-                    SliderTickContentForEach(
-                        stride(from: 0.0, through: 1.0, by: 0.33).map(\.self),
-                        id: \.self,
-                    ) { value in
-                        SliderTick(value)
-                    }
-                } onEditingChanged: { editing in
-                    isChanging = editing
-                    volume = percentage * 100
+        Image(systemSymbol: volumeSymbol)
+            .foregroundColor(Color(.systemFill))
+            .frame(width: 20, height: 16)
+            .padding(3)
+            .overlay(alignment: .trailing) {
+                if isHovering {
+                    HStack(spacing: Layout.Spacing.medium) {
+                        Slider(value: $percentage, in: 0 ... 1) {} currentValueLabel: {
+                            Text("\(Int(percentage * 100))%")
+                                .font(.subheadline)
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                                .frame(width: 35, alignment: .trailing)
+                        } ticks: {
+                            SliderTickContentForEach(
+                                stride(from: 0.0, through: 1.0, by: 0.33).map(\.self),
+                                id: \.self,
+                            ) { value in
+                                SliderTick(value)
+                            }
+                        } onEditingChanged: { editing in
+                            isChanging = editing
+                            volume = percentage * 100
 
-                    if !editing {
-                        Task {
-                            try? await ConnectionManager.command {
-                                try await $0.setVolume(Int(volume))
+                            if !editing {
+                                Task {
+                                    try? await ConnectionManager.command {
+                                        try await $0.setVolume(Int(volume))
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                .controlSize(.mini)
-                .frame(width: 120)
-                .offset(y: 1)
-                .help("Adjust playback volume")
-                .transition(.offset(x: 4).combined(with: .opacity))
-            }
+                        .controlSize(.mini)
+                        .frame(width: 120)
+                        .help("Adjust playback volume")
+                        .padding(.leading, 40)
+                        .background {
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: Color(.windowBackgroundColor), location: 0.8),
+                                    .init(color: Color(.windowBackgroundColor).opacity(0), location: 1.0),
+                                ]),
+                                startPoint: .trailing,
+                                endPoint: .leading,
+                            )
+                        }
 
-            Image(systemSymbol: volumeSymbol)
-                .foregroundColor(Color(.systemFill))
-                .frame(width: 20)
-        }
-        .padding(4)
-        .animation(.spring, value: isHovering)
-        .onHover { hovering in
-            isHovering = hovering
-        }
-        .onAppear {
-            volume = Double(mpd.status.volume ?? 0)
-            percentage = volume / 100
-        }
-        .onChange(of: mpd.status.volume) { _, value in
-            if !isChanging {
-                volume = Double(value ?? 0)
+                        Spacer()
+                            .frame(width: 20)
+                    }
+                    .offset(y: volume == 0 ? 1 : 2)
+                    .transition(.offset(x: 4).combined(with: .opacity))
+                }
+            }
+            .offset(y: volume == 0 ? 1 : 0)
+            .animation(.spring, value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
+            .onAppear {
+                volume = Double(mpd.status.volume ?? 0)
                 percentage = volume / 100
             }
-        }
-        .onChange(of: percentage) { _, _ in
-            volume = percentage * 100
-        }
+            .onChange(of: mpd.status.volume) { _, value in
+                if !isChanging {
+                    volume = Double(value ?? 0)
+                    percentage = volume / 100
+                }
+            }
+            .onChange(of: percentage) { _, _ in
+                volume = percentage * 100
+            }
     }
 }
