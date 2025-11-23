@@ -299,7 +299,7 @@ struct CategoryDatabaseView: View {
         }
 
         searchTask = Task {
-            try? await Task.sleep(for: .milliseconds(200))
+            try? await Task.sleep(for: .milliseconds(100))
             guard !Task.isCancelled else {
                 return
             }
