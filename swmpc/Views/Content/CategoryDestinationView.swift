@@ -48,27 +48,30 @@ struct CategoryDestinationView: View {
                 }
             }
         }
-        #if os(macOS)
-        .toolbar(removing: .title)
-        .toolbar {
-            if !isSearchFieldExpanded {
-                // XXX: I want to use DefaultToolbarItem, but that does not work for some reason.
-                ToolbarItem {
-                    Text(navigator.category.label)
-                        .font(.system(size: 15))
-                        .fontWeight(.semibold)
-                        .padding(.leading, 12)
-                        .foregroundStyle(controlActiveState == .inactive ? .secondary : .primary)
-                }
-                .sharedBackgroundVisibility(.hidden)
+        .navigationTitle(navigator.category.label)
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #elseif os(macOS)
+            .toolbar(removing: .title)
+            .toolbar {
+                if !isSearchFieldExpanded {
+                    // XXX: I want to use DefaultToolbarItem, but that does not work for some reason.
+                    ToolbarItem {
+                        Text(navigator.category.label)
+                            .font(.system(size: 15))
+                            .fontWeight(.semibold)
+                            .padding(.leading, 12)
+                            .foregroundStyle(controlActiveState == .inactive ? .secondary : .primary)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
 
-                ToolbarSpacer(.flexible)
+                    ToolbarSpacer(.flexible)
+                }
             }
-        }
         #endif
-        .onChange(of: navigator.category) {
-            isSearchFieldExpanded = false
-        }
+            .onChange(of: navigator.category) {
+                isSearchFieldExpanded = false
+            }
     }
 }
 

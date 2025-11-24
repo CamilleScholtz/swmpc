@@ -11,7 +11,7 @@ import SwiftUI
 struct VolumeSliderView: View {
     @Environment(MPD.self) private var mpd
 
-    @State private var isHovering = false
+    @State private var isExpanded = false
     @State private var isChanging = false
     @State private var volume: Double = 0
     @State private var percentage = 0.5
@@ -38,7 +38,7 @@ struct VolumeSliderView: View {
             .frame(width: 20, height: 16)
             .padding(3)
             .overlay(alignment: .trailing) {
-                if isHovering {
+                if isExpanded {
                     HStack(spacing: Layout.Spacing.medium) {
                         Slider(value: $percentage, in: 0 ... 1) {} currentValueLabel: {
                             Text("\(Int(percentage * 100))%")
@@ -67,17 +67,27 @@ struct VolumeSliderView: View {
                         }
                         .controlSize(.mini)
                         .frame(width: 120)
-                        .help("Adjust playback volume")
                         .padding(.leading, 40)
                         .background {
-                            LinearGradient(
-                                gradient: Gradient(stops: [
-                                    .init(color: Color(.windowBackgroundColor), location: 0.8),
-                                    .init(color: Color(.windowBackgroundColor).opacity(0), location: 1.0),
-                                ]),
-                                startPoint: .trailing,
-                                endPoint: .leading,
-                            )
+                            #if os(iOS)
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: Color(.systemBackground), location: 0.8),
+                                        .init(color: Color(.systemBackground).opacity(0), location: 1.0),
+                                    ]),
+                                    startPoint: .trailing,
+                                    endPoint: .leading,
+                                )
+                            #elseif os(macOS)
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: Color(.textBackgroundColor), location: 0.8),
+                                        .init(color: Color(.textBackgroundColor).opacity(0), location: 1.0),
+                                    ]),
+                                    startPoint: .trailing,
+                                    endPoint: .leading,
+                                )
+                            #endif
                         }
 
                         Spacer()
@@ -88,10 +98,19 @@ struct VolumeSliderView: View {
                 }
             }
             .offset(y: volume == 0 ? 1 : 0)
-            .animation(.spring, value: isHovering)
-            .onHover { hovering in
-                isHovering = hovering
+            .animation(.spring, value: isExpanded)
+        #if os(iOS)
+            .onTapGesture {
+                isExpanded.toggle()
             }
+            .onHover { hovering in
+                isExpanded = hovering
+            }
+        #elseif os(macOS)
+            .onHover { hovering in
+                isExpanded = hovering
+            }
+        #endif
             .onAppear {
                 volume = Double(mpd.status.volume ?? 0)
                 percentage = volume / 100
