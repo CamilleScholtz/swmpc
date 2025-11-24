@@ -95,9 +95,9 @@ struct CategoryDatabaseView: View {
     @State private var searchQuery = ""
     @State private var searchResults: [any Mediable]?
 
-    #if os(iOS)
-        @State private var previousCategory: CategoryDestination?
-    #elseif os(macOS)
+    @State private var previousCategory: CategoryDestination?
+
+    #if os(macOS)
         @State private var searchTextField: NSTextField?
     #endif
 
@@ -249,6 +249,10 @@ struct CategoryDatabaseView: View {
             scrollToCurrentMedia()
         }
         .task(id: sort) {
+            guard previousCategory == navigator.category else {
+                return
+            }
+
             try? await mpd.database.set(idle: false, sort: sort)
 
             scrollToCurrentMedia()
@@ -261,6 +265,7 @@ struct CategoryDatabaseView: View {
         }
         .onChange(of: navigator.category) {
             mpd.state.isLoading = true
+            previousCategory = navigator.category
         }
         .onChange(of: sort) {
             mpd.state.isLoading = true
