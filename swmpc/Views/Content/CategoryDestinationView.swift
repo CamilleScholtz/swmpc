@@ -238,15 +238,6 @@ struct CategoryDatabaseView: View {
             #endif
         }
         .task(id: navigator.category) {
-            #if os(iOS)
-                guard navigator.category != previousCategory else {
-                    return
-                }
-
-                previousCategory = navigator.category
-            #endif
-
-            mpd.state.isLoading = true
             try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
             searchTask?.cancel()
@@ -258,22 +249,21 @@ struct CategoryDatabaseView: View {
             scrollToCurrentMedia()
         }
         .task(id: sort) {
-            #if os(iOS)
-                guard navigator.category != previousCategory else {
-                    return
-                }
-            #endif
-
-            guard !mpd.state.isLoading else {
-                return
-            }
-
-            mpd.state.isLoading = true
             try? await mpd.database.set(idle: false, sort: sort)
 
             scrollToCurrentMedia()
-            try? await Task.sleep(for: .milliseconds(100))
+            try? await Task.sleep(for: .milliseconds(200))
             scrollToCurrentMedia()
+        }
+        // XXX: I'd prefer to do this in a `Task.immediate`, but I can't modify the `.task` Task.
+        .onAppear {
+            mpd.state.isLoading = true
+        }
+        .onChange(of: navigator.category) {
+            mpd.state.isLoading = true
+        }
+        .onChange(of: sort) {
+            mpd.state.isLoading = true
         }
         .onChange(of: searchQuery) { _, value in
             performSearch(query: value, fields: searchFields)
@@ -484,8 +474,6 @@ struct CategoryPlaylistView: View {
             }
         }
         .task(id: playlist) {
-            mpd.state.isLoading = true
-
             songs = try? await mpd.playlists.getSongs(for: playlist)
 
             if songIsInPlaylist(mpd.status.song) {
@@ -493,6 +481,13 @@ struct CategoryPlaylistView: View {
                 try? await Task.sleep(for: .milliseconds(200))
                 scrollToCurrentSong()
             }
+        }
+        // XXX: I'd prefer to do this in a `Task.immediate`, but I can't modify the `.task` Task.
+        .onAppear {
+            mpd.state.isLoading = true
+        }
+        .onChange(of: playlist) {
+            mpd.state.isLoading = true
         }
         .onReceive(fillIntelligencePlaylistNotification) { notification in
             guard let playlist = notification.object as? Playlist else {

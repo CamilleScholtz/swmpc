@@ -11,7 +11,7 @@ import SwiftUI
 /// Manages the overall state of the MPD client including loading and connection states.
 @Observable final class StateManager {
     /// Whether the MPD client is currently loading data.
-    var isLoading = false
+    var isLoading = true
 
     /// The current network connection state.
     var connectionState: NetworkChannel<TCP>.State?
