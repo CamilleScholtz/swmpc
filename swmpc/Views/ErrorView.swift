@@ -60,6 +60,10 @@ struct ErrorView: View {
             .opacity(showError ? 1 : 0)
             .animation(.spring, value: showError)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+        .zIndex(999)
+        .background(Color(.textBackgroundColor))
         .task(priority: .medium) {
             try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled else {
@@ -68,5 +72,9 @@ struct ErrorView: View {
 
             showError = true
         }
+        .transition(.asymmetric(
+            insertion: .opacity,
+            removal: .opacity.animation(.easeOut(duration: 0.2).delay(0.3)),
+        ))
     }
 }

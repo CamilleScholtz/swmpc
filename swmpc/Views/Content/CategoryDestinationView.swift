@@ -263,9 +263,9 @@ struct CategoryDatabaseView: View {
         .onAppear {
             mpd.state.isLoading = true
         }
-        .onChange(of: navigator.category) {
+        .onChange(of: navigator.category) { _, value in
             mpd.state.isLoading = true
-            previousCategory = navigator.category
+            previousCategory = value
         }
         .onChange(of: sort) {
             mpd.state.isLoading = true
