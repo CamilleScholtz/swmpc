@@ -250,7 +250,7 @@ struct CategoryDatabaseView: View {
             guard !mpd.state.isLoading else {
                 return
             }
-            
+
             try? await mpd.database.set(idle: false, sort: sort)
 
             scrollToCurrentMedia()

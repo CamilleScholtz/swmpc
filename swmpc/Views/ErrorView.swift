@@ -63,7 +63,7 @@ struct ErrorView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
         .zIndex(999)
-        .background(Color(.textBackgroundColor))
+        .background(Layout.Colors.systemBackground)
         .task(priority: .medium) {
             try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled else {

@@ -69,25 +69,14 @@ struct VolumeSliderView: View {
                         .frame(width: 120)
                         .padding(.leading, 40)
                         .background {
-                            #if os(iOS)
-                                LinearGradient(
-                                    gradient: Gradient(stops: [
-                                        .init(color: Color(.systemBackground), location: 0.8),
-                                        .init(color: Color(.systemBackground).opacity(0), location: 1.0),
-                                    ]),
-                                    startPoint: .trailing,
-                                    endPoint: .leading,
-                                )
-                            #elseif os(macOS)
-                                LinearGradient(
-                                    gradient: Gradient(stops: [
-                                        .init(color: Color(.textBackgroundColor), location: 0.8),
-                                        .init(color: Color(.textBackgroundColor).opacity(0), location: 1.0),
-                                    ]),
-                                    startPoint: .trailing,
-                                    endPoint: .leading,
-                                )
-                            #endif
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: Layout.Colors.systemBackground, location: 0.8),
+                                    .init(color: Layout.Colors.systemBackground.opacity(0), location: 1.0),
+                                ]),
+                                startPoint: .trailing,
+                                endPoint: .leading,
+                            )
                         }
 
                         Spacer()

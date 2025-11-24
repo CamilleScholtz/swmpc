@@ -112,7 +112,7 @@ struct SongView: View, Equatable {
                             LinearGradient(
                                 gradient: Gradient(stops: [
                                     .init(color: .clear, location: 0.0),
-                                    .init(color: Color(.textBackgroundColor), location: 0.3),
+                                    .init(color: Layout.Colors.systemBackground, location: 0.3),
                                 ]),
                                 startPoint: .leading,
                                 endPoint: .trailing,

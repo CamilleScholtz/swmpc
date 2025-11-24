@@ -64,4 +64,12 @@ enum Layout {
             static let song: CGFloat = 31.5
         #endif
     }
+
+    enum Colors {
+        #if os(iOS)
+            static let systemBackground = Color(.systemBackground)
+        #elseif os(macOS)
+            static let systemBackground = Color(.textBackgroundColor)
+        #endif
+    }
 }
