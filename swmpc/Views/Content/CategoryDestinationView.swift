@@ -49,28 +49,29 @@ struct CategoryDestinationView: View {
             }
         }
         #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(isSearchFieldExpanded ? "" : navigator.category.label)
+        .navigationBarTitleDisplayMode(.inline)
         #elseif os(macOS)
-            .toolbar(removing: .title)
-            .toolbar {
-                if !isSearchFieldExpanded {
-                    // XXX: I want to use DefaultToolbarItem, but that does not work for some reason.
-                    ToolbarItem {
-                        Text(navigator.category.label)
-                            .font(.system(size: 15))
-                            .fontWeight(.semibold)
-                            .padding(.leading, 12)
-                            .foregroundStyle(controlActiveState == .inactive ? .secondary : .primary)
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-
-                    ToolbarSpacer(.flexible)
+        .toolbar(removing: .title)
+        .toolbar {
+            if !isSearchFieldExpanded {
+                // XXX: I want to use DefaultToolbarItem, but that does not work for some reason.
+                ToolbarItem {
+                    Text(navigator.category.label)
+                        .font(.system(size: 15))
+                        .fontWeight(.semibold)
+                        .padding(.leading, 12)
+                        .foregroundStyle(controlActiveState == .inactive ? .secondary : .primary)
                 }
+                .sharedBackgroundVisibility(.hidden)
+
+                ToolbarSpacer(.flexible)
             }
+        }
         #endif
-            .onChange(of: navigator.category) {
-                isSearchFieldExpanded = false
-            }
+        .onChange(of: navigator.category) {
+            isSearchFieldExpanded = false
+        }
     }
 }
 
@@ -87,6 +88,10 @@ struct CategoryDatabaseView: View {
     @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor.default
 
     @Binding var isSearchFieldExpanded: Bool
+
+    #if os(iOS)
+        @FocusState private var isSearchFieldFocused: Bool
+    #endif
 
     @State private var scrollTarget: ScrollTarget?
 
@@ -161,13 +166,17 @@ struct CategoryDatabaseView: View {
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
-                mediaList(for: media)
-                    .id(navigator.category)
-                    .overlay {
-                        if let searchResults {
-                            mediaList(for: searchResults)
-                        }
+                ZStack {
+                    mediaList(for: media)
+                        .id(navigator.category)
+                    #if os(iOS)
+                        .opacity(searchResults == nil ? 1 : 0)
+                    #endif
+
+                    if let searchResults {
+                        mediaList(for: searchResults)
                     }
+                }
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -181,7 +190,9 @@ struct CategoryDatabaseView: View {
                     #endif
                         .padding(.leading, Layout.Padding.small)
                         .autocorrectionDisabled()
-                    #if os(macOS)
+                    #if os(iOS)
+                        .focused($isSearchFieldFocused)
+                    #elseif os(macOS)
                         .introspect(.textField, on: .macOS(.v26)) { value in
                             // XXX: Workaround for .focusEffectDisabled() not working in toolbar.
                             value.focusRingType = .none
@@ -270,7 +281,11 @@ struct CategoryDatabaseView: View {
         .onChange(of: searchFields) { _, value in
             performSearch(query: searchQuery, fields: value)
         }
-        #if os(macOS)
+        #if os(iOS)
+        .onChange(of: isSearchFieldExpanded) { _, value in
+            isSearchFieldFocused = value
+        }
+        #elseif os(macOS)
         // XXX: Workaround for @FocusState not working in toolbar.
         .onChange(of: searchTextField) { _, value in
             guard let value else {
