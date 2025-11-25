@@ -183,11 +183,11 @@ struct CategoryDatabaseView: View {
                         .padding(.leading, Layout.Padding.small)
                         .autocorrectionDisabled()
                     #if os(macOS)
-                        .introspect(.textField, on: .macOS(.v26)) { textField in
+                        .introspect(.textField, on: .macOS(.v26)) { value in
                             // XXX: Workaround for .focusEffectDisabled() not working in toolbar.
-                            textField.focusRingType = .none
+                            value.focusRingType = .none
 
-                            searchTextField = textField
+                            searchTextField = value
                         }
                     #endif
                 }

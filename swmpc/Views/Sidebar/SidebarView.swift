@@ -130,10 +130,13 @@ struct SidebarView: View {
                         }
                 }
 
-                // TODO: This button doesn't take up the full width.
-                Button("New Playlist", systemSymbol: .plus) {
+                Button {
                     isCreatingPlaylist = true
                     isFocused = true
+                } label: {
+                    Label("New Playlist", systemSymbol: .plus)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
                 .keyboardShortcut("n", modifiers: [.command])

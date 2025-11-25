@@ -28,82 +28,10 @@ struct PlaylistsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
-                ForEach(playlists) { playlist in
-                    if isRenamingPlaylist, playlist == playlistToRename {
-                        TextField(playlistName, text: $playlistName)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 12)
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
-                            .focused($isFocused)
-                            .onChange(of: isFocused) { _, value in
-                                guard !value else {
-                                    return
-                                }
-
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    isRenamingPlaylist = false
-                                    playlistToRename = nil
-                                    playlistName = ""
-                                }
-                            }
-                            .onSubmit {
-                                Task(priority: .userInitiated) {
-                                    try await ConnectionManager.command {
-                                        try await $0.renamePlaylist(playlist, to: playlistName)
-                                    }
-
-                                    isRenamingPlaylist = false
-                                    playlistToRename = nil
-                                    playlistName = ""
-                                }
-                            }
-                    } else {
-                        Button {
-                            navigator.path.append(ContentDestination.playlist(playlist))
-                        } label: {
-                            HStack(spacing: Layout.Spacing.large) {
-                                Label(playlist.name, systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            if playlist.name != "Favorites" {
-                                Button("Rename Playlist", systemSymbol: .pencil) {
-                                    isRenamingPlaylist = true
-                                    playlistName = playlist.name
-                                    playlistToRename = playlist
-                                    isFocused = true
-                                }
-
-                                Button("Delete Playlist", systemSymbol: .trash, role: .destructive) {
-                                    playlistToDelete = playlist
-                                    showDeleteAlert = true
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
-                                .fill(Color.clear)
-                                .contentShape(Rectangle()),
-                        )
-                    }
-                }
-
-                if isCreatingPlaylist {
-                    TextField("Untitled Playlist", text: $playlistName)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+        List {
+            ForEach(playlists) { playlist in
+                if isRenamingPlaylist, playlist == playlistToRename {
+                    TextField(playlistName, text: $playlistName)
                         .focused($isFocused)
                         .onChange(of: isFocused) { _, value in
                             guard !value else {
@@ -111,43 +39,52 @@ struct PlaylistsView: View {
                             }
 
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                isCreatingPlaylist = false
+                                isRenamingPlaylist = false
+                                playlistToRename = nil
                                 playlistName = ""
                             }
                         }
                         .onSubmit {
                             Task(priority: .userInitiated) {
-                                try? await ConnectionManager.command {
-                                    try await $0.createPlaylist(named: playlistName)
+                                try await ConnectionManager.command {
+                                    try await $0.renamePlaylist(playlist, to: playlistName)
                                 }
 
-                                isCreatingPlaylist = false
+                                isRenamingPlaylist = false
+                                playlistToRename = nil
                                 playlistName = ""
                             }
                         }
-                }
+                        .mediaRowStyle()
+                } else {
+                    Button {
+                        navigator.path.append(ContentDestination.playlist(playlist))
+                    } label: {
+                        Label(playlist.name, systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)
+                            .foregroundStyle(.primary)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        if playlist.name != "Favorites" {
+                            Button("Rename Playlist", systemSymbol: .pencil) {
+                                isRenamingPlaylist = true
+                                playlistName = playlist.name
+                                playlistToRename = playlist
+                                isFocused = true
+                            }
 
-                Button {
-                    isCreatingPlaylist = true
-                    isFocused = true
-                } label: {
-                    Label("New Playlist", systemSymbol: .plus)
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: Layout.CornerRadius.small)
-                                .fill(Color(.secondarySystemBackground))
-                                .opacity(0.5),
-                        )
+                            Button("Delete Playlist", systemSymbol: .trash, role: .destructive) {
+                                playlistToDelete = playlist
+                                showDeleteAlert = true
+                            }
+                        }
+                    }
+                    .mediaRowStyle()
                 }
-                .buttonStyle(.plain)
-                .padding(.top, 10)
             }
-            .padding(.horizontal, Layout.Padding.large)
-            .padding(.vertical, 10)
+
         }
+        .mediaListStyle()
         .task {
             mpd.state.isLoading = true
 
@@ -178,7 +115,16 @@ struct PlaylistsView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem {
+                Button("New Playlist", systemSymbol: .plus) {
+                    playlistName = ""
+                    isCreatingPlaylist = true
+                }
+            }
+            
+            ToolbarSpacer()
+
+            ToolbarItem {
                 Menu {
                     Button {
                         navigator.showSettings()
@@ -188,6 +134,25 @@ struct PlaylistsView: View {
                 } label: {
                     Image(systemSymbol: .ellipsis)
                 }
+            }
+        }
+        .alert("New Playlist", isPresented: $isCreatingPlaylist) {
+            TextField("Playlist Name", text: $playlistName)
+
+            Button("Cancel", role: .cancel) {
+                playlistName = ""
+            }
+
+            AsyncButton("Create", role: .confirm) {
+                guard !playlistName.isEmpty else {
+                    return
+                }
+
+                try await ConnectionManager.command {
+                    try await $0.createPlaylist(named: playlistName)
+                }
+
+                playlistName = ""
             }
         }
     }
