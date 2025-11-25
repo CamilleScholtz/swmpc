@@ -51,6 +51,7 @@ struct AppView: View {
                                             .navigationDestination(for: ContentDestination.self) { destination in
                                                 ContentDestinationView(destination: destination)
                                             }
+                                            .navigationTitle(navigator.category.label)
                                     }
                                     .overlay(
                                         LoadingView(),
@@ -87,6 +88,7 @@ struct AppView: View {
                                 CategoryDestinationView()
                                     .navigationDestination(for: ContentDestination.self) { destination in
                                         ContentDestinationView(destination: destination)
+                                            .navigationTitle(navigator.category.label)
                                     }
                             }
                             .navigationSplitViewColumnWidth(Layout.Size.contentWidth)

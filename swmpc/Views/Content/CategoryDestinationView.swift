@@ -48,7 +48,6 @@ struct CategoryDestinationView: View {
                 }
             }
         }
-        .navigationTitle(navigator.category.label)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #elseif os(macOS)
