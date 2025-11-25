@@ -165,6 +165,10 @@ import SwiftUI
             return false
         }
 
-        return text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil).contains(query)
+        let options: String.CompareOptions = [.diacriticInsensitive,
+                                              .caseInsensitive]
+
+        return text.folding(options: options, locale: nil)
+            .contains(query.folding(options: options, locale: nil))
     }
 }

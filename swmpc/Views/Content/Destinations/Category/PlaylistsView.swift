@@ -82,7 +82,6 @@ struct PlaylistsView: View {
                     .mediaRowStyle()
                 }
             }
-
         }
         .mediaListStyle()
         .task {
@@ -121,7 +120,7 @@ struct PlaylistsView: View {
                     isCreatingPlaylist = true
                 }
             }
-            
+
             ToolbarSpacer()
 
             ToolbarItem {
