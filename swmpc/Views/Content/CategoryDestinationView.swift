@@ -205,7 +205,13 @@ struct CategoryDatabaseView: View {
 
             ToolbarSpacer(.fixed)
 
-            #if os(macOS)
+            #if os(iOS)
+                if !isSearchFieldExpanded {
+                    ToolbarItem {
+                        sortMenu
+                    }
+                }
+            #elseif os(macOS)
                 if !isSearchFieldExpanded, navigator.category.source.isSortable {
                     ToolbarItem {
                         sortMenu
@@ -225,14 +231,6 @@ struct CategoryDatabaseView: View {
                 }
                 .keyboardShortcut("f", modifiers: .command)
             }
-
-            #if os(iOS)
-                if !isSearchFieldExpanded {
-                    ToolbarItem {
-                        sortMenu
-                    }
-                }
-            #endif
         }
         .task(id: navigator.category) {
             try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
