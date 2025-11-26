@@ -99,6 +99,7 @@ struct AppView: View {
                             // XXX: The scrollview is a hack to hide apply the .soft scroll edge effect.
                             ZStack {
                                 ScrollView {}
+                                    .scrollContentBackground(.visible)
 
                                 DetailView(artwork: artwork, showQueuePanel: $showQueuePanel)
                             }
