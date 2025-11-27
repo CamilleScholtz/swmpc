@@ -14,7 +14,6 @@ import SwiftUI
 
 struct QueueView: View {
     @Environment(MPD.self) private var mpd
-    @Environment(\.colorScheme) private var colorScheme
 
     @State private var showIntelligenceQueueSheet = false
 

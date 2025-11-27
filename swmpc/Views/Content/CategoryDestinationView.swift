@@ -266,9 +266,6 @@ struct CategoryDatabaseView: View {
             scrollToCurrentMedia()
         }
         // XXX: I'd prefer to do this in a `Task.immediate`, but I can't modify the `.task` Task.
-        .onAppear {
-            mpd.state.isLoading = true
-        }
         .onChange(of: navigator.category) {
             mpd.state.isLoading = true
         }
@@ -495,10 +492,6 @@ struct CategoryPlaylistView: View {
                 try? await Task.sleep(for: .milliseconds(200))
                 scrollToCurrentSong()
             }
-        }
-        // XXX: I'd prefer to do this in a `Task.immediate`, but I can't modify the `.task` Task.
-        .onAppear {
-            mpd.state.isLoading = true
         }
         .onChange(of: playlist) {
             mpd.state.isLoading = true

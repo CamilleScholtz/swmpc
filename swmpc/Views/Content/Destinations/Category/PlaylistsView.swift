@@ -84,9 +84,10 @@ struct PlaylistsView: View {
             }
         }
         .mediaListStyle()
-        .task {
+        .onAppear {
             mpd.state.isLoading = true
-
+        }
+        .task {
             try? await Task.sleep(for: .milliseconds(200))
             mpd.state.isLoading = false
         }
