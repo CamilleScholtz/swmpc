@@ -144,7 +144,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
             throw ConnectionManagerError.connectionFailure(
-                "Missing OK MPD line from server greeting"
+                "Missing OK MPD line from server greeting",
             )
         }
 
@@ -662,9 +662,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
                     artist: Artist(
                         file: file,
                         name: artistName,
-                        nameSort: fields["albumartistsort"]
-                    )
-                )
+                        nameSort: fields["albumartistsort"],
+                    ),
+                ),
             )
 
             return try castResult(song)
@@ -676,8 +676,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 artist: Artist(
                     file: file,
                     name: artistName,
-                    nameSort: fields["albumartistsort"]
-                )
+                    nameSort: fields["albumartistsort"],
+                ),
             )
 
             return try castResult(album)
@@ -685,7 +685,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let artist = Artist(
                 file: file,
                 name: artistName,
-                nameSort: fields["albumartistsort"]
+                nameSort: fields["albumartistsort"],
             )
 
             return try castResult(artist)

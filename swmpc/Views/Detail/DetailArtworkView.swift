@@ -20,65 +20,17 @@ struct DetailArtworkView: View {
 
     @State private var colors: [Color]?
 
-    @ViewBuilder
-    private func shadowGradient(colors: [Color]) -> some View {
-        let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
-            (-60, -60),
-            (60, -60),
-            (-60, 60),
-            (60, 60),
-        ]
-
-        ZStack {
-            ForEach(Array(colors.enumerated()), id: \.offset) { index, color in
-                let offset = cornerOffsets[index % 4]
-
-                RadialGradient(
-                    colors: [color, .clear],
-                    center: .center,
-                    startRadius: 0,
-                    endRadius: 200,
-                )
-                .offset(
-                    x: offset.x,
-                    y: offset.y,
-                )
-            }
-        }
+    private var artworkHeight: CGFloat {
+        artwork.map {
+            Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
+        } ?? Layout.Size.artworkWidth
     }
 
     var body: some View {
         ZStack {
             if let colors {
-                ZStack {
-                    let height = artwork.map {
-                        Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
-                    } ?? Layout.Size.artworkWidth
-
-                    shadowGradient(colors: colors)
-                        .mask(
-                            RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                .frame(width: Layout.Size.artworkWidth + Layout.Padding.small, height: height + Layout.Padding.small)
-                                .blur(radius: 40),
-                        )
-                        .opacity(0.6)
-
-                    shadowGradient(colors: colors)
-                        .mask(
-                            RadialGradient(
-                                colors: [.black, .clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: Layout.Size.artworkWidth * 1.4,
-                            )
-                            .frame(width: Layout.Size.artworkWidth * 2, height: Layout.Size.artworkWidth * 2),
-                        )
-                        .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
-                        .opacity(0.5)
-                        .offset(y: height / 2)
-                        .animation(.easeInOut(duration: 0.6), value: colors)
-                }
-                .opacity(colorScheme == .dark ? 0.3 : 0.8)
+                ShadowGradientView(colors: colors, artworkHeight: artworkHeight)
+                    .opacity(colorScheme == .dark ? 0.3 : 0.8)
             }
 
             ArtworkView(image: artwork)
@@ -154,5 +106,65 @@ struct DetailArtworkView: View {
 
             colors = await Color.extractDominantColors(from: artwork, count: 4)
         }
+    }
+}
+
+private struct ShadowGradientView: View, Equatable {
+    let colors: [Color]
+    let artworkHeight: CGFloat
+
+    private static let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
+        (-60, -60),
+        (60, -60),
+        (-60, 60),
+        (60, 60),
+    ]
+
+    var body: some View {
+        ZStack {
+            gradientLayer
+                .mask(
+                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                        .frame(width: Layout.Size.artworkWidth + Layout.Padding.small, height: artworkHeight + Layout.Padding.small)
+                        .blur(radius: 40),
+                )
+                .opacity(0.6)
+
+            gradientLayer
+                .mask(
+                    RadialGradient(
+                        colors: [.black, .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: Layout.Size.artworkWidth * 1.4,
+                    )
+                    .frame(width: Layout.Size.artworkWidth * 2, height: Layout.Size.artworkWidth * 2),
+                )
+                .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
+                .opacity(0.5)
+                .offset(y: artworkHeight / 2)
+        }
+        .animation(.easeInOut(duration: 0.6), value: colors)
+        .drawingGroup()
+    }
+
+    private var gradientLayer: some View {
+        ZStack {
+            ForEach(colors.indices, id: \.self) { index in
+                let offset = Self.cornerOffsets[index % 4]
+
+                RadialGradient(
+                    colors: [colors[index], .clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 200,
+                )
+                .offset(x: offset.x, y: offset.y)
+            }
+        }
+    }
+
+    static func == (lhs: ShadowGradientView, rhs: ShadowGradientView) -> Bool {
+        lhs.colors == rhs.colors && lhs.artworkHeight == rhs.artworkHeight
     }
 }

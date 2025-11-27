@@ -152,7 +152,7 @@ nonisolated struct SearchFields: Equatable, RawRepresentable, Sendable {
         } else {
             selectedFields = Set(
                 rawValue.split(separator: ",")
-                    .compactMap { SearchField(rawValue: String($0)) }
+                    .compactMap { SearchField(rawValue: String($0)) },
             )
         }
     }
