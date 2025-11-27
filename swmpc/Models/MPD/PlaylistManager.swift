@@ -9,7 +9,8 @@ import SwiftUI
 
 /// Manages playlist operations for the MPD client.
 @Observable final class PlaylistManager {
-    private let state: StateManager
+    /// The state manager, used to indicate when data is being fetched.
+    @ObservationIgnored private let state: StateManager
 
     init(state: StateManager) {
         self.state = state

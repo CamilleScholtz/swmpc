@@ -144,7 +144,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
             throw ConnectionManagerError.connectionFailure(
-                "Missing OK MPD line from server greeting",
+                "Missing OK MPD line from server greeting"
             )
         }
 
@@ -271,7 +271,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Escapes a given string for safe inclusion in MPD commands.
     ///
     /// This function escapes special characters in a string, such as
-    /// backslashes and quotes, and optionally encloses the string in a quote character.
+    /// backslashes and quotes, and optionally encloses the string in a quote
+    /// character.
     ///
     /// - Parameters:
     ///   - string: The string to be escaped.
@@ -620,7 +621,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let artist: String
             let title: String
 
-            if let name = fields["name"], fields["artist"] == nil, fields["title"] == nil {
+            if let name = fields["name"], fields["artist"] == nil,
+               fields["title"] == nil
+            {
                 if let separator = name.range(of: " - ") {
                     artist = String(name[..<separator.lowerBound])
                     title = String(name[separator.upperBound...])
@@ -659,9 +662,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
                     artist: Artist(
                         file: file,
                         name: artistName,
-                        nameSort: fields["albumartistsort"],
-                    ),
-                ),
+                        nameSort: fields["albumartistsort"]
+                    )
+                )
             )
 
             return try castResult(song)
@@ -673,8 +676,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 artist: Artist(
                     file: file,
                     name: artistName,
-                    nameSort: fields["albumartistsort"],
-                ),
+                    nameSort: fields["albumartistsort"]
+                )
             )
 
             return try castResult(album)
@@ -682,7 +685,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let artist = Artist(
                 file: file,
                 name: artistName,
-                nameSort: fields["albumartistsort"],
+                nameSort: fields["albumartistsort"]
             )
 
             return try castResult(artist)
@@ -806,9 +809,9 @@ extension ConnectionManager {
     ///   - `update`: The last database update in UNIX time.
     /// - Throws: An error if the response is malformed or if the underlying
     ///           command execution fails.
-    func getStatsData() async throws -> (artists: Int?, albums: Int?, songs: Int?,
-                                         uptime: Int?, playtime: Int?,
-                                         update: Int?)
+    func getStatsData() async throws -> (artists: Int?, albums: Int?,
+                                         songs: Int?, uptime: Int?,
+                                         playtime: Int?, update: Int?)
     {
         let lines = try await run(["stats"])
 
@@ -1030,7 +1033,8 @@ extension ConnectionManager where Mode == IdleMode {
     /// - Throws: A `ConnectionManagerError.malformedResponse` if the server
     ///           response does not contain a `changed` line.
     func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
-        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
+        let lines = try await run(["idle \(mask.map(\.rawValue)
+            .joined(separator: " "))"])
         guard let changedLine = lines.first(where: { $0.hasPrefix(
             "changed: ") })
         else {
@@ -1099,7 +1103,8 @@ extension ConnectionManager where Mode == ArtworkMode {
         var totalSize: Int?
 
         loop: while true {
-            let artworkGetterRaw = UserDefaults.standard.string(forKey: Setting.artworkGetter) ?? ArtworkGetter.library.rawValue
+            let artworkGetterRaw = UserDefaults.standard.string(forKey:
+                Setting.artworkGetter) ?? ArtworkGetter.library.rawValue
             try await writeLine("\(artworkGetterRaw) \(escape(file)) \(offset)")
 
             var chunkSize: Int?
@@ -1338,10 +1343,14 @@ extension ConnectionManager where Mode == CommandMode {
                     continue
                 }
                 if start == end {
-                    commands.append("playlistdelete \(escape(playlist.name)) \(start)")
+                    commands.append(
+                        "playlistdelete \(escape(playlist.name)) \(start)")
                 } else {
-                    for pos in stride(from: Int(start), through: Int(end), by: -1) {
-                        commands.append("playlistdelete \(escape(playlist.name)) \(pos)")
+                    for pos in stride(from: Int(start), through: Int(end), by:
+                        -1)
+                    {
+                        commands.append(
+                            "playlistdelete \(escape(playlist.name)) \(pos)")
                     }
                 }
             default:
@@ -1412,7 +1421,8 @@ extension ConnectionManager where Mode == CommandMode {
         case let album as Album:
             songs = try await getSongs(in: album, from: .database)
         case let artist as Artist:
-            let lines = try await run(["find \(filter(key: "artist", value: artist.name))"])
+            let lines = try await run(["find \(filter(key: "artist", value:
+                artist.name))"])
             songs = try parseMediaResponseArray(lines, as: .song)
         case let song as Song:
             songs = [song]

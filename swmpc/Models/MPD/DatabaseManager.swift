@@ -10,7 +10,7 @@ import SwiftUI
 /// Manages the MPD database, handling artists, albums, and song queries.
 @Observable final class DatabaseManager {
     /// The state manager, used to indicate when data is being fetched.
-    private let state: StateManager
+    @ObservationIgnored private let state: StateManager
 
     /// Creates a new database manager.
     ///

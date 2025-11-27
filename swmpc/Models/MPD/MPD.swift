@@ -33,7 +33,7 @@ import SwiftUI
 
     /// The background task that maintains the connection and listens for
     /// changes.
-    private var updateLoopTask: Task<Void, Never>?
+    @ObservationIgnored private var updateLoopTask: Task<Void, Never>?
 
     init() {
         database = DatabaseManager(state: state)

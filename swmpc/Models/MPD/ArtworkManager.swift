@@ -11,7 +11,8 @@ import SwiftUI
 ///
 /// `ArtworkManager` is a singleton actor that provides efficient artwork data
 /// retrieval with intelligent caching and request deduplication. Each artwork
-/// fetch uses its own connection to prevent buffer confusion during parallel loads.
+/// fetch uses its own connection to prevent buffer confusion during parallel
+/// loads.
 actor ArtworkManager {
     static let shared = ArtworkManager()
 
@@ -54,7 +55,8 @@ actor ArtworkManager {
             }
 
             if shouldCache {
-                cache.setObject(data as NSData, forKey: file as NSString, cost: data.count)
+                cache.setObject(data as NSData, forKey: file as NSString, cost:
+                    data.count)
             }
 
             return data

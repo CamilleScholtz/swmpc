@@ -75,7 +75,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "api.openai.com",
             path: "/v1",
             setting: Setting.openAIToken,
-            isEnabled: true,
+            isEnabled: true
         ),
         .deepSeek: ModelConfig(
             name: "DeepSeek",
@@ -83,7 +83,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "api.deepseek.com",
             path: "/v1",
             setting: Setting.deepSeekToken,
-            isEnabled: true,
+            isEnabled: true
         ),
         .gemini: ModelConfig(
             name: "Gemini",
@@ -91,7 +91,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "generativelanguage.googleapis.com",
             path: "/v1beta/openai",
             setting: Setting.geminiToken,
-            isEnabled: true,
+            isEnabled: true
         ),
         .grok: ModelConfig(
             name: "Grok",
@@ -99,7 +99,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "api.x.ai",
             path: "/v1",
             setting: Setting.grokToken,
-            isEnabled: true,
+            isEnabled: true
         ),
         .claude: ModelConfig(
             name: "Claude",
@@ -107,7 +107,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "api.anthropic.com",
             path: "/v1",
             setting: Setting.claudeToken,
-            isEnabled: true,
+            isEnabled: true
         ),
     ]
 
@@ -187,7 +187,7 @@ actor IntelligenceManager {
             token: UserDefaults.standard.string(forKey: model.setting) ?? "",
             host: model.host,
             basePath: model.path,
-            parsingOptions: .fillRequiredFieldIfKeyNotFound,
+            parsingOptions: .fillRequiredFieldIfKeyNotFound
         ))
     }
 
@@ -269,7 +269,7 @@ actor IntelligenceManager {
                     .init(role: .assistant, content: prefill)!,
                 ],
                 model: model.model,
-                responseFormat: .jsonObject,
+                responseFormat: .jsonObject
             ))
 
             guard let content = result.choices.first?.message.content else {
@@ -349,7 +349,7 @@ actor IntelligenceManager {
     ///           limit, or any error thrown by the operation itself.
     private func withTimeout<T: Sendable>(
         seconds: TimeInterval,
-        operation: @escaping @Sendable () async throws -> T,
+        operation: @escaping @Sendable () async throws -> T
     ) async throws -> T {
         try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask {

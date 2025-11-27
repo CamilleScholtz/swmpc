@@ -9,7 +9,8 @@ import SwiftUI
 
 /// Manages the MPD queue, handling song operations.
 @Observable final class QueueManager {
-    private let state: StateManager
+    /// The state manager, used to indicate when data is being fetched.
+    @ObservationIgnored private let state: StateManager
 
     init(state: StateManager) {
         self.state = state

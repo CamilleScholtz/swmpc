@@ -61,7 +61,8 @@ nonisolated struct SortDescriptor: RawRepresentable, Equatable, Hashable {
     ///
     /// Returns a string in the format "option_direction" for serialization.
     var rawValue: String {
-        "\(option.rawValue)_\(direction == .ascending ? "ascending" : "descending")"
+        "\(option.rawValue)_\(direction == .ascending ? "ascending" :
+            "descending")"
     }
 }
 
@@ -152,7 +153,7 @@ nonisolated struct SearchFields: Equatable, RawRepresentable, Sendable {
         } else {
             selectedFields = Set(
                 rawValue.split(separator: ",")
-                    .compactMap { SearchField(rawValue: String($0)) },
+                    .compactMap { SearchField(rawValue: String($0)) }
             )
         }
     }

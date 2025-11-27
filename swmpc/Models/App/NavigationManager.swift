@@ -25,14 +25,6 @@ import SwiftUI
         }
     }
 
-    #if os(iOS)
-        /// Controls the presentation of the settings sheet on iOS.
-        var showSettingsSheet = false
-    #endif
-
-    /// Tracks the content destinations in the path for duplicate prevention.
-    private var pathContents: [ContentDestination] = []
-
     /// The currently selected category destination (e.g., albums, artists,
     /// songs, playlists). When this value changes, the navigation path is
     /// automatically reset to ensure a clean navigation state for the new
@@ -44,6 +36,15 @@ import SwiftUI
             }
         }
     }
+
+    #if os(iOS)
+        /// Controls the presentation of the settings sheet on iOS.
+        var showSettingsSheet = false
+    #endif
+
+    /// Tracks the content destinations in the path for duplicate prevention.
+    /// This is internal state that doesn't need to trigger view updates.
+    @ObservationIgnored private var pathContents: [ContentDestination] = []
 
     /// Navigates to a specific content destination by appending it to the
     /// navigation path.
@@ -90,9 +91,9 @@ import SwiftUI
         }
     #endif
 
-    /// Synchronizes the pathContents array with the actual NavigationPath count.
-    /// This ensures our tracking stays in sync when SwiftUI modifies the path directly
-    /// (e.g., via the back button).
+    /// Synchronizes the pathContents array with the actual NavigationPath
+    /// count. This ensures our tracking stays in sync when SwiftUI modifies the
+    /// path directly (e.g., via the back button).
     private func syncPathContents() {
         let currentCount = path.count
         let trackedCount = pathContents.count
@@ -173,7 +174,8 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case .albums: "Albums"
         case .artists: "Artists"
         case .songs: "Songs"
-        case let .playlist(playlist): LocalizedStringResource(stringLiteral: playlist.name)
+        case let .playlist(playlist): LocalizedStringResource(stringLiteral:
+                playlist.name)
 
         #if os(iOS)
             case .playlists: "Playlists"
@@ -181,7 +183,8 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         }
     }
 
-    /// The SF Symbol associated with this category destination for display in the UI.
+    /// The SF Symbol associated with this category destination for display in
+    /// the UI.
     var symbol: SFSymbol {
         switch self {
         case .albums: .squareStack
@@ -199,7 +202,6 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
     ///
     /// - Returns: A keyboard shortcut for albums (1), artists (2), and songs
     ///            (3), or nil for other categories.
-    @available(macOS 26.0, *)
     var shortcut: KeyboardShortcut? {
         switch self {
         case .albums: KeyboardShortcut("1", modifiers: [])
