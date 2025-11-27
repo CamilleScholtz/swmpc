@@ -61,8 +61,7 @@ nonisolated struct SortDescriptor: RawRepresentable, Equatable, Hashable {
     ///
     /// Returns a string in the format "option_direction" for serialization.
     var rawValue: String {
-        "\(option.rawValue)_\(direction == .ascending ? "ascending" :
-            "descending")"
+        "\(option.rawValue)_\(direction == .ascending ? "ascending" : "descending")"
     }
 }
 

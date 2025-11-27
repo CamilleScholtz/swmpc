@@ -1033,8 +1033,7 @@ extension ConnectionManager where Mode == IdleMode {
     /// - Throws: A `ConnectionManagerError.malformedResponse` if the server
     ///           response does not contain a `changed` line.
     func idleForEvents(mask: [IdleEvent]) async throws -> IdleEvent {
-        let lines = try await run(["idle \(mask.map(\.rawValue)
-            .joined(separator: " "))"])
+        let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
         guard let changedLine = lines.first(where: { $0.hasPrefix(
             "changed: ") })
         else {
@@ -1421,8 +1420,7 @@ extension ConnectionManager where Mode == CommandMode {
         case let album as Album:
             songs = try await getSongs(in: album, from: .database)
         case let artist as Artist:
-            let lines = try await run(["find \(filter(key: "artist", value:
-                artist.name))"])
+            let lines = try await run(["find \(filter(key: "artist", value: artist.name))"])
             songs = try parseMediaResponseArray(lines, as: .song)
         case let song as Song:
             songs = [song]
