@@ -94,6 +94,7 @@ struct CategoryDatabaseView: View {
     #endif
 
     @State private var scrollTarget: ScrollTarget?
+    @State private var scrolledCategory: CategoryDestination?
 
     @State private var searchTask: Task<Void, Never>?
     @State private var searchQuery = ""
@@ -250,6 +251,11 @@ struct CategoryDatabaseView: View {
             searchQuery = ""
             searchResults = nil
 
+            guard scrolledCategory != navigator.category else {
+                return
+            }
+            scrolledCategory = navigator.category
+
             scrollToCurrentMedia()
             try? await Task.sleep(for: .milliseconds(200))
             scrollToCurrentMedia()
@@ -260,6 +266,10 @@ struct CategoryDatabaseView: View {
             }
 
             try? await mpd.database.set(idle: false, sort: sort)
+
+            guard scrolledCategory != navigator.category else {
+                return
+            }
 
             scrollToCurrentMedia()
             try? await Task.sleep(for: .milliseconds(200))

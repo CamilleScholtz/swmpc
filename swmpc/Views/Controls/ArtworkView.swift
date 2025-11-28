@@ -25,12 +25,7 @@ struct ArtworkView: View {
                 #endif
             } else {
                 Rectangle()
-                    .fill(
-                        EllipticalGradient(
-                            colors: [Color(.tertiarySystemFill), Color(.tertiarySystemFill).opacity(0.5)],
-                            center: .center,
-                        ),
-                    )
+                    .fill(Color(.tertiarySystemFill))
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
             }
         }

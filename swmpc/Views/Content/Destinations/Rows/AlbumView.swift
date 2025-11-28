@@ -37,10 +37,37 @@ struct AlbumView: View, Equatable {
             ZStack {
                 ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
                     .frame(width: Layout.RowHeight.album, height: Layout.RowHeight.album)
-                    .shimmer(cornerRadius: Layout.CornerRadius.small, opacity: artwork?.image == nil ? 0.4 : 1)
                     .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
                     .animation(.easeInOut(duration: 0.15), value: artwork != nil)
-                    .shadow(color: .black.opacity(0.1), radius: 2, y: 2)
+                    .overlay(
+                        Color.clear
+                            .glassEffect(.clear, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
+                        #if os(iOS)
+                            .mask(
+                                RadialGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0.4),
+                                        .init(color: .black, location: 1.0),
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: Layout.RowHeight.album - Layout.Padding.large,
+                                ),
+                            )
+                        #elseif os(macOS)
+                            .mask(
+                                RadialGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0.4),
+                                        .init(color: .black, location: 1.0),
+                                    ],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: Layout.RowHeight.album - Layout.Padding.small,
+                                ),
+                            )
+                        #endif,
+                    )
                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small)
 
                 #if os(macOS)

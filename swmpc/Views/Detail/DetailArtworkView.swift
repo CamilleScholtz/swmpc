@@ -29,6 +29,8 @@ struct DetailArtworkView: View, Equatable {
 
             ArtworkView(image: artwork?.image)
                 .animation(.easeInOut(duration: 0.3), value: artwork)
+                .frame(width: Layout.Size.artworkWidth)
+                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
                 .overlay(
                     Color.clear
                         .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
@@ -43,8 +45,6 @@ struct DetailArtworkView: View, Equatable {
                             },
                         ),
                 )
-                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-                .frame(width: Layout.Size.artworkWidth)
             #if os(macOS)
                 .scaleEffect(isHovering ? 1.02 : 1)
                 .animation(.spring, value: isHovering)
