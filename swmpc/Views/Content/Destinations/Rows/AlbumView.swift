@@ -19,7 +19,7 @@ struct AlbumView: View, Equatable {
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.album.id == rhs.album.id
+        lhs.album == rhs.album
     }
 
     @State private var artwork: PlatformImage?

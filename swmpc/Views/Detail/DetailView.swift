@@ -43,6 +43,7 @@ struct DetailView: View {
     var body: some View {
         ZStack {
             DetailArtworkView(artwork: artwork)
+                .equatable()
             #if os(iOS)
                 .offset(y: -Layout.Size.detailControlsHeight * 1.25)
             #elseif os(macOS)

@@ -19,7 +19,7 @@ struct SongView: View, Equatable {
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.song.id == rhs.song.id
+        lhs.song == rhs.song && lhs.source == rhs.source
     }
 
     #if os(macOS)

@@ -19,7 +19,7 @@ struct ArtistView: View, Equatable {
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.artist.id == rhs.artist.id
+        lhs.artist == rhs.artist
     }
 
     @State private var albumCount: Int = 0
