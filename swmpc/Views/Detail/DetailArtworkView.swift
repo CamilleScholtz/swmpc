@@ -139,7 +139,6 @@ struct DetailArtworkView: View, Equatable {
                 }
             }
             .animation(.easeInOut(duration: 0.6), value: colors)
-            .drawingGroup()
             .task(id: artwork) {
                 guard let image = artwork?.image else {
                     colors = nil
