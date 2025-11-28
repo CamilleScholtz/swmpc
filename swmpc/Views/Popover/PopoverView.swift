@@ -13,7 +13,7 @@ struct PopoverView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openSettings) private var openSettings
 
-    @State private var artwork: PlatformImage?
+    @State private var artwork: Artwork?
     @State private var height = Double(Layout.Size.artworkWidth)
 
     @State private var isHovering = false
@@ -27,7 +27,7 @@ struct PopoverView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ArtworkView(image: artwork, aspectRatioMode: .fill)
+            ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
                 .animation(.easeInOut(duration: 0.2), value: artwork)
                 .frame(width: Layout.Size.artworkWidth)
                 .overlay(
@@ -99,12 +99,12 @@ struct PopoverView: View {
                 }
 
                 artwork = try? await song.artwork()
-                guard let artwork else {
+                guard let image = artwork?.image else {
                     height = Layout.Size.artworkWidth
                     return
                 }
 
-                height = (Double(artwork.size.height) / Double(artwork.size.width) * Layout.Size.artworkWidth).rounded(.down)
+                height = (Double(image.size.height) / Double(image.size.width) * Layout.Size.artworkWidth).rounded(.down)
 
                 try? await mpd.status.startTrackingElapsed()
             }
@@ -124,12 +124,12 @@ struct PopoverView: View {
             }
 
             artwork = try? await song.artwork()
-            guard let artwork else {
+            guard let image = artwork?.image else {
                 height = Layout.Size.artworkWidth
                 return
             }
 
-            height = (Double(artwork.size.height) / Double(artwork.size.width) * Layout.Size.artworkWidth).rounded(.down)
+            height = (Double(image.size.height) / Double(image.size.width) * Layout.Size.artworkWidth).rounded(.down)
         }
         .onHoverWithDebounce(delay: .milliseconds(100), handler: hoverHandler) { value in
             isHovering = value

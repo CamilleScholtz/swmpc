@@ -12,10 +12,10 @@ struct DetailArtworkView: View, Equatable {
     @Environment(NavigationManager.self) private var navigator
     @Environment(\.colorScheme) private var colorScheme
 
-    let artwork: PlatformImage?
+    let artwork: Artwork?
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.artwork === rhs.artwork
+        lhs.artwork == rhs.artwork
     }
 
     #if os(macOS)
@@ -25,10 +25,9 @@ struct DetailArtworkView: View, Equatable {
     var body: some View {
         ZStack {
             ShadowGradientView(artwork: artwork)
-                .equatable()
                 .opacity(colorScheme == .dark ? 0.3 : 0.8)
 
-            ArtworkView(image: artwork)
+            ArtworkView(image: artwork?.image)
                 .animation(.easeInOut(duration: 0.3), value: artwork)
                 .overlay(
                     Color.clear
@@ -95,12 +94,8 @@ struct DetailArtworkView: View, Equatable {
         }
     }
 
-    private struct ShadowGradientView: View, Equatable {
-        let artwork: PlatformImage?
-
-        static func == (lhs: Self, rhs: Self) -> Bool {
-            lhs.artwork === rhs.artwork
-        }
+    private struct ShadowGradientView: View {
+        let artwork: Artwork?
 
         @State private var colors: [Color]?
 
@@ -112,7 +107,7 @@ struct DetailArtworkView: View, Equatable {
         ]
 
         private var artworkHeight: CGFloat {
-            artwork.map {
+            artwork?.image.map {
                 Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
             } ?? Layout.Size.artworkWidth
         }
@@ -146,12 +141,12 @@ struct DetailArtworkView: View, Equatable {
             .animation(.easeInOut(duration: 0.6), value: colors)
             .drawingGroup()
             .task(id: artwork) {
-                guard let artwork else {
+                guard let image = artwork?.image else {
                     colors = nil
                     return
                 }
 
-                colors = await Color.extractDominantColors(from: artwork, count: 4)
+                colors = await Color.extractDominantColors(from: image, count: 4)
             }
         }
 

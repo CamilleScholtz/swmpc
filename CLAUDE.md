@@ -101,7 +101,7 @@ External packages (managed via Xcode's Swift Package Manager):
 
 ### xcodebuild-mini
 
-The `xcodebuild-mini` MCP provides tools for building and managing Xcode projects. It includes various toolsets categorized by functionality. **Always** prefer using a `XcodeBuildMCP` tool over raw `xcodebuild` or shell commands if possible, as these tools provide better integration and error handling.
+The `xcodebuild-mini` MCP provides tools for building and managing Xcode projects. It includes various toolsets categorized by functionality. **Always** prefer using a `XcodeBuildMCP` tool over raw `xcodebuild` or shell commands if possible, as these tools provide better integration and error handling. ONLY build the project when the user asks for this or when really not sure if the project will build.
 
 ### apple-docs
 

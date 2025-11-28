@@ -7,7 +7,8 @@
 
 import SwiftUI
 
-/// A protocol that defines the base requirements for all media items in the MPD system.
+/// A protocol that defines the base requirements for all media items in the MPD
+/// system.
 ///
 /// Types conforming to `Mediable` represent various media entities (artists,
 /// albums, songs) that can be stored, compared, and transmitted safely across
@@ -41,41 +42,55 @@ extension Mediable {
 
 /// A protocol for media items that can have associated artwork.
 ///
-/// Types conforming to `Artworkable` can fetch and optionally cache artwork
-/// images from the MPD server.
+/// Types conforming to `Artworkable` can fetch artwork images from the MPD
+/// server. Artwork is automatically cached and deduplicated by content hash.
 protocol Artworkable {
-    /// Determines if the fetched artwork should be cached.
+    /// Fetches the artwork for this media item.
     ///
-    /// Albums and artists typically return `true` to cache artwork for
-    /// performance, while songs return `false` to save memory.
-    var shouldCacheArtwork: Bool { get }
-
-    /// Fetches the artwork image for this media item.
-    ///
-    /// - Returns: A platform-specific image if artwork is available, or `nil`
-    ///            if no artwork is found.
+    /// - Returns: An `Artwork` instance if artwork is available, or `nil` if no
+    ///            artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
-    func artwork() async throws -> PlatformImage?
+    func artwork() async throws -> Artwork?
 }
 
 extension Artworkable where Self: Mediable {
     /// Default implementation that fetches artwork from the MPD server using
     /// the media item's file.
     ///
-    /// This implementation uses the `ArtworkManager` to retrieve artwork and
-    /// respects the `shouldCacheArtwork` property to determine caching
-    /// behavior.
+    /// This implementation uses the `ArtworkManager` to retrieve artwork. The
+    /// returned `Artwork` includes a hash of the image data for efficient
+    /// equality comparisons.
     ///
-    /// - Returns: A platform-specific image if artwork is available, or `nil`
-    ///            if no artwork is found.
+    /// - Returns: An `Artwork` instance if artwork is available, or `nil` if no
+    ///            artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
-    func artwork() async throws -> PlatformImage? {
-        let data = try await ArtworkManager.shared.get(
-            for: file,
-            shouldCache: shouldCacheArtwork,
-        )
+    func artwork() async throws -> Artwork? {
+        let (data, hash) = try await ArtworkManager.shared.get(for: file)
 
-        return PlatformImage(data: data)
+        return Artwork(
+            image: PlatformImage(data: data),
+            hash: hash,
+        )
+    }
+}
+
+/// A container for artwork image data with equality based on content hash.
+///
+/// `Artwork` wraps a platform-specific image along with a hash of the original
+/// image data. This allows efficient equality comparisons without re-encoding
+/// the image, and ensures that identical artwork from different sources
+/// (e.g., different songs from the same album) are considered equal.
+nonisolated struct Artwork: Equatable, Sendable {
+    /// The platform-specific image.
+    let image: PlatformImage?
+
+    // XXX: Use `file` if this ever gets added to MPD's protocol.
+    // See: https://github.com/MusicPlayerDaemon/MPD/issues/2397
+    /// A hash of the original image data, used for equality comparisons.
+    let hash: Int
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.hash == rhs.hash
     }
 }
 
@@ -144,9 +159,6 @@ nonisolated struct Album: Mediable, Artworkable {
             try await $0.getSongs(in: self, from: .database)
         }
     }
-
-    /// Albums cache their artwork for performance optimization.
-    var shouldCacheArtwork: Bool { true }
 }
 
 /// Represents a song in the MPD database.
@@ -233,10 +245,6 @@ nonisolated struct Song: Mediable, Artworkable {
     func isBy(_ artist: Artist) -> Bool {
         album.artist == artist
     }
-
-    /// Songs don't cache their artwork as the chance we play or view the same
-    /// song again is low.
-    var shouldCacheArtwork: Bool { false }
 }
 
 /// Represents a playlist in the MPD database.

@@ -19,7 +19,7 @@ struct AlbumSongsView: View {
         self.album = album
     }
 
-    @State private var artwork: PlatformImage?
+    @State private var artwork: Artwork?
     @State private var songs: [Int: [Song]]?
 
     #if os(macOS)
@@ -32,7 +32,7 @@ struct AlbumSongsView: View {
                 #if os(iOS)
                     VStack(spacing: Layout.Spacing.large) {
                         ZStack(alignment: .bottom) {
-                            ArtworkView(image: artwork)
+                            ArtworkView(image: artwork?.image)
                                 .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
                                 .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
                                 .frame(width: 180)
@@ -134,7 +134,7 @@ struct AlbumSongsView: View {
                     HStack(spacing: Layout.Spacing.large) {
                         ZStack {
                             ZStack(alignment: .bottom) {
-                                ArtworkView(image: artwork)
+                                ArtworkView(image: artwork?.image)
                                     .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
                                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small, y: 4)
                                     .frame(width: 100)

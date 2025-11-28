@@ -22,7 +22,7 @@ struct AlbumView: View, Equatable {
         lhs.album == rhs.album
     }
 
-    @State private var artwork: PlatformImage?
+    @State private var artwork: Artwork?
 
     #if os(iOS)
         @State private var isShowingContextMenu = false
@@ -35,7 +35,7 @@ struct AlbumView: View, Equatable {
     var body: some View {
         HStack(spacing: Layout.Spacing.large) {
             ZStack {
-                ArtworkView(image: artwork, aspectRatioMode: .fill)
+                ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
                     .frame(width: Layout.RowHeight.album, height: Layout.RowHeight.album)
                     .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
                     .animation(.easeInOut(duration: 0.15), value: artwork != nil)

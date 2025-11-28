@@ -12,11 +12,11 @@ import SwiftUI
 struct DetailMiniView: View {
     @Environment(MPD.self) private var mpd
 
-    let artwork: PlatformImage?
+    let artwork: Artwork?
 
     var body: some View {
         HStack(spacing: Layout.Spacing.small) {
-            ArtworkView(image: artwork, aspectRatioMode: .fill)
+            ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
                 .frame(width: 32, height: 32)
                 .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small / 1.5))
 

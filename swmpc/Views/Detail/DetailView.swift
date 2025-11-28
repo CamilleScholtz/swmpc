@@ -16,7 +16,7 @@ private extension Layout.Size {
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
 
-    let artwork: PlatformImage?
+    let artwork: Artwork?
 
     #if os(macOS)
         @Binding var showQueuePanel: Bool

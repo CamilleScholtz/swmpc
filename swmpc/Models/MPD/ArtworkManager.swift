@@ -13,11 +13,21 @@ import SwiftUI
 /// retrieval with intelligent caching and request deduplication. Each artwork
 /// fetch uses its own connection to prevent buffer confusion during parallel
 /// loads.
+///
+/// Caching is based on the hash of the artwork data, which deduplicates storage
+/// when multiple songs share the same artwork (e.g., songs from the same
+/// album).
 actor ArtworkManager {
     static let shared = ArtworkManager()
 
-    private let cache = NSCache<NSString, NSData>()
-    private var tasks: [String: Task<Data, Error>] = [:]
+    /// Maps file paths to their artwork data hash for quick lookups.
+    private var fileToHash: [String: Int] = [:]
+
+    /// Caches artwork data by hash, deduplicating identical artwork.
+    private let cache = NSCache<NSNumber, NSData>()
+
+    /// Tracks in-flight fetch tasks to deduplicate concurrent requests.
+    private var tasks: [String: Task<(Data, Int), Error>] = [:]
 
     /// Private initializer to enforce singleton pattern. Sets up the cache with
     /// a 64MB memory limit.
@@ -28,23 +38,20 @@ actor ArtworkManager {
     /// Fetches artwork data for a given file, handling caching and request
     /// deduplication.
     ///
-    /// This function first checks the in-memory cache for the artwork. If not
-    /// found, it deduplicates concurrent requests for the same file by sharing
-    /// a single fetch task. Multiple simultaneous requests for the same file
-    /// will await the same underlying network operation, preventing redundant
-    /// fetches.
+    /// This function uses a two-level lookup: first checking if we know the
+    /// hash for this file, then looking up the data by hash. This ensures
+    /// identical artwork from different files is stored only once.
     ///
-    /// - Parameters:
-    ///   - file: The file path of the artwork to fetch.
-    ///   - shouldCache: A Boolean indicating whether to store the fetched data
-    ///                  in the in-memory cache. Defaults to `true`.
-    /// - Returns: The artwork data.
+    /// - Parameter file: The file path of the artwork to fetch.
+    /// - Returns: A tuple containing the artwork data and its hash.
     /// - Throws: An error if the artwork data cannot be fetched.
-    func get(for file: String, shouldCache: Bool = true) async throws -> Data {
+    func get(for file: String) async throws -> (Data, Int) {
         try Task.checkCancellation()
 
-        if shouldCache, let data = cache.object(forKey: file as NSString) {
-            return data as Data
+        if let hash = fileToHash[file],
+           let data = cache.object(forKey: NSNumber(value: hash))
+        {
+            return (data as Data, hash)
         }
 
         let task = tasks[file, default: Task {
@@ -54,12 +61,15 @@ actor ArtworkManager {
                 try await $0.getArtworkData(for: file)
             }
 
-            if shouldCache {
-                cache.setObject(data as NSData, forKey: file as NSString, cost:
-                    data.count)
+            let hash = data.hashValue
+            fileToHash[file] = hash
+
+            if cache.object(forKey: NSNumber(value: hash)) == nil {
+                cache.setObject(data as NSData, forKey: NSNumber(value: hash),
+                                cost: data.count)
             }
 
-            return data
+            return (data, hash)
         }]
 
         return try await task.value

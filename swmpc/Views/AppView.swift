@@ -28,7 +28,7 @@ struct AppView: View {
         @State private var columnVisibility: NavigationSplitViewVisibility = .all
     #endif
 
-    @State private var artwork: PlatformImage?
+    @State private var artwork: Artwork?
     @State private var showClearQueueAlert = false
 
     private let showClearQueueAlertNotification = NotificationCenter.default

@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+#if os(iOS)
+    import SwiftUIIntrospect
+#endif
 
 struct PlayerProgressView: View {
     @Environment(MPD.self) private var mpd
@@ -44,22 +47,35 @@ struct PlayerProgressView: View {
                 },
             )
             .controlSize(.mini)
-            .disabled(mpd.status.song == nil)
-            .help("Seek to position in track")
-            .onChange(of: elapsed) { _, value in
-                guard !isEditing else {
-                    return
-                }
+            #if os(iOS)
+                .introspect(.slider, on: .iOS(.v26)) { value in
+                    let size = CGSize(width: 12, height: 12)
+                    let renderer = UIGraphicsImageRenderer(size: size)
+                    let thumb = renderer.image { context in
+                        let rect = CGRect(origin: .zero, size: size)
+                        context.cgContext.setFillColor(UIColor.white.cgColor)
+                        context.cgContext.fillEllipse(in: rect)
+                    }
 
-                // XXX: One second animation does not work.
-                // See: https://openradar.appspot.com/FB11802261
-                withAnimation(.linear(duration: 1)) {
-                    sliderValue = value
+                    value.setThumbImage(thumb, for: .normal)
                 }
-            }
-            .onAppear {
-                sliderValue = elapsed
-            }
+            #endif
+                .disabled(mpd.status.song == nil)
+                .help("Seek to position in track")
+                .onChange(of: elapsed) { _, value in
+                    guard !isEditing else {
+                        return
+                    }
+
+                    // XXX: One second animation does not work.
+                    // See: https://openradar.appspot.com/FB11802261
+                    withAnimation(.linear(duration: 1)) {
+                        sliderValue = value
+                    }
+                }
+                .onAppear {
+                    sliderValue = elapsed
+                }
 
             if showTimestamps {
                 HStack(alignment: .center) {
