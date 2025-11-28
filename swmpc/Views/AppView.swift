@@ -68,8 +68,16 @@ struct AppView: View {
                         }
                         .fullScreenCover(isPresented: $showDetailCover) {
                             List {
+                                Capsule()
+                                    .fill(.tertiary)
+                                    .frame(width: 64, height: 5)
+                                    .frame(maxWidth: .infinity)
+                                    .listRowSeparator(.hidden)
+                                    .listRowInsets(.init())
+                                    .listRowBackground(Color.clear)
+
                                 DetailView(artwork: artwork)
-                                    .frame(height: 600)
+                                    .frame(height: 580)
                                     .listRowSeparator(.hidden)
                                     .listRowInsets(.horizontal, Layout.Padding.large)
 

@@ -52,7 +52,7 @@ struct AlbumView: View, Equatable {
                                     center: .center,
                                     startRadius: 0,
                                     endRadius: Layout.RowHeight.album - Layout.Padding.large,
-                                ),
+                                )
                             )
                         #elseif os(macOS)
                             .mask(
@@ -64,9 +64,9 @@ struct AlbumView: View, Equatable {
                                     center: .center,
                                     startRadius: 0,
                                     endRadius: Layout.RowHeight.album - Layout.Padding.small,
-                                ),
+                                )
                             )
-                        #endif,
+                        #endif // swiftformat:options --trailing-commas multi-element-lists
                     )
                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small)
 

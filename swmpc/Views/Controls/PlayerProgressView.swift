@@ -73,14 +73,26 @@ struct PlayerProgressView: View {
             if showTimestamps {
                 HStack(alignment: .center) {
                     Text(mpd.status.elapsed?.timeString ?? "0:00")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                    #if os(iOS)
+                        .foregroundStyle(Color(.tertiaryLabel))
+                    #elseif os(macOS)
+                        .foregroundStyle(Color(.tertiaryLabelColor))
+                    #endif
 
                     Spacer()
 
                     Text(mpd.status.song?.duration.timeString ?? "0:00")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                    #if os(iOS)
+                        .foregroundStyle(Color(.tertiaryLabel))
+                    #elseif os(macOS)
+                        .foregroundStyle(Color(.tertiaryLabelColor))
+                    #endif
                 }
             }
         }

@@ -45,7 +45,7 @@ struct DetailView: View {
             DetailArtworkView(artwork: artwork)
                 .equatable()
             #if os(iOS)
-                .offset(y: -Layout.Size.detailControlsHeight * 1.25)
+                .offset(y: -Layout.Size.detailControlsHeight * 1.25 - Layout.Padding.large)
             #elseif os(macOS)
                 .offset(y: -Layout.Size.detailControlsHeight)
             #endif

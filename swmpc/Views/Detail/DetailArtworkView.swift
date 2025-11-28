@@ -25,7 +25,7 @@ struct DetailArtworkView: View, Equatable {
     var body: some View {
         ZStack {
             ShadowGradientView(artwork: artwork)
-                .opacity(colorScheme == .dark ? 0.3 : 0.8)
+                .opacity(colorScheme == .dark ? 0.4 : 0.8)
 
             ArtworkView(image: artwork?.image)
                 .animation(.easeInOut(duration: 0.3), value: artwork)
@@ -99,11 +99,12 @@ struct DetailArtworkView: View, Equatable {
 
         @State private var colors: [Color]?
 
+        private static let cornerOffset = Layout.Size.artworkWidth / 4
         private static let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
-            (-60, -60),
-            (60, -60),
-            (-60, 60),
-            (60, 60),
+            (-cornerOffset, -cornerOffset),
+            (cornerOffset, -cornerOffset),
+            (-cornerOffset, cornerOffset),
+            (cornerOffset, cornerOffset),
         ]
 
         private var artworkHeight: CGFloat {
@@ -118,9 +119,13 @@ struct DetailArtworkView: View, Equatable {
                     gradientLayer(colors: colors)
                         .mask(
                             RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                .frame(width: Layout.Size.artworkWidth + Layout.Padding.small, height: artworkHeight + Layout.Padding.small)
+                                .frame(width: Layout.Size.artworkWidth * Layout.Padding.small, height: artworkHeight * Layout.Padding.small)
                                 .blur(radius: 40),
                         )
+                    #if os(iOS)
+                        .scaleEffect(1.2)
+                        .blur(radius: 10)
+                    #endif
                         .opacity(0.6)
 
                     gradientLayer(colors: colors)
@@ -138,6 +143,9 @@ struct DetailArtworkView: View, Equatable {
                         .offset(y: artworkHeight / 2)
                 }
             }
+            #if os(iOS)
+            .offset(y: -Layout.Padding.large)
+            #endif
             .animation(.easeInOut(duration: 0.6), value: colors)
             .task(id: artwork) {
                 guard let image = artwork?.image else {

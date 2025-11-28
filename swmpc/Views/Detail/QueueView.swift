@@ -70,28 +70,30 @@ struct QueueView: View {
 
                 Spacer()
 
-                HStack(spacing: Layout.Spacing.medium) {
-                    AsyncButton {
-                        try await ConnectionManager.command {
-                            try await $0.consume(!(mpd.status.isConsume ?? false))
+                GlassEffectContainer {
+                    HStack(spacing: Layout.Spacing.medium) {
+                        AsyncButton {
+                            try await ConnectionManager.command {
+                                try await $0.consume(!(mpd.status.isConsume ?? false))
+                            }
+                        } label: {
+                            Image(systemSymbol: mpd.status.isConsume ?? false ? .flameFill : .flame)
                         }
-                    } label: {
-                        Image(systemSymbol: mpd.status.isConsume ?? false ? .flameFill : .flame)
-                    }
 
-                    if !mpd.queue.songs.isEmpty {
-                        Button {
-                            NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
-                        } label: {
-                            Image(systemSymbol: .trash)
+                        if !mpd.queue.songs.isEmpty {
+                            Button {
+                                NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
+                            } label: {
+                                Image(systemSymbol: .trash)
+                            }
+                        } else {
+                            Button {
+                                showIntelligenceQueueSheet = true
+                            } label: {
+                                Image(systemSymbol: .sparkles)
+                            }
+                            .disabled(!IntelligenceManager.isEnabled)
                         }
-                    } else {
-                        Button {
-                            showIntelligenceQueueSheet = true
-                        } label: {
-                            Image(systemSymbol: .sparkles)
-                        }
-                        .disabled(!IntelligenceManager.isEnabled)
                     }
                 }
                 .buttonStyle(.glass)
