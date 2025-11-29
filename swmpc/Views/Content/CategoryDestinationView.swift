@@ -13,6 +13,7 @@ import SwiftUI
 #endif
 
 struct CategoryDestinationView: View {
+    @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
     #if os(macOS)
         @Environment(\.controlActiveState) private var controlActiveState
@@ -71,6 +72,7 @@ struct CategoryDestinationView: View {
         #endif
         .onChange(of: navigator.category) {
             isSearchFieldExpanded = false
+            mpd.state.isLoading = true
         }
     }
 }
@@ -270,10 +272,6 @@ struct CategoryDatabaseView: View {
             }
 
             scrollToCurrentMedia()
-        }
-        // XXX: I'd prefer to do this in a `Task.immediate`, but I can't modify the `.task` Task.
-        .onChange(of: navigator.category) {
-            mpd.state.isLoading = true
         }
         .onChange(of: sort) {
             mpd.state.isLoading = true

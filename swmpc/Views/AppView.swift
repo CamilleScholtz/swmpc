@@ -97,6 +97,7 @@ struct AppView: View {
                                         ContentDestinationView(destination: destination)
                                             .navigationTitle(navigator.category.label)
                                     }
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                             .navigationSplitViewColumnWidth(Layout.Size.contentWidth)
                             .overlay(

@@ -84,14 +84,14 @@ import SwiftUI
 
         try Task.checkCancellation()
 
+        media = newMedia
+
         if let type {
             self.type = type
         }
         if let sort {
             self.sort = sort
         }
-
-        media = newMedia
     }
 
     /// Searches through the locally cached media library on a background
