@@ -40,9 +40,7 @@ struct ScrollToItemModifier: ViewModifier {
                 return
             }
 
-            if (try? performScroll(to: scrollTarget)) != nil {
-                self.scrollTarget = nil
-            }
+            performScroll(to: scrollTarget)
         }
         #elseif os(macOS)
         .introspect(.list, on: .macOS(.v26)) { value in
@@ -74,12 +72,12 @@ struct ScrollToItemModifier: ViewModifier {
     private func performScroll(to target: ScrollTarget) {
         #if os(iOS)
             guard let collectionView else {
-                throw ScrollError.viewNotReady
+                return
             }
 
             let indexPath = IndexPath(item: target.index, section: 0)
             guard indexPath.item < collectionView.numberOfItems(inSection: 0) else {
-                throw ScrollError.indexOutOfBounds
+                return
             }
 
             collectionView.scrollToItem(
