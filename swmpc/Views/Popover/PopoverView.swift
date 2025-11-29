@@ -11,7 +11,6 @@ import SwiftUI
 struct PopoverView: View {
     @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.openSettings) private var openSettings
 
     @State private var artwork: Artwork?
     @State private var height = Double(Layout.Size.artworkWidth)
@@ -30,9 +29,10 @@ struct PopoverView: View {
             ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
                 .animation(.easeInOut(duration: 0.2), value: artwork)
                 .frame(width: Layout.Size.artworkWidth)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(
                     Color.clear
-                        .glassEffect(.clear, in: .rect(cornerRadius: 20))
+                        .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 20))
                         .mask(
                             ZStack {
                                 RoundedRectangle(cornerRadius: 20)
@@ -44,7 +44,6 @@ struct PopoverView: View {
                             },
                         ),
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 20))
                 .scaleEffect(showInfo ? 0.7 : 1)
                 .offset(y: showInfo ? -7 : 0)
                 .animation(.spring(response: 0.7, dampingFraction: 1, blendDuration: 0.7), value: showInfo)
@@ -91,6 +90,8 @@ struct PopoverView: View {
         )
         .frame(width: Layout.Size.artworkWidth, height: height)
         .onReceive(willShowNotification) { _ in
+            showInfo = !mpd.status.isPlaying
+
             Task(priority: .userInitiated) {
                 guard let song = mpd.status.song else {
                     artwork = nil
