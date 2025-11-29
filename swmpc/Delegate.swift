@@ -283,7 +283,7 @@ struct Delegate: App {
         }
 
         private func configurePopover() {
-            popover.behavior = .semitransient
+            popover.behavior = .transient
 
             let viewController = NSViewController()
             viewController.view = NSHostingView(
