@@ -53,10 +53,11 @@ This project adopts Swift 6.2's modern concurrency settings. This fundamentally 
 
 The app follows an MVVM-style architecture using SwiftUI. The main entry point is `swmpc/Delegate.swift` which sets up the app for both platforms.
 
-This project uses cutting edge technologies, use the Apple documentation for possible clarification:
-- The aforementioned Approachable Concurrency (introduced in 2025)
+This project uses cutting edge technologies, use the Apple documentation for clarification if needed:
 - The Observation framework (instead of the old Observable Object - introduced in 2023)
+- The aforementioned Approachable Concurrency (introduced in 2025)
 - NetworkConnection (instead of the old NWConnection - introduced in 2025)
+- The Liquid Glass design language (introduced in 2025)
 
 ### Core Components
 
@@ -89,6 +90,7 @@ External packages (managed via Xcode's Swift Package Manager):
 - `LaunchAtLogin` (macOS only): Auto-start at login
 - `ButtonKit`: Async button action handling
 - `DequeModule`: High-performance collections for connection buffering
+- `Introspect`: Access underlying UIKit/AppKit views from SwiftUI
 
 ## MPD Protocol Implementation
 
@@ -97,11 +99,11 @@ External packages (managed via Xcode's Swift Package Manager):
 - Uses MPD's idle command for real-time updates without polling
 - Binary protocol support for album artwork retrieval
 
-## MCPs
+## MCP tools
 
 ### xcodebuild-mini
 
-The `xcodebuild-mini` MCP provides tools for building and managing Xcode projects. It includes various toolsets categorized by functionality. **Always** prefer using a `XcodeBuildMCP` tool over raw `xcodebuild` or shell commands if possible, as these tools provide better integration and error handling. ONLY build the project when the user asks for this or when really not sure if the project will build.
+The `xcodebuild-mini` MCP provides tools for building and managing Xcode projects. It includes various toolsets categorized by functionality. **Always** prefer using a `XcodeBuildMCP` tool over raw `xcodebuild` or shell commands if possible, as these tools provide better integration and error handling. **Only** build the project when the user explicitly asks for this or when **really** not sure if the project will build.
 
 ### apple-docs
 
