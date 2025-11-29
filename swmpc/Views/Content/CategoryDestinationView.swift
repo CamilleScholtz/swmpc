@@ -278,6 +278,13 @@ struct CategoryDatabaseView: View {
         .onChange(of: sort) {
             mpd.state.isLoading = true
         }
+        .onChange(of: mpd.status.song) { old, new in
+            guard old == nil, new != nil else {
+                return
+            }
+
+            scrollToCurrentMedia()
+        }
         .onChange(of: searchQuery) { _, value in
             performSearch(query: value, fields: searchFields)
         }

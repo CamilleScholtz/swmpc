@@ -122,8 +122,7 @@ struct DetailArtworkView: View, Equatable {
                             #if os(iOS)
                                 .frame(width: Layout.Size.artworkWidth * 2, height: artworkHeight * 2)
                             #elseif os(macOS)
-                                .frame(width: Layout.Size.artworkWidth * Layout.Padding.large, height: artworkHeight * Layout.Padding.large)
-
+                                .frame(width: Layout.Size.artworkWidth + Layout.Padding.large, height: artworkHeight + Layout.Padding.large)
                             #endif
                                 .blur(radius: 40),
                         )

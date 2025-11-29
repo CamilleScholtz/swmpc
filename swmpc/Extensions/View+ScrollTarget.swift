@@ -11,6 +11,7 @@ import SwiftUIIntrospect
 struct ScrollTarget: Equatable {
     let index: Int
     let animated: Bool
+    let timestamp: Date = .init()
 }
 
 struct ScrollToItemModifier: ViewModifier {
@@ -39,7 +40,9 @@ struct ScrollToItemModifier: ViewModifier {
                 return
             }
 
-            performScroll(to: scrollTarget)
+            if (try? performScroll(to: scrollTarget)) != nil {
+                self.scrollTarget = nil
+            }
         }
         #elseif os(macOS)
         .introspect(.list, on: .macOS(.v26)) { value in
@@ -71,12 +74,12 @@ struct ScrollToItemModifier: ViewModifier {
     private func performScroll(to target: ScrollTarget) {
         #if os(iOS)
             guard let collectionView else {
-                return
+                throw ScrollError.viewNotReady
             }
 
             let indexPath = IndexPath(item: target.index, section: 0)
             guard indexPath.item < collectionView.numberOfItems(inSection: 0) else {
-                return
+                throw ScrollError.indexOutOfBounds
             }
 
             collectionView.scrollToItem(
