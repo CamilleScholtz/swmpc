@@ -257,8 +257,6 @@ struct CategoryDatabaseView: View {
             scrolledCategory = navigator.category
 
             scrollToCurrentMedia()
-            try? await Task.sleep(for: .milliseconds(200))
-            scrollToCurrentMedia()
         }
         .task(id: sort) {
             guard !mpd.state.isLoading else {
@@ -271,8 +269,6 @@ struct CategoryDatabaseView: View {
                 return
             }
 
-            scrollToCurrentMedia()
-            try? await Task.sleep(for: .milliseconds(200))
             scrollToCurrentMedia()
         }
         // XXX: I'd prefer to do this in a `Task.immediate`, but I can't modify the `.task` Task.
@@ -412,20 +408,26 @@ struct CategoryDatabaseView: View {
     }
 
     private func scrollToCurrentMedia(animated: Bool = false) {
-        guard let song = mpd.status.song else {
+        guard let song = mpd.status.song,
+              let media = mpd.database.media
+        else {
             return
         }
 
-        let id = switch navigator.category.type {
+        let index: Int? = switch navigator.category.type {
         case .album:
-            song.album.id
+            (media as? [Album])?.firstIndex { $0.id == song.album.id }
         case .artist:
-            song.album.artist.id
+            (media as? [Artist])?.firstIndex { $0.id == song.album.artist.id }
         default:
-            song.id
+            (media as? [Song])?.firstIndex { $0.id == song.id }
         }
 
-        scrollTarget = ScrollTarget(id: id, animated: animated)
+        guard let index else {
+            return
+        }
+
+        scrollTarget = ScrollTarget(index: index, animated: animated)
     }
 }
 
@@ -499,8 +501,6 @@ struct CategoryPlaylistView: View {
 
             if songIsInPlaylist(mpd.status.song) {
                 scrollToCurrentSong()
-                try? await Task.sleep(for: .milliseconds(200))
-                scrollToCurrentSong()
             }
         }
         .onChange(of: playlist) {
@@ -540,11 +540,14 @@ struct CategoryPlaylistView: View {
     }
 
     private func scrollToCurrentSong(animated: Bool = false) {
-        guard let song = mpd.status.song else {
+        guard let song = mpd.status.song,
+              let songs,
+              let index = songs.firstIndex(where: { $0.id == song.id })
+        else {
             return
         }
 
-        scrollTarget = ScrollTarget(id: song.id, animated: animated)
+        scrollTarget = ScrollTarget(index: index, animated: animated)
     }
 
     private func songIsInPlaylist(_ song: Song?) -> Bool {

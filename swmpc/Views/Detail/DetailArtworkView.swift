@@ -119,13 +119,14 @@ struct DetailArtworkView: View, Equatable {
                     gradientLayer(colors: colors)
                         .mask(
                             RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                .frame(width: Layout.Size.artworkWidth * Layout.Padding.small, height: artworkHeight * Layout.Padding.small)
+                            #if os(iOS)
+                                .frame(width: Layout.Size.artworkWidth * 2, height: artworkHeight * 2)
+                            #elseif os(macOS)
+                                .frame(width: Layout.Size.artworkWidth * Layout.Padding.large, height: artworkHeight * Layout.Padding.large)
+
+                            #endif
                                 .blur(radius: 40),
                         )
-                    #if os(iOS)
-                        .scaleEffect(1.2)
-                        .blur(radius: 10)
-                    #endif
                         .opacity(0.6)
 
                     gradientLayer(colors: colors)

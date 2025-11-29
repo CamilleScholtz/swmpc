@@ -137,13 +137,13 @@ private struct MediaList: View {
             .mediaListStyle()
             .scrollToItem($scrollTarget)
             .task {
-                guard let song = mpd.status.song else {
+                guard let song = mpd.status.song,
+                      let index = mpd.queue.songs.firstIndex(where: { $0.id == song.id })
+                else {
                     return
                 }
 
-                scrollTarget = ScrollTarget(id: song.id, animated: false)
-                try? await Task.sleep(for: .milliseconds(200))
-                scrollTarget = ScrollTarget(id: song.id, animated: false)
+                scrollTarget = ScrollTarget(index: index, animated: false)
             }
         #endif
     }
