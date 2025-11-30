@@ -1,133 +1,107 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
-swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with SwiftUI. It's a universal app that provides a modern interface for controlling MPD servers.
+swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with SwiftUI.
 
 - **Platforms**: macOS 26, iOS 26
 - **Language**: Swift 6.2
-- **UI Framework**: SwiftUI with Observation framework (@Observable)
-- **Build System**: Xcode project (swmpc.xcodeproj)
-- **Scheme**: swmpc (single scheme for both platforms)
-- **Concurrency**: Swift 6.2 model with Main Actor by default and Approachable Concurrency - see the Concurrency Model section for detailed guidance
-
-## Concurrency Model
-
-This project adopts Swift 6.2's modern concurrency settings. This fundamentally shifts the project to a "safer-by-default" model where code runs on the main actor unless you explicitly opt-out. Here's what that means in practice:
-
-**1. Default Execution Context: Main Actor by Default**
-
-- **Before**: In older Swift versions, code was non-isolated by default. An `async` function on a plain class would run on a background thread, often leading to unexpected concurrency and data race warnings that required manual `@MainActor` annotations.
-- **Now**: Code is **`@MainActor` isolated by default**. Most types and functions will implicitly run on the main thread, eliminating many common data races with the UI. Concurrency is now something you **opt-in** to, not opt-out of.
-
-**2. Offloading Work to a Background Thread**
-
-- **Before**: You would write a `nonisolated async func` to run work on a background thread.
-- **Now**: A plain `nonisolated async func` now runs on the *caller's* actor due to "Approachable Concurrency". To explicitly run code on a background thread (the global executor), you must now use the **`@concurrent`** attribute.
-  ```swift
-  @concurrent
-  func performHeavyComputation() async -> Result {
-    // This code runs on a background thread.
-  }
-  ```
-  **Guidance**: Use `@concurrent` only for CPU-intensive tasks. Standard `await` calls for network requests do not block the main thread and do not need `@concurrent`.
-
-**3. Handling Protocol Conformances (e.g., `Codable`)**
-
-- **Before**: This was less of an issue because types were not `@MainActor` by default.
-- **Now**: Since most types are implicitly `@MainActor`, you may get compiler errors when conforming to protocols like `Codable` that have `nonisolated` requirements. You have two primary solutions:
-  - **For background processing**: If you intend to encode/decode on a background thread, make the entire type `nonisolated`.
-    ```swift
-    // This model can be used on any thread.
-    nonisolated struct MyData: Codable { ... }
-    ```
-  - **For main-thread processing**: If encoding/decoding on the main thread is acceptable, isolate the *conformance* to the main actor.
-    ```swift
-    // This model is on the MainActor, and its Codable conformance is too.
-    struct MyData: @MainActor Codable { ... }
-    ```
+- **UI**: SwiftUI + Liquid Glass design language
+- **Build**: `swmpc.xcodeproj`, scheme: `swmpc`
 
 ## Architecture
 
-The app follows an MVVM-style architecture using SwiftUI. The main entry point is `swmpc/Delegate.swift` which sets up the app for both platforms.
+Entry point: `swmpc/Delegate.swift`. Uses MVVM with SwiftUI.
 
-This project uses cutting edge technologies, use the Apple documentation for clarification if needed:
-- The Observation framework (instead of the old Observable Object - introduced in 2023)
-- The aforementioned Approachable Concurrency (introduced in 2025)
-- NetworkConnection (instead of the old NWConnection - introduced in 2025)
-- The Liquid Glass design language (introduced in 2025)
+**Technologies** (use Apple docs MCP for reference):
+- Observation framework (`@Observable`, not `ObservableObject`)
+- NetworkConnection (not `NWConnection`)
+- Approachable Concurrency + MainActor-by-default isolation
+- Liquid Glass design language
+
+## Swift 6.2 Concurrency (Approachable Concurrency)
+
+This project uses **MainActor-by-default isolation**. All code runs on the main actor unless explicitly opted out.
+
+**Key rules:**
+
+1. **Background work requires `@concurrent`** — A `nonisolated async func` still runs on the caller's actor. Use `@concurrent` for CPU-intensive work:
+   ```swift
+   @concurrent
+   func processData() async -> Result { /* runs on background thread */ }
+   ```
+   Note: Network `await` calls don't block and don't need `@concurrent`.
+
+2. **Protocol conformances** — Types are implicitly `@MainActor`, which can conflict with `nonisolated` protocol requirements like `Codable`:
+   ```swift
+   nonisolated struct MyData: Codable { }      // For background encode/decode
+   struct MyData: @MainActor Codable { }       // For main-thread encode/decode
+   ```
 
 ### Core Components
 
-- **MPD Client (`swmpc/Models/MPD/MPD.swift`)**: Central coordinator that initializes and manages all MPD-related components. Uses an update loop with the idle command to listen for server changes.
+| Component | Path | Purpose |
+|-----------|------|---------|
+| **MPD** | `Models/MPD/MPD.swift` | Central coordinator; uses idle command for real-time updates |
+| **ConnectionManager** | `Models/MPD/ConnectionManager.swift` | TCP connections with modes: Idle, Artwork, Command |
+| **StatusManager** | `Models/MPD/StatusManager.swift` | Playback state, current song, volume |
+| **DatabaseManager** | `Models/MPD/DatabaseManager.swift` | Library queries and search |
+| **QueueManager** | `Models/MPD/QueueManager.swift` | Playback queue management |
+| **PlaylistManager** | `Models/MPD/PlaylistManager.swift` | Playlist CRUD operations |
+| **ArtworkManager** | `Models/MPD/ArtworkManager.swift` | Album artwork fetching and caching |
 
-- **Connection Layer (`ConnectionManager.swift`)**: Handles TCP connections with different modes (Idle, Artwork, Command) for performance optimization. Uses Network.framework with configurable buffer sizes and queue priorities.
+### App Services
 
-- **State Managers**:
-  - `StatusManager`: Tracks playback state, current song, volume
-  - `DatabaseManager`: Handles music library queries and search
-  - `QueueManager`: Manages the playback queue
-  - `PlaylistManager`: CRUD operations for playlists
-  - `ArtworkManager`: Fetches and caches album artwork
+| Service | Path | Purpose |
+|---------|------|---------|
+| **NavigationManager** | `Models/App/NavigationManager.swift` | Cross-view navigation state |
+| **IntelligenceManager** | `Models/App/IntelligenceManager.swift` | OpenAI smart playlist generation |
+| **BonjourManager** | `Models/App/BonjourManager.swift` | MPD server discovery |
+| **Settings** | `Models/App/Settings.swift` | User preferences (`@AppStorage`) |
 
-- **App-Level Services**:
-  - `NavigationManager`: Coordinates navigation state between views
-  - `IntelligenceManager`: OpenAI integration for smart playlist generation
-  - `Settings`: User preferences with @AppStorage persistence
+### Platform Code Style
 
-### Platform Differences
-
-- **Styling guidance**:
-  - Always prefer shared code where possible to minimize duplication.
-  - Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code.
-  - Always place iOS specific code on top of macOS specific code in conditional compilation blocks, example:
+Prefer shared code. For platform-specific code, use conditional compilation with **iOS first**:
 
 ```swift
 #if os(iOS)
-// iOS-specific code
+// iOS-specific
 #elseif os(macOS)
-// macOS-specific code
+// macOS-specific
 #endif
 ```
 
-#### Major Structure differences:
+### Platform Differences
 
-- **App Entry Point** (`Delegate.swift`)
-  - **iOS**: Static `mpd` singleton, direct `WindowGroup` entry
-  - **macOS**: Full `AppDelegate` with `NSStatusBar` menu bar item, `NSPopover`, dock menu, keyboard shortcuts, and `LaunchAtLogin`
+| Area | iOS | macOS |
+|------|-----|-------|
+| **Entry** (`Delegate.swift`) | Static `mpd` singleton, `WindowGroup` | `AppDelegate` with `NSStatusBar`, `NSPopover`, dock menu, `LaunchAtLogin` |
+| **Navigation** (`AppView.swift`) | `TabView` (Albums, Artists, Songs, Playlists); Now Playing/Queue as full-screen covers | `NavigationSplitView` (3-column); Queue as overlay panel |
+| **Settings** (`SettingsView.swift`) | Sheet with Connection + Intelligence | Dedicated scene with Connection + Behavior + Intelligence |
 
-- **Navigation** (`AppView.swift`, `NavigationManager.swift`)
-  - **iOS**: `TabView` with tabs for Albums, Artists, Songs, Playlists. Now Playing and Queue shown as full-screen covers with matched transition animations.
-  - **macOS**: `NavigationSplitView` (3-column: Sidebar + Content + Detail). Playlists in sidebar, Queue as right-side overlay panel.
+## Dependencies
 
-- **Settings** (`SettingsView.swift`)
-  - **iOS**: Connection + Intelligence sections, presented as sheet
-  - **macOS**: Connection + Behavior + Intelligence sections, dedicated Settings Scene. Behavior includes `LaunchAtLogin`, status bar visibility, and song display in menu bar.
+| Package | Purpose | Platform |
+|---------|---------|----------|
+| `OpenAI` | Smart playlist generation | All |
+| `LaunchAtLogin` | Auto-start at login | macOS |
+| `ButtonKit` | Async button actions | All |
+| `DequeModule` | Connection buffering | All |
+| `Introspect` | UIKit/AppKit access from SwiftUI | All |
 
-## Key Dependencies
+## MPD Protocol
 
-External packages (managed via Xcode's Swift Package Manager):
-- `OpenAI`: AI integration for smart playlists
-- `LaunchAtLogin` (macOS only): Auto-start at login
-- `ButtonKit`: Async button action handling
-- `DequeModule`: High-performance collections for connection buffering
-- `Introspect`: Access underlying UIKit/AppKit views from SwiftUI
+- Requires **MPD 0.22+**
+- Three connection modes: Idle (listening), Command (execution), Artwork (binary)
+- Real-time updates via `idle` command (no polling)
+- Binary protocol for album artwork
 
-## MPD Protocol Implementation
-
-- Requires MPD 0.22+
-- Connection modes optimize for different operations (idle listening, command execution, artwork fetching)
-- Uses MPD's idle command for real-time updates without polling
-- Binary protocol support for album artwork retrieval
-
-## MCP tools
+## MCP Tools
 
 ### xcodebuild-mini
 
-The `xcodebuild-mini` MCP provides tools for building and managing Xcode projects. It includes various toolsets categorized by functionality. **Always** prefer using a `XcodeBuildMCP` tool over raw `xcodebuild` or shell commands if possible, as these tools provide better integration and error handling. **Only** build the project when the user explicitly asks for this.
+Use for building and testing. **Prefer MCP tools over raw `xcodebuild`**. Only build when explicitly requested.
 
 ### apple-docs
 
-The `apple-docs` MCP provides access to Apple's official documentation for APIs, frameworks, and developer guides. Use this MCP to look up specific classes, methods, or concepts related to Apple development.
+Use to look up Apple APIs, especially for newer frameworks (Observation, NetworkConnection, Liquid Glass). Prefer `search_apple_docs` for API lookup and `get_wwdc_video` for implementation guidance.
