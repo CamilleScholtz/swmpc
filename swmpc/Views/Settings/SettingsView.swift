@@ -112,6 +112,8 @@ struct SettingsView: View {
 
         @AppStorage(Setting.artworkGetter) var artworkGetter = ArtworkGetter.library
 
+        @State private var bonjour = BonjourManager()
+
         @State private var host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
         @State private var port = UserDefaults.standard.integer(forKey: Setting.port) == 0 ? 6600 : UserDefaults.standard.integer(forKey: Setting.port)
         @State private var password = UserDefaults.standard.string(forKey: Setting.password) ?? ""
@@ -149,6 +151,18 @@ struct SettingsView: View {
 
                 Section {
                     HStack {
+                        Button {
+                            bonjour.scan()
+                        } label: {
+                            if bonjour.isScanning {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Text("Scan for Servers")
+                            }
+                        }
+                        .disabled(bonjour.isScanning)
+
                         AsyncButton("Connect") {
                             UserDefaults.standard.set(host, forKey: Setting.host)
                             UserDefaults.standard.set(port, forKey: Setting.port)
@@ -184,6 +198,7 @@ struct SettingsView: View {
                                     ),
                             )
                     }
+
                 } footer: {
                     #if os(iOS)
                         Text("Test connection and apply settings.")
@@ -194,6 +209,37 @@ struct SettingsView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, 1)
                     #endif
+                }
+
+                if !bonjour.servers.isEmpty {
+                    #if os(macOS)
+                        Divider()
+                            .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
+                    #endif
+
+                    Section {
+                        ForEach(bonjour.servers) { server in
+                            Button {
+                                host = server.host
+                                port = server.port
+                            } label: {
+                                HStack {
+                                    Circle()
+                                        .fill(.green)
+                                        .frame(width: 8, height: 8)
+                                    VStack(alignment: .leading) {
+                                        Text(server.displayName)
+                                        Text("\(server.host):\(server.port)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
 
                 #if os(macOS)

@@ -8,13 +8,42 @@
 import SwiftUI
 import SwiftUIIntrospect
 
+/// Represents a scroll destination within a list.
+///
+/// Used with ``ScrollToItemModifier`` to programmatically scroll a list to a specific item.
+/// The timestamp ensures each scroll request is treated as unique, even when scrolling
+/// to the same index multiple times.
 struct ScrollTarget: Equatable {
+    /// The zero-based index of the item to scroll to.
     let index: Int
+
+    /// Whether to animate the scroll transition.
     let animated: Bool
+
+    /// The time this scroll target was created, used to distinguish identical scroll requests.
     let timestamp: Date = .init()
 }
 
+/// A view modifier that enables programmatic scrolling to specific items in a list.
+///
+/// Uses SwiftUIIntrospect to access the underlying platform-specific list implementation
+/// (`UICollectionView` on iOS, `NSTableView` on macOS) and perform precise scroll operations.
+/// Items are centered vertically in the visible area when scrolled to.
+///
+/// ## Usage
+/// ```swift
+/// @State private var scrollTarget: ScrollTarget?
+///
+/// List(items) { item in
+///     Text(item.name)
+/// }
+/// .scrollToItem($scrollTarget)
+///
+/// // Trigger scroll:
+/// scrollTarget = ScrollTarget(index: 5, animated: true)
+/// ```
 struct ScrollToItemModifier: ViewModifier {
+    /// Binding to the scroll target. Set this to trigger a scroll operation.
     @Binding var scrollTarget: ScrollTarget?
 
     #if os(iOS)
@@ -69,6 +98,13 @@ struct ScrollToItemModifier: ViewModifier {
         }
     }
 
+    /// Executes the scroll operation to the specified target.
+    ///
+    /// On iOS, scrolls the collection view to center the item vertically.
+    /// On macOS, calculates the scroll position manually to center the row
+    /// and optionally animates the transition.
+    ///
+    /// - Parameter target: The scroll target containing the index and animation preference.
     private func performScroll(to target: ScrollTarget) {
         #if os(iOS)
             guard let collectionView else {
@@ -118,6 +154,14 @@ struct ScrollToItemModifier: ViewModifier {
 }
 
 extension View {
+    /// Enables programmatic scrolling to items in a list.
+    ///
+    /// Attach this modifier to a `List` view and control scrolling by setting the bound
+    /// `ScrollTarget` value. The list will scroll to center the specified item.
+    ///
+    /// - Parameter scrollTarget: A binding to the scroll target. Set to a new `ScrollTarget`
+    ///   to trigger scrolling, or `nil` to clear.
+    /// - Returns: A view that responds to scroll target changes.
     func scrollToItem(_ scrollTarget: Binding<ScrollTarget?>) -> some View {
         modifier(ScrollToItemModifier(scrollTarget: scrollTarget))
     }
