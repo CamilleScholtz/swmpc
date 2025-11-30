@@ -79,9 +79,32 @@ This project uses cutting edge technologies, use the Apple documentation for cla
 
 ### Platform Differences
 
-Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code:
-- macOS: Menu bar app with NSStatusItem popover (`PopoverView.swift`)
-- iOS: Tab-based navigation with full screen cover for now playing and queue
+- **Styling guidance**:
+  - Always prefer shared code where possible to minimize duplication.
+  - Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code.
+  - Always place iOS specific code on top of macOS specific code in conditional compilation blocks, example:
+
+```swift
+#if os(iOS)
+// iOS-specific code
+#elseif os(macOS)
+// macOS-specific code
+#endif
+```
+
+#### Major Structure differences:
+
+- **App Entry Point** (`Delegate.swift`)
+  - **iOS**: Static `mpd` singleton, direct `WindowGroup` entry
+  - **macOS**: Full `AppDelegate` with `NSStatusBar` menu bar item, `NSPopover`, dock menu, keyboard shortcuts, and `LaunchAtLogin`
+
+- **Navigation** (`AppView.swift`, `NavigationManager.swift`)
+  - **iOS**: `TabView` with tabs for Albums, Artists, Songs, Playlists. Now Playing and Queue shown as full-screen covers with matched transition animations.
+  - **macOS**: `NavigationSplitView` (3-column: Sidebar + Content + Detail). Playlists in sidebar, Queue as right-side overlay panel.
+
+- **Settings** (`SettingsView.swift`)
+  - **iOS**: Connection + Intelligence sections, presented as sheet
+  - **macOS**: Connection + Behavior + Intelligence sections, dedicated Settings Scene. Behavior includes `LaunchAtLogin`, status bar visibility, and song display in menu bar.
 
 ## Key Dependencies
 

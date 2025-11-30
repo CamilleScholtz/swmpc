@@ -97,14 +97,19 @@ struct AboutView: View {
                 }
 
                 VStack(alignment: .leading, spacing: Layout.Spacing.small) {
-                    VStack(spacing: Layout.Spacing.small) {
-                        StatRow(symbol: .clockFill, label: "Server Uptime", value: uptime.map { Double($0).humanTimeString })
-                        StatRow(symbol: .waveform, label: "Total Music Duration", value: playtime.map { Double($0).humanTimeString })
-                        StatRow(symbol: .calendarBadgeClock, label: "Last Database Update", value: update.map(formatDate))
-                    }
+                    StatRow(symbol: .clockFill, label: "Server Uptime", value: uptime.map { Double($0).humanTimeString })
+                    StatRow(symbol: .waveform, label: "Total Music Duration", value: playtime.map { Double($0).humanTimeString })
+                    StatRow(symbol: .calendarBadgeClock, label: "Last Database Update", value: update.map(formatDate))
                 }
+                #if os(iOS)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                #endif
             }
             .padding(.horizontal)
+
+            #if os(iOS)
+                Spacer()
+            #endif
         }
         .padding(.vertical)
         #if os(macOS)
@@ -165,23 +170,44 @@ struct AboutView: View {
         let value: String?
 
         var body: some View {
-            HStack(spacing: 12) {
-                Image(systemSymbol: symbol)
-                    .font(.system(size: 14))
-                    .foregroundStyle(.accent)
-                    .frame(width: 20)
+            #if os(iOS)
+                VStack(alignment: .leading) {
+                    HStack(spacing: 12) {
+                        Image(systemSymbol: symbol)
+                            .font(.system(size: 14))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.accent)
+                            .frame(width: 20)
 
-                Text(label)
-                    .font(.subheadline)
+                        Text(label)
+                            .font(.subheadline)
+                    }
 
-                Spacer()
+                    Text(value ?? "?")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                .padding(.vertical, 4)
+            #elseif os(macOS)
+                HStack(spacing: 12) {
+                    Image(systemSymbol: symbol)
+                        .font(.system(size: 14))
+                        .foregroundStyle(.accent)
+                        .frame(width: 20)
 
-                Text(value ?? "?")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-            .padding(.vertical, 4)
+                    Text(label)
+                        .font(.subheadline)
+
+                    Spacer()
+
+                    Text(value ?? "?")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                .padding(.vertical, 4)
+            #endif
         }
     }
 
