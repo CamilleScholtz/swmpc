@@ -95,8 +95,10 @@ struct CategoryDatabaseView: View {
         @FocusState private var isSearchFieldFocused: Bool
     #endif
 
+    @State private var loadedCategory: CategoryDestination?
+    @State private var loadedSort: SortDescriptor?
+
     @State private var scrollTarget: ScrollTarget?
-    @State private var scrolledCategory: CategoryDestination?
 
     @State private var searchTask: Task<Void, Never>?
     @State private var searchQuery = ""
@@ -247,34 +249,29 @@ struct CategoryDatabaseView: View {
             }
         }
         .task(id: navigator.category) {
+            guard loadedCategory != navigator.category else {
+                return
+            }
+            loadedCategory = navigator.category
+            loadedSort = sort
+
             try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
             searchTask?.cancel()
             searchQuery = ""
             searchResults = nil
 
-            guard scrolledCategory != navigator.category else {
-                return
-            }
-            scrolledCategory = navigator.category
-
             scrollToCurrentMedia()
         }
         .task(id: sort) {
-            guard !mpd.state.isLoading else {
+            guard loadedSort != sort else {
                 return
             }
+            loadedSort = sort
 
             try? await mpd.database.set(idle: false, sort: sort)
 
-            guard scrolledCategory != navigator.category else {
-                return
-            }
-
             scrollToCurrentMedia()
-        }
-        .onChange(of: sort) {
-            mpd.state.isLoading = true
         }
         .onChange(of: mpd.status.song) { old, new in
             guard old == nil, new != nil else {
@@ -282,6 +279,9 @@ struct CategoryDatabaseView: View {
             }
 
             scrollToCurrentMedia()
+        }
+        .onChange(of: sort) {
+            mpd.state.isLoading = true
         }
         .onChange(of: searchQuery) { _, value in
             performSearch(query: value, fields: searchFields)

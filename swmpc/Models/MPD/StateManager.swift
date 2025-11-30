@@ -61,7 +61,7 @@ import SwiftUI
 
         switch state {
         case .ready:
-            return "Connected and ready"
+            return "Connected"
         case .failed:
             return "Connection failed"
         case .waiting:

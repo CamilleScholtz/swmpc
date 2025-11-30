@@ -29,19 +29,6 @@ struct ScrollTarget: Equatable {
 /// Uses SwiftUIIntrospect to access the underlying platform-specific list implementation
 /// (`UICollectionView` on iOS, `NSTableView` on macOS) and perform precise scroll operations.
 /// Items are centered vertically in the visible area when scrolled to.
-///
-/// ## Usage
-/// ```swift
-/// @State private var scrollTarget: ScrollTarget?
-///
-/// List(items) { item in
-///     Text(item.name)
-/// }
-/// .scrollToItem($scrollTarget)
-///
-/// // Trigger scroll:
-/// scrollTarget = ScrollTarget(index: 5, animated: true)
-/// ```
 struct ScrollToItemModifier: ViewModifier {
     /// Binding to the scroll target. Set this to trigger a scroll operation.
     @Binding var scrollTarget: ScrollTarget?

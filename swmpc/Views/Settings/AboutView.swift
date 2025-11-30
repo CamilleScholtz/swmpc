@@ -112,7 +112,9 @@ struct AboutView: View {
             #endif
         }
         .padding(.vertical)
-        #if os(macOS)
+        #if os(iOS)
+            .background(Color(.systemGroupedBackground), ignoresSafeAreaEdges: .all)
+        #elseif os(macOS)
             .frame(width: 420, height: 420)
         #endif
             .task {
