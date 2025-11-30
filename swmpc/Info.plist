@@ -6,6 +6,10 @@
 	<true/>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>swmpc needs to access your local network to connect to MPD servers.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_mpd._tcp</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSSiriUsageDescription</key>

@@ -116,8 +116,49 @@ struct SettingsView: View {
         @State private var port = UserDefaults.standard.integer(forKey: Setting.port) == 0 ? 6600 : UserDefaults.standard.integer(forKey: Setting.port)
         @State private var password = UserDefaults.standard.string(forKey: Setting.password) ?? ""
 
+        @State private var showServerPicker = false
+
+        private func selectServer(_ server: ServerDiscovery.Server) {
+            Task {
+                await mpd.connect(to: server.endpoint)
+            }
+        }
+
         var body: some View {
             Form {
+                Section {
+                    #if os(iOS)
+                        NavigationLink {
+                            ServerPickerView(onSelect: selectServer)
+                        } label: {
+                            Label("Discover Servers", systemSymbol: .magnifyingglass)
+                        }
+                    #elseif os(macOS)
+                        Button {
+                            showServerPicker = true
+                        } label: {
+                            Label("Discover Servers", systemSymbol: .magnifyingglass)
+                        }
+                        .popover(isPresented: $showServerPicker) {
+                            ServerPickerView(onSelect: selectServer)
+                                .frame(width: 300, height: 250)
+                        }
+                    #endif
+                } footer: {
+                    Text("Find MPD servers on your local network using Bonjour.")
+                    #if os(macOS)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 1)
+                    #endif
+                }
+
+                #if os(macOS)
+                    Divider()
+                        .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
+                #endif
+
                 Section {
                     TextField(text: $host, label: {
                         SettingsLabel("MPD Host")
@@ -154,6 +195,7 @@ struct SettingsView: View {
                             UserDefaults.standard.set(port, forKey: Setting.port)
                             UserDefaults.standard.set(password, forKey: Setting.password)
 
+                            mpd.clearBonjourEndpoint()
                             await mpd.reinitialize()
                         }
 

@@ -74,6 +74,32 @@ enum ConnectionManagerError: LocalizedError, Equatable {
     }
 }
 
+/// Shared storage for the Bonjour endpoint used by all connection managers.
+///
+/// This allows discovered servers to be used by all connection types (idle,
+/// command, artwork) without each manager needing its own copy.
+nonisolated final class BonjourEndpointStore: @unchecked Sendable {
+    nonisolated static let shared = BonjourEndpointStore()
+
+    private nonisolated(unsafe) var _endpoint: Bonjour.Endpoint?
+    private let lock = NSLock()
+
+    nonisolated var endpoint: Bonjour.Endpoint? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _endpoint
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _endpoint = newValue
+        }
+    }
+
+    private init() {}
+}
+
 /// Manages TCP connections to the MPD server with support for different
 /// connection modes.
 ///
@@ -95,6 +121,11 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
     /// The version of the MPD server obtained during connection handshake.
     private(set) var version: String?
+
+    /// Sets the shared Bonjour endpoint to use for connections.
+    nonisolated func setBonjourEndpoint(_ endpoint: Bonjour.Endpoint?) {
+        BonjourEndpointStore.shared.endpoint = endpoint
+    }
 
     /// Establishes a TCP connection to the MPD server.
     ///
@@ -118,23 +149,33 @@ actor ConnectionManager<Mode: ConnectionMode> {
             return
         }
 
-        let host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
-        guard !host.isEmpty else {
-            throw ConnectionManagerError.invalidHost
-        }
+        if let bonjourEndpoint = BonjourEndpointStore.shared.endpoint {
+            // Connect using discovered Bonjour endpoint
+            connection = NetworkConnection(to: bonjourEndpoint) {
+                TCP()
+                    .noDelay(true)
+                    .connectionTimeout(3)
+            }
+        } else {
+            // Connect using manual host/port configuration
+            let host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
+            guard !host.isEmpty else {
+                throw ConnectionManagerError.invalidHost
+            }
 
-        var port = UserDefaults.standard.integer(forKey: Setting.port)
-        port = port == 0 ? 6600 : port
-        guard port > 0, port <= 65535 else {
-            throw ConnectionManagerError.invalidPort
-        }
+            var port = UserDefaults.standard.integer(forKey: Setting.port)
+            port = port == 0 ? 6600 : port
+            guard port > 0, port <= 65535 else {
+                throw ConnectionManagerError.invalidPort
+            }
 
-        connection = NetworkConnection(to: .hostPort(host: NWEndpoint.Host(
-            host), port: NWEndpoint.Port(integerLiteral: UInt16(port))))
-        {
-            TCP()
-                .noDelay(true)
-                .connectionTimeout(3)
+            connection = NetworkConnection(to: .hostPort(host: NWEndpoint.Host(
+                host), port: NWEndpoint.Port(integerLiteral: UInt16(port))))
+            {
+                TCP()
+                    .noDelay(true)
+                    .connectionTimeout(3)
+            }
         }
 
         if let onStateUpdate {

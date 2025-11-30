@@ -48,17 +48,39 @@ import SwiftUI
     /// Reinitializes the MPD connection with new settings.
     func reinitialize() async {
         updateLoopTask?.cancel()
+        await updateLoopTask?.value
         updateLoopTask = nil
 
         await ConnectionManager.idle.disconnect()
 
         state.error = nil
 
-        try? await Task.sleep(for: .seconds(1))
+        updateLoopTask = Task { [weak self] in
+            await self?.updateLoop()
+        }
+    }
+
+    /// Connects to a discovered Bonjour server.
+    ///
+    /// - Parameter endpoint: The Bonjour endpoint to connect to.
+    func connect(to endpoint: Bonjour.Endpoint) async {
+        updateLoopTask?.cancel()
+        await updateLoopTask?.value
+        updateLoopTask = nil
+
+        await ConnectionManager.idle.disconnect()
+        ConnectionManager.idle.setBonjourEndpoint(endpoint)
+
+        state.error = nil
 
         updateLoopTask = Task { [weak self] in
             await self?.updateLoop()
         }
+    }
+
+    /// Clears any Bonjour endpoint and uses manual host/port settings.
+    func clearBonjourEndpoint() {
+        ConnectionManager.idle.setBonjourEndpoint(nil)
     }
 
     /// Establishes a connection to the MPD server.
