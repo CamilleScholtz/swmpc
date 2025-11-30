@@ -84,6 +84,15 @@ struct SettingsView: View {
                             Label(category.title, systemSymbol: category.image)
                         }
                     }
+
+                    Section {
+                        NavigationLink(destination: AboutView()
+                            .navigationTitle("About")
+                            .navigationBarTitleDisplayMode(.inline))
+                        {
+                            Label("About", systemSymbol: .infoCircle)
+                        }
+                    }
                 }
                 .navigationTitle("Settings")
                 .navigationBarTitleDisplayMode(.inline)

@@ -16,15 +16,39 @@ struct AboutView: View {
     @State private var playtime: Int?
     @State private var update: Int?
 
+    #if os(iOS)
+        private static var appIcon: UIImage? {
+            guard let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+                  let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
+                  let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+                  let iconName = iconFiles.last
+            else {
+                return nil
+            }
+
+            return UIImage(named: iconName)
+        }
+    #endif
+
     var body: some View {
         VStack(spacing: Layout.Spacing.large) {
             VStack(spacing: Layout.Spacing.small) {
-                if let image = NSApp.applicationIconImage {
-                    Image(nsImage: image)
-                        .resizable()
-                        .frame(width: 64, height: 64)
-                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                }
+                #if os(iOS)
+                    if let image = Self.appIcon {
+                        Image(uiImage: image)
+                            .resizable()
+                            .frame(width: 64, height: 64)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                    }
+                #elseif os(macOS)
+                    if let image = NSApp.applicationIconImage {
+                        Image(nsImage: image)
+                            .resizable()
+                            .frame(width: 64, height: 64)
+                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                    }
+                #endif
 
                 Text("swmpc")
                     .font(.headline)
@@ -83,23 +107,25 @@ struct AboutView: View {
             .padding(.horizontal)
         }
         .padding(.vertical)
-        .frame(width: 420, height: 420)
-        .task {
-            let data = try? await ConnectionManager.command {
-                try await $0.getStatsData()
-            }
+        #if os(macOS)
+            .frame(width: 420, height: 420)
+        #endif
+            .task {
+                let data = try? await ConnectionManager.command {
+                    try await $0.getStatsData()
+                }
 
-            guard let data else {
-                return
-            }
+                guard let data else {
+                    return
+                }
 
-            artists = data.artists
-            albums = data.albums
-            songs = data.songs
-            uptime = data.uptime
-            playtime = data.playtime
-            update = data.update
-        }
+                artists = data.artists
+                albums = data.albums
+                songs = data.songs
+                uptime = data.uptime
+                playtime = data.playtime
+                update = data.update
+            }
     }
 
     struct StatCard: View {
@@ -124,10 +150,12 @@ struct AboutView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(
-                RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
-                    .fill(Color(nsColor: .secondarySystemFill).opacity(0.4)),
-            )
+            #if os(macOS)
+                .background(
+                    RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
+                        .fill(Color(nsColor: .secondarySystemFill).opacity(0.4)),
+                )
+            #endif
         }
     }
 
