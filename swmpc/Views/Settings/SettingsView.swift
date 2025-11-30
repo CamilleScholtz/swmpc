@@ -129,153 +129,243 @@ struct SettingsView: View {
 
         var body: some View {
             Form {
-                Section {
-                    TextField(text: $host, label: {
-                        SettingsLabel("MPD Host")
-                    })
-                    .help("Hostname or IP address of your MPD server")
-                    #if os(iOS)
-                        .autocapitalization(.none)
-                        .keyboardType(.URL)
-                    #endif
-                    TextField(value: $port, formatter: NumberFormatter(), label: {
-                        SettingsLabel("MPD Port")
-                    })
-                    .help("Port number for MPD connection (default: 6600)")
-                    #if os(iOS)
-                        .keyboardType(.numberPad)
-                    #endif
-                }
-
-                Section {
-                    SecureField(text: $password, label: {
-                        SettingsLabel("MPD Password")
-                    })
-                    .help("Password for MPD server authentication")
-                } footer: {
-                    #if os(iOS)
-                        Text("Leave empty if no password is set.")
-                    #endif
-                }
-
-                Section {
-                    HStack {
-                        Button {
-                            bonjour.scan()
-                        } label: {
-                            if bonjour.isScanning {
-                                ProgressView()
-                                    .controlSize(.small)
-                            } else {
-                                Text("Scan for Servers")
+                #if os(iOS)
+                    Section {
+                        HStack {
+                            Text("Status")
+                            Spacer()
+                            HStack(spacing: Layout.Padding.small) {
+                                Circle()
+                                    .fill(mpd.state.connectionColor)
+                                    .frame(width: 8, height: 8)
+                                Text(mpd.state.connectionDescription)
+                                    .foregroundStyle(.secondary)
                             }
                         }
-                        .disabled(bonjour.isScanning)
 
-                        AsyncButton("Connect") {
+                        if !mpd.state.isConnectionReady, let error = mpd.state.error {
+                            Text(error.localizedDescription)
+                                .font(.caption)
+                                .monospaced()
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    Section {
+                        TextField("Host", text: $host)
+                            .autocapitalization(.none)
+                            .keyboardType(.URL)
+                        TextField("Port", value: $port, formatter: NumberFormatter())
+                            .keyboardType(.numberPad)
+                    } header: {
+                        Text("Server")
+                    } footer: {
+                        Text("The hostname and port of your MPD server.")
+                    }
+
+                    Section {
+                        SecureField("Password", text: $password)
+                    } header: {
+                        Text("Authentication")
+                    } footer: {
+                        Text("Leave empty if your server doesn't require authentication.")
+                    }
+
+                    Section {
+                        AsyncButton {
                             UserDefaults.standard.set(host, forKey: Setting.host)
                             UserDefaults.standard.set(port, forKey: Setting.port)
                             UserDefaults.standard.set(password, forKey: Setting.password)
 
                             await mpd.reinitialize()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Text("Connect")
+                                Spacer()
+                            }
+                        }
+                    } footer: {
+                        Text("Save settings and connect to the server.")
+                    }
+
+                    Section {
+                        Button {
+                            bonjour.scan()
+                        } label: {
+                            HStack {
+                                Text("Scan for Servers")
+                                Spacer()
+                                if bonjour.isScanning {
+                                    ProgressView()
+                                }
+                            }
+                        }
+                        .disabled(bonjour.isScanning)
+                    } header: {
+                        Text("Discovery")
+                    } footer: {
+                        Text("Search for MPD servers on your local network using Bonjour.")
+                    }
+
+                    if !bonjour.servers.isEmpty {
+                        Section {
+                            ForEach(bonjour.servers) { server in
+                                Button {
+                                    host = server.host
+                                    port = server.port
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading) {
+                                            Text(server.displayName)
+                                                .foregroundStyle(.primary)
+                                            Text("\(server.host):\(server.port)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemSymbol: .chevronRight)
+                                            .font(.caption)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                }
+                            }
+                        } header: {
+                            Text("Available Servers")
+                        }
+                    }
+
+                    Section {
+                        Picker("Retrieval Method", selection: $artworkGetter) {
+                            Text("Library").tag(ArtworkGetter.library)
+                            Text("Metadata").tag(ArtworkGetter.metadata)
+                        }
+                        .pickerStyle(.navigationLink)
+                    } header: {
+                        Text("Artwork")
+                    } footer: {
+                        Text("Library searches for cover.png, cover.jpg, or cover.webp in the song's directory. Metadata extracts artwork from the song file, but is slower.")
+                    }
+                #elseif os(macOS)
+                    Section {
+                        TextField(text: $host, label: {
+                            SettingsLabel("MPD Host")
+                        })
+                        .help("Hostname or IP address of your MPD server")
+                        TextField(value: $port, formatter: NumberFormatter(), label: {
+                            SettingsLabel("MPD Port")
+                        })
+                        .help("Port number for MPD connection (default: 6600)")
+                    }
+
+                    Section {
+                        SecureField(text: $password, label: {
+                            SettingsLabel("MPD Password")
+                        })
+                        .help("Password for MPD server authentication")
+                    }
+
+                    Section {
+                        HStack {
+                            Button {
+                                bonjour.scan()
+                            } label: {
+                                if bonjour.isScanning {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                } else {
+                                    Text("Scan for Servers")
+                                }
+                            }
+                            .disabled(bonjour.isScanning)
+
+                            AsyncButton("Connect") {
+                                UserDefaults.standard.set(host, forKey: Setting.host)
+                                UserDefaults.standard.set(port, forKey: Setting.port)
+                                UserDefaults.standard.set(password, forKey: Setting.password)
+
+                                await mpd.reinitialize()
+                            }
+
+                            Circle()
+                                .fill(mpd.state.connectionColor)
+                                .frame(width: 10, height: 10)
+                                .help(mpd.state.connectionDescription)
                         }
 
-                        #if os(iOS)
-                            Spacer()
-                        #endif
+                        if !mpd.state.isConnectionReady, let error = mpd.state.error {
+                            Text(error.localizedDescription)
+                                .font(.caption)
+                                .monospaced()
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(7)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 7)
+                                        .fill(Color(white: 0.1, opacity: 0.05))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 7)
+                                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1),
+                                        ),
+                                )
+                        }
 
-                        Circle()
-                            .fill(mpd.state.connectionColor)
-                            .frame(width: 10, height: 10)
-                            .help(mpd.state.connectionDescription)
-                    }
-
-                    if !mpd.state.isConnectionReady, let error = mpd.state.error {
-                        Text(error.localizedDescription)
-                            .font(.caption)
-                            .monospaced()
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(7)
-                            .background(
-                                RoundedRectangle(cornerRadius: 7)
-                                    .fill(Color(white: 0.1, opacity: 0.05))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 7)
-                                            .stroke(Color.secondary.opacity(0.2), lineWidth: 1),
-                                    ),
-                            )
-                    }
-
-                } footer: {
-                    #if os(iOS)
-                        Text("Test connection and apply settings.")
-                    #elseif os(macOS)
+                    } footer: {
                         Text("Leave password field empty if no password is set. Click Connect to test the connection and apply changes.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.top, 1)
-                    #endif
-                }
+                    }
 
-                if !bonjour.servers.isEmpty {
-                    #if os(macOS)
+                    if !bonjour.servers.isEmpty {
                         Divider()
                             .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
-                    #endif
 
-                    Section {
-                        ForEach(bonjour.servers) { server in
-                            Button {
-                                host = server.host
-                                port = server.port
-                            } label: {
-                                HStack {
-                                    Circle()
-                                        .fill(.green)
-                                        .frame(width: 8, height: 8)
-                                    VStack(alignment: .leading) {
-                                        Text(server.displayName)
-                                        Text("\(server.host):\(server.port)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                        Section {
+                            ForEach(bonjour.servers) { server in
+                                Button {
+                                    host = server.host
+                                    port = server.port
+                                } label: {
+                                    HStack {
+                                        Circle()
+                                            .fill(.green)
+                                            .frame(width: 8, height: 8)
+                                        VStack(alignment: .leading) {
+                                            Text(server.displayName)
+                                            Text("\(server.host):\(server.port)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
                                     }
-                                    Spacer()
+                                    .contentShape(Rectangle())
                                 }
-                                .contentShape(Rectangle())
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
-                }
 
-                #if os(macOS)
                     Divider()
                         .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
-                #endif
 
-                Section {
-                    Picker(selection: $artworkGetter, label: SettingsLabel("Artwork retrieval")) {
-                        Text("Library").tag(ArtworkGetter.library)
-                        Text("Metadata").tag(ArtworkGetter.metadata)
-                    }
-                    .help("Choose how to retrieve album artwork")
-                    #if os(iOS)
-                        .pickerStyle(.navigationLink)
-                    #else
+                    Section {
+                        Picker(selection: $artworkGetter, label: SettingsLabel("Artwork retrieval")) {
+                            Text("Library").tag(ArtworkGetter.library)
+                            Text("Metadata").tag(ArtworkGetter.metadata)
+                        }
+                        .help("Choose how to retrieve album artwork")
                         .pickerStyle(.inline)
-                    #endif
-                } footer: {
-                    Text("Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Metadata will fetch the artwork from the song metadata. Using metadata is not recommended as it is generally much slower.")
-                    #if os(macOS)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 1)
-                    #endif
-                }
+                    } footer: {
+                        Text("Library will fetch artwork by searching the directory the songs resides in for a file called cover.png, cover.jpg, or cover.webp. Metadata will fetch the artwork from the song metadata. Using metadata is not recommended as it is generally much slower.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 1)
+                    }
+                #endif
             }
         }
     }
@@ -328,30 +418,16 @@ struct SettingsView: View {
 
         var body: some View {
             Form {
-                Section {
-                    Toggle(isOn: $isIntelligenceEnabled) {
-                        Text("Enable AI Features")
+                #if os(iOS)
+                    Section {
+                        Toggle("Enable AI Features", isOn: $isIntelligenceEnabled)
+                    } footer: {
+                        Text("Powers smart playlist and queue generation using AI.")
                     }
-                    .help("Enable AI-powered features for playlist generation")
-                } footer: {
-                    Text("Powers smart playlist and queue generation using AI.")
-                    #if os(macOS)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 1)
-                    #endif
-                }
 
-                #if os(macOS)
-                    Divider()
-                        .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
-                #endif
-
-                Section {
-                    Picker(selection: $intelligenceModel, label: SettingsLabel("Model")) {
-                        ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
-                            #if os(iOS)
+                    Section {
+                        Picker("Model", selection: $intelligenceModel) {
+                            ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
                                 VStack(alignment: .leading) {
                                     Text(model.name)
                                     Text(model.model)
@@ -359,7 +435,39 @@ struct SettingsView: View {
                                         .foregroundColor(.secondary)
                                 }
                                 .tag(model)
-                            #elseif os(macOS)
+                            }
+                        }
+                        .pickerStyle(.navigationLink)
+                        .disabled(!isIntelligenceEnabled)
+
+                        SecureField("API Token", text: $intelligenceToken)
+                            .textContentType(.password)
+                            .disabled(!isIntelligenceEnabled)
+                    } header: {
+                        Text("Provider")
+                    } footer: {
+                        Text("Enter your API token for the selected AI provider.")
+                    }
+                #elseif os(macOS)
+                    Section {
+                        Toggle(isOn: $isIntelligenceEnabled) {
+                            Text("Enable AI Features")
+                        }
+                        .help("Enable AI-powered features for playlist generation")
+                    } footer: {
+                        Text("Powers smart playlist and queue generation using AI.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 1)
+                    }
+
+                    Divider()
+                        .frame(height: Layout.Size.settingsRowHeight, alignment: .center)
+
+                    Section {
+                        Picker(selection: $intelligenceModel, label: SettingsLabel("Model")) {
+                            ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
                                 HStack {
                                     Text(model.name)
                                     Text(model.model)
@@ -367,28 +475,21 @@ struct SettingsView: View {
                                         .foregroundColor(.secondary)
                                 }
                                 .tag(model)
-                            #endif
+                            }
                         }
-                    }
-                    .help("Select the AI model to use for intelligent features")
-                    #if os(iOS)
-                        .pickerStyle(.navigationLink)
-                    #elseif os(macOS)
+                        .help("Select the AI model to use for intelligent features")
                         .pickerStyle(.inline)
-                    #endif
                         .disabled(!isIntelligenceEnabled)
 
-                    SecureField(text: $intelligenceToken, label: {
-                        SettingsLabel("API Token")
-                    })
-                    .textContentType(.password)
-                    .help("API token for the selected AI service")
-                    .disabled(!isIntelligenceEnabled)
-                }
+                        SecureField(text: $intelligenceToken, label: {
+                            SettingsLabel("API Token")
+                        })
+                        .textContentType(.password)
+                        .help("API token for the selected AI service")
+                        .disabled(!isIntelligenceEnabled)
+                    }
+                #endif
             }
-            #if os(iOS)
-            .listStyle(.insetGrouped)
-            #endif
             .onAppear {
                 @AppStorage(intelligenceModel.setting) var token = ""
                 intelligenceToken = token
