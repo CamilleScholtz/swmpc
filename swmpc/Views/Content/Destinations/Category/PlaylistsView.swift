@@ -122,7 +122,7 @@ struct PlaylistsView: View {
                 }
             }
 
-            ToolbarSpacer()
+            ToolbarSpacer(.fixed)
 
             ToolbarItem {
                 Menu {

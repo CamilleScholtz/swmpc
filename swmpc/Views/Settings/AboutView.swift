@@ -102,7 +102,7 @@ struct AboutView: View {
                     StatRow(symbol: .calendarBadgeClock, label: "Last Database Update", value: update.map(formatDate))
                 }
                 #if os(iOS)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 #endif
             }
             .padding(.horizontal)
@@ -155,12 +155,10 @@ struct AboutView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            #if os(macOS)
-                .background(
-                    RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
-                        .fill(Color(nsColor: .secondarySystemFill).opacity(0.4)),
-                )
-            #endif
+            .background(
+                RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
+                    .fill(.background.opacity(0.4)),
+            )
         }
     }
 
