@@ -20,6 +20,7 @@ struct PlaylistsView: View {
 
     @State private var isCreatingPlaylist = false
     @State private var playlistName = ""
+    @State private var playlistSongCounts: [String: Int] = [:]
 
     @FocusState private var isFocused: Bool
 
@@ -60,8 +61,32 @@ struct PlaylistsView: View {
                     Button {
                         navigator.path.append(ContentDestination.playlist(playlist))
                     } label: {
-                        Label(playlist.name, systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)
-                            .foregroundStyle(.primary)
+                        HStack(spacing: Layout.Spacing.large) {
+                            Image(systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 30)
+
+                            VStack(alignment: .leading) {
+                                Text(playlist.name)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(2)
+
+                                if let count = playlistSongCounts[playlist.name] {
+                                    Text(count == 1
+                                        ? String(localized: "1 song")
+                                        : String(localized: "\(count) songs"))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
+
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
@@ -84,12 +109,8 @@ struct PlaylistsView: View {
             }
         }
         .mediaListStyle()
-        .onAppear {
-            mpd.state.isLoading = true
-        }
         .task {
-            try? await Task.sleep(for: .milliseconds(200))
-            mpd.state.isLoading = false
+            await loadPlaylistCounts()
         }
         .alert("Delete Playlist", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {
@@ -153,6 +174,20 @@ struct PlaylistsView: View {
                 }
 
                 playlistName = ""
+            }
+        }
+    }
+
+    private func loadPlaylistCounts() async {
+        playlistSongCounts["Favorites"] = mpd.playlists.favorites.count
+
+        guard let allPlaylists = mpd.playlists.playlists else {
+            return
+        }
+
+        for playlist in allPlaylists {
+            if let songs = try? await mpd.playlists.getSongs(for: playlist) {
+                playlistSongCounts[playlist.name] = songs.count
             }
         }
     }

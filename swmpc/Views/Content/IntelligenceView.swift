@@ -159,7 +159,7 @@ struct IntelligenceView: View {
                     .disableAutocorrection(true)
                     .focused($isFocused)
                     .onAppear {
-                        isFocused = false
+                        isFocused = true
                     }
 
                 HStack(spacing: Layout.Spacing.medium) {
@@ -201,7 +201,6 @@ struct IntelligenceView: View {
         #if os(iOS)
             .frame(maxHeight: .infinity)
             .presentationDetents([.medium])
-            .ignoresSafeArea()
         #elseif os(macOS)
             .frame(width: Layout.Size.intelligenceViewWidth, height: Layout.Size.intelligenceViewWidth / 1.68)
         #endif
@@ -214,6 +213,17 @@ struct IntelligenceView: View {
                         y: 0,
                     ),
                 )
+                #if os(iOS)
+                .mask(
+                    RadialGradient(
+                        colors: [.black, .clear],
+                        center: .init(x: 0.5, y: 0.5),
+                        startRadius: 0,
+                        endRadius: Layout.Size.intelligenceViewWidth / 2 + 30,
+                    )
+                    .blur(radius: 50),
+                )
+                #elseif os(macOS)
                 .mask(
                     RadialGradient(
                         colors: [.black, .clear],
@@ -223,6 +233,7 @@ struct IntelligenceView: View {
                     )
                     .blur(radius: 50),
                 )
+                #endif
                 .ignoresSafeArea()
             }
             .onAppear {
