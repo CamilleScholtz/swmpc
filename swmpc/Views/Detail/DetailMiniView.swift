@@ -22,12 +22,11 @@ struct DetailMiniView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(mpd.status.song?.title ?? "No song playing")
-                    .font(.subheadline)
+                    .font(.headline.pointSize(14))
                     .lineLimit(1)
 
                 Text(mpd.status.song?.artist ?? "")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 

@@ -199,7 +199,7 @@ struct IntelligenceView: View {
         }
         .padding(Layout.Padding.large)
         #if os(iOS)
-            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .presentationDetents([.medium])
         #elseif os(macOS)
             .frame(width: Layout.Size.intelligenceViewWidth, height: Layout.Size.intelligenceViewWidth / 1.68)

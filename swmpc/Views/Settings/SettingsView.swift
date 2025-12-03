@@ -152,44 +152,6 @@ struct SettingsView: View {
                     }
 
                     Section {
-                        TextField("Host", text: $host)
-                            .autocapitalization(.none)
-                            .keyboardType(.URL)
-                        TextField("Port", value: $port, formatter: NumberFormatter())
-                            .keyboardType(.numberPad)
-                    } header: {
-                        Text("Server")
-                    } footer: {
-                        Text("The hostname and port of your MPD server.")
-                    }
-
-                    Section {
-                        SecureField("Password", text: $password)
-                    } header: {
-                        Text("Authentication")
-                    } footer: {
-                        Text("Leave empty if your server doesn't require authentication.")
-                    }
-
-                    Section {
-                        AsyncButton {
-                            UserDefaults.standard.set(host, forKey: Setting.host)
-                            UserDefaults.standard.set(port, forKey: Setting.port)
-                            UserDefaults.standard.set(password, forKey: Setting.password)
-
-                            await mpd.reinitialize()
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Text("Connect")
-                                Spacer()
-                            }
-                        }
-                    } footer: {
-                        Text("Save settings and connect to the server.")
-                    }
-
-                    Section {
                         Button {
                             bonjour.scan()
                         } label: {
@@ -233,6 +195,44 @@ struct SettingsView: View {
                         } header: {
                             Text("Available Servers")
                         }
+                    }
+
+                    Section {
+                        TextField("Host", text: $host)
+                            .autocapitalization(.none)
+                            .keyboardType(.URL)
+                        TextField("Port", value: $port, formatter: NumberFormatter())
+                            .keyboardType(.numberPad)
+                    } header: {
+                        Text("Server")
+                    } footer: {
+                        Text("The hostname and port of your MPD server.")
+                    }
+
+                    Section {
+                        SecureField("Password", text: $password)
+                    } header: {
+                        Text("Authentication")
+                    } footer: {
+                        Text("Leave empty if your server doesn't require authentication.")
+                    }
+
+                    Section {
+                        AsyncButton {
+                            UserDefaults.standard.set(host, forKey: Setting.host)
+                            UserDefaults.standard.set(port, forKey: Setting.port)
+                            UserDefaults.standard.set(password, forKey: Setting.password)
+
+                            await mpd.reinitialize()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Text("Connect")
+                                Spacer()
+                            }
+                        }
+                    } footer: {
+                        Text("Save settings and connect to the server.")
                     }
 
                     Section {
