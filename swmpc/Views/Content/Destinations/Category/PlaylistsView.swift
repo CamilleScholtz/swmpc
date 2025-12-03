@@ -148,7 +148,7 @@ struct PlaylistsView: View {
             ToolbarItem {
                 Menu {
                     Button {
-                        navigator.showSettings()
+                        navigator.showSettingsSheet = true
                     } label: {
                         Label("Settings", systemSymbol: .gearshape)
                     }

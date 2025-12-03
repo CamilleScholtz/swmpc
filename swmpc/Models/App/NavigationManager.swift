@@ -42,6 +42,15 @@ import SwiftUI
         var showSettingsSheet = false
     #endif
 
+    /// Controls the presentation of the intelligence sheet.
+    var showIntelligenceSheet = false
+
+    /// The target for the intelligence sheet (queue or playlist).
+    var intelligenceTarget: IntelligenceTarget?
+
+    /// Controls the presentation of the clear queue alert.
+    var showClearQueueAlert = false
+
     /// Tracks the content destinations in the path for duplicate prevention.
     /// This is internal state that doesn't need to trigger view updates.
     @ObservationIgnored private var pathContents: [ContentDestination] = []
@@ -78,18 +87,6 @@ import SwiftUI
         path = NavigationPath()
         pathContents = []
     }
-
-    #if os(iOS)
-        /// Shows the settings sheet on iOS.
-        func showSettings() {
-            showSettingsSheet = true
-        }
-
-        /// Hides the settings sheet on iOS.
-        func hideSettings() {
-            showSettingsSheet = false
-        }
-    #endif
 
     /// Synchronizes the pathContents array with the actual NavigationPath
     /// count. This ensures our tracking stays in sync when SwiftUI modifies the

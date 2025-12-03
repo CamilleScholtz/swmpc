@@ -29,10 +29,6 @@ struct AppView: View {
     #endif
 
     @State private var artwork: Artwork?
-    @State private var showClearQueueAlert = false
-
-    private let showClearQueueAlertNotification = NotificationCenter.default
-        .publisher(for: .showClearQueueAlertNotification)
 
     var body: some View {
         @Bindable var navigator = navigator
@@ -85,6 +81,13 @@ struct AppView: View {
                             }
                             .mediaListStyle()
                             .navigationTransition(.zoom(sourceID: 1, in: namespace))
+                            .sheet(isPresented: $navigator.showIntelligenceSheet, onDismiss: {
+                                navigator.intelligenceTarget = nil
+                            }) {
+                                if let target = navigator.intelligenceTarget {
+                                    IntelligenceView(target: target)
+                                }
+                            }
                         }
                     #elseif os(macOS)
                         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -164,7 +167,7 @@ struct AppView: View {
         .onDisappear {
             mpd.status.stopTrackingElapsed()
         }
-        .alert("Clear Queue", isPresented: $showClearQueueAlert) {
+        .alert("Clear Queue", isPresented: $navigator.showClearQueueAlert) {
             Button("Cancel", role: .cancel) {}
 
             AsyncButton("Clear", role: .destructive) {
@@ -175,8 +178,12 @@ struct AppView: View {
         } message: {
             Text("Are you sure you want to clear the queue?")
         }
-        .onReceive(showClearQueueAlertNotification) { _ in
-            showClearQueueAlert = true
+        .sheet(isPresented: $navigator.showIntelligenceSheet, onDismiss: {
+            navigator.intelligenceTarget = nil
+        }) {
+            if let target = navigator.intelligenceTarget {
+                IntelligenceView(target: target)
+            }
         }
         #if os(iOS)
         .sheet(isPresented: $navigator.showSettingsSheet) {

@@ -15,20 +15,13 @@ import SwiftUI
 struct QueueView: View {
     @Environment(MPD.self) private var mpd
 
-    @State private var showIntelligenceQueueSheet = false
-
-    private let fillIntelligenceQueueNotification = NotificationCenter.default
-        .publisher(for: .fillIntelligenceQueueNotification)
-
     var body: some View {
         Group {
             #if os(iOS)
                 Group {
-                    QueueHeaderView(
-                        showIntelligenceQueueSheet: $showIntelligenceQueueSheet,
-                    )
-                    .listRowSeparator(.visible)
-                    .listRowInsets(.horizontal, Layout.Padding.large)
+                    QueueHeaderView()
+                        .listRowSeparator(.visible)
+                        .listRowInsets(.horizontal, Layout.Padding.large)
 
                     if mpd.queue.songs.isEmpty {
                         EmptyQueueView()
@@ -48,20 +41,13 @@ struct QueueView: View {
                 .background(.background)
             #endif
         }
-        .onReceive(fillIntelligenceQueueNotification) { _ in
-            showIntelligenceQueueSheet = true
-        }
-        .sheet(isPresented: $showIntelligenceQueueSheet) {
-            IntelligenceView(target: .queue)
-        }
     }
 }
 
 #if os(iOS)
     private struct QueueHeaderView: View {
         @Environment(MPD.self) private var mpd
-
-        @Binding var showIntelligenceQueueSheet: Bool
+        @Environment(NavigationManager.self) private var navigator
 
         var body: some View {
             HStack(alignment: .center) {
@@ -82,13 +68,14 @@ struct QueueView: View {
 
                         if !mpd.queue.songs.isEmpty {
                             Button {
-                                NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
+                                navigator.showClearQueueAlert = true
                             } label: {
                                 Image(systemSymbol: .trash)
                             }
                         } else {
                             Button {
-                                showIntelligenceQueueSheet = true
+                                navigator.intelligenceTarget = .queue
+                                navigator.showIntelligenceSheet = true
                             } label: {
                                 Image(systemSymbol: .sparkles)
                             }

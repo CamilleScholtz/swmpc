@@ -15,6 +15,7 @@ private extension Layout.Size {
 
 struct DetailView: View {
     @Environment(MPD.self) private var mpd
+    @Environment(NavigationManager.self) private var navigator
 
     let artwork: Artwork?
 
@@ -87,7 +88,7 @@ struct DetailView: View {
                 if !mpd.queue.songs.isEmpty {
                     ToolbarItem {
                         Button("Clear Queue", systemSymbol: .trash, role: .destructive) {
-                            NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
+                            navigator.showClearQueueAlert = true
                         }
                         .keyboardShortcut(.delete, modifiers: [.shift, .command])
                     }
@@ -95,7 +96,8 @@ struct DetailView: View {
                 } else {
                     ToolbarItem {
                         Button("Fill Queue with AI", systemSymbol: .sparkles) {
-                            NotificationCenter.default.post(name: .fillIntelligenceQueueNotification, object: nil)
+                            navigator.intelligenceTarget = .queue
+                            navigator.showIntelligenceSheet = true
                         }
                         .disabled(!IntelligenceManager.isEnabled)
                     }

@@ -121,7 +121,7 @@ struct Delegate: App {
                 }
 
                 Button("Clear Queue", systemSymbol: .trash) {
-                    NotificationCenter.default.post(name: .showClearQueueAlertNotification, object: nil)
+                    navigator.showClearQueueAlert = true
                 }
                 .keyboardShortcut(.delete, modifiers: [.command, .option])
 

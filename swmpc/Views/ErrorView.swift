@@ -34,7 +34,7 @@ struct ErrorView: View {
                         .foregroundColor(.secondary)
                     Button {
                         #if os(iOS)
-                            navigator.showSettings()
+                            navigator.showSettingsSheet = true
                         #elseif os(macOS)
                             openSettings()
                         #endif

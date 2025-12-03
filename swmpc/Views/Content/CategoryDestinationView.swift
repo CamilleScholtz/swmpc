@@ -397,7 +397,7 @@ struct CategoryDatabaseView: View {
 
             #if os(iOS)
                 Button {
-                    navigator.showSettings()
+                    navigator.showSettingsSheet = true
                 } label: {
                     Label("Settings", systemSymbol: .gearshape)
                 }
@@ -444,12 +444,8 @@ struct CategoryPlaylistView: View {
 
     @State private var songs: [Song]?
     @State private var scrollTarget: ScrollTarget?
-    @State private var showIntelligencePlaylistSheet = false
-    @State private var playlistToEdit: Playlist?
     @State private var showReplaceQueueAlert = false
 
-    private let fillIntelligencePlaylistNotification = NotificationCenter.default
-        .publisher(for: .fillIntelligencePlaylistNotification)
     private let playlistModifiedNotification = NotificationCenter.default
         .publisher(for: .playlistModifiedNotification)
 
@@ -480,7 +476,8 @@ struct CategoryPlaylistView: View {
             if songs?.isEmpty ?? true {
                 ToolbarItem {
                     Button("Fill playlist with AI", systemSymbol: .sparkles) {
-                        NotificationCenter.default.post(name: .fillIntelligencePlaylistNotification, object: playlist)
+                        navigator.intelligenceTarget = .playlist(playlist)
+                        navigator.showIntelligenceSheet = true
                     }
                     .disabled(!IntelligenceManager.isEnabled)
                 }
@@ -511,13 +508,6 @@ struct CategoryPlaylistView: View {
         .onChange(of: playlist) {
             mpd.state.isLoading = true
         }
-        .onReceive(fillIntelligencePlaylistNotification) { notification in
-            guard let playlist = notification.object as? Playlist else {
-                return
-            }
-            playlistToEdit = playlist
-            showIntelligencePlaylistSheet = true
-        }
         .onReceive(playlistModifiedNotification) { _ in
             Task(priority: .userInitiated) {
                 if playlist.name == "Favorites" {
@@ -526,13 +516,6 @@ struct CategoryPlaylistView: View {
                 } else {
                     songs = try? await mpd.playlists.getSongs(for: playlist)
                 }
-            }
-        }
-        .sheet(isPresented: $showIntelligencePlaylistSheet, onDismiss: {
-            playlistToEdit = nil
-        }) {
-            if let playlistToEdit {
-                IntelligenceView(target: .playlist(playlistToEdit))
             }
         }
         .alert("Replace Queue", isPresented: $showReplaceQueueAlert) {
