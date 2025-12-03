@@ -528,29 +528,24 @@ struct CategoryPlaylistView: View {
                 }
             }
         }
-        #if os(iOS)
-        .background {
-            Color.clear
-                .sheet(isPresented: $showIntelligencePlaylistSheet) {
-                    IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
-                }
+        .sheet(isPresented: $showIntelligencePlaylistSheet, onDismiss: {
+            playlistToEdit = nil
+        }) {
+            if let playlistToEdit {
+                IntelligenceView(target: .playlist(playlistToEdit))
+            }
         }
-        #else
-        .sheet(isPresented: $showIntelligencePlaylistSheet) {
-                    IntelligenceView(target: .playlist($playlistToEdit), showSheet: $showIntelligencePlaylistSheet)
-                }
-        #endif
-                .alert("Replace Queue", isPresented: $showReplaceQueueAlert) {
-                    Button("Cancel", role: .cancel) {}
+        .alert("Replace Queue", isPresented: $showReplaceQueueAlert) {
+            Button("Cancel", role: .cancel) {}
 
-                    AsyncButton("Replace", role: .destructive) {
-                        try await ConnectionManager.command {
-                            try await $0.loadPlaylist(playlist)
-                        }
-                    }
-                } message: {
-                    Text("Are you sure you want to replace the current queue with this playlist?")
+            AsyncButton("Replace", role: .destructive) {
+                try await ConnectionManager.command {
+                    try await $0.loadPlaylist(playlist)
                 }
+            }
+        } message: {
+            Text("Are you sure you want to replace the current queue with this playlist?")
+        }
     }
 
     private func scrollToCurrentSong(animated: Bool = false) {

@@ -37,7 +37,7 @@ struct QueueView: View {
                         MediaList()
                     }
                 }
-            #else
+            #elseif os(macOS)
                 VStack(spacing: 0) {
                     if mpd.queue.songs.isEmpty {
                         EmptyQueueView()
@@ -52,7 +52,7 @@ struct QueueView: View {
             showIntelligenceQueueSheet = true
         }
         .sheet(isPresented: $showIntelligenceQueueSheet) {
-            IntelligenceView(target: .queue, showSheet: $showIntelligenceQueueSheet)
+            IntelligenceView(target: .queue)
         }
     }
 }

@@ -14,25 +14,16 @@ private extension Layout.Size {
 }
 
 struct IntelligenceView: View {
-    @Environment(MPD.self) private var mpd
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dismiss) private var dismiss
 
     let target: IntelligenceTarget
-
-    @Binding var showSheet: Bool
-
-    init(target: IntelligenceTarget, showSheet: Binding<Bool>) {
-        self.target = target
-        _showSheet = showSheet
-
-        _loadingSentence = State(initialValue: loadingSentences.randomElement() ?? "…")
-    }
 
     @State private var prompt = ""
     @State private var isLoading = false
     @State private var error: Error?
 
-    @State private var loadingSentence: LocalizedStringResource
+    @State private var loadingSentence: LocalizedStringResource = "…"
     @State private var colorOffset: CGFloat = 0
 
     @FocusState private var isFocused: Bool
@@ -157,17 +148,14 @@ struct IntelligenceView: View {
                     .glassEffect(.regular.interactive())
                     .multilineTextAlignment(.center)
                     .disableAutocorrection(true)
-                    .focused($isFocused)
-                    .onAppear {
-                        isFocused = true
-                    }
+//                    .focused($isFocused)
+//                    .onAppear {
+//                        isFocused = true
+//                    }
 
                 HStack(spacing: Layout.Spacing.medium) {
                     Button("Cancel", role: .cancel) {
-                        if case let .playlist(playlist) = target {
-                            playlist.wrappedValue = nil
-                        }
-                        showSheet = false
+                        dismiss()
                     }
                     .buttonStyle(.bordered)
                     .keyboardShortcut(.cancelAction)
@@ -179,11 +167,7 @@ struct IntelligenceView: View {
 
                         do {
                             try await IntelligenceManager.shared.fill(target: target, prompt: prompt)
-                            if case let .playlist(playlist) = target {
-                                playlist.wrappedValue = nil
-                            }
-
-                            showSheet = false
+                            dismiss()
                         } catch {
                             self.error = error
                         }
@@ -236,7 +220,11 @@ struct IntelligenceView: View {
                 #endif
                 .ignoresSafeArea()
             }
-            .onAppear {
+            .task {
+                loadingSentence = loadingSentences.randomElement() ?? "…"
+
+                try? await Task.sleep(for: .milliseconds(100))
+
                 withAnimation(
                     .linear(duration: 15)
                         .repeatForever(autoreverses: false),

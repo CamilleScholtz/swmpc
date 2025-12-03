@@ -36,7 +36,7 @@ enum IntelligenceManagerError: LocalizedError {
 /// Target destination for intelligence-generated songs.
 enum IntelligenceTarget {
     /// Add songs to a specific playlist.
-    case playlist(Binding<Playlist?>)
+    case playlist(Playlist)
     /// Add songs directly to the playback queue.
     case queue
 }
@@ -324,10 +324,6 @@ actor IntelligenceManager {
     private func addSongs(_ songs: [Song], to target: IntelligenceTarget) async throws {
         switch target {
         case let .playlist(playlist):
-            guard let playlist = playlist.wrappedValue else {
-                return
-            }
-
             try await ConnectionManager.command { manager in
                 try await manager.add(songs: songs, to: .playlist(playlist))
                 try await manager.loadPlaylist(playlist)
