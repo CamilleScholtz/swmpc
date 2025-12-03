@@ -15,18 +15,22 @@
 	</a>
 </div>
 
-## Features
+- - -
 
-`swmpc` is a beautifully designed and simple yet powerful MPD (Music Player Daemon) client tailored exclusively for macOS & iOS. It supports all the basic features you would expect from a MPD client, and more.
+Tired of janky MPD clients? Same.
 
-#### Key Features:
+`swmpc` is a fast, elegant MPD client built exclusively for macOS & iOS. A clean, native interface that feels right at home on your Apple devices.
 
-- **Quick and simple music library browsing:** search by artist, album, or track
-- **Intuitive queue management**: add and remove tracks, reorder tracks, and manage your playback queue with ease
-- **Efficient playlist management**: create, edit, and delete playlists, as well as add tracks to them
-- **Favorite tracks**: mark tracks as favorites for easy access
-- **AI-powered recommendations**: Fill playlists or the queue with tracks based on genre or mood
-- **Status bar integration**: control playback from the status bar
+#### What you get:
+
+- Fast library browsing: Search artists, albums, and tracks instantly
+- Sane queue management: Add, remove, reorder. Drag and drop. No friction.
+- Full playlist support: Create, edit, delete, and populate playlists without fighting the UI
+- Favorites: Quick access to tracks you actually listen to
+- AI-powered smart fill: Generate playlists or queue tracks by genre or mood
+- Menu bar controls: Skip, pause, adjust—without switching windows
+- Open source: Inspect it, fork it, contribute. It's your app too.
+- Universal purchase: One price. Get it for both Mac and iPhone. Done.
 
 
 ## Screenshots
