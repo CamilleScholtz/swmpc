@@ -100,7 +100,8 @@ Prefer shared code. For platform-specific code, use conditional compilation with
 
 ### xcodebuild-mini
 
-Use for building and testing. **Prefer MCP tools over raw `xcodebuild`**. Only build when explicitly requested.
+Use for building and testing. **Prefer MCP tools over raw `xcodebuild`**.
+**IMPORTANT**: Only build when explicitly requested by the user!
 
 ### apple-docs
 
