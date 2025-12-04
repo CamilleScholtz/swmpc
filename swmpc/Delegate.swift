@@ -294,7 +294,7 @@ struct Delegate: App {
         }
 
         func setPopoverAnchorImage(changed: String? = nil) {
-            guard showStatusBar, let button = popoverAnchor.button else {
+            guard showStatusBar, !popover.isShown, let button = popoverAnchor.button else {
                 return
             }
 
@@ -318,7 +318,7 @@ struct Delegate: App {
             case "single":
                 button.image = NSImage(systemSymbol: .return, accessibilityDescription: "single")
             default:
-                button.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
+                button.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "swmpc")
                 return
             }
 
@@ -329,7 +329,7 @@ struct Delegate: App {
                     return
                 }
 
-                button.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "mmpsp")
+                button.image = NSImage(systemSymbol: .musicNote, accessibilityDescription: "swmpc")
             }
         }
 
