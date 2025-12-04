@@ -61,6 +61,7 @@ struct ErrorView: View {
             .animation(.spring, value: showError)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
         .ignoresSafeArea()
         .zIndex(999)
         .background(Layout.Colors.systemBackground)

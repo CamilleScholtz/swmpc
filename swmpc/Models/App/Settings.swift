@@ -6,9 +6,13 @@
 //
 
 nonisolated enum Setting {
+    static let servers = "servers"
+    static let selectedServerID = "selected_server_id"
+
     static let host = "host"
     static let port = "port"
     static let password = "password"
+    static let artworkGetter = "artwork_getter"
 
     #if os(macOS)
         static let showStatusBar = "show_status_bar"
@@ -23,8 +27,6 @@ nonisolated enum Setting {
     static let geminiToken = "gemini_token"
     static let grokToken = "grok_token"
     static let claudeToken = "claude_token"
-
-    static let artworkGetter = "artwork_getter"
 
     static let albumSearchFields = "album_search_fields"
     static let artistSearchFields = "artist_search_fields"

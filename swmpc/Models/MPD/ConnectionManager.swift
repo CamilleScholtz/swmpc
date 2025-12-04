@@ -137,8 +137,14 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 .connectionTimeout(3)
         }
 
-        if let onStateUpdate {
-            connection?.onStateUpdate(onStateUpdate)
+        connection?.onStateUpdate { [weak self] connection, state in
+            if case .failed = state {
+                Task {
+                    await self?.disconnect()
+                }
+            }
+
+            onStateUpdate?(connection, state)
         }
 
         let lines = try await readUntilOK()

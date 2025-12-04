@@ -43,7 +43,7 @@ Tired of janky MPD clients? Same.
 
 The latest version of `swmpc` is available on the [App Store](https://apps.apple.com/app/swmpc/id6743818735). I've decided to make `swmpc` a paid app to help offset the many hours spent developing it, as well as expenses like the annual $100 Apple Developer License fee. Of course, you're also welcome to compile `swmpc` yourself from source.
 
-`swmpc` is an universal app, meaning you only need to purchase it once to use it on both macOS and iOS.
+`swmpc` is an universal app, meaning you only need to purchase it once to get it on both macOS and iOS.
 
 
 ## Requirements

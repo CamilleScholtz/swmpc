@@ -142,7 +142,7 @@ enum IdleEvent: String {
 }
 
 /// Specifies the method for retrieving artwork from MPD.
-enum ArtworkGetter: String {
+enum ArtworkGetter: String, Codable {
     /// Retrieve artwork from the music library folder structure.
     case library = "albumart"
     /// Retrieve artwork embedded in the audio file.

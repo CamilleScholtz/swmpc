@@ -20,6 +20,7 @@ struct Delegate: App {
     #endif
 
     #if os(iOS)
+        static let serverManager = ServerManager()
         static let mpd = MPD()
     #endif
 
@@ -36,8 +37,10 @@ struct Delegate: App {
             AppView()
                 .environment(navigator)
             #if os(iOS)
+                .environment(Delegate.serverManager)
                 .environment(Delegate.mpd)
             #elseif os(macOS)
+                .environment(appDelegate.serverManager)
                 .environment(appDelegate.mpd)
             #endif
         }
@@ -154,6 +157,7 @@ struct Delegate: App {
         #if os(macOS)
             Settings {
                 SettingsView()
+                    .environment(appDelegate.serverManager)
                     .environment(appDelegate.mpd)
             }
 
@@ -175,6 +179,7 @@ struct Delegate: App {
     final class AppDelegate: NSObject, NSApplicationDelegate {
         private(set) static var shared: AppDelegate?
 
+        let serverManager = ServerManager()
         let mpd = MPD()
 
         private lazy var popoverAnchor = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
