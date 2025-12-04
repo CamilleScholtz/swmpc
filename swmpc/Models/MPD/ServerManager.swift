@@ -10,6 +10,7 @@ import Foundation
 /// Represents a saved MPD server configuration.
 nonisolated struct Server: Identifiable, Hashable, Sendable, Codable {
     var id = UUID()
+
     var name = ""
     var host = "localhost"
     var port = 6600
@@ -35,9 +36,9 @@ extension Server {
 
 /// Manages the list of saved MPD server configurations.
 ///
-/// Handles persistence of server configurations to UserDefaults and tracks
-/// the currently selected server. Changes to the server list or selection
-/// are automatically persisted.
+/// Handles persistence of server configurations to UserDefaults and tracks the
+/// currently selected server. Changes to the server list or selection are
+/// automatically persisted.
 @Observable final class ServerManager {
     /// All saved server configurations.
     private(set) var servers: [Server] = []
@@ -46,11 +47,14 @@ extension Server {
     var selectedServerID: UUID? {
         didSet {
             if let id = selectedServerID {
-                UserDefaults.standard.set(id.uuidString, forKey: Setting.selectedServerID)
+                UserDefaults.standard.set(id.uuidString, forKey:
+                    Setting.selectedServerID)
             } else {
-                UserDefaults.standard.removeObject(forKey: Setting.selectedServerID)
+                UserDefaults.standard.removeObject(forKey:
+                    Setting.selectedServerID)
             }
-            syncSelectedServerToDefaults()
+
+            syncSelectedServer()
         }
     }
 
@@ -59,6 +63,7 @@ extension Server {
         guard let id = selectedServerID else {
             return nil
         }
+
         return servers.first { $0.id == id }
     }
 
@@ -74,14 +79,17 @@ extension Server {
 
     /// Updates an existing server and persists the change.
     func update(_ server: Server) {
-        guard let index = servers.firstIndex(where: { $0.id == server.id }) else {
+        guard let index = servers.firstIndex(where: { $0.id
+                == server.id
+        }) else {
             return
         }
+
         servers[index] = server
         save()
 
         if selectedServerID == server.id {
-            syncSelectedServerToDefaults()
+            syncSelectedServer()
         }
     }
 
@@ -93,6 +101,7 @@ extension Server {
         if selectedServerID == server.id {
             selectedServerID = nil
         }
+
         save()
     }
 
@@ -103,6 +112,7 @@ extension Server {
         if let selectedID = selectedServerID, removedIDs.contains(selectedID) {
             selectedServerID = nil
         }
+
         save()
     }
 
@@ -119,13 +129,14 @@ extension Server {
             servers = decoded
         }
 
-        if let idString = UserDefaults.standard.string(forKey: Setting.selectedServerID),
-           let id = UUID(uuidString: idString)
+        if let idString = UserDefaults.standard.string(forKey:
+            Setting.selectedServerID),
+            let id = UUID(uuidString: idString)
         {
             selectedServerID = id
         }
 
-        syncSelectedServerToDefaults()
+        syncSelectedServer()
     }
 
     /// Persists the server list to UserDefaults.
@@ -135,22 +146,8 @@ extension Server {
         }
     }
 
-    /// Syncs the selected server's settings to individual UserDefaults keys.
-    ///
-    /// This allows ConnectionManager to continue reading settings from the
-    /// same keys without needing to know about the server list structure.
-    private func syncSelectedServerToDefaults() {
-        guard let server = selectedServer else {
-            UserDefaults.standard.removeObject(forKey: Setting.host)
-            UserDefaults.standard.removeObject(forKey: Setting.port)
-            UserDefaults.standard.removeObject(forKey: Setting.password)
-            UserDefaults.standard.removeObject(forKey: Setting.artworkGetter)
-            return
-        }
-
-        UserDefaults.standard.set(server.host, forKey: Setting.host)
-        UserDefaults.standard.set(server.port, forKey: Setting.port)
-        UserDefaults.standard.set(server.password, forKey: Setting.password)
-        UserDefaults.standard.set(server.artworkGetter.rawValue, forKey: Setting.artworkGetter)
+    /// Updates the shared connection configuration with the selected server.
+    private func syncSelectedServer() {
+        ConnectionConfiguration.server = selectedServer
     }
 }

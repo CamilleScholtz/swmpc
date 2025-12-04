@@ -9,11 +9,6 @@ nonisolated enum Setting {
     static let servers = "servers"
     static let selectedServerID = "selected_server_id"
 
-    static let host = "host"
-    static let port = "port"
-    static let password = "password"
-    static let artworkGetter = "artwork_getter"
-
     #if os(macOS)
         static let showStatusBar = "show_status_bar"
         static let showStatusbarSong = "show_statusbar_song"

@@ -39,7 +39,7 @@ struct ErrorView: View {
                             openSettings()
                         #endif
                     } label: {
-                        Text("swmpc settings")
+                        Text("connection settings")
                             .font(.subheadline)
                             .foregroundColor(.accentColor)
                     }

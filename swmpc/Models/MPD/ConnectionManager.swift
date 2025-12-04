@@ -35,6 +35,14 @@ nonisolated enum CommandMode: ConnectionMode {
     static let bufferSize = 4096
 }
 
+/// Holds the shared server configuration used by all connection managers.
+///
+/// This is separate from ConnectionManager because generic types cannot have
+/// static stored properties.
+enum ConnectionConfiguration {
+    nonisolated(unsafe) static var server: Server?
+}
+
 /// Errors that can occur during MPD connection management.
 enum ConnectionManagerError: LocalizedError, Equatable {
     case invalidHost
@@ -118,13 +126,16 @@ actor ConnectionManager<Mode: ConnectionMode> {
             return
         }
 
-        let host = UserDefaults.standard.string(forKey: Setting.host) ?? "localhost"
+        guard let server = ConnectionConfiguration.server else {
+            throw ConnectionManagerError.invalidHost
+        }
+
+        let host = server.host
         guard !host.isEmpty else {
             throw ConnectionManagerError.invalidHost
         }
 
-        var port = UserDefaults.standard.integer(forKey: Setting.port)
-        port = port == 0 ? 6600 : port
+        let port = server.port
         guard port > 0, port <= 65535 else {
             throw ConnectionManagerError.invalidPort
         }
@@ -209,9 +220,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// - Throws: An error if the authentication command fails.
     func ensureAuthentication() async throws {
-        let password = UserDefaults.standard.string(forKey: Setting.password)
-            ?? ""
-        guard !password.isEmpty else {
+        guard let password = ConnectionConfiguration.server?.password,
+              !password.isEmpty
+        else {
             return
         }
 
@@ -1108,9 +1119,8 @@ extension ConnectionManager where Mode == ArtworkMode {
         var totalSize: Int?
 
         loop: while true {
-            let artworkGetterRaw = UserDefaults.standard.string(forKey:
-                Setting.artworkGetter) ?? ArtworkGetter.library.rawValue
-            try await writeLine("\(artworkGetterRaw) \(escape(file)) \(offset)")
+            let artworkGetter = ConnectionConfiguration.server?.artworkGetter ?? .library
+            try await writeLine("\(artworkGetter.rawValue) \(escape(file)) \(offset)")
 
             var chunkSize: Int?
 

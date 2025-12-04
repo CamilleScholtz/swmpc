@@ -122,15 +122,9 @@ struct SettingsView: View {
 
         var body: some View {
             Form {
-                #if os(iOS)
-                    statusSection
-                    serversSection
-                    discoverySection
-                #elseif os(macOS)
-                    serversSection
-                    discoverySection
-                    statusSection
-                #endif
+                serversSection
+                statusSection
+                discoverySection
             }
             .sheet(isPresented: $showingAddServer) {
                 ServerEditView(server: nil)
@@ -141,231 +135,177 @@ struct SettingsView: View {
         }
 
         @ViewBuilder
-        private var statusSection: some View {
-            #if os(iOS)
-                Section {
-                    HStack {
-                        Text("Status")
-                        Spacer()
-                        HStack(spacing: Layout.Padding.small) {
-                            Circle()
-                                .fill(mpd.state.connectionColor)
-                                .frame(width: 8, height: 8)
-                            Text(mpd.state.connectionDescription)
-                                .foregroundStyle(.secondary)
+        private var serversSection: some View {
+            Section {
+                if serverManager.servers.isEmpty {
+                    Button("Add Server") {
+                        showingAddServer = true
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    ForEach(serverManager.servers) { server in
+                        ServerRow(
+                            server: server,
+                            isSelected: serverManager.selectedServerID == server.id,
+                        ) {
+                            Task(priority: .userInitiated) {
+                                serverManager.select(server)
+                                await mpd.reinitialize()
+                            }
+                        } onEdit: {
+                            serverToEdit = server
                         }
                     }
-
-                    if !mpd.state.isConnectionReady, let error = mpd.state.error {
-                        Text(error.localizedDescription)
-                            .font(.caption)
-                            .monospaced()
-                            .foregroundColor(.secondary)
-                    }
-                }
-            #elseif os(macOS)
-                if !mpd.state.isConnectionReady, let error = mpd.state.error {
-                    Section("Error") {
-                        Text(error.localizedDescription)
-                            .font(.caption)
-                            .monospaced()
-                            .foregroundColor(.secondary)
-                    }
-                }
-            #endif
-        }
-
-        @ViewBuilder
-        private var serversSection: some View {
-            #if os(iOS)
-                Section {
-                    ForEach(serverManager.servers) { server in
-                        serverRow(for: server)
-                    }
+                    #if os(iOS)
                     .onDelete { offsets in
                         serverManager.remove(atOffsets: offsets)
                     }
+                    #endif
 
-                    Button {
-                        showingAddServer = true
-                    } label: {
-                        Label("Add Server", systemSymbol: .plus)
-                    }
-                } header: {
-                    Text("Servers")
-                } footer: {
-                    Text("Tap a server to connect. Tap the info button to edit settings.")
-                }
-            #elseif os(macOS)
-                Section {
-                    ForEach(serverManager.servers) { server in
-                        serverRow(for: server)
-                    }
-                } header: {
-                    Text("Servers")
-                } footer: {
-                    HStack {
-                        Spacer()
-
-                        Button {
-                            bonjour.scan()
-                        } label: {
-                            if bonjour.isScanning {
-                                ProgressView()
-                                    .controlSize(.small)
-                            } else {
-                                Text("Scan for Servers")
-                            }
-                        }
-                        .disabled(bonjour.isScanning)
-
+                    #if os(iOS)
                         Button("Add Server") {
                             showingAddServer = true
                         }
-                    }
+                    #endif
                 }
-            #endif
+            } header: {
+                Text("My Servers")
+            } footer: {
+                #if os(macOS)
+                    if !serverManager.servers.isEmpty {
+                        HStack {
+                            Spacer()
+
+                            Button("Add Server") {
+                                showingAddServer = true
+                            }
+                        }
+                    }
+                #endif
+            }
         }
 
         @ViewBuilder
-        private func serverRow(for server: Server) -> some View {
-            let isSelected = serverManager.selectedServerID == server.id
-
-            #if os(iOS)
-                HStack {
-                    Button {
-                        Task {
-                            serverManager.select(server)
-                            await mpd.reinitialize()
-                        }
-                    } label: {
-                        HStack {
-                            if isSelected {
-                                Image(systemSymbol: .checkmark)
-                                    .foregroundStyle(.tint)
-                                    .fontWeight(.semibold)
-                            } else {
-                                Image(systemSymbol: .checkmark)
-                                    .hidden()
-                            }
-
-                            VStack(alignment: .leading) {
-                                Text(server.displayName)
-                                    .foregroundStyle(.primary)
-                                Text("\(server.host):\(server.port)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-
-                    Button {
-                        serverToEdit = server
-                    } label: {
-                        Image(systemSymbol: .infoCircle)
-                            .foregroundStyle(.tint)
-                    }
-                    .buttonStyle(.plain)
+        private var statusSection: some View {
+            if !mpd.state.isConnectionReady, let error = mpd.state.error {
+                Section("Error") {
+                    Text(error.localizedDescription)
+                        .font(.caption)
+                        .monospaced()
+                        .foregroundColor(.secondary)
                 }
-            #elseif os(macOS)
-                ServerRow(server: server, isSelected: isSelected) {
-                    Task {
-                        serverManager.select(server)
-                        await mpd.reinitialize()
-                    }
-                } onEdit: {
-                    serverToEdit = server
-                }
-                .environment(mpd)
-            #endif
+            }
         }
 
         @ViewBuilder
         private var discoverySection: some View {
-            #if os(iOS)
-                Section {
-                    Button {
-                        bonjour.scan()
-                    } label: {
-                        HStack {
-                            Text("Scan for Servers")
-                            Spacer()
-                            if bonjour.isScanning {
-                                ProgressView()
-                            }
-                        }
-                    }
-                    .disabled(bonjour.isScanning)
-                } header: {
-                    Text("Discovery")
-                } footer: {
-                    Text("Search for MPD servers on your local network using Bonjour.")
-                }
+            Section {
+                if bonjour.servers.isEmpty {
+                    Text("Searching...")
+                        .frame(maxWidth: .infinity, alignment: .center)
+                } else {
+                    ForEach(bonjour.servers) { discovered in
+                        Button {
+                            let server = Server(from: discovered)
 
-                if !bonjour.servers.isEmpty {
-                    Section {
-                        ForEach(bonjour.servers) { discovered in
-                            Button {
-                                let server = Server(from: discovered)
-                                serverManager.add(server)
-                                serverManager.select(server)
-                                serverToEdit = server
-                            } label: {
-                                HStack {
-                                    Circle()
-                                        .fill(.green)
-                                        .frame(width: 8, height: 8)
-                                    VStack(alignment: .leading) {
-                                        Text(discovered.displayName)
-                                            .foregroundStyle(.primary)
-                                        Text("\(discovered.host):\(discovered.port)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Image(systemSymbol: .plusCircle)
-                                        .foregroundStyle(.tint)
+                            serverManager.add(server)
+                            serverManager.select(server)
+
+                            serverToEdit = server
+                        } label: {
+                            HStack(spacing: Layout.Spacing.large) {
+                                Circle()
+                                    .fill(.gray)
+                                    .frame(width: 9, height: 9)
+
+                                VStack(alignment: .leading) {
+                                    Text(discovered.displayName)
+                                    Text(verbatim: "\(discovered.host):\(discovered.port)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
+
+                                Spacer()
                             }
+                            .contentShape(Rectangle())
                         }
-                    } header: {
-                        Text("Available Servers")
+                        .buttonStyle(.plain)
                     }
                 }
-            #elseif os(macOS)
-                if !bonjour.servers.isEmpty {
-                    Section("Discovered Servers") {
-                        ForEach(bonjour.servers) { discovered in
-                            Button {
-                                let server = Server(from: discovered)
-                                serverManager.add(server)
-                                serverManager.select(server)
-                                serverToEdit = server
-                            } label: {
-                                HStack {
-                                    Circle()
-                                        .fill(.green)
-                                        .frame(width: 8, height: 8)
-                                    VStack(alignment: .leading) {
-                                        Text(discovered.displayName)
-                                        Text("\(discovered.host):\(discovered.port)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Image(systemSymbol: .plusCircle)
-                                        .foregroundStyle(.tint)
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        }
+            } header: {
+                HStack {
+                    Text("Discovered Servers")
+
+                    Spacer()
+
+                    if bonjour.isScanning {
+                        ProgressView()
+                            .controlSize(.small)
                     }
                 }
+            }
+            .task {
+                while !Task.isCancelled {
+                    bonjour.scan()
+                    try? await Task.sleep(for: .seconds(10))
+                }
+            }
+        }
+
+        private struct ServerRow: View {
+            @Environment(MPD.self) private var mpd
+
+            let server: Server
+            let isSelected: Bool
+            let onConnect: () -> Void
+            let onEdit: () -> Void
+
+            #if os(macOS)
+                @State private var isHovering = false
             #endif
+
+            var body: some View {
+                HStack(spacing: Layout.Spacing.large) {
+                    Circle()
+                        .fill(isSelected ? mpd.state.connectionColor : .clear)
+                        .frame(width: 9, height: 9)
+
+                    VStack(alignment: .leading) {
+                        Text(server.displayName)
+                        Text(verbatim: "\(server.host):\(server.port)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    #if os(iOS)
+                        Button {
+                            onEdit()
+                        } label: {
+                            Image(systemSymbol: .infoCircle)
+                                .font(Font.system(size: 18))
+                                .foregroundStyle(.tint)
+                        }
+                        .buttonStyle(.plain)
+                    #elseif os(macOS)
+                        if isHovering {
+                            Button("Edit") {
+                                onEdit()
+                            }
+                        }
+                    #endif
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onConnect()
+                }
+                #if os(macOS)
+                .onHover { hovering in
+                    isHovering = hovering
+                }
+                #endif
+            }
         }
     }
 
@@ -491,52 +431,3 @@ struct SettingsView: View {
         }
     }
 }
-
-#if os(macOS)
-    private struct ServerRow: View {
-        @Environment(MPD.self) private var mpd
-
-        let server: Server
-        let isSelected: Bool
-        let onConnect: () -> Void
-        let onEdit: () -> Void
-
-        @State private var isHovering = false
-
-        var body: some View {
-            HStack(spacing: Layout.Spacing.medium) {
-                if isSelected {
-                    Circle()
-                        .fill(mpd.state.connectionColor)
-                        .frame(width: 8, height: 8)
-                } else {
-                    Circle()
-                        .fill(.clear)
-                        .frame(width: 8, height: 8)
-                }
-
-                VStack(alignment: .leading) {
-                    Text(server.displayName)
-                    Text("\(server.host):\(server.port)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                if isHovering {
-                    Button("Edit") {
-                        onEdit()
-                    }
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                onConnect()
-            }
-            .onHover { hovering in
-                isHovering = hovering
-            }
-        }
-    }
-#endif

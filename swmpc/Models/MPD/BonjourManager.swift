@@ -116,7 +116,9 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
                         }
 
                         await MainActor.run {
-                            self.servers = resolved
+                            if Set(self.servers) != Set(resolved) {
+                                self.servers = resolved
+                            }
                         }
 
                         return .continue
@@ -163,7 +165,14 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
             return nil
         }
 
-        let connection = NWConnection(to: nwEndpoint, using: .tcp)
+        let parameters = NWParameters.tcp
+        if let ipOptions = parameters.defaultProtocolStack.internetProtocol
+            as? NWProtocolIP.Options
+        {
+            ipOptions.version = .v4
+        }
+
+        let connection = NWConnection(to: nwEndpoint, using: parameters)
 
         return await withCheckedContinuation { continuation in
             nonisolated(unsafe) var didResume = false

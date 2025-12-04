@@ -35,6 +35,9 @@ import SwiftUI
     /// changes.
     @ObservationIgnored private var updateLoopTask: Task<Void, Never>?
 
+    /// The task handling the current reinitialization, if any.
+    @ObservationIgnored private var reinitializeTask: Task<Void, Never>?
+
     init() {
         database = DatabaseManager(state: state)
         queue = QueueManager(state: state)
@@ -47,18 +50,26 @@ import SwiftUI
 
     /// Reinitializes the MPD connection with new settings.
     func reinitialize() async {
-        updateLoopTask?.cancel()
-        updateLoopTask = nil
+        reinitializeTask?.cancel()
 
-        await ConnectionManager.idle.disconnect()
+        reinitializeTask = Task { [weak self] in
+            self?.updateLoopTask?.cancel()
+            self?.updateLoopTask = nil
 
-        state.error = nil
+            await ConnectionManager.idle.disconnect()
 
-        try? await Task.sleep(for: .seconds(1))
+            self?.state.error = nil
 
-        updateLoopTask = Task { [weak self] in
-            await self?.updateLoop()
+            try? await Task.sleep(for: .seconds(1))
+
+            guard !Task.isCancelled else { return }
+
+            self?.updateLoopTask = Task { [weak self] in
+                await self?.updateLoop()
+            }
         }
+
+        await reinitializeTask?.value
     }
 
     /// Establishes a connection to the MPD server.

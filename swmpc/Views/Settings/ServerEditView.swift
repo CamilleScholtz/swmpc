@@ -56,7 +56,6 @@ struct ServerEditView: View {
         #elseif os(macOS)
             VStack(spacing: 0) {
                 formContent
-                    .padding()
 
                 Divider()
 
@@ -65,6 +64,14 @@ struct ServerEditView: View {
                         dismiss()
                     }
                     .keyboardShortcut(.cancelAction)
+
+                    if !isNew {
+                        Button("Delete") {
+                            serverManager.remove(server!)
+                            dismiss()
+                        }
+                        .foregroundStyle(.red)
+                    }
 
                     Spacer()
 
@@ -76,101 +83,63 @@ struct ServerEditView: View {
                 }
                 .padding()
             }
-            .frame(width: 400)
+            .frame(width: 450)
         #endif
     }
 
     @ViewBuilder
     private var formContent: some View {
         Form {
-            #if os(iOS)
-                Section {
-                    TextField("Name", text: $name)
-                        .autocapitalization(.words)
-                } header: {
-                    Text("Name")
-                } footer: {
-                    Text("Optional display name for this server.")
-                }
+            Section {
+                TextField("Name", text: $name)
+                #if os(iOS)
+                    .autocapitalization(.words)
+                #endif
+            } header: {
+                Text("Name")
+            } footer: {
+                Text("Optional display name for this server.")
+            }
 
-                Section {
-                    TextField("Host", text: $host)
-                        .autocapitalization(.none)
-                        .keyboardType(.URL)
-                    TextField("Port", value: $port, formatter: NumberFormatter())
-                        .keyboardType(.numberPad)
-                } header: {
-                    Text("Server")
-                } footer: {
-                    Text("The hostname and port of your MPD server.")
-                }
+            Section("Server") {
+                TextField("Host", text: $host)
+                #if os(iOS)
+                    .autocapitalization(.none)
+                    .keyboardType(.URL)
+                #endif
+                TextField("Port", value: $port, formatter: NumberFormatter())
+                #if os(iOS)
+                    .keyboardType(.numberPad)
+                #endif
+            }
 
-                Section {
-                    SecureField("Password", text: $password)
-                } header: {
-                    Text("Authentication")
-                } footer: {
-                    Text("Leave empty if your server doesn't require authentication.")
-                }
+            Section {
+                SecureField("Password", text: $password)
+            } header: {
+                Text("Authentication")
+            } footer: {
+                Text("Leave empty if your server doesn't require authentication.")
+            }
 
-                Section {
-                    Picker("Retrieval Method", selection: $artworkGetter) {
-                        Text("Library").tag(ArtworkGetter.library)
-                        Text("Metadata").tag(ArtworkGetter.metadata)
-                    }
-                    .pickerStyle(.navigationLink)
-                } header: {
-                    Text("Artwork")
-                } footer: {
-                    Text("Library searches for cover files in the song's directory. Metadata extracts artwork from the song file, but is slower.")
+            Section {
+                Picker("Retrieval Method", selection: $artworkGetter) {
+                    Text("Library").tag(ArtworkGetter.library)
+                    Text("Metadata").tag(ArtworkGetter.metadata)
                 }
-            #elseif os(macOS)
-                Section {
-                    TextField("Name", text: $name)
-                        .textFieldStyle(.roundedBorder)
-                } header: {
-                    Text("Name")
-                } footer: {
-                    Text("Optional display name for this server.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Section {
-                    TextField("Host", text: $host)
-                        .textFieldStyle(.roundedBorder)
-                    TextField("Port", value: $port, formatter: NumberFormatter())
-                        .textFieldStyle(.roundedBorder)
-                } header: {
-                    Text("Server")
-                }
-
-                Section {
-                    SecureField("Password", text: $password)
-                        .textFieldStyle(.roundedBorder)
-                } header: {
-                    Text("Authentication")
-                } footer: {
-                    Text("Leave empty if your server doesn't require authentication.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Section {
-                    Picker("Retrieval Method", selection: $artworkGetter) {
-                        Text("Library").tag(ArtworkGetter.library)
-                        Text("Metadata").tag(ArtworkGetter.metadata)
-                    }
-                    .pickerStyle(.inline)
-                } header: {
-                    Text("Artwork")
-                } footer: {
-                    Text("Library searches for cover files in the song's directory. Metadata extracts artwork from the song file, but is slower.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            #endif
+                #if os(iOS)
+                .pickerStyle(.navigationLink)
+                #elseif os(macOS)
+                .pickerStyle(.inline)
+                #endif
+            } header: {
+                Text("Artwork")
+            } footer: {
+                Text("Library searches for cover files in the song's directory. Metadata extracts artwork from the song file, but is slower.")
+            }
         }
+        #if os(macOS)
+        .formStyle(.grouped)
+        #endif
     }
 
     private func saveServer() async {
