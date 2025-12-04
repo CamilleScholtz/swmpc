@@ -24,7 +24,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App.webp,
-				Download.svg,
 				Icon.webp,
 				Popover.webp,
 			);
@@ -80,19 +79,11 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		9182FEF22D97757000FED9D4 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		91A141D72CDE3987000A74BC = {
 			isa = PBXGroup;
 			children = (
 				9183AF022D4BB8DF00CDC987 /* Assets */,
 				91A141E22CDE3988000A74BC /* swmpc */,
-				9182FEF22D97757000FED9D4 /* Frameworks */,
 				91A141E12CDE3988000A74BC /* Products */,
 			);
 			sourceTree = "<group>";
