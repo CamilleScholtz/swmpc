@@ -215,7 +215,7 @@ struct SettingsView: View {
                         } label: {
                             HStack(spacing: Layout.Spacing.large) {
                                 Circle()
-                                    .fill(.gray)
+                                    .fill(.gray.opacity(0.5))
                                     .frame(width: 9, height: 9)
 
                                 VStack(alignment: .leading) {
@@ -267,7 +267,7 @@ struct SettingsView: View {
             var body: some View {
                 HStack(spacing: Layout.Spacing.large) {
                     Circle()
-                        .fill(isSelected ? mpd.state.connectionColor : .clear)
+                        .fill(isSelected ? mpd.state.connectionColor : .gray.opacity(0.5))
                         .frame(width: 9, height: 9)
 
                     VStack(alignment: .leading) {

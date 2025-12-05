@@ -20,12 +20,11 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
     }
 }
 
-/// Manages Bonjour discovery for MPD servers on the local network.
+/// Manages Bonjour discovery of MPD servers on the local network.
 ///
-/// Uses Network.framework's `NetworkBrowser` to discover MPD services
-/// advertised via the `_mpd._tcp` Bonjour service type. The manager handles
-/// endpoint resolution to obtain usable host/port pairs from discovered
-/// services.
+/// Uses the Network framework's `NetworkBrowser` to discover MPD services
+/// advertised via Bonjour (`_mpd._tcp`). Discovered services are resolved to
+/// obtain their host and port for connection.
 @Observable final class BonjourManager {
     /// The list of discovered MPD servers on the local network.
     private(set) var servers: [DiscoveredServer] = []
@@ -33,19 +32,16 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
     /// Indicates whether a network scan is currently in progress.
     private(set) var isScanning = false
 
-    /// The most recent error encountered during scanning, if any.
-    private(set) var error: Error?
-
-    @ObservationIgnored private var browseTask: Task<Void, Never>?
+    /// The active browse task.
+    ///
+    /// Marked as `nonisolated(unsafe)` to allow cancellation in deinit.
+    /// All other access occurs on the MainActor.
+    @ObservationIgnored private nonisolated(unsafe) var browseTask: Task<Void, Never>?
 
     /// Duration in seconds to scan for servers before stopping.
     private let scanDuration: UInt64 = 5
 
-    deinit {
-        browseTask?.cancel()
-    }
-
-    /// Initiates a scan for MPD servers on the local network.
+    /// Starts scanning for MPD servers on the local network.
     ///
     /// Cancels any existing scan, clears previous results, and starts a new
     /// Bonjour browse operation. The scan runs for `scanDuration` seconds
@@ -59,36 +55,22 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
 
         browseTask?.cancel()
         servers = []
-        isScanning = true
-        error = nil
 
         browseTask = Task {
-            await browse()
+            await performScan()
         }
     }
 
-    /// Performs the actual Bonjour browse operation.
+    /// Performs the actual Bonjour browsing operation.
     ///
     /// Runs a `NetworkBrowser` for MPD services and resolves discovered
     /// endpoints to obtain their host addresses and ports. The operation is
     /// bounded by `scanDuration` seconds using a racing task group.
-    private func browse() async {
+    private func performScan() async {
+        isScanning = true
+        defer { isScanning = false }
+
         let browser = NetworkBrowser(for: .bonjour("_mpd._tcp"))
-            .onStateUpdate { [weak self] _, state in
-                Task { @MainActor [weak self] in
-                    switch state {
-                    case let .failed(error):
-                        self?.error = error
-                        self?.isScanning = false
-                    case let .waiting(error):
-                        self?.error = error
-                    case .cancelled:
-                        self?.isScanning = false
-                    default:
-                        break
-                    }
-                }
-            }
 
         do {
             try await withThrowingTaskGroup(of: Void.self) { group in
@@ -102,25 +84,7 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
                             return .finish(())
                         }
 
-                        let resolved = await withTaskGroup(of:
-                            DiscoveredServer?.self)
-                        { group in
-                            for endpoint in endpoints {
-                                group.addTask { await self.resolve(endpoint) }
-                            }
-                            return await group.reduce(into: [
-                                DiscoveredServer
-                            ]()) { result, server in
-                                if let server { result.append(server) }
-                            }
-                        }
-
-                        await MainActor.run {
-                            if Set(self.servers) != Set(resolved) {
-                                self.servers = resolved
-                            }
-                        }
-
+                        await processEndpoints(endpoints)
                         return .continue
                     }
                 }
@@ -128,93 +92,227 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
                 try await group.next()
                 group.cancelAll()
             }
-        } catch is CancellationError {
-            // Expected when scan times out.
         } catch {
-            self.error = error
+            // Expected when scan times out or is cancelled.
         }
-
-        isScanning = false
     }
 
-    /// Resolves a Bonjour endpoint to a concrete host and port.
+    /// Processes discovered Bonjour endpoints and updates the servers list.
     ///
-    /// If the endpoint already contains host/port information, it's returned
-    /// directly. For service-type endpoints, a temporary TCP connection is
-    /// established to resolve the actual network address. The connection is
-    /// cancelled immediately after resolution.
+    /// Resolves all endpoints in parallel and only updates `servers` if the
+    /// set of discovered servers has changed.
+    ///
+    /// - Parameter endpoints: The currently discovered Bonjour endpoints.
+    private func processEndpoints(_ endpoints: [Bonjour.Endpoint]) async {
+        let discovered = await withTaskGroup(of: DiscoveredServer?.self) { group in
+            for endpoint in endpoints {
+                group.addTask {
+                    await self.resolveEndpoint(endpoint)
+                }
+            }
+
+            var results: [DiscoveredServer] = []
+            for await server in group {
+                if let server {
+                    results.append(server)
+                }
+            }
+
+            return results
+        }
+
+        if Set(servers) != Set(discovered) {
+            servers = discovered
+        }
+    }
+
+    /// Resolves a Bonjour endpoint to obtain its host and port.
+    ///
+    /// Creates a temporary connection to the Bonjour service endpoint to
+    /// trigger DNS resolution. Once the connection path is available, extracts
+    /// the resolved host and port information.
     ///
     /// - Parameter endpoint: The Bonjour endpoint to resolve.
     /// - Returns: A `DiscoveredServer` with resolved host/port, or `nil` if
-    ///            resolution fails.
-    private func resolve(_ endpoint: Bonjour.Endpoint) async ->
-        DiscoveredServer?
+    ///            resolution fails or times out.
+    private func resolveEndpoint(_ endpoint: Bonjour.Endpoint) async
+        -> DiscoveredServer?
     {
         let nwEndpoint = endpoint.nwEndpoint
 
-        if case let .hostPort(host, port) = nwEndpoint {
-            return DiscoveredServer(
-                id: endpoint.id,
-                name: endpoint.name,
-                host: host.debugDescription,
-                port: Int(port.rawValue),
-            )
+        return await withTaskGroup(of: DiscoveredServer?.self) { group in
+            group.addTask {
+                await self.performResolution(
+                    nwEndpoint: nwEndpoint,
+                    name: endpoint.name,
+                    id: endpoint.id,
+                )
+            }
+
+            group.addTask {
+                try? await Task.sleep(for: .seconds(3))
+                return nil
+            }
+
+            let result = await group.next() ?? nil
+            group.cancelAll()
+            return result
+        }
+    }
+
+    /// Performs the actual connection-based resolution.
+    ///
+    /// Tries IPv4 first, falls back to IPv6 if IPv4 resolution fails.
+    private nonisolated func performResolution(
+        nwEndpoint: NWEndpoint,
+        name: String,
+        id: String,
+    ) async -> DiscoveredServer? {
+        if let server = await resolveWithIPVersion(
+            nwEndpoint: nwEndpoint,
+            name: name,
+            id: id,
+            version: .v4,
+        ) {
+            return server
         }
 
-        guard case .service = nwEndpoint else {
-            return nil
-        }
+        return await resolveWithIPVersion(
+            nwEndpoint: nwEndpoint,
+            name: name,
+            id: id,
+            version: .v6,
+        )
+    }
 
-        let parameters = NWParameters.tcp
-        if let ipOptions = parameters.defaultProtocolStack.internetProtocol
-            as? NWProtocolIP.Options
-        {
-            ipOptions.version = .v4
-        }
+    /// Resolves an endpoint using a specific IP version.
+    private nonisolated func resolveWithIPVersion(
+        nwEndpoint: NWEndpoint,
+        name: String,
+        id: String,
+        version: NWProtocolIP.Options.Version,
+    ) async -> DiscoveredServer? {
+        await withCheckedContinuation { continuation in
+            let parameters = NWParameters.tcp
 
-        let connection = NWConnection(to: nwEndpoint, using: parameters)
+            if let ipOptions = parameters.defaultProtocolStack.internetProtocol
+                as? NWProtocolIP.Options
+            {
+                ipOptions.version = version
+            }
 
-        return await withCheckedContinuation { continuation in
-            nonisolated(unsafe) var didResume = false
+            let connection = NWConnection(to: nwEndpoint, using: parameters)
+            let resolver = ResolutionState()
 
-            connection.stateUpdateHandler = { state in
-                guard !didResume else {
+            connection.stateUpdateHandler = { [weak connection] state in
+                guard resolver.tryComplete() else {
                     return
                 }
 
                 switch state {
                 case .ready:
-                    didResume = true
-                    defer { connection.cancel() }
+                    if let remoteEndpoint = connection?.currentPath?
+                        .remoteEndpoint
+                    {
+                        let server = self.extractServerInfo(
+                            from: remoteEndpoint,
+                            name: name,
+                            id: id,
+                        )
 
-                    guard let path = connection.currentPath,
-                          let remote = path.remoteEndpoint,
-                          case let .hostPort(host, port) = remote
-                    else {
+                        connection?.cancel()
+                        continuation.resume(returning: server)
+                    } else {
+                        connection?.cancel()
                         continuation.resume(returning: nil)
-                        return
                     }
-
-                    var hostString = host.debugDescription
-                    if let i = hostString.firstIndex(of: "%") {
-                        hostString = String(hostString[..<i])
-                    }
-
-                    continuation.resume(returning: DiscoveredServer(
-                        id: endpoint.id,
-                        name: endpoint.name,
-                        host: hostString,
-                        port: Int(port.rawValue),
-                    ))
                 case .failed, .cancelled:
-                    didResume = true
                     continuation.resume(returning: nil)
                 default:
-                    break
+                    // Not a terminal state, allow future callbacks.
+                    resolver.reset()
                 }
             }
 
-            connection.start(queue: .global())
+            connection.start(queue: .global(qos: .userInitiated))
         }
+    }
+
+    /// Thread-safe state tracker for resolution completion.
+    private final nonisolated class ResolutionState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var completed = false
+
+        /// Attempts to mark the resolution as complete.
+        /// - Returns: `true` if this call successfully completed the resolution,
+        ///            `false` if it was already completed.
+        func tryComplete() -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+
+            guard !completed else {
+                return false
+            }
+
+            completed = true
+            return true
+        }
+
+        /// Resets the state for non-terminal states.
+        func reset() {
+            lock.lock()
+            defer { lock.unlock() }
+            completed = false
+        }
+    }
+
+    /// Extracts server information from a resolved network endpoint.
+    ///
+    /// Prefers IPv4 addresses, falls back to IPv6 if unavailable.
+    ///
+    /// - Parameters:
+    ///   - endpoint: The resolved `NWEndpoint` containing host/port info.
+    ///   - name: The Bonjour service name.
+    ///   - id: The unique identifier for the endpoint.
+    /// - Returns: A `DiscoveredServer` if an IP address can be extracted,
+    ///            or `nil` otherwise.
+    private nonisolated func extractServerInfo(
+        from endpoint: NWEndpoint,
+        name: String,
+        id: String,
+    ) -> DiscoveredServer? {
+        switch endpoint {
+        case let .hostPort(host, port):
+            let hostString: String
+            switch host {
+            case let .ipv4(address):
+                hostString = stripInterfaceScope(from: "\(address)")
+            case let .ipv6(address):
+                hostString = stripInterfaceScope(from: "\(address)")
+            default:
+                return nil
+            }
+
+            return DiscoveredServer(
+                id: id,
+                name: name,
+                host: hostString,
+                port: Int(port.rawValue),
+            )
+        default:
+            return nil
+        }
+    }
+
+    /// Strips the interface scope suffix (e.g., "%en0") from an IP address.
+    private nonisolated func stripInterfaceScope(from address: String) -> String {
+        if let percentIndex = address.firstIndex(of: "%") {
+            return String(address[..<percentIndex])
+        }
+        return address
+    }
+
+    nonisolated deinit {
+        browseTask?.cancel()
     }
 }
