@@ -11,7 +11,7 @@
 		<a href="https://github.com/CamilleScholtz/swmpc/issues/new?template=feature_request.md">Request Feature</a>
 	</p>
 	<p>
-		<a href="https://apps.apple.com/app/swmpc/id6743818735" target="_blank"><img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/AppStore.svg" alt="Download on the App Store"></a>&nbsp;&nbsp;<a href="https://apps.apple.com/app/swmpc/id6743818735" target="_blank"><img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/MacAppStore.svg" alt="Download on the Mac App Store"></a>
+		<a href="https://apps.apple.com/app/swmpc/id6743818735" target="_blank"><img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/MacAppStore.svg" alt="Download on the Mac App Store"></a>&nbsp;&nbsp;<a href="https://apps.apple.com/nl/app/swmpc/id6743818735" target="_blank"><img src="https://raw.githubusercontent.com/CamilleScholtz/swmpc/refs/heads/main/Assets/AppStore.svg" alt="Download on the App Store"></a>
 	</p>
 </div>
 
