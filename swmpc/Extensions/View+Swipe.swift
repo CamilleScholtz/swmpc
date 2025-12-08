@@ -54,7 +54,7 @@ struct SwipeModifier: ViewModifier {
                     : .spring(response: 0.4, dampingFraction: 0.7),
                 value: dragOffset,
             )
-            .sensoryFeedback(.success, trigger: lastTriggeredThreshold)
+            .sensoryFeedback(.start, trigger: lastTriggeredThreshold)
             .onDisappear {
                 reset()
             }

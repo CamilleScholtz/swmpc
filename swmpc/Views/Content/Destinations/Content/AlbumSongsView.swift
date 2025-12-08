@@ -31,62 +31,70 @@ struct AlbumSongsView: View {
             Group {
                 #if os(iOS)
                     VStack(spacing: Layout.Spacing.large) {
-                        ZStack(alignment: .bottom) {
-                            ArtworkView(image: artwork?.image)
-                                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-                                .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
-                                .frame(width: 180)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                        .fill(.clear)
-                                        .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
+                        ArtworkView(image: artwork?.image)
+                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                            .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
+                            .frame(width: 180)
+                            .overlay(
+                                Color.clear
+                                    .glassEffect(.clear.interactive(), in: .rect(cornerRadius: Layout.CornerRadius.large))
+                                    .mask(
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+
+                                            RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                                .scale(0.9)
+                                                .blur(radius: 8)
+                                                .blendMode(.destinationOut)
+                                        },
+                                    ),
+                            )
+                            .overlay(
+                                ZStack(alignment: .bottomLeading) {
+                                    Color.clear
+                                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
                                         .mask(
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                            LinearGradient(
+                                                gradient: Gradient(stops: [
+                                                    .init(color: .black, location: 0.3),
+                                                    .init(color: .black.opacity(0), location: 1.0),
+                                                ]),
+                                                startPoint: .bottom,
+                                                endPoint: .top,
+                                            ),
+                                        )
+                                        .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
 
-                                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                                    .scale(0.9)
-                                                    .blur(radius: 8)
-                                                    .blendMode(.destinationOut)
-                                            },
-                                        ),
-                                )
-                                .overlay(
-                                    ZStack(alignment: .bottomLeading) {
-                                        Color.clear
-                                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-                                            .mask(
-                                                LinearGradient(
-                                                    gradient: Gradient(stops: [
-                                                        .init(color: .black, location: 0.3),
-                                                        .init(color: .black.opacity(0), location: 1.0),
-                                                    ]),
-                                                    startPoint: .bottom,
-                                                    endPoint: .top,
-                                                ),
-                                            )
-                                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-
-                                        HStack(spacing: 5) {
-                                            Image(systemSymbol: .playFill)
-                                            Text("Playing")
-                                        }
-                                        .font(.caption2)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.black)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 4)
-                                        .background(.white)
-                                        .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
-                                        .padding(10)
+                                    HStack(spacing: 5) {
+                                        Image(systemSymbol: .playFill)
+                                        Text("Playing")
                                     }
-                                    .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                                    .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
-                                )
-                        }
-                        .contextMenu {
-                            ContextMenuView(for: album)
-                        }
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
+                                    .padding(14)
+                                }
+                                .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
+                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
+                            )
+                            .contextMenu {
+                                ContextMenuView(for: album)
+                            }
+                            .onTapGesture {
+                                guard !(mpd.status.song?.isIn(album) ?? false) else {
+                                    return
+                                }
+
+                                Task(priority: .userInitiated) {
+                                    try await ConnectionManager.command {
+                                        try await $0.play(album)
+                                    }
+                                }
+                            }
 
                         VStack(alignment: .center) {
                             Text(album.title)
@@ -130,7 +138,7 @@ struct AlbumSongsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, Layout.Spacing.medium)
-                #else
+                #elseif os(macOS)
                     HStack(spacing: Layout.Spacing.large) {
                         ZStack {
                             ZStack(alignment: .bottom) {
@@ -139,8 +147,7 @@ struct AlbumSongsView: View {
                                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small, y: 4)
                                     .frame(width: 100)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
-                                            .fill(.clear)
+                                        Color.clear
                                             .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.medium))
                                             .mask(
                                                 ZStack {

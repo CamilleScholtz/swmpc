@@ -126,6 +126,9 @@ struct DetailArtworkView: View, Equatable {
                             #endif
                                 .blur(radius: 40),
                         )
+                    #if os(iOS)
+                        .blur(radius: 10)
+                    #endif
                         .opacity(0.6)
 
                     gradientLayer(colors: colors)
