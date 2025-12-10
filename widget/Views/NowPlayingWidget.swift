@@ -1,5 +1,5 @@
 //
-//  NowPlayingWidgetView.swift
+//  NowPlayingWidget.swift
 //  widget
 //
 //  Created by Camille Scholtz on 09/12/2025.
@@ -7,6 +7,21 @@
 
 import SFSafeSymbols
 import SwiftUI
+import WidgetKit
+
+struct NowPlayingWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "NowPlayingWidget", provider: Provider()) { entry in
+            NowPlayingWidgetEntryView(entry: entry)
+                .containerBackground(.accent.gradient, for: .widget)
+                .widgetURL(URL(string: "swmpc://nowplaying"))
+        }
+        .configurationDisplayName("Now Playing")
+        .description("Shows the currently playing song from your MPD server.")
+        .supportedFamilies([.systemSmall, .systemMedium])
+        .contentMarginsDisabled()
+    }
+}
 
 struct NowPlayingWidgetEntryView: View {
     var entry: Provider.Entry
@@ -33,8 +48,8 @@ struct NowPlayingWidgetView: View {
                             .init(color: .black.opacity(0), location: 1.0),
                         ]),
                         startPoint: .bottom,
-                        endPoint: .top
-                    )
+                        endPoint: .top,
+                    ),
                 )
 
             VStack(alignment: .leading, spacing: 2) {

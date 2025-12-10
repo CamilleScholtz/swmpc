@@ -7,6 +7,7 @@
 
 import Foundation
 import MPDKit
+import Shared
 
 extension Server {
     /// Creates a server from a discovered Bonjour server.

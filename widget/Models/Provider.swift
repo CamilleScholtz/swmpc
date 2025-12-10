@@ -6,7 +6,15 @@
 //
 
 import MPDKit
+import Shared
 import WidgetKit
+
+struct NowPlayingEntry: TimelineEntry {
+    let date: Date
+    let artwork: PlatformImage?
+    let title: String
+    let artist: String
+}
 
 struct Provider: TimelineProvider {
     private static let refreshInterval: TimeInterval = 15 * 60
@@ -17,7 +25,6 @@ struct Provider: TimelineProvider {
             artwork: nil,
             title: "Not Playing",
             artist: "swmpc",
-            isPlaying: false
         )
     }
 
@@ -28,7 +35,6 @@ struct Provider: TimelineProvider {
                 artwork: nil,
                 title: "Mad Rush",
                 artist: "Philip Glass",
-                isPlaying: true
             ))
             return
         }
@@ -55,7 +61,6 @@ struct Provider: TimelineProvider {
                 try await $0.getStatusData()
             }
 
-            let isPlaying = statusData.state == .play
             let title = statusData.song?.title ?? "Not Playing"
             let artist = statusData.song?.artist ?? "swmpc"
 
@@ -73,7 +78,6 @@ struct Provider: TimelineProvider {
                 artwork: artwork,
                 title: title,
                 artist: artist,
-                isPlaying: isPlaying
             )
         } catch {
             return NowPlayingEntry(
@@ -81,7 +85,6 @@ struct Provider: TimelineProvider {
                 artwork: nil,
                 title: "Not Playing",
                 artist: "swmpc",
-                isPlaying: false
             )
         }
     }
@@ -95,6 +98,6 @@ private func configureConnection() {
     ConnectionConfiguration.server = Server(
         host: config.host,
         port: config.port,
-        password: config.password ?? ""
+        password: config.password ?? "",
     )
 }

@@ -2,7 +2,7 @@
 //  MPDTypes.swift
 //  MPDKit
 //
-//  Core MPD types shared between the main app and widget extension.
+//  Created by Camille Scholtz on 09/12/2025.
 //
 
 import SwiftUI
@@ -231,7 +231,7 @@ public nonisolated struct SearchFields: Equatable, RawRepresentable, Sendable {
         } else {
             selectedFields = Set(
                 rawValue.split(separator: ",")
-                    .compactMap { SearchField(rawValue: String($0)) }
+                    .compactMap { SearchField(rawValue: String($0)) },
             )
         }
     }
@@ -411,7 +411,7 @@ public nonisolated struct Server: Identifiable, Hashable, Sendable, Codable {
         host: String = "localhost",
         port: Int = 6600,
         password: String = "",
-        artworkGetter: ArtworkGetter = .library
+        artworkGetter: ArtworkGetter = .library,
     ) {
         self.id = id
         self.name = name
@@ -659,7 +659,7 @@ public nonisolated struct Song: Mediable {
         ensemble: String?,
         mood: String?,
         comment: String?,
-        album: Album
+        album: Album,
     ) {
         self.file = file
         self.identifier = identifier

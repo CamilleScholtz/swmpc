@@ -12,14 +12,12 @@
 		9168E5C02ED39DB500E116AB /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 9168E5BF2ED39DB500E116AB /* SwiftUIIntrospect */; };
 		9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 9182FEF32D97757000FED9D4 /* OpenAI */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
-		91EF2E282EE844A700B222C4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91EF2E272EE844A700B222C4 /* WidgetKit.framework */; };
-		91EF2E2A2EE844A700B222C4 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91EF2E292EE844A700B222C4 /* SwiftUI.framework */; };
-		91EF2E372EE844A800B222C4 /* widget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 91EF2E252EE844A700B222C4 /* widget.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		91EF376D2EE888A300B222C4 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF376C2EE888A300B222C4 /* SFSafeSymbols */; };
 		91EF37782EE8BFE200B222C4 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37772EE8BFE200B222C4 /* AsyncAlgorithms */; };
 		91EF377B2EE8C56100B222C4 /* MPDKit in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF377A2EE8C56100B222C4 /* MPDKit */; };
-		91EF37922EE8C82C00B222C4 /* xcschememanagement.plist in Resources */ = {isa = PBXBuildFile; fileRef = 91EF377E2EE8C82C00B222C4 /* xcschememanagement.plist */; };
 		91EF37962EE8E02100B222C4 /* MPDKit in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37952EE8E02100B222C4 /* MPDKit */; };
+		91EF37AA2EEA30EA00B222C4 /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37A92EEA30EA00B222C4 /* Shared */; };
+		91EF37AD2EEA310C00B222C4 /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37AC2EEA310C00B222C4 /* Shared */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
@@ -39,23 +37,14 @@
 			dstPath = "";
 			dstSubfolder = PlugIns;
 			files = (
-				91EF2E372EE844A800B222C4 /* widget.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		91A141E02CDE3988000A74BC /* swmpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swmpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		91EF2E252EE844A700B222C4 /* widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = widget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		91EF2E272EE844A700B222C4 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		91EF2E292EE844A700B222C4 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		91EF377E2EE8C82C00B222C4 /* xcschememanagement.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = xcschememanagement.plist; sourceTree = "<group>"; };
-		91EF37842EE8C82C00B222C4 /* ConnectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionManager.swift; sourceTree = "<group>"; };
-		91EF37852EE8C82C00B222C4 /* MPDKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPDKit.swift; sourceTree = "<group>"; };
-		91EF37862EE8C82C00B222C4 /* MPDTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPDTypes.swift; sourceTree = "<group>"; };
-		91EF37872EE8C82C00B222C4 /* NowPlayingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingData.swift; sourceTree = "<group>"; };
-		91EF378A2EE8C82C00B222C4 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		91A141E02CDE3988000A74BC /* swmpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = swmpc.app; path = /Users/camille/Developer/Home/swmpc/build/Debug/swmpc.app; sourceTree = "<absolute>"; };
+		91EF2E252EE844A700B222C4 /* widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = widget.appex; path = /Users/camille/Developer/Home/swmpc/build/Debug/widget.appex; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -127,6 +116,7 @@
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
 				91EF377B2EE8C56100B222C4 /* MPDKit in Frameworks */,
 				9168E5C02ED39DB500E116AB /* SwiftUIIntrospect in Frameworks */,
+				91EF37AA2EEA30EA00B222C4 /* Shared in Frameworks */,
 				9114DB422DB11A8500DD5E6E /* ButtonKit in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
 			);
@@ -135,9 +125,8 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				91EF37962EE8E02100B222C4 /* MPDKit in Frameworks */,
+				91EF37AD2EEA310C00B222C4 /* Shared in Frameworks */,
 				91EF376D2EE888A300B222C4 /* SFSafeSymbols in Frameworks */,
-				91EF2E2A2EE844A700B222C4 /* SwiftUI.framework in Frameworks */,
-				91EF2E282EE844A700B222C4 /* WidgetKit.framework in Frameworks */,
 				91EF37782EE8BFE200B222C4 /* AsyncAlgorithms in Frameworks */,
 			);
 		};
@@ -150,105 +139,15 @@
 				9183AF022D4BB8DF00CDC987 /* Assets */,
 				91A141E22CDE3988000A74BC /* swmpc */,
 				91EF2E2B2EE844A700B222C4 /* widget */,
-				91EF2E262EE844A700B222C4 /* Frameworks */,
-				91A141E12CDE3988000A74BC /* Products */,
-				91EF378C2EE8C82C00B222C4 /* Packages */,
+				91EF37AB2EEA310C00B222C4 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
-		91A141E12CDE3988000A74BC /* Products */ = {
+		91EF37AB2EEA310C00B222C4 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				91A141E02CDE3988000A74BC /* swmpc.app */,
-				91EF2E252EE844A700B222C4 /* widget.appex */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		91EF2E262EE844A700B222C4 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				91EF2E272EE844A700B222C4 /* WidgetKit.framework */,
-				91EF2E292EE844A700B222C4 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		91EF377F2EE8C82C00B222C4 /* xcschemes */ = {
-			isa = PBXGroup;
-			children = (
-				91EF377E2EE8C82C00B222C4 /* xcschememanagement.plist */,
-			);
-			path = xcschemes;
-			sourceTree = "<group>";
-		};
-		91EF37802EE8C82C00B222C4 /* camille.xcuserdatad */ = {
-			isa = PBXGroup;
-			children = (
-				91EF377F2EE8C82C00B222C4 /* xcschemes */,
-			);
-			path = camille.xcuserdatad;
-			sourceTree = "<group>";
-		};
-		91EF37812EE8C82C00B222C4 /* xcuserdata */ = {
-			isa = PBXGroup;
-			children = (
-				91EF37802EE8C82C00B222C4 /* camille.xcuserdatad */,
-			);
-			path = xcuserdata;
-			sourceTree = "<group>";
-		};
-		91EF37822EE8C82C00B222C4 /* xcode */ = {
-			isa = PBXGroup;
-			children = (
-				91EF37812EE8C82C00B222C4 /* xcuserdata */,
-			);
-			path = xcode;
-			sourceTree = "<group>";
-		};
-		91EF37832EE8C82C00B222C4 /* .swiftpm */ = {
-			isa = PBXGroup;
-			children = (
-				91EF37822EE8C82C00B222C4 /* xcode */,
-			);
-			path = .swiftpm;
-			sourceTree = "<group>";
-		};
-		91EF37882EE8C82C00B222C4 /* MPDKit */ = {
-			isa = PBXGroup;
-			children = (
-				91EF37842EE8C82C00B222C4 /* ConnectionManager.swift */,
-				91EF37852EE8C82C00B222C4 /* MPDKit.swift */,
-				91EF37862EE8C82C00B222C4 /* MPDTypes.swift */,
-				91EF37872EE8C82C00B222C4 /* NowPlayingData.swift */,
-			);
-			path = MPDKit;
-			sourceTree = "<group>";
-		};
-		91EF37892EE8C82C00B222C4 /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				91EF37882EE8C82C00B222C4 /* MPDKit */,
-			);
-			path = Sources;
-			sourceTree = "<group>";
-		};
-		91EF378B2EE8C82C00B222C4 /* MPDKit */ = {
-			isa = PBXGroup;
-			children = (
-				91EF37832EE8C82C00B222C4 /* .swiftpm */,
-				91EF37892EE8C82C00B222C4 /* Sources */,
-				91EF378A2EE8C82C00B222C4 /* Package.swift */,
-			);
-			path = MPDKit;
-			sourceTree = "<group>";
-		};
-		91EF378C2EE8C82C00B222C4 /* Packages */ = {
-			isa = PBXGroup;
-			children = (
-				91EF378B2EE8C82C00B222C4 /* MPDKit */,
-			);
-			path = Packages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -281,6 +180,7 @@
 				9114DB412DB11A8500DD5E6E /* ButtonKit */,
 				9168E5BF2ED39DB500E116AB /* SwiftUIIntrospect */,
 				91EF377A2EE8C56100B222C4 /* MPDKit */,
+				91EF37A92EEA30EA00B222C4 /* Shared */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
@@ -304,6 +204,7 @@
 				91EF376C2EE888A300B222C4 /* SFSafeSymbols */,
 				91EF37772EE8BFE200B222C4 /* AsyncAlgorithms */,
 				91EF37952EE8E02100B222C4 /* MPDKit */,
+				91EF37AC2EEA310C00B222C4 /* Shared */,
 			);
 			productName = widgetExtension;
 			productReference = 91EF2E252EE844A700B222C4 /* widget.appex */;
@@ -348,9 +249,10 @@
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
 				9168E5BE2ED39DB500E116AB /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
 				91EF37792EE8C56100B222C4 /* XCLocalSwiftPackageReference "Packages/MPDKit" */,
+				91EF37A82EEA30EA00B222C4 /* XCLocalSwiftPackageReference "Packages/Shared" */,
 			);
 			preferredProjectObjectVersion = 90;
-			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
+			productRefGroup = 91A141D72CDE3987000A74BC;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -364,7 +266,6 @@
 		91A141DE2CDE3988000A74BC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				91EF37922EE8C82C00B222C4 /* xcschememanagement.plist in Resources */,
 			);
 		};
 		91EF2E232EE844A700B222C4 /* Resources */ = {
@@ -729,6 +630,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/MPDKit;
 		};
+		91EF37A82EEA30EA00B222C4 /* XCLocalSwiftPackageReference "Packages/Shared" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Shared;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -826,6 +731,15 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91EF37792EE8C56100B222C4 /* XCLocalSwiftPackageReference "Packages/MPDKit" */;
 			productName = MPDKit;
+		};
+		91EF37A92EEA30EA00B222C4 /* Shared */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Shared;
+		};
+		91EF37AC2EEA310C00B222C4 /* Shared */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91EF37A82EEA30EA00B222C4 /* XCLocalSwiftPackageReference "Packages/Shared" */;
+			productName = Shared;
 		};
 		91F55B392CFE5D300027BBFE /* AsyncAlgorithms */ = {
 			isa = XCSwiftPackageProductDependency;

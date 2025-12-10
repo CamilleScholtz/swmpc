@@ -164,7 +164,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
             throw ConnectionManagerError.connectionFailure(
-                "Missing OK MPD line from server greeting"
+                "Missing OK MPD line from server greeting",
             )
         }
 
@@ -680,9 +680,9 @@ public actor ConnectionManager<Mode: ConnectionMode> {
                     artist: Artist(
                         file: file,
                         name: artistName,
-                        nameSort: fields["albumartistsort"]
-                    )
-                )
+                        nameSort: fields["albumartistsort"],
+                    ),
+                ),
             )
 
             return try castResult(song)
@@ -694,8 +694,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
                 artist: Artist(
                     file: file,
                     name: artistName,
-                    nameSort: fields["albumartistsort"]
-                )
+                    nameSort: fields["albumartistsort"],
+                ),
             )
 
             return try castResult(album)
@@ -703,7 +703,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             let artist = Artist(
                 file: file,
                 name: artistName,
-                nameSort: fields["albumartistsort"]
+                nameSort: fields["albumartistsort"],
             )
 
             return try castResult(artist)
@@ -1183,7 +1183,7 @@ public extension ConnectionManager where Mode == CommandMode {
     /// - Returns: The result of the operation closure.
     /// - Throws: An error if the connection fails or if the operation throws.
     static func command<T: Sendable>(_ operation: @Sendable (ConnectionManager<
-        CommandMode
+        CommandMode,
     >) async throws -> T) async throws -> T {
         let manager = ConnectionManager<CommandMode>()
         try await manager.connect()

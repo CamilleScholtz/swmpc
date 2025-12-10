@@ -2,7 +2,7 @@
 //  MPDKit.swift
 //  MPDKit
 //
-//  A shared MPD client library for swmpc and its widget extension.
+//  Created by Camille Scholtz on 09/12/2025.
 //
 
 // Re-export all public types for convenience

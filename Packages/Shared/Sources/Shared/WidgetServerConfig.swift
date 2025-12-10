@@ -1,9 +1,8 @@
 //
 //  WidgetServerConfig.swift
-//  MPDKit
+//  Shared
 //
-//  Minimal server configuration for sharing connection details with the widget
-//  via App Groups.
+//  Created by Camille Scholtz on 09/12/2025.
 //
 
 import Foundation
@@ -25,7 +24,7 @@ public nonisolated struct WidgetServerConfig: Codable, Sendable {
 
     public static func save(_ config: WidgetServerConfig) {
         guard let container = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: appGroupID
+            forSecurityApplicationGroupIdentifier: appGroupID,
         ) else {
             return
         }
@@ -38,7 +37,7 @@ public nonisolated struct WidgetServerConfig: Codable, Sendable {
 
     public static func load() -> WidgetServerConfig? {
         guard let container = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: appGroupID
+            forSecurityApplicationGroupIdentifier: appGroupID,
         ),
             let data = try? Data(contentsOf: container.appendingPathComponent(
                 configKey))
