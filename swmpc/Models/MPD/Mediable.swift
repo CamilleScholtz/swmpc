@@ -2,7 +2,7 @@
 //  Mediable.swift
 //  swmpc
 //
-//  App-specific extensions for media types.
+//  Created by Camille Scholtz on 16/11/2024.
 //
 
 import MPDKit

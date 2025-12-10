@@ -2,7 +2,7 @@
 //  Enums.swift
 //  swmpc
 //
-//  App-specific extensions for shared MPD types.
+//  Created by Camille Scholtz on 10/11/2024.
 //
 
 import MPDKit
