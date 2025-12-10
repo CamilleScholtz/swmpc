@@ -6,7 +6,9 @@
 //
 
 import AsyncAlgorithms
+import MPDKit
 import SwiftUI
+import WidgetKit
 
 /// Manages the MPD player status, including playback state, options, and
 /// elapsed time tracking.
@@ -141,6 +143,8 @@ import SwiftUI
             #if os(macOS)
                 AppDelegate.shared?.setStatusItemTitle()
             #endif
+
+            WidgetCenter.shared.reloadAllTimelines()
         }
 
         _ = volume.update(to: data.volume)

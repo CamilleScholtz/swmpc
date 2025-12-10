@@ -2,18 +2,19 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSAllowsLocalNetworking</key>
-	<true/>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>swmpc needs to access your local network to connect to MPD servers.</string>
-	<key>NSBonjourServices</key>
+	<key>CFBundleURLTypes</key>
 	<array>
-		<string>_mpd._tcp</string>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.camille.swmpc</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>swmpc</string>
+			</array>
+		</dict>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<key>NSSiriUsageDescription</key>
-	<string>Use Siri to control music playback and get information about currently playing songs.</string>
 	<key>INAlternativeAppNames</key>
 	<array>
 		<dict>
@@ -26,6 +27,12 @@
 			<key>INAlternativeAppName</key>
 			<string>music player daemon</string>
 		</dict>
+	</array>
+	<key>NSAllowsLocalNetworking</key>
+	<true/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_mpd._tcp</string>
 	</array>
 </dict>
 </plist>

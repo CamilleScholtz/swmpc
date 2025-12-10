@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 04/03/2025.
 //
 
+import MPDKit
 import OpenAI
 import SwiftUI
 

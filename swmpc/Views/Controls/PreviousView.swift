@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import MPDKit
 import SwiftUI
 
 private extension Layout {

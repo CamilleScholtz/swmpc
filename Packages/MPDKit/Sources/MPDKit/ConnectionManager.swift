@@ -1,6 +1,6 @@
 //
 //  ConnectionManager.swift
-//  swmpc
+//  MPDKit
 //
 //  Created by Camille Scholtz on 16/11/2024.
 //
@@ -12,39 +12,39 @@ import SwiftUI
 /// Protocol defining the configuration for different connection modes to the
 /// MPD server. Each mode can have different performance characteristics and
 /// buffer sizes.
-protocol ConnectionMode: Sendable {
+public protocol ConnectionMode: Sendable {
     /// The buffer size to use for reading data.
     nonisolated static var bufferSize: Int { get }
 }
 
 /// Connection mode for idle operations that listen for MPD server events.
 /// Uses keepalive to maintain long-lived connections.
-nonisolated enum IdleMode: ConnectionMode {
-    static let bufferSize = 4096
+public nonisolated enum IdleMode: ConnectionMode {
+    public static let bufferSize = 4096
 }
 
 /// Connection mode for artwork retrieval operations.
 /// Uses larger buffers and concurrent queue for efficient image data transfer.
-nonisolated enum ArtworkMode: ConnectionMode {
-    static let bufferSize = 8192
+public nonisolated enum ArtworkMode: ConnectionMode {
+    public static let bufferSize = 8192
 }
 
 /// Connection mode for executing MPD commands.
 /// Optimized for quick command execution with higher priority.
-nonisolated enum CommandMode: ConnectionMode {
-    static let bufferSize = 4096
+public nonisolated enum CommandMode: ConnectionMode {
+    public static let bufferSize = 4096
 }
 
 /// Holds the shared server configuration used by all connection managers.
 ///
 /// This is separate from ConnectionManager because generic types cannot have
 /// static stored properties.
-enum ConnectionConfiguration {
-    nonisolated(unsafe) static var server: Server?
+public enum ConnectionConfiguration {
+    public nonisolated(unsafe) static var server: Server?
 }
 
 /// Errors that can occur during MPD connection management.
-enum ConnectionManagerError: LocalizedError, Equatable {
+public enum ConnectionManagerError: LocalizedError, Equatable {
     case invalidHost
     case invalidPort
     case unsupportedServerVersion
@@ -58,7 +58,7 @@ enum ConnectionManagerError: LocalizedError, Equatable {
     case malformedResponse(String)
     case unsupportedOperation(String)
 
-    nonisolated var errorDescription: String? {
+    public nonisolated var errorDescription: String? {
         switch self {
         case .invalidHost:
             "Invalid host provided."
@@ -94,7 +94,7 @@ enum ConnectionManagerError: LocalizedError, Equatable {
 /// - Command batching for efficient communication
 /// - Response parsing for various MPD data types
 /// - Thread-safe operation using Swift actors
-actor ConnectionManager<Mode: ConnectionMode> {
+public actor ConnectionManager<Mode: ConnectionMode> {
     /// The underlying network connection to the MPD server.
     private var connection: NetworkConnection<TCP>?
 
@@ -102,7 +102,10 @@ actor ConnectionManager<Mode: ConnectionMode> {
     private var buffer = Deque<UInt8>()
 
     /// The version of the MPD server obtained during connection handshake.
-    private(set) var version: String?
+    public private(set) var version: String?
+
+    /// Creates a new connection manager.
+    public init() {}
 
     /// Establishes a TCP connection to the MPD server.
     ///
@@ -118,9 +121,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///           ready, or the expected server greeting is not received,
     ///           `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
-    func connect(onStateUpdate: (@Sendable (NetworkConnection<TCP>,
-                                            NetworkConnection<TCP>.State) ->
-            Void)? = nil) async throws
+    public func connect(onStateUpdate: (@Sendable (NetworkConnection<TCP>,
+                                                   NetworkConnection<TCP>.State)
+            -> Void)? = nil) async throws
     {
         guard connection == nil else {
             return
@@ -161,7 +164,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
         let lines = try await readUntilOK()
         guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
             throw ConnectionManagerError.connectionFailure(
-                "Missing OK MPD line from server greeting",
+                "Missing OK MPD line from server greeting"
             )
         }
 
@@ -176,7 +179,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Cancels any active connection, sets the connection to `nil`, removes all
     /// buffered data, and resets the server version. This method should be
     /// called to cleanly terminate the connection.
-    func disconnect() {
+    public func disconnect() {
         connection = nil
         version = nil
 
@@ -189,7 +192,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///           is no active connection.
     /// - Returns: A ready-to-use `NetworkConnection` instance.
     @discardableResult
-    func ensureConnection() throws -> NetworkConnection<TCP> {
+    public func ensureConnection() throws -> NetworkConnection<TCP> {
         guard let connection else {
             throw ConnectionManagerError.connectionUnexpectedClosure
         }
@@ -205,7 +208,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is older than the minimum required.
-    func ensureVersionSupported() throws {
+    public func ensureVersionSupported() throws {
         guard version?.compare("0.22", options: .numeric) !=
             .orderedAscending
         else {
@@ -219,7 +222,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// authentication. If no password is set, the function returns immediately.
     ///
     /// - Throws: An error if the authentication command fails.
-    func ensureAuthentication() async throws {
+    public func ensureAuthentication() async throws {
         guard let password = ConnectionConfiguration.server?.password,
               !password.isEmpty
         else {
@@ -232,7 +235,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// Sends a ping command to the server.
     ///
     /// - Throws: An error if the command fails.
-    func ping() async throws {
+    public func ping() async throws {
         try await run(["ping"])
     }
 
@@ -249,7 +252,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: An error if writing to the connection or reading the response
     ///           fails.
     @discardableResult
-    func run(_ commands: [String]) async throws -> [String] {
+    public func run(_ commands: [String]) async throws -> [String] {
         var list = commands
 
         if list.count > 1 {
@@ -274,7 +277,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Parameter line: The string to be sent over the connection.
     /// - Throws: An error if the connection is not ready or if the send
     ///           operation encounters an error.
-    private func writeLine(_ line: String) async throws {
+    func writeLine(_ line: String) async throws {
         let connection = try ensureConnection()
 
         guard let data = (line + "\n").data(using: .utf8) else {
@@ -297,7 +300,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            Defaults to `"` if not provided.
     /// - Returns: A new string where special characters have been escaped and,
     ///            if a quote is provided, the string is enclosed by it.
-    private nonisolated func escape(_ string: String, quote: String? = "\"")
+    nonisolated func escape(_ string: String, quote: String? = "\"")
         -> String
     {
         var escaped = string.replacingOccurrences(of: "\\", with: "\\\\")
@@ -335,7 +338,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            double quotes. Defaults to `true`.
     /// - Returns: A formatted and escaped string representing the filter
     ///            clause.
-    private nonisolated func filter(key: String, value: String, comparator:
+    nonisolated func filter(key: String, value: String, comparator:
         String = "==", quote: Bool = true) -> String
     {
         let clause = "(\(key) \(comparator) \(escape(value, quote: "'")))"
@@ -360,7 +363,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Returns: A string representing the next complete line from the buffer.
     /// - Throws: An error if a protocol error is encountered or if underlying
     ///           I/O operations fail.
-    private func readLine() async throws -> String? {
+    func readLine() async throws -> String? {
         while true {
             if let line = try extractLineFromBuffer() {
                 if line.hasPrefix("ACK") {
@@ -386,7 +389,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Parameter length: The total number of bytes to read.
     /// - Returns: A `Data` object containing exactly `length` bytes.
     /// - Throws: An error if receiving additional data fails.
-    private func readFixedLengthData(_ length: Int) async throws -> Data {
+    func readFixedLengthData(_ length: Int) async throws -> Data {
         guard length >= 0 else {
             throw ConnectionManagerError.malformedResponse(
                 "Invalid data length requested: \(length)")
@@ -484,7 +487,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///   - prefix: The prefix string that signifies the start of a new chunk.
     /// - Returns: An array of chunks, where each chunk is an array of strings
     ///            grouped together.
-    private nonisolated func chunkLines(_ lines: [String], startingWith prefix:
+    nonisolated func chunkLines(_ lines: [String], startingWith prefix:
         String) -> [[String]]
     {
         var chunks = [[String]]()
@@ -522,7 +525,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Returns: An array of strings containing all lines read up to and
     ///            including the line that satisfies the condition.
     /// - Throws: An error if any underlying `readLine()` call fails.
-    private func readUntil(_ condition: @escaping (String) -> Bool) async throws
+    func readUntil(_ condition: @escaping (String) -> Bool) async throws
         -> [String]
     {
         var lines: [String] = []
@@ -551,7 +554,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: `ConnectionManagerError.readUntilConditionNotMet` if the
     ///           condition is never met, or any error encountered by
     ///           `readLine()`.
-    private func readUntilOK() async throws -> [String] {
+    func readUntilOK() async throws -> [String] {
         try await readUntil { $0.hasPrefix("OK") }
     }
 
@@ -571,9 +574,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            second element is the value.
     /// - Throws: `ConnectionManagerError.malformedResponse` if the line does
     ///           not contain exactly one colon.
-    private func parseLine(_ line: String) throws -> (String,
-                                                      String)
-    {
+    func parseLine(_ line: String) throws -> (String, String) {
         let parts = line.split(separator: ":", maxSplits: 1).map {
             $0.trimmingCharacters(in: .whitespaces)
         }
@@ -616,7 +617,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
     ///           are missing, the response is improperly formatted, or the
     ///           created object cannot be cast to `T`.
-    private func parseMediaResponse<T>(_ lines: [String], as type:
+    func parseMediaResponse<T>(_ lines: [String], as type:
         MediaType, index: Int? = nil) throws -> T
     {
         var fields: [String: String] = [:]
@@ -679,9 +680,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
                     artist: Artist(
                         file: file,
                         name: artistName,
-                        nameSort: fields["albumartistsort"],
-                    ),
-                ),
+                        nameSort: fields["albumartistsort"]
+                    )
+                )
             )
 
             return try castResult(song)
@@ -693,8 +694,8 @@ actor ConnectionManager<Mode: ConnectionMode> {
                 artist: Artist(
                     file: file,
                     name: artistName,
-                    nameSort: fields["albumartistsort"],
-                ),
+                    nameSort: fields["albumartistsort"]
+                )
             )
 
             return try castResult(album)
@@ -702,7 +703,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
             let artist = Artist(
                 file: file,
                 name: artistName,
-                nameSort: fields["albumartistsort"],
+                nameSort: fields["albumartistsort"]
             )
 
             return try castResult(artist)
@@ -728,9 +729,9 @@ actor ConnectionManager<Mode: ConnectionMode> {
     ///            song's position.
     /// - Returns: An array of media objects, each cast to the generic type `T`.
     /// - Throws: An error if parsing of any chunk fails.
-    private func parseMediaResponseArray<T>(_ lines: [String],
-                                            as type: MediaType,
-                                            index: Bool = false)
+    func parseMediaResponseArray<T>(_ lines: [String],
+                                    as type: MediaType,
+                                    index: Bool = false)
         throws -> [T]
     {
         let chunks = chunkLines(lines, startingWith: "file")
@@ -749,7 +750,7 @@ actor ConnectionManager<Mode: ConnectionMode> {
 
 // MARK: - Shared commands
 
-extension ConnectionManager {
+public extension ConnectionManager {
     /// Retrieves the current status of the media player from the server.
     ///
     /// This asynchronous function sends a command list containing "status" and
@@ -1035,7 +1036,7 @@ extension ConnectionManager {
 
 // MARK: - Idle mode commands
 
-extension ConnectionManager where Mode == IdleMode {
+public extension ConnectionManager where Mode == IdleMode {
     /// Shared singleton instance for idle connection management.
     /// Used for listening to server events without blocking other operations.
     static let idle = ConnectionManager<IdleMode>()
@@ -1070,7 +1071,7 @@ extension ConnectionManager where Mode == IdleMode {
 
 // MARK: - Artwork mode commands
 
-extension ConnectionManager where Mode == ArtworkMode {
+public extension ConnectionManager where Mode == ArtworkMode {
     /// Executes an artwork operation with automatic connection cleanup.
     ///
     /// This method creates a new connection, executes the provided closure with
@@ -1083,8 +1084,8 @@ extension ConnectionManager where Mode == ArtworkMode {
     ///                        operations on it.
     /// - Returns: The result of the operation closure.
     /// - Throws: An error if the connection fails or if the operation throws.
-    static func artwork<T>(_ operation: (ConnectionManager<ArtworkMode>) async
-        throws -> T) async throws -> T
+    static func artwork<T: Sendable>(_ operation: @Sendable (
+        ConnectionManager<ArtworkMode>) async throws -> T) async throws -> T
     {
         let manager = ConnectionManager<ArtworkMode>()
         try await manager.connect()
@@ -1168,7 +1169,7 @@ extension ConnectionManager where Mode == ArtworkMode {
 
 // MARK: - Command mode commands
 
-extension ConnectionManager where Mode == CommandMode {
+public extension ConnectionManager where Mode == CommandMode {
     /// Executes a command operation with automatic connection cleanup.
     ///
     /// This method creates a new connection, executes the provided closure with
@@ -1181,9 +1182,9 @@ extension ConnectionManager where Mode == CommandMode {
     ///                        operations on it.
     /// - Returns: The result of the operation closure.
     /// - Throws: An error if the connection fails or if the operation throws.
-    static func command<T>(_ operation: (ConnectionManager<CommandMode>) async
-        throws -> T) async throws -> T
-    {
+    static func command<T: Sendable>(_ operation: @Sendable (ConnectionManager<
+        CommandMode
+    >) async throws -> T) async throws -> T {
         let manager = ConnectionManager<CommandMode>()
         try await manager.connect()
 

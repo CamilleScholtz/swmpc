@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import MPDKit
 import SFSafeSymbols
 import SwiftUI
 #if os(macOS)
@@ -85,9 +86,9 @@ struct CategoryDatabaseView: View {
     @AppStorage(Setting.artistSearchFields) private var artistSearchFields = SearchFields.default
     @AppStorage(Setting.songSearchFields) private var songSearchFields = SearchFields.default
 
-    @AppStorage(Setting.albumSortOption) private var albumSort = SortDescriptor.default
-    @AppStorage(Setting.artistSortOption) private var artistSort = SortDescriptor.default
-    @AppStorage(Setting.songSortOption) private var songSort = SortDescriptor.default
+    @AppStorage(Setting.albumSortOption) private var albumSort = MPDKit.SortDescriptor.default
+    @AppStorage(Setting.artistSortOption) private var artistSort = MPDKit.SortDescriptor.default
+    @AppStorage(Setting.songSortOption) private var songSort = MPDKit.SortDescriptor.default
 
     @Binding var isSearchFieldExpanded: Bool
 
@@ -96,7 +97,7 @@ struct CategoryDatabaseView: View {
     #endif
 
     @State private var loadedCategory: CategoryDestination?
-    @State private var loadedSort: SortDescriptor?
+    @State private var loadedSort: MPDKit.SortDescriptor?
 
     @State private var scrollTarget: ScrollTarget?
 
@@ -123,12 +124,12 @@ struct CategoryDatabaseView: View {
         return fields
     }
 
-    private var sort: SortDescriptor {
+    private var sort: MPDKit.SortDescriptor {
         switch navigator.category {
         case .albums: albumSort
         case .artists: artistSort
         case .songs: songSort
-        default: SortDescriptor.default
+        default: MPDKit.SortDescriptor.default
         }
     }
 
@@ -363,12 +364,12 @@ struct CategoryDatabaseView: View {
     private var sortMenu: some View {
         Menu {
             if navigator.category.source.isSortable {
-                ForEach(navigator.category.source.availableSortOptions(for: navigator.category.type), id: \.self) { option in
+                ForEach(navigator.category.source.availableSortOptions(for: navigator.category.type), id: \.self) { (option: SortOption) in
                     Button {
                         let newSort = if sort.option == option {
-                            SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)
+                            MPDKit.SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)
                         } else {
-                            SortDescriptor(option: option)
+                            MPDKit.SortDescriptor(option: option)
                         }
 
                         switch navigator.category {

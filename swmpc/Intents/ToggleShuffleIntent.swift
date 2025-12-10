@@ -6,6 +6,7 @@
 //
 
 import AppIntents
+import MPDKit
 import SwiftUI
 
 struct ToggleShuffleIntent: AppIntent, AudioPlaybackIntent {

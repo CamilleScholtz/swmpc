@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 02/07/2025.
 //
 
+import MPDKit
 import SwiftUI
 #if os(iOS)
     import SwiftUIIntrospect

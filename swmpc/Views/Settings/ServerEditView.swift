@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import MPDKit
 import SFSafeSymbols
 import SwiftUI
 
@@ -26,6 +27,7 @@ struct ServerEditView: View {
 
     init(server: Server?) {
         self.server = server
+
         _name = State(initialValue: server?.name ?? "")
         _host = State(initialValue: server?.host ?? "localhost")
         _port = State(initialValue: server?.port ?? 6600)
@@ -159,7 +161,6 @@ struct ServerEditView: View {
             serverManager.update(updatedServer)
         }
 
-        // Reconnect if this is the selected server
         if serverManager.selectedServerID == updatedServer.id {
             await mpd.reinitialize()
         }

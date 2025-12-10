@@ -2,16 +2,16 @@
 //  widgetBundle.swift
 //  widget
 //
-//  Created by Camille Scholtz on 08/12/2025.
+//  Created by Camille Scholtz on 09/12/2025.
 //
 
-import WidgetKit
 import SwiftUI
+import WidgetKit
 
 @main
-struct widgetBundle: WidgetBundle {
+struct swmpcWidgetBundle: WidgetBundle {
     var body: some Widget {
-        widget()
-        widgetControl()
+        NowPlayingWidget()
+        NowPlayingAltWidget()
     }
 }

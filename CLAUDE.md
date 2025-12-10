@@ -9,6 +9,21 @@ swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with
 - **UI**: SwiftUI + Liquid Glass design language
 - **Build**: `swmpc.xcodeproj`, scheme: `swmpc`
 
+## Project Structure
+
+```
+swmpc/
+├── Packages/
+│   └── MPDKit/              # Shared MPD client library
+├── widget/                  # WidgetKit extension (Now Playing)
+├── swmpc/                   # Main app target
+└── swmpc.xcodeproj
+```
+
+**Targets:**
+- `swmpc` — Main app (macOS/iOS)
+- `widget` — WidgetKit extension with Now Playing widgets
+
 ## Architecture
 
 Entry point: `swmpc/Delegate.swift`. Uses MVVM with SwiftUI.
@@ -38,26 +53,55 @@ This project uses **MainActor-by-default isolation**. All code runs on the main 
    struct MyData: @MainActor Codable { }       // For main-thread encode/decode
    ```
 
-### Core Components
+## MPDKit Package
+
+Located in `Packages/MPDKit/`. Shared library for MPD client functionality used by both the app and widget.
+
+| Component | Purpose |
+|-----------|---------|
+| **ConnectionManager** | Actor-based TCP connections with generic modes (Idle, Command, Artwork) |
+| **MPDTypes** | Shared types: `Song`, `Album`, `Artist`, `Playlist`, `Server`, enums |
+| **WidgetServerConfig** | App Groups bridge for sharing server config with widget |
+
+**Connection modes:**
+- `IdleMode` — Long-lived connections for event listening
+- `CommandMode` — Quick command execution
+- `ArtworkMode` — Binary artwork data transfer
+
+### App Components
 
 | Component | Path | Purpose |
 |-----------|------|---------|
-| **MPD** | `Models/MPD/MPD.swift` | Central coordinator; uses idle command for real-time updates |
-| **ConnectionManager** | `Models/MPD/ConnectionManager.swift` | TCP connections with modes: Idle, Artwork, Command |
-| **StatusManager** | `Models/MPD/StatusManager.swift` | Playback state, current song, volume |
-| **DatabaseManager** | `Models/MPD/DatabaseManager.swift` | Library queries and search |
-| **QueueManager** | `Models/MPD/QueueManager.swift` | Playback queue management |
-| **PlaylistManager** | `Models/MPD/PlaylistManager.swift` | Playlist CRUD operations |
-| **ArtworkManager** | `Models/MPD/ArtworkManager.swift` | Album artwork fetching and caching |
+| **MPD** | `swmpc/Models/MPD/MPD.swift` | Central coordinator; uses idle command for real-time updates |
+| **StatusManager** | `swmpc/Models/MPD/StatusManager.swift` | Playback state, current song, volume |
+| **DatabaseManager** | `swmpc/Models/MPD/DatabaseManager.swift` | Library queries and search |
+| **QueueManager** | `swmpc/Models/MPD/QueueManager.swift` | Playback queue management |
+| **PlaylistManager** | `swmpc/Models/MPD/PlaylistManager.swift` | Playlist CRUD operations |
+| **ArtworkManager** | `swmpc/Models/MPD/ArtworkManager.swift` | Album artwork fetching and caching |
+| **ServerManager** | `swmpc/Models/MPD/ServerManager.swift` | Multi-server configuration |
+| **StateManager** | `swmpc/Models/MPD/StateManager.swift` | Loading/connection states |
 
 ### App Services
 
 | Service | Path | Purpose |
 |---------|------|---------|
-| **NavigationManager** | `Models/App/NavigationManager.swift` | Cross-view navigation state |
-| **IntelligenceManager** | `Models/App/IntelligenceManager.swift` | OpenAI smart playlist generation |
-| **BonjourManager** | `Models/App/BonjourManager.swift` | MPD server discovery |
-| **Settings** | `Models/App/Settings.swift` | User preferences (`@AppStorage`) |
+| **NavigationManager** | `swmpc/Models/App/NavigationManager.swift` | Cross-view navigation state |
+| **IntelligenceManager** | `swmpc/Models/App/IntelligenceManager.swift` | OpenAI smart playlist generation |
+| **BonjourManager** | `swmpc/Models/MPD/BonjourManager.swift` | MPD server discovery |
+| **Settings** | `swmpc/Models/App/Settings.swift` | User preferences (`@AppStorage`) |
+
+## Widget Extension
+
+Located in `widget/`. Provides Now Playing widgets using WidgetKit.
+
+| Widget | Description |
+|--------|-------------|
+| **NowPlayingWidget** | Artwork with overlay text (systemSmall, systemMedium) |
+| **NowPlayingAltWidget** | Artwork with sidebar thumbnail (systemSmall) |
+
+- Uses `ConnectionManager` from MPDKit
+- Reads server config via App Groups (`WidgetServerConfig`)
+- 15-minute timeline refresh interval
 
 ### Platform Code Style
 
@@ -81,12 +125,13 @@ Prefer shared code. For platform-specific code, use conditional compilation with
 
 ## Dependencies
 
-| Package | Purpose | Platform |
+| Package | Purpose | Location |
 |---------|---------|----------|
+| `MPDKit` | MPD protocol, connections, types | `Packages/MPDKit` (local) |
 | `OpenAI` | Smart playlist generation | All |
 | `LaunchAtLogin` | Auto-start at login | macOS |
 | `ButtonKit` | Async button actions | All |
-| `DequeModule` | Connection buffering | All |
+| `DequeModule` | Connection buffering | MPDKit |
 | `Introspect` | UIKit/AppKit access from SwiftUI | All |
 
 ## MPD Protocol

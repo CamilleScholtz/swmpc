@@ -6,7 +6,9 @@
 //
 
 import ButtonKit
+import MPDKit
 import SwiftUI
+import WidgetKit
 
 enum ViewError: Error {
     case missingData
@@ -21,9 +23,7 @@ struct AppView: View {
         @Namespace var namespace
     #endif
 
-    #if os(iOS)
-        @State private var showDetailCover = false
-    #elseif os(macOS)
+    #if os(macOS)
         @State private var showQueuePanel = false
         @State private var columnVisibility: NavigationSplitViewVisibility = .all
     #endif
@@ -54,15 +54,14 @@ struct AppView: View {
                                 }
                             }
                         }
-                        .tabBarMinimizeBehavior(.onScrollDown)
                         .tabViewBottomAccessory {
                             DetailMiniView(artwork: artwork)
                                 .onTapGesture {
-                                    showDetailCover.toggle()
+                                    navigator.showNowPlaying.toggle()
                                 }
                                 .matchedTransitionSource(id: 1, in: namespace)
                         }
-                        .fullScreenCover(isPresented: $showDetailCover) {
+                        .fullScreenCover(isPresented: $navigator.showNowPlaying) {
                             List {
                                 Capsule()
                                     .fill(.tertiary)
@@ -152,6 +151,9 @@ struct AppView: View {
                     #endif
                 }
             }
+        }
+        .onAppear {
+            WidgetCenter.shared.reloadAllTimelines()
         }
         .task(priority: .medium) {
             try? await mpd.status.startTrackingElapsed()

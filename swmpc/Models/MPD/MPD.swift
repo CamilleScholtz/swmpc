@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import MPDKit
 import Network
 import SwiftUI
 

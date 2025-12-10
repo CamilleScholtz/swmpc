@@ -6,22 +6,7 @@
 //
 
 import Foundation
-
-/// Represents a saved MPD server configuration.
-nonisolated struct Server: Identifiable, Hashable, Sendable, Codable {
-    var id = UUID()
-
-    var name = ""
-    var host = "localhost"
-    var port = 6600
-    var password = ""
-    var artworkGetter = ArtworkGetter.library
-
-    /// Display name for the server, falling back to host if name is empty.
-    var displayName: String {
-        name.isEmpty ? host : name
-    }
-}
+import MPDKit
 
 extension Server {
     /// Creates a server from a discovered Bonjour server.
@@ -149,5 +134,13 @@ extension Server {
     /// Updates the shared connection configuration with the selected server.
     private func syncSelectedServer() {
         ConnectionConfiguration.server = selectedServer
+
+        if let server = selectedServer {
+            WidgetServerConfig.save(WidgetServerConfig(
+                host: server.host,
+                port: server.port,
+                password: server.password.isEmpty ? nil : server.password,
+            ))
+        }
     }
 }

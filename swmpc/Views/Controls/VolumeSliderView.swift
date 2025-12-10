@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 14/07/2025.
 //
 
+import MPDKit
 import SFSafeSymbols
 import SwiftUI
 

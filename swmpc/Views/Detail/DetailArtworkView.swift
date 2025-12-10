@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 22/09/2025.
 //
 
+import MPDKit
 import SwiftUI
 
 struct DetailArtworkView: View, Equatable {

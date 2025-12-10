@@ -6,6 +6,7 @@
 //
 
 import ButtonKit
+import MPDKit
 import SwiftUI
 
 struct ArtistView: View, Equatable {

@@ -7,6 +7,7 @@
 
 import AppIntents
 import ButtonKit
+import MPDKit
 import SwiftUI
 #if os(macOS)
     import SFSafeSymbols
@@ -43,6 +44,9 @@ struct Delegate: App {
                 .environment(appDelegate.serverManager)
                 .environment(appDelegate.mpd)
             #endif
+                .onOpenURL { url in
+                    handleURL(url)
+                }
         }
         #if os(macOS)
         .commands {
@@ -172,6 +176,30 @@ struct Delegate: App {
             .windowResizability(.contentSize)
             .restorationBehavior(.disabled)
         #endif
+    }
+
+    private func handleURL(_ url: URL) {
+        guard url.scheme == "swmpc" else { return }
+
+        switch url.host {
+        #if os(iOS)
+            case "nowplaying":
+                navigator.showNowPlaying = true
+        #endif
+        case "toggle":
+            #if os(iOS)
+                let mpd = Delegate.mpd
+            #elseif os(macOS)
+                let mpd = appDelegate.mpd
+            #endif
+            Task {
+                try? await ConnectionManager.command {
+                    try await $0.pause(mpd.status.isPlaying)
+                }
+            }
+        default:
+            break
+        }
     }
 }
 

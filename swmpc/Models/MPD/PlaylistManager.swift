@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 20/06/2025.
 //
 
+import MPDKit
 import SwiftUI
 
 /// Manages playlist operations for the MPD client.

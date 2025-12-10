@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 07/11/2024.
 //
 
+import MPDKit
 import SwiftUI
 
 /// Manages the MPD queue, handling song operations.

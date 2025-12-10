@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import MPDKit
 import SwiftUI
 
 /// Manages the MPD database, handling artists, albums, and song queries.
@@ -29,7 +30,7 @@ import SwiftUI
     private(set) var type: MediaType = .album
 
     /// The current sort option being used.
-    private(set) var sort: SortDescriptor = .default
+    private(set) var sort: MPDKit.SortDescriptor = .default
 
     /// Sets the media type and/or sort descriptor and fetches corresponding
     /// media from MPD.
@@ -47,7 +48,7 @@ import SwiftUI
     ///           If `nil`, retains the current sort.
     /// - Throws: An error if the MPD connection fails or the fetch is
     ///           cancelled.
-    func set(idle: Bool = true, type: MediaType? = nil, sort: SortDescriptor?
+    func set(idle: Bool = true, type: MediaType? = nil, sort: MPDKit.SortDescriptor?
         = nil)
         async throws
     {
@@ -57,26 +58,27 @@ import SwiftUI
             return
         }
 
+        let sortToUse: MPDKit.SortDescriptor = sort ?? self.sort
+
         let newMedia: [any Mediable]? = switch type ?? self.type {
         case .album:
             try await idle
-                ? ConnectionManager.idle.getAlbums(sort: sort ?? self.sort)
+                ? ConnectionManager.idle.getAlbums(sort: sortToUse)
                 : ConnectionManager.command {
-                    try await $0.getAlbums(sort: sort ?? self.sort)
+                    try await $0.getAlbums(sort: sortToUse)
                 }
         case .artist:
             try await idle
-                ? ConnectionManager.idle.getArtists(sort: sort ?? self.sort)
+                ? ConnectionManager.idle.getArtists(sort: sortToUse)
                 : ConnectionManager.command {
-                    try await $0.getArtists(sort: sort ?? self.sort)
+                    try await $0.getArtists(sort: sortToUse)
                 }
         case .song:
             try await idle
                 ? ConnectionManager.idle.getSongs(from: Source.database,
-                                                  sort: sort ?? self.sort)
+                                                  sort: sortToUse)
                 : ConnectionManager.command {
-                    try await $0.getSongs(from: Source.database, sort: sort
-                        ?? self.sort)
+                    try await $0.getSongs(from: Source.database, sort: sortToUse)
                 }
         case .playlist:
             nil

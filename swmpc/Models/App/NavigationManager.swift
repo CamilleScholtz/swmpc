@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 07/04/2025.
 //
 
+import MPDKit
 import SFSafeSymbols
 import SwiftUI
 
@@ -40,6 +41,9 @@ import SwiftUI
     #if os(iOS)
         /// Controls the presentation of the settings sheet on iOS.
         var showSettingsSheet = false
+
+        /// Controls the presentation of the now playing view on iOS.
+        var showNowPlaying = false
     #endif
 
     /// Controls the presentation of the intelligence sheet.
@@ -50,6 +54,9 @@ import SwiftUI
 
     /// Controls the presentation of the clear queue alert.
     var showClearQueueAlert = false
+
+    /// Controls the presentation of the ratings sheet.
+    var showRatingsSheet = false
 
     /// Tracks the content destinations in the path for duplicate prevention.
     /// This is internal state that doesn't need to trigger view updates.

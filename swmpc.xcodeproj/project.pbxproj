@@ -12,11 +12,50 @@
 		9168E5C02ED39DB500E116AB /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 9168E5BF2ED39DB500E116AB /* SwiftUIIntrospect */; };
 		9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 9182FEF32D97757000FED9D4 /* OpenAI */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
+		91EF2E282EE844A700B222C4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91EF2E272EE844A700B222C4 /* WidgetKit.framework */; };
+		91EF2E2A2EE844A700B222C4 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91EF2E292EE844A700B222C4 /* SwiftUI.framework */; };
+		91EF2E372EE844A800B222C4 /* widget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 91EF2E252EE844A700B222C4 /* widget.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		91EF376D2EE888A300B222C4 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF376C2EE888A300B222C4 /* SFSafeSymbols */; };
+		91EF37782EE8BFE200B222C4 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37772EE8BFE200B222C4 /* AsyncAlgorithms */; };
+		91EF377B2EE8C56100B222C4 /* MPDKit in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF377A2EE8C56100B222C4 /* MPDKit */; };
+		91EF37922EE8C82C00B222C4 /* xcschememanagement.plist in Resources */ = {isa = PBXBuildFile; fileRef = 91EF377E2EE8C82C00B222C4 /* xcschememanagement.plist */; };
+		91EF37962EE8E02100B222C4 /* MPDKit in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37952EE8E02100B222C4 /* MPDKit */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		91EF2E352EE844A800B222C4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 91A141D82CDE3987000A74BC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 91EF2E242EE844A700B222C4;
+			remoteInfo = widgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		91EF2E3C2EE844A800B222C4 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				91EF2E372EE844A800B222C4 /* widget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		91A141E02CDE3988000A74BC /* swmpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swmpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		91EF2E252EE844A700B222C4 /* widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = widget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		91EF2E272EE844A700B222C4 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		91EF2E292EE844A700B222C4 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		91EF377E2EE8C82C00B222C4 /* xcschememanagement.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = xcschememanagement.plist; sourceTree = "<group>"; };
+		91EF37842EE8C82C00B222C4 /* ConnectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionManager.swift; sourceTree = "<group>"; };
+		91EF37852EE8C82C00B222C4 /* MPDKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPDKit.swift; sourceTree = "<group>"; };
+		91EF37862EE8C82C00B222C4 /* MPDTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPDTypes.swift; sourceTree = "<group>"; };
+		91EF37872EE8C82C00B222C4 /* NowPlayingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingData.swift; sourceTree = "<group>"; };
+		91EF378A2EE8C82C00B222C4 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -43,6 +82,13 @@
 			};
 			target = 91A141DF2CDE3988000A74BC /* swmpc */;
 		};
+		91EF2E3B2EE844A800B222C4 /* Exceptions for "widget" folder in "widget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 91EF2E242EE844A700B222C4 /* widget */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -62,6 +108,14 @@
 			path = swmpc;
 			sourceTree = "<group>";
 		};
+		91EF2E2B2EE844A700B222C4 /* widget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				91EF2E3B2EE844A800B222C4 /* Exceptions for "widget" folder in "widget" target */,
+			);
+			path = widget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,9 +125,20 @@
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
 				9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */,
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
+				91EF377B2EE8C56100B222C4 /* MPDKit in Frameworks */,
 				9168E5C02ED39DB500E116AB /* SwiftUIIntrospect in Frameworks */,
 				9114DB422DB11A8500DD5E6E /* ButtonKit in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
+			);
+		};
+		91EF2E222EE844A700B222C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				91EF37962EE8E02100B222C4 /* MPDKit in Frameworks */,
+				91EF376D2EE888A300B222C4 /* SFSafeSymbols in Frameworks */,
+				91EF2E2A2EE844A700B222C4 /* SwiftUI.framework in Frameworks */,
+				91EF2E282EE844A700B222C4 /* WidgetKit.framework in Frameworks */,
+				91EF37782EE8BFE200B222C4 /* AsyncAlgorithms in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -84,7 +149,10 @@
 			children = (
 				9183AF022D4BB8DF00CDC987 /* Assets */,
 				91A141E22CDE3988000A74BC /* swmpc */,
+				91EF2E2B2EE844A700B222C4 /* widget */,
+				91EF2E262EE844A700B222C4 /* Frameworks */,
 				91A141E12CDE3988000A74BC /* Products */,
+				91EF378C2EE8C82C00B222C4 /* Packages */,
 			);
 			sourceTree = "<group>";
 		};
@@ -92,8 +160,95 @@
 			isa = PBXGroup;
 			children = (
 				91A141E02CDE3988000A74BC /* swmpc.app */,
+				91EF2E252EE844A700B222C4 /* widget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		91EF2E262EE844A700B222C4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				91EF2E272EE844A700B222C4 /* WidgetKit.framework */,
+				91EF2E292EE844A700B222C4 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		91EF377F2EE8C82C00B222C4 /* xcschemes */ = {
+			isa = PBXGroup;
+			children = (
+				91EF377E2EE8C82C00B222C4 /* xcschememanagement.plist */,
+			);
+			path = xcschemes;
+			sourceTree = "<group>";
+		};
+		91EF37802EE8C82C00B222C4 /* camille.xcuserdatad */ = {
+			isa = PBXGroup;
+			children = (
+				91EF377F2EE8C82C00B222C4 /* xcschemes */,
+			);
+			path = camille.xcuserdatad;
+			sourceTree = "<group>";
+		};
+		91EF37812EE8C82C00B222C4 /* xcuserdata */ = {
+			isa = PBXGroup;
+			children = (
+				91EF37802EE8C82C00B222C4 /* camille.xcuserdatad */,
+			);
+			path = xcuserdata;
+			sourceTree = "<group>";
+		};
+		91EF37822EE8C82C00B222C4 /* xcode */ = {
+			isa = PBXGroup;
+			children = (
+				91EF37812EE8C82C00B222C4 /* xcuserdata */,
+			);
+			path = xcode;
+			sourceTree = "<group>";
+		};
+		91EF37832EE8C82C00B222C4 /* .swiftpm */ = {
+			isa = PBXGroup;
+			children = (
+				91EF37822EE8C82C00B222C4 /* xcode */,
+			);
+			path = .swiftpm;
+			sourceTree = "<group>";
+		};
+		91EF37882EE8C82C00B222C4 /* MPDKit */ = {
+			isa = PBXGroup;
+			children = (
+				91EF37842EE8C82C00B222C4 /* ConnectionManager.swift */,
+				91EF37852EE8C82C00B222C4 /* MPDKit.swift */,
+				91EF37862EE8C82C00B222C4 /* MPDTypes.swift */,
+				91EF37872EE8C82C00B222C4 /* NowPlayingData.swift */,
+			);
+			path = MPDKit;
+			sourceTree = "<group>";
+		};
+		91EF37892EE8C82C00B222C4 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				91EF37882EE8C82C00B222C4 /* MPDKit */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		91EF378B2EE8C82C00B222C4 /* MPDKit */ = {
+			isa = PBXGroup;
+			children = (
+				91EF37832EE8C82C00B222C4 /* .swiftpm */,
+				91EF37892EE8C82C00B222C4 /* Sources */,
+				91EF378A2EE8C82C00B222C4 /* Package.swift */,
+			);
+			path = MPDKit;
+			sourceTree = "<group>";
+		};
+		91EF378C2EE8C82C00B222C4 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				91EF378B2EE8C82C00B222C4 /* MPDKit */,
+			);
+			path = Packages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -106,8 +261,12 @@
 				91A141DC2CDE3988000A74BC /* Sources */,
 				91A141DD2CDE3988000A74BC /* Frameworks */,
 				91A141DE2CDE3988000A74BC /* Resources */,
+				91EF2E3C2EE844A800B222C4 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				91EF2E362EE844A800B222C4 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				9183AF022D4BB8DF00CDC987 /* Assets */,
@@ -121,10 +280,34 @@
 				9182FEF32D97757000FED9D4 /* OpenAI */,
 				9114DB412DB11A8500DD5E6E /* ButtonKit */,
 				9168E5BF2ED39DB500E116AB /* SwiftUIIntrospect */,
+				91EF377A2EE8C56100B222C4 /* MPDKit */,
 			);
 			productName = swmpc;
 			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
 			productType = "com.apple.product-type.application";
+		};
+		91EF2E242EE844A700B222C4 /* widget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 91EF2E382EE844A800B222C4 /* Build configuration list for PBXNativeTarget "widget" */;
+			buildPhases = (
+				91EF2E212EE844A700B222C4 /* Sources */,
+				91EF2E222EE844A700B222C4 /* Frameworks */,
+				91EF2E232EE844A700B222C4 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				91EF2E2B2EE844A700B222C4 /* widget */,
+			);
+			name = widget;
+			packageProductDependencies = (
+				91EF376C2EE888A300B222C4 /* SFSafeSymbols */,
+				91EF37772EE8BFE200B222C4 /* AsyncAlgorithms */,
+				91EF37952EE8E02100B222C4 /* MPDKit */,
+			);
+			productName = widgetExtension;
+			productReference = 91EF2E252EE844A700B222C4 /* widget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -133,11 +316,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
+				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					91A141DF2CDE3988000A74BC = {
 						CreatedOnToolsVersion = 16.1;
+					};
+					91EF2E242EE844A700B222C4 = {
+						CreatedOnToolsVersion = 26.1.1;
 					};
 				};
 			};
@@ -161,6 +347,7 @@
 				91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */,
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
 				9168E5BE2ED39DB500E116AB /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
+				91EF37792EE8C56100B222C4 /* XCLocalSwiftPackageReference "Packages/MPDKit" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 91A141E12CDE3988000A74BC /* Products */;
@@ -168,12 +355,19 @@
 			projectRoot = "";
 			targets = (
 				91A141DF2CDE3988000A74BC /* swmpc */,
+				91EF2E242EE844A700B222C4 /* widget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		91A141DE2CDE3988000A74BC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+				91EF37922EE8C82C00B222C4 /* xcschememanagement.plist in Resources */,
+			);
+		};
+		91EF2E232EE844A700B222C4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -186,7 +380,21 @@
 			files = (
 			);
 		};
+		91EF2E212EE844A700B222C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		91EF2E362EE844A800B222C4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 91EF2E242EE844A700B222C4 /* widget */;
+			targetProxy = 91EF2E352EE844A800B222C4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		91A141ED2CDE398A000A74BC /* Debug configuration for PBXProject "swmpc" */ = {
@@ -422,6 +630,71 @@
 			};
 			name = Release;
 		};
+		91EF2E392EE844A800B222C4 /* Debug configuration for PBXNativeTarget "widget" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = widget/widget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 25;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = widget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = swmpc;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.camille.swmpc.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		91EF2E3A2EE844A800B222C4 /* Release configuration for PBXNativeTarget "widget" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = widget/widget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 25;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = widget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = swmpc;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.camille.swmpc.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -441,7 +714,22 @@
 			);
 			defaultConfigurationName = Release;
 		};
+		91EF2E382EE844A800B222C4 /* Build configuration list for PBXNativeTarget "widget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				91EF2E392EE844A800B222C4 /* Debug configuration for PBXNativeTarget "widget" */,
+				91EF2E3A2EE844A800B222C4 /* Release configuration for PBXNativeTarget "widget" */,
+			);
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		91EF37792EE8C56100B222C4 /* XCLocalSwiftPackageReference "Packages/MPDKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MPDKit;
+		};
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */ = {
@@ -519,6 +807,25 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
 			productName = LaunchAtLogin;
+		};
+		91EF376C2EE888A300B222C4 /* SFSafeSymbols */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
+			productName = SFSafeSymbols;
+		};
+		91EF37772EE8BFE200B222C4 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
+		91EF377A2EE8C56100B222C4 /* MPDKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MPDKit;
+		};
+		91EF37952EE8E02100B222C4 /* MPDKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91EF37792EE8C56100B222C4 /* XCLocalSwiftPackageReference "Packages/MPDKit" */;
+			productName = MPDKit;
 		};
 		91F55B392CFE5D300027BBFE /* AsyncAlgorithms */ = {
 			isa = XCSwiftPackageProductDependency;
