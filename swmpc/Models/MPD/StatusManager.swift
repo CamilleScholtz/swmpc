@@ -69,10 +69,10 @@ import WidgetKit
     }
 
     /// The background task that updates elapsed time during playback.
-    private var trackingTask: Task<Void, Never>?
+    @ObservationIgnored private var trackingTask: Task<Void, Never>?
 
     /// The start time used for calculating elapsed time.
-    private var startTime: Date?
+    @ObservationIgnored private var startTime: Date?
 
     /// Updates the status from the MPD server.
     ///

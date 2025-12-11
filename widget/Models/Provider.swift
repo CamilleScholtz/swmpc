@@ -88,16 +88,16 @@ struct Provider: TimelineProvider {
             )
         }
     }
-}
+    
+    private func configureConnection() {
+        guard let config = WidgetServerConfig.load() else {
+            return
+        }
 
-private func configureConnection() {
-    guard let config = WidgetServerConfig.load() else {
-        return
+        ConnectionConfiguration.server = Server(
+            host: config.host,
+            port: config.port,
+            password: config.password ?? "",
+        )
     }
-
-    ConnectionConfiguration.server = Server(
-        host: config.host,
-        port: config.port,
-        password: config.password ?? "",
-    )
 }
