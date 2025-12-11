@@ -88,7 +88,7 @@ struct Provider: TimelineProvider {
             )
         }
     }
-    
+
     private func configureConnection() {
         guard let config = WidgetServerConfig.load() else {
             return

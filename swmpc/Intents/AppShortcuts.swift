@@ -54,53 +54,29 @@ struct AppShortcuts: AppShortcutsProvider {
         )
 
         AppShortcut(
-            intent: ToggleConsumeIntent(),
+            intent: ClearQueueIntent(),
             phrases: [
-                "Toggle consume in \(.applicationName)",
-                "Consume music in \(.applicationName)",
-                "Turn on consume in \(.applicationName)",
-                "Turn off consume in \(.applicationName)",
-                "Enable consume in \(.applicationName)",
-                "Disable consume in \(.applicationName)",
-                "Consume mode in \(.applicationName)",
+                "Clear queue in \(.applicationName)",
+                "Clear the queue in \(.applicationName)",
+                "Empty queue in \(.applicationName)",
+                "Remove all songs in \(.applicationName)",
             ],
-            shortTitle: "Toggle Consume",
-            systemImageName: "flame",
+            shortTitle: "Clear Queue",
+            systemImageName: "xmark.circle",
         )
 
         AppShortcut(
-            intent: ToggleShuffleIntent(),
+            intent: SetPlaybackModeIntent(),
             phrases: [
-                "Toggle shuffle in \(.applicationName)",
-                "Shuffle music in \(.applicationName)",
-                "Turn on shuffle in \(.applicationName)",
-                "Turn off shuffle in \(.applicationName)",
-                "Enable shuffle in \(.applicationName)",
-                "Disable shuffle in \(.applicationName)",
-                "Toggle random in \(.applicationName)",
-                "Shuffle random in \(.applicationName)",
-                "Turn on random in \(.applicationName)",
-                "Turn off random in \(.applicationName)",
-                "Enable random in \(.applicationName)",
-                "Disable random in \(.applicationName)",
+                "Toggle \(\.$mode) in \(.applicationName)",
+                "Enable \(\.$mode) in \(.applicationName)",
+                "Disable \(\.$mode) in \(.applicationName)",
+                "Turn on \(\.$mode) in \(.applicationName)",
+                "Turn off \(\.$mode) in \(.applicationName)",
+                "Set \(\.$mode) in \(.applicationName)",
             ],
-            shortTitle: "Toggle Shuffle",
-            systemImageName: "shuffle",
-        )
-
-        AppShortcut(
-            intent: ToggleRepeatIntent(),
-            phrases: [
-                "Toggle repeat in \(.applicationName)",
-                "Repeat music in \(.applicationName)",
-                "Turn on repeat in \(.applicationName)",
-                "Turn off repeat in \(.applicationName)",
-                "Enable repeat in \(.applicationName)",
-                "Disable repeat in \(.applicationName)",
-                "Loop music in \(.applicationName)",
-            ],
-            shortTitle: "Toggle Repeat",
-            systemImageName: "repeat",
+            shortTitle: "Playback Mode",
+            systemImageName: "slider.horizontal.3",
         )
 
         AppShortcut(
