@@ -18,6 +18,7 @@
 		91EF37962EE8E02100B222C4 /* MPDKit in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37952EE8E02100B222C4 /* MPDKit */; };
 		91EF37AA2EEA30EA00B222C4 /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37A92EEA30EA00B222C4 /* Shared */; };
 		91EF37AD2EEA310C00B222C4 /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37AC2EEA310C00B222C4 /* Shared */; };
+		91EF3AD32EEAE93800B222C4 /* widget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 91EF3A0D2EEAE92400B222C4 /* widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
@@ -37,14 +38,15 @@
 			dstPath = "";
 			dstSubfolder = PlugIns;
 			files = (
+				91EF3AD32EEAE93800B222C4 /* widget.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		91A141E02CDE3988000A74BC /* swmpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = swmpc.app; path = /Users/camille/Developer/Home/swmpc/build/Debug/swmpc.app; sourceTree = "<absolute>"; };
-		91EF2E252EE844A700B222C4 /* widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = widget.appex; path = /Users/camille/Developer/Home/swmpc/build/Debug/widget.appex; sourceTree = "<absolute>"; };
+		91EF3A0C2EEAE92400B222C4 /* swmpc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swmpc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		91EF3A0D2EEAE92400B222C4 /* widget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = widget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -139,15 +141,9 @@
 				9183AF022D4BB8DF00CDC987 /* Assets */,
 				91A141E22CDE3988000A74BC /* swmpc */,
 				91EF2E2B2EE844A700B222C4 /* widget */,
-				91EF37AB2EEA310C00B222C4 /* Frameworks */,
+				91EF3A0C2EEAE92400B222C4 /* swmpc.app */,
+				91EF3A0D2EEAE92400B222C4 /* widget.appex */,
 			);
-			sourceTree = "<group>";
-		};
-		91EF37AB2EEA310C00B222C4 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -183,7 +179,7 @@
 				91EF37A92EEA30EA00B222C4 /* Shared */,
 			);
 			productName = swmpc;
-			productReference = 91A141E02CDE3988000A74BC /* swmpc.app */;
+			productReference = 91EF3A0C2EEAE92400B222C4 /* swmpc.app */;
 			productType = "com.apple.product-type.application";
 		};
 		91EF2E242EE844A700B222C4 /* widget */ = {
@@ -207,7 +203,7 @@
 				91EF37AC2EEA310C00B222C4 /* Shared */,
 			);
 			productName = widgetExtension;
-			productReference = 91EF2E252EE844A700B222C4 /* widget.appex */;
+			productReference = 91EF3A0D2EEAE92400B222C4 /* widget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
