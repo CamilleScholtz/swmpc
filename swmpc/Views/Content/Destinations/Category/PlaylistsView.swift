@@ -157,6 +157,11 @@ struct PlaylistsView: View {
                     Image(systemSymbol: .ellipsis)
                 }
             }
+
+            ToolbarItem {
+                Color.clear
+                    .frame(width: 0)
+            }
         }
         .alert("New Playlist", isPresented: $isCreatingPlaylist) {
             TextField("Playlist Name", text: $playlistName)
