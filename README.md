@@ -23,12 +23,13 @@ Tired of janky MPD clients? Same.
 
 #### What you get:
 
-- **Fast library browsing**: Search artists, albums, and tracks instantly
+- **Fast library browsing**: Search artists, albums, and tracks instantly.
 - **Sane queue management**: Add, remove, reorder. Drag and drop. No friction.
-- **Full playlist support**: Create, edit, delete, and populate playlists without fighting the UI
-- **Favorites**: Quick access to tracks you actually listen to
-- **AI-powered smart fill**: Generate playlists or queue tracks by genre or mood
-- **Menu bar controls**: Skip, pause, adjust—without switching windows
+- **Full playlist support**: Create, edit, delete, and populate playlists without fighting the UI.
+- **Favorites**: Quick access to tracks you actually listen to.
+- **AI-powered smart fill**: Generate playlists or queue tracks by genre or mood.
+- **Menu bar controls**: Skip, pause, adjust—without switching windows.
+- **Widget support**: Control playback from your home or lock screen.
 - **Open source**: Inspect it, fork it, contribute. It's your app too.
 - **Universal purchase**: One price. Get it for both Mac and iPhone. Done.
 
