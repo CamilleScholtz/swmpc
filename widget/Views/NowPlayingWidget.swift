@@ -18,7 +18,7 @@ struct NowPlayingWidget: Widget {
         }
         .configurationDisplayName("Now Playing")
         .description("Shows the currently playing song from your MPD server.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall])
         .contentMarginsDisabled()
     }
 }

@@ -87,6 +87,17 @@ struct AppView: View {
                                     IntelligenceView(target: target)
                                 }
                             }
+                            .alert("Clear Queue", isPresented: $navigator.showClearQueueAlert) {
+                                Button("Cancel", role: .cancel) {}
+
+                                AsyncButton("Clear", role: .destructive) {
+                                    try await ConnectionManager.command {
+                                        try await $0.clearQueue()
+                                    }
+                                }
+                            } message: {
+                                Text("Are you sure you want to clear the queue?")
+                            }
                         }
                     #elseif os(macOS)
                         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -169,6 +180,7 @@ struct AppView: View {
         .onDisappear {
             mpd.status.stopTrackingElapsed()
         }
+        #if os(macOS)
         .alert("Clear Queue", isPresented: $navigator.showClearQueueAlert) {
             Button("Cancel", role: .cancel) {}
 
@@ -180,6 +192,7 @@ struct AppView: View {
         } message: {
             Text("Are you sure you want to clear the queue?")
         }
+        #endif
         .sheet(isPresented: $navigator.showIntelligenceSheet, onDismiss: {
             navigator.intelligenceTarget = nil
         }) {

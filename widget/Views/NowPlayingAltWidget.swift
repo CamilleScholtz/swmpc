@@ -17,7 +17,7 @@ struct NowPlayingAltWidget: Widget {
                 .widgetURL(URL(string: "swmpc://nowplaying"))
         }
         .configurationDisplayName("Now Playing Alt")
-        .description("Alternative widget showing the currently playing song.")
+        .description("Shows the currently playing song from your MPD server.")
         .supportedFamilies([.systemSmall])
         .contentMarginsDisabled()
     }
