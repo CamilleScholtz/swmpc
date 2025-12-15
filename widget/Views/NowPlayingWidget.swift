@@ -32,25 +32,29 @@ struct NowPlayingWidgetEntryView: View {
 }
 
 struct NowPlayingWidgetView: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
     let entry: NowPlayingEntry
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             artworkView
 
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
-                .mask(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: .black, location: 0.3),
-                            .init(color: .black.opacity(0), location: 1.0),
-                        ]),
-                        startPoint: .bottom,
-                        endPoint: .top,
-                    ),
-                )
+            if renderingMode == .fullColor {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .environment(\.colorScheme, .dark)
+                    .mask(
+                        LinearGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: .black, location: 0.3),
+                                .init(color: .black.opacity(0), location: 1.0),
+                            ]),
+                            startPoint: .bottom,
+                            endPoint: .top
+                        )
+                    )
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title)
@@ -80,10 +84,12 @@ struct NowPlayingWidgetView: View {
             #if os(iOS)
                 Image(uiImage: artwork)
                     .resizable()
+                    .widgetAccentedRenderingMode(.fullColor)
                     .aspectRatio(contentMode: .fill)
             #elseif os(macOS)
                 Image(nsImage: artwork)
                     .resizable()
+                    .widgetAccentedRenderingMode(.fullColor)
                     .aspectRatio(contentMode: .fill)
             #endif
         } else {

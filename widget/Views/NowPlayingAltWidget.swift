@@ -32,15 +32,22 @@ struct NowPlayingAltWidgetEntryView: View {
 }
 
 struct NowPlayingAltWidgetView: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
     let entry: NowPlayingEntry
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            artworkView
+            if renderingMode == .fullColor {
+                artworkView
 
-            Rectangle()
-                .fill(.thinMaterial)
-                .environment(\.colorScheme, .dark)
+                Rectangle()
+                    .fill(.thinMaterial)
+                    .environment(\.colorScheme, .dark)
+            } else {
+                Spacer()
+                    .frame(maxHeight: .infinity)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title)
@@ -77,10 +84,12 @@ struct NowPlayingAltWidgetView: View {
             #if os(iOS)
                 Image(uiImage: artwork)
                     .resizable()
+                    .widgetAccentedRenderingMode(.fullColor)
                     .aspectRatio(contentMode: .fill)
             #elseif os(macOS)
                 Image(nsImage: artwork)
                     .resizable()
+                    .widgetAccentedRenderingMode(.fullColor)
                     .aspectRatio(contentMode: .fill)
             #endif
         } else {
