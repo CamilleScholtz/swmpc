@@ -56,6 +56,11 @@ struct OutputView: View {
 
                     HStack(spacing: Layout.Spacing.medium) {
                         Text("\(Int(percentage * 100))%")
+                        #if os(iOS)
+                            .font(.subheadline.pointSize(12))
+                        #elseif os(macOS)
+                            .font(.subheadline)
+                        #endif
                             .font(.subheadline)
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
@@ -63,7 +68,7 @@ struct OutputView: View {
 
                         Slider(value: $percentage, in: 0 ... 1) {} ticks: {
                             SliderTickContentForEach(
-                                stride(from: 0.0, through: 1.0, by: 0.33).map(\.self),
+                                stride(from: 0.0, through: 1.0, by: 0.25).map(\.self),
                                 id: \.self,
                             ) { value in
                                 SliderTick(value)

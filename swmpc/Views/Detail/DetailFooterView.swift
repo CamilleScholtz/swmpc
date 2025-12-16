@@ -16,7 +16,7 @@ struct DetailFooterView: View {
             HStack(alignment: .bottom) {
                 Text(mpd.status.song?.title ?? "No song playing")
                 #if os(iOS)
-                    .font(.system(size: 22))
+                    .font(.system(size: 21))
                 #elseif os(macOS)
                     .font(.system(size: 18))
                 #endif
@@ -27,7 +27,9 @@ struct DetailFooterView: View {
                 Spacer()
 
                 OutputView()
+                #if os(macOS)
                     .offset(y: 1)
+                #endif
 
                 FavoriteView()
                     .offset(x: 4, y: 1)
