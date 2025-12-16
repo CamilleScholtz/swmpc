@@ -51,8 +51,8 @@ struct NowPlayingWidgetView: View {
                                 .init(color: .black.opacity(0), location: 1.0),
                             ]),
                             startPoint: .bottom,
-                            endPoint: .top
-                        )
+                            endPoint: .top,
+                        ),
                     )
             }
 

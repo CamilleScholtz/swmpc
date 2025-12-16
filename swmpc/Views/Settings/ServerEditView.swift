@@ -23,6 +23,8 @@ struct ServerEditView: View {
     @State private var password: String
     @State private var artworkGetter: ArtworkGetter
 
+    @State private var streamingPort: Int?
+
     private var isNew: Bool { server == nil }
 
     init(server: Server?) {
@@ -33,6 +35,8 @@ struct ServerEditView: View {
         _port = State(initialValue: server?.port ?? 6600)
         _password = State(initialValue: server?.password ?? "")
         _artworkGetter = State(initialValue: server?.artworkGetter ?? .library)
+
+        _streamingPort = State(initialValue: server?.streamingPort ?? 8000)
     }
 
     var body: some View {
@@ -138,6 +142,17 @@ struct ServerEditView: View {
             } footer: {
                 Text("Library searches for cover files in the song's directory. Metadata extracts artwork from the song file, but is slower.")
             }
+
+            Section {
+                TextField("Port", value: $streamingPort, formatter: NumberFormatter())
+                #if os(iOS)
+                    .keyboardType(.numberPad)
+                #endif
+            } header: {
+                Text("Streaming")
+            } footer: {
+                Text("Stream audio from MPD's httpd output. Requires httpd output configured in MPD.")
+            }
         }
         #if os(macOS)
         .formStyle(.grouped)
@@ -152,6 +167,7 @@ struct ServerEditView: View {
             port: port,
             password: password,
             artworkGetter: artworkGetter,
+            streamingPort: streamingPort,
         )
 
         if isNew {

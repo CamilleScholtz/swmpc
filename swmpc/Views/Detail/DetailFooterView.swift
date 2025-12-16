@@ -26,10 +26,8 @@ struct DetailFooterView: View {
 
                 Spacer()
 
-                #if os(macOS)
-                    VolumeSliderView()
-                        .offset(y: 1)
-                #endif
+                OutputView()
+                    .offset(y: 1)
 
                 FavoriteView()
                     .offset(x: 4, y: 1)

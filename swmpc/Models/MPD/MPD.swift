@@ -32,6 +32,12 @@ import SwiftUI
     /// The playlist manager, handling playlist operations.
     let playlists: PlaylistManager
 
+    /// The output manager, handling audio outputs.
+    let outputs = OutputManager()
+
+    /// The streaming manager, handling audio streaming from httpd output.
+    let streaming = StreamingManager()
+
     /// The background task that maintains the connection and listens for
     /// changes.
     @ObservationIgnored private var updateLoopTask: Task<Void, Never>?
@@ -123,6 +129,7 @@ import SwiftUI
         try? await database.set()
         try? await queue.set()
         try? await playlists.set()
+        try? await outputs.set()
         try? await status.set()
 
         while !Task.isCancelled {
@@ -135,6 +142,7 @@ import SwiftUI
                 .player,
                 .options,
                 .mixer,
+                .output,
             ])
             guard let changes else {
                 continue
@@ -171,6 +179,8 @@ import SwiftUI
             try await status.set()
         case .mixer:
             try await status.set()
+        case .output:
+            try await outputs.set()
         }
     }
 }
