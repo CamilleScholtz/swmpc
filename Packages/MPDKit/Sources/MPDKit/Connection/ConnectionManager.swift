@@ -79,9 +79,16 @@ public actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         connection?.onStateUpdate { [weak self] connection, state in
-            if case .failed = state {
-                Task {
+            Task {
+                switch state {
+                case .failed:
                     await self?.disconnect()
+                case let .waiting(details):
+                    if case let .posix(code) = details, code == .ECONNREFUSED {
+                        await self?.disconnect()
+                    }
+                default:
+                    break
                 }
             }
 

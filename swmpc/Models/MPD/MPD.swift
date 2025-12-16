@@ -94,9 +94,17 @@ import SwiftUI
 
                         switch state {
                         case let .failed(details):
-                            self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"])
+                            self?.state.error = NSError(
+                                domain: "MPD",
+                                code: 0,
+                                userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"],
+                            )
                         case let .waiting(details):
-                            self?.state.error = NSError(domain: "MPD", code: 0, userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(details.localizedDescription)"])
+                            self?.state.error = NSError(
+                                domain: "MPD",
+                                code: 0,
+                                userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(details.localizedDescription)"],
+                            )
                         case .cancelled:
                             self?.state.error = nil
                         case .ready:
@@ -135,20 +143,24 @@ import SwiftUI
         while !Task.isCancelled {
             await connect()
 
-            let changes = try? await ConnectionManager.idle.idleForEvents(mask: [
-                .database,
-                .playlists,
-                .queue,
-                .player,
-                .options,
-                .mixer,
-                .output,
-            ])
-            guard let changes else {
+            do {
+                let changes = try await ConnectionManager.idle.idleForEvents(mask: [
+                    .database,
+                    .playlists,
+                    .queue,
+                    .player,
+                    .options,
+                    .mixer,
+                    .output,
+                ])
+
+                try? await performUpdates(for: changes)
+            } catch is ConnectionManagerError {
+                await ConnectionManager.idle.disconnect()
+                try? await Task.sleep(for: .seconds(2))
+            } catch {
                 continue
             }
-
-            try? await performUpdates(for: changes)
         }
     }
 
