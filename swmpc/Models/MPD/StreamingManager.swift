@@ -67,7 +67,9 @@ import Observation
             queue: .main,
         ) { [weak self] notification in
             let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
-            self?.state = .error(error?.localizedDescription ?? "Playback failed")
+            Task { @MainActor [weak self] in
+                self?.state = .error(error?.localizedDescription ?? "Playback failed")
+            }
         }
 
         player?.play()
