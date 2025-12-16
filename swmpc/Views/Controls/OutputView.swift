@@ -94,7 +94,7 @@ struct OutputView: View {
                             .fontWeight(.medium)
                             .foregroundStyle(.secondary)
 
-                        ForEach(mpd.outputs.outputs, id: \.self) { output in
+                        ForEach(mpd.outputs.outputs, id: \.id) { output in
                             OutputRow(for: output)
                         }
                     }
@@ -114,8 +114,13 @@ struct OutputView: View {
                                 .foregroundStyle(.secondary)
                                 .frame(width: 40)
 
-                            Text("Stream to this device")
-                                .font(.subheadline)
+                            #if os(iOS)
+                                Text("Stream to iPhone")
+                                    .font(.subheadline)
+                            #elseif os(macOS)
+                                Text("Stream to this device")
+                                    .font(.subheadline)
+                            #endif
 
                             Spacer()
 
@@ -149,8 +154,8 @@ struct OutputView: View {
             percentage = volume / 100
         }
         .onChange(of: mpd.status.volume) { _, value in
-            if !isChangingVolume {
-                volume = Double(value ?? 0)
+            if !isChangingVolume, let value {
+                volume = Double(value)
                 percentage = volume / 100
             }
         }

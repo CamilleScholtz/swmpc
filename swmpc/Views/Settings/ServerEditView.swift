@@ -151,7 +151,7 @@ struct ServerEditView: View {
             } header: {
                 Text("Streaming")
             } footer: {
-                Text("Stream audio from MPD's httpd output. Requires httpd output configured in MPD.")
+                Text("Configure an httpd output in MPD to stream audio. Use the lame encoder with MP3 format for compatibility (e.g., encoder \"lame\", port \"8000\", q \"5\").")
             }
         }
         #if os(macOS)
