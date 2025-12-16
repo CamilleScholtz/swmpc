@@ -47,7 +47,102 @@ struct OutputView: View {
         }
         .buttonStyle(.plain)
         .popover(isPresented: $showPopover) {
-            popoverContent
+            VStack(alignment: .leading, spacing: Layout.Spacing.medium) {
+                VStack(alignment: .leading, spacing: Layout.Spacing.small) {
+                    Text("Volume")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: Layout.Spacing.medium) {
+                        Text("\(Int(percentage * 100))%")
+                            .font(.subheadline)
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .frame(width: 40)
+
+                        Slider(value: $percentage, in: 0 ... 1) {} ticks: {
+                            SliderTickContentForEach(
+                                stride(from: 0.0, through: 1.0, by: 0.33).map(\.self),
+                                id: \.self,
+                            ) { value in
+                                SliderTick(value)
+                            }
+                        } onEditingChanged: { editing in
+                            isChangingVolume = editing
+                            volume = percentage * 100
+
+                            if !editing {
+                                Task {
+                                    try? await ConnectionManager.command {
+                                        try await $0.setVolume(Int(volume))
+                                    }
+                                }
+                            }
+                        }
+                        .controlSize(.mini)
+                        .frame(minWidth: 150)
+                    }
+                }
+
+                if !mpd.outputs.outputs.isEmpty {
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: Layout.Spacing.small) {
+                        Text("Outputs")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
+
+                        ForEach(mpd.outputs.outputs, id: \.self) { output in
+                            OutputRow(for: output)
+                        }
+                    }
+                }
+
+                if !mpd.outputs.httpd.isEmpty {
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: Layout.Spacing.small) {
+                        Text("Streaming")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: Layout.Spacing.medium) {
+                            Image(systemSymbol: .antennaRadiowavesLeftAndRight)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 40)
+
+                            Text("Stream to this device")
+                                .font(.subheadline)
+
+                            Spacer()
+
+                            if let server = serverManager.selectedServer {
+                                Toggle("", isOn: Binding(
+                                    get: { mpd.streaming.state != .stopped },
+                                    set: { _ in mpd.streaming.toggleStreaming(from: server) },
+                                ))
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                                .controlSize(.mini)
+                                .disabled(!mpd.outputs.httpd.contains { $0.isEnabled })
+                            }
+                        }
+
+                        if case let .error(message) = mpd.streaming.state {
+                            Text(message)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+            }
+            .padding()
+            #if os(iOS)
+                .presentationCompactAdaptation(.popover)
+            #endif
         }
         .onAppear {
             volume = Double(mpd.status.volume ?? 0)
@@ -64,130 +159,14 @@ struct OutputView: View {
         }
     }
 
-    @ViewBuilder
-    private var popoverContent: some View {
-        VStack(alignment: .leading, spacing: Layout.Spacing.medium) {
-            volumeSection
-
-            if !mpd.outputs.outputs.isEmpty {
-                Divider()
-
-                outputsSection
-            }
-
-            if !mpd.outputs.httpd.isEmpty {
-                Divider()
-
-                streamingSection
-            }
-        }
-        .padding()
-        #if os(iOS)
-            .presentationCompactAdaptation(.popover)
-        #endif
-    }
-
-    @ViewBuilder
-    private var volumeSection: some View {
-        VStack(alignment: .leading, spacing: Layout.Spacing.small) {
-            Text("Volume")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: Layout.Spacing.medium) {
-                Text("\(Int(percentage * 100))%")
-                    .font(.subheadline)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .frame(width: 40)
-
-                Slider(value: $percentage, in: 0 ... 1) {} ticks: {
-                    SliderTickContentForEach(
-                        stride(from: 0.0, through: 1.0, by: 0.33).map(\.self),
-                        id: \.self,
-                    ) { value in
-                        SliderTick(value)
-                    }
-                } onEditingChanged: { editing in
-                    isChangingVolume = editing
-                    volume = percentage * 100
-
-                    if !editing {
-                        Task {
-                            try? await ConnectionManager.command {
-                                try await $0.setVolume(Int(volume))
-                            }
-                        }
-                    }
-                }
-                .controlSize(.mini)
-                .frame(minWidth: 150)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var outputsSection: some View {
-        VStack(alignment: .leading, spacing: Layout.Spacing.small) {
-            Text("Outputs")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-
-            ForEach(mpd.outputs.outputs, id: \.id) { output in
-                OutputRow(output: output) {
-                    try? await ConnectionManager.command {
-                        try await $0.toggleOutput(output)
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var streamingSection: some View {
-        VStack(alignment: .leading, spacing: Layout.Spacing.small) {
-            Text("Streaming")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: Layout.Spacing.medium) {
-                Image(systemSymbol: .antennaRadiowavesLeftAndRight)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 40)
-
-                Text("Stream to this device")
-                    .font(.subheadline)
-
-                Spacer()
-
-                if let server = serverManager.selectedServer {
-                    Toggle("", isOn: Binding(
-                        get: { mpd.streaming.state != .stopped },
-                        set: { _ in mpd.streaming.toggleStreaming(from: server) },
-                    ))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
-                    .disabled(!mpd.outputs.httpd.contains { $0.isEnabled })
-                }
-            }
-
-            if case let .error(message) = mpd.streaming.state {
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-        }
-    }
-
     private struct OutputRow: View {
-        let output: Output
-        let onToggle: () async -> Void
+        @Environment(MPD.self) private var mpd
 
-        @State private var isToggling = false
+        private let output: Output
+
+        init(for output: Output) {
+            self.output = output
+        }
 
         var body: some View {
             HStack(spacing: Layout.Spacing.medium) {
@@ -200,25 +179,21 @@ struct OutputView: View {
 
                 Spacer()
 
-                if isToggling {
-                    ProgressView()
-                        .controlSize(.mini)
-                } else {
-                    Toggle("", isOn: Binding(
-                        get: { output.isEnabled },
-                        set: { _ in
-                            isToggling = true
-
-                            Task(priority: .userInitiated) {
-                                await onToggle()
-                                isToggling = false
+                Toggle("", isOn: Binding(
+                    get: { output.isEnabled },
+                    set: { _ in
+                        Task(priority: .userInitiated) {
+                            try? await ConnectionManager.command {
+                                try await $0.toggleOutput(output)
                             }
-                        },
-                    ))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
-                }
+
+                            try? await mpd.outputs.set(idle: false)
+                        }
+                    },
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
             }
         }
     }

@@ -129,8 +129,8 @@ import SwiftUI
         try? await database.set()
         try? await queue.set()
         try? await playlists.set()
-        try? await outputs.set()
         try? await status.set()
+        try? await outputs.set()
 
         while !Task.isCancelled {
             await connect()

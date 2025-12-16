@@ -357,7 +357,7 @@ struct Delegate: App {
 
             changeImageTask?.cancel()
             changeImageTask = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(0.8))
+                try? await Task.sleep(for: .milliseconds(800))
                 guard !Task.isCancelled, let self, let button = popoverAnchor.button else {
                     return
                 }

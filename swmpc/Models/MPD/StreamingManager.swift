@@ -103,8 +103,6 @@ import Observation
         }
     }
 
-    // MARK: - Private Methods
-
     private func handleTimeControlStatusChange(_ status: AVPlayer.TimeControlStatus) {
         switch status {
         case .paused:

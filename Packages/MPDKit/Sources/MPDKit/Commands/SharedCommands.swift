@@ -305,6 +305,7 @@ public extension ConnectionManager {
                 let (key, value) = try parseLine(line)
                 fields[key] = value
             }
+
             return Output(fields)
         }
     }
