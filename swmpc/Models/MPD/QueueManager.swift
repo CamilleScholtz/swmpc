@@ -6,7 +6,7 @@
 //
 
 import MPDKit
-import SwiftUI
+import Observation
 
 /// Manages the MPD queue, handling song operations.
 @Observable final class QueueManager {

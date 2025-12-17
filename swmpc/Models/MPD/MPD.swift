@@ -5,9 +5,10 @@
 //  Created by Camille Scholtz on 08/11/2024.
 //
 
+import Foundation
 import MPDKit
 import Network
-import SwiftUI
+import Observation
 
 /// The main MPD client class that manages the connection and state
 /// synchronization.

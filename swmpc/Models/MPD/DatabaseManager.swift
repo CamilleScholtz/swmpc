@@ -6,7 +6,7 @@
 //
 
 import MPDKit
-import SwiftUI
+import Observation
 
 /// Manages the MPD database, handling artists, albums, and song queries.
 @Observable final class DatabaseManager {

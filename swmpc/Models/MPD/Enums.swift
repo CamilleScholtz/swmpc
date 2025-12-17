@@ -35,3 +35,15 @@ extension SearchField {
         }
     }
 }
+
+/// The current state of the streaming player.
+enum StreamState: Equatable {
+    /// No stream is playing.
+    case stopped
+    /// Connecting to or buffering the stream.
+    case loading
+    /// Actively playing audio.
+    case playing
+    /// An error occurred.
+    case error(String)
+}

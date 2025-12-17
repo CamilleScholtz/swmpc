@@ -6,7 +6,7 @@
 //
 
 import MPDKit
-import SwiftUI
+import Observation
 
 /// Manages playlist operations for the MPD client.
 @Observable final class PlaylistManager {

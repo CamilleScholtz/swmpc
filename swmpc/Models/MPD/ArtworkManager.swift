@@ -5,8 +5,8 @@
 //  Created by Camille Scholtz on 22/12/2024.
 //
 
+import Foundation
 import MPDKit
-import SwiftUI
 
 /// Manages artwork fetching and caching for media items.
 ///

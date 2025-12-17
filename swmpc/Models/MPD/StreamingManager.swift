@@ -12,22 +12,15 @@ import Observation
 /// Manages audio streaming from MPD's httpd output using AVPlayer.
 @Observable final class StreamingManager {
     /// The current state of the streaming player.
-    enum State: Equatable {
-        /// No stream is playing.
-        case stopped
-        /// Connecting to or buffering the stream.
-        case loading
-        /// Actively playing audio.
-        case playing
-        /// An error occurred.
-        case error(String)
-    }
+    private(set) var state: StreamState = .stopped
 
-    /// The current state of the streaming player.
-    private(set) var state: State = .stopped
-
+    /// The AVPlayer instance used for streaming.
     @ObservationIgnored private var player: AVPlayer?
+
+    /// Observers for player status and errors.
     @ObservationIgnored private var statusObservation: NSKeyValueObservation?
+
+    /// Observer for playback errors.
     @ObservationIgnored private var errorObserver: NSObjectProtocol?
 
     /// Starts streaming audio from the specified server.
@@ -44,10 +37,13 @@ import Observation
 
         #if os(iOS)
             do {
-                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode:
+                    .default)
                 try AVAudioSession.sharedInstance().setActive(true)
             } catch {
-                state = .error("Audio session error: \(error.localizedDescription)")
+                state = .error(
+                    "Audio session error: \(error.localizedDescription)")
+
                 return
             }
         #endif
@@ -55,7 +51,9 @@ import Observation
         let playerItem = AVPlayerItem(url: url)
         player = AVPlayer(playerItem: playerItem)
 
-        statusObservation = player?.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+        statusObservation = player?.observe(\.timeControlStatus, options: [
+            .new,
+        ]) { [weak self] player, _ in
             Task { @MainActor [weak self] in
                 self?.handleTimeControlStatusChange(player.timeControlStatus)
             }
@@ -66,7 +64,10 @@ import Observation
             object: playerItem,
             queue: .main,
         ) { [weak self] notification in
-            let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
+            let error = notification.userInfo?[
+                AVPlayerItemFailedToPlayToEndTimeErrorKey,
+            ] as? Error
+
             Task { @MainActor [weak self] in
                 self?.state = .error(error?.localizedDescription ?? "Playback failed")
             }
@@ -90,7 +91,8 @@ import Observation
         state = .stopped
 
         #if os(iOS)
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            try? AVAudioSession.sharedInstance().setActive(false, options:
+                .notifyOthersOnDeactivation)
         #endif
     }
 
@@ -105,15 +107,16 @@ import Observation
         }
     }
 
-    private func handleTimeControlStatusChange(_ status: AVPlayer.TimeControlStatus) {
+    private func handleTimeControlStatusChange(_ status:
+        AVPlayer.TimeControlStatus)
+    {
         switch status {
-        case .paused:
-            // Only set to stopped if we intentionally stopped, not on stall
-            break
         case .waitingToPlayAtSpecifiedRate:
             state = .loading
         case .playing:
             state = .playing
+        case .paused:
+            break
         @unknown default:
             break
         }

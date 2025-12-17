@@ -5,8 +5,9 @@
 //  Created by Camille Scholtz on 30/11/2025.
 //
 
+import Foundation
 import Network
-import SwiftUI
+import Observation
 
 /// Represents a discovered MPD server on the local network.
 nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {

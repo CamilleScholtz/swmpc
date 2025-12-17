@@ -6,7 +6,7 @@
 //
 
 import MPDKit
-import SwiftUI
+import Observation
 
 /// Manages MPD audio outputs.
 ///
