@@ -54,6 +54,8 @@ nonisolated struct ModelConfig {
     let path: String
     /// UserDefaults key for storing the API token.
     let setting: String
+    /// Custom HTTP headers for API requests.
+    let headers: [String: String]
     /// Whether the model is enabled.
     let isEnabled: Bool
 }
@@ -76,6 +78,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "api.openai.com",
             path: "/v1",
             setting: Setting.openAIToken,
+            headers: [:],
             isEnabled: true,
         ),
         .deepSeek: ModelConfig(
@@ -84,7 +87,8 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "api.deepseek.com",
             path: "/v1",
             setting: Setting.deepSeekToken,
-            isEnabled: true,
+            headers: [:],
+            isEnabled: false, // No stuctured output.
         ),
         .gemini: ModelConfig(
             name: "Gemini",
@@ -92,14 +96,16 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "generativelanguage.googleapis.com",
             path: "/v1beta/openai",
             setting: Setting.geminiToken,
+            headers: [:],
             isEnabled: true,
         ),
         .grok: ModelConfig(
             name: "Grok",
-            model: "grok-3-mini-latest",
+            model: "grok-4-1-fast-non-reasoning",
             host: "api.x.ai",
             path: "/v1",
             setting: Setting.grokToken,
+            headers: [:],
             isEnabled: true,
         ),
         .claude: ModelConfig(
@@ -108,6 +114,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             host: "api.anthropic.com",
             path: "/v1",
             setting: Setting.claudeToken,
+            headers: ["anthropic-beta": "structured-outputs-2025-11-13"],
             isEnabled: true,
         ),
     ]
@@ -132,6 +139,8 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
     var path: String { config.path }
     /// UserDefaults key for storing the API token.
     var setting: String { config.setting }
+    /// Custom HTTP headers for API requests.
+    var headers: [String: String] { config.headers }
     /// Whether the model supports structured output.
     var isEnabled: Bool { config.isEnabled }
 }
@@ -188,6 +197,7 @@ actor IntelligenceManager {
             token: UserDefaults.standard.string(forKey: model.setting) ?? "",
             host: model.host,
             basePath: model.path,
+            customHeaders: model.headers,
             parsingOptions: .fillRequiredFieldIfKeyNotFound,
         ))
     }
@@ -224,11 +234,6 @@ actor IntelligenceManager {
             let albumDescriptions = selectedAlbums.map(\.description).joined(
                 separator: "\n")
 
-            let prefill = """
-            {
-              "playlist": [
-            """
-
             let result = try await client.chats(query: ChatQuery(
                 messages: [
                     .init(role: .system, content: """
@@ -250,34 +255,25 @@ actor IntelligenceManager {
 
                     The user will send you a list of available albums in the format `[artist] - [title]`.
 
-                    ## OUTPUT
-
-                    You must respond with valid JSON matching this exact structure (example albums used):
-
-                    {
-                      "playlist": [
-                        "Philip Glass - Koyaanisqatsi",
-                        "Philip Glass - Einstein on the Beach",
-                        "Steve Reich - Music for 18 Musicians"
-                      ]
-                    }
-
                     ## PLAYLIST DESCRIPTION
 
                     \(prompt)
                     """)!,
                     .init(role: .user, content: albumDescriptions)!,
-                    .init(role: .assistant, content: prefill)!,
                 ],
                 model: model.model,
-                responseFormat: .jsonObject,
+                responseFormat: .jsonSchema(
+                    .init(
+                        name: "playlist-response",
+                        schema: .derivedJsonSchema(IntelligenceResponse.self),
+                        strict: true,
+                    ),
+                ),
             ))
 
-            guard let content = result.choices.first?.message.content else {
-                throw IntelligenceManagerError.noResponse
-            }
-
-            guard let data = (prefill + content).data(using: .utf8) else {
+            guard let content = result.choices.first?.message.content,
+                  let data = content.data(using: .utf8)
+            else {
                 throw IntelligenceManagerError.noResponse
             }
 
