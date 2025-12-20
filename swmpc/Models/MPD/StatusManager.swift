@@ -89,8 +89,7 @@ import WidgetKit
                 try await $0.getStatusData()
             }
 
-        let stateChanged = state.update(to: data.state)
-        if stateChanged {
+        if state.update(to: data.state) {
             #if os(macOS)
                 let image = switch data.state {
                 case .play:
@@ -109,6 +108,8 @@ import WidgetKit
                     ? startTrackingElapsedTask()
                     : stopTrackingElapsedTask()
             }
+
+            updateNowPlayingPlaybackState()
         }
 
         if isConsume.update(to: data.isConsume ?? false) {
@@ -146,20 +147,17 @@ import WidgetKit
             }
         }
 
-        let songChanged = song.update(to: data.song)
-        if songChanged {
+        if song.update(to: data.song) {
             #if os(macOS)
                 AppDelegate.shared?.setStatusItemTitle()
             #endif
 
             WidgetCenter.shared.reloadAllTimelines()
+
+            await updateNowPlayingSong()
         }
 
         _ = volume.update(to: data.volume)
-
-        if songChanged || stateChanged {
-            await updateNowPlayingInfo()
-        }
     }
 
     /// Starts tracking elapsed time for the current song.

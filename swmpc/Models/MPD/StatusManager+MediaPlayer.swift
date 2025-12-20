@@ -134,11 +134,11 @@ extension StatusManager {
         commandCenter.changePlaybackRateCommand.isEnabled = false
     }
 
-    /// Updates the system Now Playing info center with current playback state.
+    /// Updates song metadata and artwork in the Now Playing info center.
     ///
-    /// This method updates the Control Center and Lock Screen with track
-    /// information, artwork, and playback state.
-    func updateNowPlayingInfo() async {
+    /// Call this when the song changes. For state-only changes (play/pause),
+    /// use `updateNowPlayingPlaybackState()` instead.
+    func updateNowPlayingSong() async {
         guard let song else {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             return
@@ -150,8 +150,7 @@ extension StatusManager {
             MPMediaItemPropertyAlbumTitle: song.album.title,
             MPMediaItemPropertyAlbumArtist: song.album.artist.name,
             MPMediaItemPropertyPlaybackDuration: song.duration,
-            // XXX: Makes the title in the now playing control ugly.
-            // MPMediaItemPropertyAlbumTrackNumber: song.track,
+            MPMediaItemPropertyAlbumTrackNumber: song.track,
             MPMediaItemPropertyDiscNumber: song.disc,
 
             MPNowPlayingInfoPropertyElapsedPlaybackTime: elapsed ?? 0,
@@ -174,6 +173,30 @@ extension StatusManager {
         MPNowPlayingInfoCenter.default().playbackState = state == .play ?
             .playing : .paused
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+    }
+
+    /// Updates only the playback state in the Now Playing info center.
+    ///
+    /// This is a lightweight update for play/pause state changes that doesn't
+    /// re-fetch artwork. Call `updateNowPlayingSong()` when the song changes.
+    func updateNowPlayingPlaybackState() {
+        guard song != nil else {
+            return
+        }
+
+        MPNowPlayingInfoCenter.default().playbackState = state == .play ?
+            .playing : .paused
+
+        if var nowPlayingInfo = MPNowPlayingInfoCenter.default()
+            .nowPlayingInfo
+        {
+            nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] =
+                elapsed ?? 0
+            nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] =
+                state == .play ? 1.0 : 0.0
+
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        }
     }
 
     /// Updates the command center's repeat and shuffle mode states.
