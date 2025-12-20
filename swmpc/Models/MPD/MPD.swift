@@ -51,7 +51,7 @@ import Observation
         queue = QueueManager(state: state)
         playlists = PlaylistManager(state: state)
 
-        setupRemoteCommands()
+        status.setupRemoteCommands()
 
         updateLoopTask = Task { [weak self] in
             await self?.updateLoop()

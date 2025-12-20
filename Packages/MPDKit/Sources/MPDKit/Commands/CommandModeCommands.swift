@@ -347,6 +347,13 @@ public extension ConnectionManager where Mode == CommandMode {
         try await run(["next"])
     }
 
+    /// Stops playback.
+    ///
+    /// - Throws: An error if the underlying command execution fails.
+    func stop() async throws {
+        try await run(["stop"])
+    }
+
     /// Sets the consume mode.
     ///
     /// - Parameter value: A Boolean value indicating whether to enable (`true`)

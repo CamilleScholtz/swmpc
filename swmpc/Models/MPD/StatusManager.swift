@@ -6,7 +6,6 @@
 //
 
 import AsyncAlgorithms
-@preconcurrency import MediaPlayer
 import MPDKit
 import SwiftUI
 import WidgetKit
@@ -119,18 +118,24 @@ import WidgetKit
             #endif
         }
 
-        if isRandom.update(to: data.isRandom ?? false) {
+        let randomChanged = isRandom.update(to: data.isRandom ?? false)
+        if randomChanged {
             #if os(macOS)
                 AppDelegate.shared?.setPopoverAnchorImage(changed:
                     data.isRandom ?? false ? "random" : "sequential")
             #endif
         }
 
-        if isRepeat.update(to: data.isRepeat ?? false) {
+        let repeatChanged = isRepeat.update(to: data.isRepeat ?? false)
+        if repeatChanged {
             #if os(macOS)
                 AppDelegate.shared?.setPopoverAnchorImage(changed:
                     data.isRepeat ?? false ? "repeat" : "single")
             #endif
+        }
+
+        if randomChanged || repeatChanged {
+            updateRemoteCommandModes()
         }
 
         _ = elapsed.update(to: data.elapsed ?? 0)
@@ -221,51 +226,5 @@ import WidgetKit
 
         trackingTask = nil
         startTime = nil
-    }
-
-    /// Updates the system Now Playing info center with current playback state.
-    ///
-    /// This method updates the Control Center and Lock Screen with track
-    /// information, artwork, and playback state.
-    private func updateNowPlayingInfo() async {
-        guard let song else {
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-            return
-        }
-
-        var nowPlayingInfo: [String: Any] = [
-            MPMediaItemPropertyTitle: song.title,
-            MPMediaItemPropertyArtist: song.artist,
-            MPMediaItemPropertyAlbumTitle: song.album.title,
-            MPMediaItemPropertyPlaybackDuration: song.duration,
-
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: elapsed ?? 0,
-            MPNowPlayingInfoPropertyPlaybackRate: state == .play ? 1.0 : 0.0,
-            MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
-        ]
-
-        if let artwork = await fetchNowPlayingArtwork(for: song) {
-            nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
-        }
-
-        MPNowPlayingInfoCenter.default().playbackState = state == .play ? .playing : .paused
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
-    }
-
-    /// Fetches artwork for the Now Playing info center.
-    ///
-    /// Uses `ArtworkManager` for caching the underlying artwork data.
-    private func fetchNowPlayingArtwork(for song: Song) async -> MPMediaItemArtwork? {
-        guard let artworkData = try? await song.artwork(),
-              let image = artworkData.image
-        else {
-            return nil
-        }
-
-        return MPMediaItemArtwork(
-            boundsSize: CGSize(width: 600, height: 600),
-        ) { @Sendable _ in
-            image
-        }
     }
 }
