@@ -94,86 +94,86 @@ struct DetailArtworkView: View, Equatable {
                 }
         }
     }
+}
 
-    private struct ShadowGradientView: View {
-        let artwork: Artwork?
+private struct ShadowGradientView: View {
+    let artwork: Artwork?
 
-        @State private var colors: [Color]?
+    @State private var colors: [Color]?
 
-        private static let cornerOffset = Layout.Size.artworkWidth / 4
-        private static let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
-            (-cornerOffset, -cornerOffset),
-            (cornerOffset, -cornerOffset),
-            (-cornerOffset, cornerOffset),
-            (cornerOffset, cornerOffset),
-        ]
+    private static let cornerOffset = Layout.Size.artworkWidth / 4
+    private static let cornerOffsets: [(x: CGFloat, y: CGFloat)] = [
+        (-cornerOffset, -cornerOffset),
+        (cornerOffset, -cornerOffset),
+        (-cornerOffset, cornerOffset),
+        (cornerOffset, cornerOffset),
+    ]
 
-        private var artworkHeight: CGFloat {
-            artwork?.image.map {
-                Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
-            } ?? Layout.Size.artworkWidth
-        }
+    private var artworkHeight: CGFloat {
+        artwork?.image.map {
+            Double($0.size.height) / Double($0.size.width) * Layout.Size.artworkWidth
+        } ?? Layout.Size.artworkWidth
+    }
 
-        var body: some View {
-            ZStack {
-                if let colors {
-                    gradientLayer(colors: colors)
-                        .mask(
-                            RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                            #if os(iOS)
-                                .frame(width: Layout.Size.artworkWidth * 2, height: artworkHeight * 2)
-                            #elseif os(macOS)
-                                .frame(width: Layout.Size.artworkWidth + Layout.Padding.large, height: artworkHeight + Layout.Padding.large)
-                            #endif
-                                .blur(radius: 40),
-                        )
-                    #if os(iOS)
-                        .blur(radius: 10)
-                    #endif
-                        .opacity(0.6)
-
-                    gradientLayer(colors: colors)
-                        .mask(
-                            RadialGradient(
-                                colors: [.black, .clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: Layout.Size.artworkWidth * 1.4,
-                            )
-                            .frame(width: Layout.Size.artworkWidth * 2, height: Layout.Size.artworkWidth * 2),
-                        )
-                        .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
-                        .opacity(0.5)
-                        .offset(y: artworkHeight / 2)
-                }
-            }
-            #if os(iOS)
-            .offset(y: -Layout.Padding.large)
-            #endif
-            .animation(.easeInOut(duration: 0.6), value: colors)
-            .task(id: artwork) {
-                guard let image = artwork?.image else {
-                    colors = nil
-                    return
-                }
-
-                colors = await Color.extractDominantColors(from: image, count: 4)
-            }
-        }
-
-        private func gradientLayer(colors: [Color]) -> some View {
-            ZStack {
-                ForEach(colors.indices, id: \.self) { index in
-                    let offset = Self.cornerOffsets[index % 4]
-
-                    RadialGradient(
-                        colors: [colors[index], .clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 200,
+    var body: some View {
+        ZStack {
+            if let colors {
+                gradientLayer(colors: colors)
+                    .mask(
+                        RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                        #if os(iOS)
+                            .frame(width: Layout.Size.artworkWidth * 2, height: artworkHeight * 2)
+                        #elseif os(macOS)
+                            .frame(width: Layout.Size.artworkWidth + Layout.Padding.large, height: artworkHeight + Layout.Padding.large)
+                        #endif
+                            .blur(radius: 40),
                     )
-                    .offset(x: offset.x, y: offset.y)
-                }
+                #if os(iOS)
+                    .blur(radius: 10)
+                #endif
+                    .opacity(0.6)
+
+                gradientLayer(colors: colors)
+                    .mask(
+                        RadialGradient(
+                            colors: [.black, .clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: Layout.Size.artworkWidth * 1.4,
+                        )
+                        .frame(width: Layout.Size.artworkWidth * 2, height: Layout.Size.artworkWidth * 2),
+                    )
+                    .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
+                    .opacity(0.5)
+                    .offset(y: artworkHeight / 2)
+            }
+        }
+        #if os(iOS)
+        .offset(y: -Layout.Padding.large)
+        #endif
+        .animation(.easeInOut(duration: 0.6), value: colors)
+        .task(id: artwork) {
+            guard let image = artwork?.image else {
+                colors = nil
+                return
+            }
+
+            colors = await Color.extractDominantColors(from: image, count: 4)
+        }
+    }
+
+    private func gradientLayer(colors: [Color]) -> some View {
+        ZStack {
+            ForEach(colors.indices, id: \.self) { index in
+                let offset = Self.cornerOffsets[index % 4]
+
+                RadialGradient(
+                    colors: [colors[index], .clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 200,
+                )
+                .offset(x: offset.x, y: offset.y)
             }
         }
     }

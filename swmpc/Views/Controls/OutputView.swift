@@ -168,43 +168,43 @@ struct OutputView: View {
             volume = percentage * 100
         }
     }
+}
 
-    private struct OutputRow: View {
-        @Environment(MPD.self) private var mpd
+private struct OutputRow: View {
+    @Environment(MPD.self) private var mpd
 
-        private let output: Output
+    private let output: Output
 
-        init(for output: Output) {
-            self.output = output
-        }
+    init(for output: Output) {
+        self.output = output
+    }
 
-        var body: some View {
-            HStack(spacing: Layout.Spacing.medium) {
-                Image(systemSymbol: output.isHttpd ? .antennaRadiowavesLeftAndRight : .speakerWave2)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 40)
+    var body: some View {
+        HStack(spacing: Layout.Spacing.medium) {
+            Image(systemSymbol: output.isHttpd ? .antennaRadiowavesLeftAndRight : .speakerWave2)
+                .foregroundStyle(.secondary)
+                .frame(width: 40)
 
-                Text(output.name)
-                    .font(.subheadline)
+            Text(output.name)
+                .font(.subheadline)
 
-                Spacer()
+            Spacer()
 
-                Toggle("", isOn: Binding(
-                    get: { output.isEnabled },
-                    set: { _ in
-                        Task(priority: .userInitiated) {
-                            try? await ConnectionManager.command {
-                                try await $0.toggleOutput(output)
-                            }
-
-                            try? await mpd.outputs.set(idle: false)
+            Toggle("", isOn: Binding(
+                get: { output.isEnabled },
+                set: { _ in
+                    Task(priority: .userInitiated) {
+                        try? await ConnectionManager.command {
+                            try await $0.toggleOutput(output)
                         }
-                    },
-                ))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-            }
+
+                        try? await mpd.outputs.set(idle: false)
+                    }
+                },
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.mini)
         }
     }
 }

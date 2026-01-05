@@ -136,82 +136,6 @@ struct AboutView: View {
             }
     }
 
-    struct StatCard: View {
-        let symbol: SFSymbol
-        let label: String
-        let value: String?
-
-        var body: some View {
-            VStack(spacing: 8) {
-                Image(systemSymbol: symbol)
-                    .font(.system(size: 24))
-                    .foregroundStyle(.accent)
-                    .frame(height: 32)
-
-                Text(value ?? "?")
-                    .font(.system(size: 20, weight: .semibold))
-                    .monospacedDigit()
-
-                Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
-                    .fill(.background.opacity(0.4)),
-            )
-        }
-    }
-
-    struct StatRow: View {
-        let symbol: SFSymbol
-        let label: String
-        let value: String?
-
-        var body: some View {
-            #if os(iOS)
-                VStack(alignment: .leading) {
-                    HStack(spacing: 12) {
-                        Image(systemSymbol: symbol)
-                            .font(.system(size: 14))
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.accent)
-                            .frame(width: 20)
-
-                        Text(label)
-                            .font(.subheadline)
-                    }
-
-                    Text(value ?? "?")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-                .padding(.vertical, 4)
-            #elseif os(macOS)
-                HStack(spacing: 12) {
-                    Image(systemSymbol: symbol)
-                        .font(.system(size: 14))
-                        .foregroundStyle(.accent)
-                        .frame(width: 20)
-
-                    Text(label)
-                        .font(.subheadline)
-
-                    Spacer()
-
-                    Text(value ?? "?")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-                .padding(.vertical, 4)
-            #endif
-        }
-    }
-
     private func formatDate(_ timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
         let formatter = DateFormatter()
@@ -220,5 +144,81 @@ struct AboutView: View {
         formatter.timeStyle = .short
 
         return formatter.string(from: date)
+    }
+}
+
+private struct StatCard: View {
+    let symbol: SFSymbol
+    let label: String
+    let value: String?
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemSymbol: symbol)
+                .font(.system(size: 24))
+                .foregroundStyle(.accent)
+                .frame(height: 32)
+
+            Text(value ?? "?")
+                .font(.system(size: 20, weight: .semibold))
+                .monospacedDigit()
+
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
+                .fill(.background.opacity(0.4)),
+        )
+    }
+}
+
+private struct StatRow: View {
+    let symbol: SFSymbol
+    let label: String
+    let value: String?
+
+    var body: some View {
+        #if os(iOS)
+            VStack(alignment: .leading) {
+                HStack(spacing: 12) {
+                    Image(systemSymbol: symbol)
+                        .font(.system(size: 14))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.accent)
+                        .frame(width: 20)
+
+                    Text(label)
+                        .font(.subheadline)
+                }
+
+                Text(value ?? "?")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .padding(.vertical, 4)
+        #elseif os(macOS)
+            HStack(spacing: 12) {
+                Image(systemSymbol: symbol)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.accent)
+                    .frame(width: 20)
+
+                Text(label)
+                    .font(.subheadline)
+
+                Spacer()
+
+                Text(value ?? "?")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .padding(.vertical, 4)
+        #endif
     }
 }

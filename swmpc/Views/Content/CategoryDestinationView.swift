@@ -78,7 +78,7 @@ struct CategoryDestinationView: View {
     }
 }
 
-struct CategoryDatabaseView: View {
+private struct CategoryDatabaseView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
@@ -571,7 +571,7 @@ struct CategoryPlaylistView: View {
     }
 }
 
-struct EmptyCategoryView: View {
+private struct EmptyCategoryView: View {
     let destination: CategoryDestination
 
     var body: some View {

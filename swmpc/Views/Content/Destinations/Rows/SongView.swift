@@ -130,31 +130,31 @@ struct SongView: View, Equatable {
             #endif
         }
     }
+}
 
-    private struct WaveView: View {
-        @Environment(MPD.self) private var mpd
+private struct WaveView: View {
+    @Environment(MPD.self) private var mpd
 
-        var body: some View {
-            TimelineView(.animation(minimumInterval: 1 / 30, paused: !mpd.status.isPlaying)) { timeline in
-                let time = timeline.date.timeIntervalSinceReferenceDate
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: !mpd.status.isPlaying)) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
 
-                HStack(spacing: 1.5) {
-                    bar(phase: time, speed: 1.5, low: 0.4)
-                    bar(phase: time, speed: 1.2, low: 0.3)
-                    bar(phase: time, speed: 1.0, low: 0.5)
-                    bar(phase: time, speed: 1.7, low: 0.3)
-                    bar(phase: time, speed: 1.0, low: 0.5)
-                }
+            HStack(spacing: 1.5) {
+                bar(phase: time, speed: 1.5, low: 0.4)
+                bar(phase: time, speed: 1.2, low: 0.3)
+                bar(phase: time, speed: 1.0, low: 0.5)
+                bar(phase: time, speed: 1.7, low: 0.3)
+                bar(phase: time, speed: 1.0, low: 0.5)
             }
         }
+    }
 
-        private func bar(phase: Double, speed: Double, low: CGFloat, high: CGFloat = 1.0) -> some View {
-            let normalized = (sin(phase * speed * .pi * 2) + 1) / 2
-            let height = low + (high - low) * normalized
+    private func bar(phase: Double, speed: Double, low: CGFloat, high: CGFloat = 1.0) -> some View {
+        let normalized = (sin(phase * speed * .pi * 2) + 1) / 2
+        let height = low + (high - low) * normalized
 
-            return RoundedRectangle(cornerRadius: 2)
-                .fill(.secondary)
-                .frame(width: 2, height: height * 12)
-        }
+        return RoundedRectangle(cornerRadius: 2)
+            .fill(.secondary)
+            .frame(width: 2, height: height * 12)
     }
 }

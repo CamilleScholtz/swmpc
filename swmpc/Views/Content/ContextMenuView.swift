@@ -99,7 +99,7 @@ struct ContextMenuView<Media: Mediable>: View {
     }
 }
 
-struct SourceToggleButton<Media: Mediable>: View {
+private struct SourceToggleButton<Media: Mediable>: View {
     @Environment(MPD.self) private var mpd
 
     let media: Media

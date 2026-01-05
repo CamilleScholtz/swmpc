@@ -222,7 +222,7 @@ extension StatusManager {
         }
 
         return MPMediaItemArtwork(
-            boundsSize: CGSize(width: 600, height: 600)
+            boundsSize: CGSize(width: 600, height: 600),
         ) { @Sendable _ in
             image
         }

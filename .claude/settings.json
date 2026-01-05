@@ -1,0 +1,7 @@
+{
+  "enabledPlugins": {
+    "xclaude-plugin@xclaude-plugin-marketplace": true,
+    "axiom@axiom-marketplace": true,
+    "swift-lsp@claude-plugins-official": true
+  }
+}
