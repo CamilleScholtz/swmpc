@@ -238,33 +238,40 @@ actor IntelligenceManager {
                 messages: [
                     .init(role: .system, content: """
                     You are an expert music curator with comprehensive knowledge of artists, albums, genres, and styles across all eras and popularity levels.
+                    You are an expert music curator with deep knowledge of artists, albums, genres, and styles across all eras.
 
-                    Your task is to analyze the playlist description below and select albums from the list provided by the user that best match the request.
+                    <task>
+                    Analyze the user's playlist description and select matching albums from their provided list. Return only albums that appear in the user's list.
+                    </task>
+                    
+                    <input_format>
+                    The user will provide:
+                    1. A playlist description (theme, mood, genre, era, or other criteria)
+                    2. A list of available albums formatted as `[artist] - [title]`
+                    </input_format>
 
-                    ## SELECTION CRITERIA
-
-                    - Only select albums that appear in the user's provided list
-                    - Match albums based on genre, mood, era, style, theme, or other relevant criteria
+                    <selection_guidelines>
+                    - Select 5-20 albums depending on request specificity
                     - Prioritize strong matches over weak connections
-                    - Include 5-20 albums depending on the specificity of the request
+                    - For broad requests (e.g., "best albums"): select diverse, highly-regarded works
+                    - For specific requests (e.g., "ambient electronic from the 90s"): focus tightly on criteria
                     - Balance variety with coherence unless the description requires otherwise
-                    - If the description is broad (e.g., "best albums"), select diverse, highly-regarded works
-                    - If the description is specific (e.g., "ambient electronic from the 90s"), focus tightly on the criteria
-
-                    ## INPUT
-
-                    The user will send you a list of available albums in the format `[artist] - [title]`.
-
-                    ## PLAYLIST DESCRIPTION
-
-                    \(prompt)
+                    </selection_guidelines>
                     """)!,
-                    .init(role: .user, content: albumDescriptions)!,
+                    .init(role: .user, content: """
+                    <playlist_description>
+                    \(prompt)
+                    </playlist_description>
+                    
+                    <available_albums>
+                    \(albumDescriptions)
+                    </available_albums>
+                    """)!,
                 ],
                 model: model.model,
                 responseFormat: .jsonSchema(
                     .init(
-                        name: "playlist-response",
+                        name: "playlist",
                         schema: .derivedJsonSchema(IntelligenceResponse.self),
                         strict: true,
                     ),
