@@ -30,6 +30,8 @@
 	</array>
 	<key>NSAllowsLocalNetworking</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>swmpc needs local network access to connect to your MPD server.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_mpd._tcp</string>
