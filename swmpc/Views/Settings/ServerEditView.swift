@@ -34,7 +34,7 @@ struct ServerEditView: View {
         _host = State(initialValue: server?.host ?? "localhost")
         _port = State(initialValue: server?.port ?? 6600)
         _password = State(initialValue: server?.password ?? "")
-        _artworkGetter = State(initialValue: server?.artworkGetter ?? .library)
+        _artworkGetter = State(initialValue: server?.artworkGetter ?? .libraryThenMetadata)
 
         _streamingPort = State(initialValue: server?.streamingPort ?? 8000)
     }
@@ -129,8 +129,10 @@ struct ServerEditView: View {
 
             Section {
                 Picker("Retrieval Method", selection: $artworkGetter) {
-                    Text("Library").tag(ArtworkGetter.library)
-                    Text("Metadata").tag(ArtworkGetter.metadata)
+                    Text("Library → Metadata").tag(ArtworkGetter.libraryThenMetadata)
+                    Text("Metadata → Library").tag(ArtworkGetter.metadataThenLibrary)
+                    Text("Library Only").tag(ArtworkGetter.library)
+                    Text("Metadata Only").tag(ArtworkGetter.metadata)
                 }
                 #if os(iOS)
                 .pickerStyle(.navigationLink)
@@ -140,7 +142,7 @@ struct ServerEditView: View {
             } header: {
                 Text("Artwork")
             } footer: {
-                Text("Library searches for cover files in the song's directory. Metadata extracts artwork from the song file, but is slower.")
+                Text("Library searches for cover files in the song's directory. Metadata extracts artwork from the song file. Fallback options try both methods in order.")
             }
 
             Section {

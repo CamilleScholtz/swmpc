@@ -15,7 +15,7 @@ public nonisolated struct Server: Identifiable, Hashable, Sendable, Codable {
     public var host = "localhost"
     public var port = 6600
     public var password = ""
-    public var artworkGetter = ArtworkGetter.library
+    public var artworkGetter = ArtworkGetter.libraryThenMetadata
     public var streamingPort: Int?
 
     /// Display name for the server, falling back to host if name is empty.
@@ -45,7 +45,7 @@ public nonisolated struct Server: Identifiable, Hashable, Sendable, Codable {
         host: String = "localhost",
         port: Int = 6600,
         password: String = "",
-        artworkGetter: ArtworkGetter = .library,
+        artworkGetter: ArtworkGetter = .libraryThenMetadata,
         streamingPort: Int? = nil,
     ) {
         self.id = id

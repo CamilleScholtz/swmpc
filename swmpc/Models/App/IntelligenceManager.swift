@@ -243,7 +243,7 @@ actor IntelligenceManager {
                     <task>
                     Analyze the user's playlist description and select matching albums from their provided list. Return only albums that appear in the user's list.
                     </task>
-                    
+
                     <input_format>
                     The user will provide:
                     1. A playlist description (theme, mood, genre, era, or other criteria)
@@ -262,7 +262,7 @@ actor IntelligenceManager {
                     <playlist_description>
                     \(prompt)
                     </playlist_description>
-                    
+
                     <available_albums>
                     \(albumDescriptions)
                     </available_albums>
