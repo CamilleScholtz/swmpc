@@ -252,7 +252,7 @@ public extension ConnectionManager {
 
         let lines = switch source {
         case .database:
-            try await run(["find \(filters)"])
+            try await run(["find \(filters) sort track"])
         case .queue:
             try await run(["playlistfind \(filters)"])
         default:
