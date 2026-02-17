@@ -25,7 +25,9 @@ struct ServerEditView: View {
 
     @State private var streamingPort: Int?
 
-    private var isNew: Bool { server == nil }
+    private var isNew: Bool {
+        server == nil
+    }
 
     init(server: Server?) {
         self.server = server

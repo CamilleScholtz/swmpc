@@ -47,7 +47,8 @@ public extension ConnectionManager {
             case "stop": state = .stop
             default:
                 throw ConnectionManagerError.malformedResponse(
-                    "Invalid player state: \(stateValue)")
+                    "Invalid player state: \(stateValue)",
+                )
             }
         } else {
             state = nil
@@ -160,7 +161,8 @@ public extension ConnectionManager {
             lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name)) sort date"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Only database and queue sources are supported for retrieving albums by artist")
+                "Only database and queue sources are supported for retrieving albums by artist",
+            )
         }
 
         let albums: [Album] = try parseMediaResponseArray(lines, as: .album)
@@ -229,7 +231,8 @@ public extension ConnectionManager {
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
                 throw ConnectionManagerError.unsupportedOperation(
-                    "Playlist source has no associated playlist")
+                    "Playlist source has no associated playlist",
+                )
             }
 
             lines = try await run(["listplaylistinfo \(escape(playlist.name))"])
@@ -257,7 +260,8 @@ public extension ConnectionManager {
             try await run(["playlistfind \(filters)"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Only database and queue sources are supported for retrieving songs in an album")
+                "Only database and queue sources are supported for retrieving songs in an album",
+            )
         }
 
         return try parseMediaResponseArray(lines, as: .song)

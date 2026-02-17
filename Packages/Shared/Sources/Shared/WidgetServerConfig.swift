@@ -40,7 +40,8 @@ public nonisolated struct WidgetServerConfig: Codable, Sendable {
             forSecurityApplicationGroupIdentifier: appGroupID,
         ),
             let data = try? Data(contentsOf: container.appendingPathComponent(
-                configKey))
+                configKey,
+            ))
         else {
             return nil
         }

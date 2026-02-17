@@ -9,8 +9,6 @@ import MPDKit
 import SwiftUI
 
 struct SongView: View, Equatable {
-    @Environment(MPD.self) private var mpd
-
     private let song: Song
     private let source: Source?
 
@@ -19,7 +17,7 @@ struct SongView: View, Equatable {
         self.source = source
     }
 
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.song == rhs.song && lhs.source == rhs.source
     }
 
@@ -48,7 +46,7 @@ struct SongView: View, Equatable {
                     #if os(macOS)
                         Image(systemSymbol: .playFill)
                             .font(.title3)
-                            .foregroundColor(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                             .background(
                                 Rectangle()
                                     .fill(.background)
@@ -57,22 +55,12 @@ struct SongView: View, Equatable {
                             .opacity(isHovering ? 1 : 0)
                     #endif
 
-                    if mpd.status.song == song {
-                        WaveView()
-                            .background(
-                                Rectangle()
-                                    .fill(.background)
-                                    .frame(width: trackSize, height: trackSize),
-                            )
-                    }
+                    SongPlayingOverlay(song: song, trackSize: trackSize)
                 }
                 .frame(width: trackSize, height: trackSize)
 
                 VStack(alignment: .leading) {
-                    Text(song.title)
-                        .font(.headline)
-                        .foregroundColor(mpd.status.song == song ? .accentColor : .primary)
-                        .lineLimit(2)
+                    SongTitleText(song: song)
 
                     Text((song.artist) + " • " + song.duration.timeString)
                         .font(.subheadline)
@@ -107,7 +95,7 @@ struct SongView: View, Equatable {
                 if source?.isReorderable ?? false {
                     Image(systemSymbol: .line3HorizontalCircle)
                         .font(.title2)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .frame(maxHeight: .infinity)
                         .background(
                             LinearGradient(
@@ -129,6 +117,35 @@ struct SongView: View, Equatable {
                 }
             #endif
         }
+    }
+}
+
+private struct SongPlayingOverlay: View {
+    @Environment(MPD.self) private var mpd
+    let song: Song
+    let trackSize: CGFloat
+
+    var body: some View {
+        if mpd.status.song == song {
+            WaveView()
+                .background(
+                    Rectangle()
+                        .fill(.background)
+                        .frame(width: trackSize, height: trackSize),
+                )
+        }
+    }
+}
+
+private struct SongTitleText: View {
+    @Environment(MPD.self) private var mpd
+    let song: Song
+
+    var body: some View {
+        Text(song.title)
+            .font(.headline)
+            .foregroundStyle(mpd.status.song == song ? Color.accentColor : .primary)
+            .lineLimit(2)
     }
 }
 

@@ -133,7 +133,6 @@ private struct CategoryDatabaseView: View {
         }
     }
 
-    @ViewBuilder
     private func mediaList(for media: [any Mediable]) -> some View {
         Group {
             switch mpd.database.type {
@@ -172,16 +171,11 @@ private struct CategoryDatabaseView: View {
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
-                ZStack {
+                if let searchResults {
+                    mediaList(for: searchResults)
+                } else {
                     mediaList(for: media)
                         .id(navigator.category)
-                    #if os(iOS)
-                        .opacity(searchResults == nil ? 1 : 0)
-                    #endif
-
-                    if let searchResults {
-                        mediaList(for: searchResults)
-                    }
                 }
             } else {
                 EmptyCategoryView(destination: navigator.category)
@@ -329,7 +323,6 @@ private struct CategoryDatabaseView: View {
         }
     }
 
-    @ViewBuilder
     private var searchFieldsMenu: some View {
         Menu {
             ForEach(navigator.category.source.availableSearchFields(for: mpd.database.type), id: \.self) { field in
@@ -360,7 +353,6 @@ private struct CategoryDatabaseView: View {
         .menuIndicator(.hidden)
     }
 
-    @ViewBuilder
     private var sortMenu: some View {
         Menu {
             if navigator.category.source.isSortable {

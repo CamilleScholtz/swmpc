@@ -40,7 +40,7 @@ struct OutputView: View {
             showPopover.toggle()
         } label: {
             Image(systemSymbol: volumeSymbol)
-                .foregroundColor(Color(.systemFill))
+                .foregroundStyle(Color(.systemFill))
                 .frame(width: 20, height: 16)
                 .padding(3)
                 .offset(y: volume == 0 ? 1 : 0)

@@ -122,18 +122,7 @@ struct AlbumSongsView: View {
                             }
 
                             if let songs {
-                                let flat = songs.values.flatMap(\.self)
-                                let count = flat.count == 1
-                                    ? String(localized: "1 song")
-                                    : String(localized: "\(flat.count) songs")
-
-                                Text(
-                                    count
-                                        + " • "
-                                        + (flat.reduce(0) { $0 + $1.duration }.humanTimeString),
-                                )
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                AlbumSummaryView(songs: songs)
                             }
                         }
                     }
@@ -244,18 +233,7 @@ struct AlbumSongsView: View {
                             }
 
                             if let songs {
-                                let flat = songs.values.flatMap(\.self)
-                                let count = flat.count == 1
-                                    ? String(localized: "1 song")
-                                    : String(localized: "\(flat.count) songs")
-
-                                Text(
-                                    count
-                                        + " • "
-                                        + (flat.reduce(0) { $0 + $1.duration }.humanTimeString),
-                                )
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                AlbumSummaryView(songs: songs)
                             }
                         }
 
@@ -274,12 +252,14 @@ struct AlbumSongsView: View {
         }
 
         if let songs {
+            let sortedDiscs = songs.keys.sorted()
+
             Section {
-                ForEach(songs.keys.sorted(), id: \.self) { disc in
-                    if songs.keys.count > 1 {
+                ForEach(sortedDiscs, id: \.self) { disc in
+                    if sortedDiscs.count > 1 {
                         Text("Disc \(String(disc))")
                             .font(.headline)
-                            .padding(.top, disc == songs.keys.sorted().first ? 0 : 10)
+                            .padding(.top, disc == sortedDiscs.first ? 0 : 10)
                             .mediaRowStyle()
                     }
 
@@ -291,5 +271,24 @@ struct AlbumSongsView: View {
                 }
             }
         }
+    }
+}
+
+private struct AlbumSummaryView: View {
+    let songs: [Int: [Song]]
+
+    var body: some View {
+        let flat = songs.values.flatMap(\.self)
+        let count = flat.count == 1
+            ? String(localized: "1 song")
+            : String(localized: "\(flat.count) songs")
+
+        Text(
+            count
+                + " • "
+                + (flat.reduce(0) { $0 + $1.duration }.humanTimeString),
+        )
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
     }
 }

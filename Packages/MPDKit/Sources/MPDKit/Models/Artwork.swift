@@ -18,10 +18,11 @@
 /// the image, and ensures that identical artwork from different sources
 /// (e.g., different songs from the same album) are considered equal.
 public nonisolated struct Artwork: Equatable, Sendable {
-    /// The platform-specific image.
     #if canImport(UIKit)
+        /// The platform-specific image.
         public let image: UIImage?
     #elseif canImport(AppKit)
+        /// The platform-specific image.
         public let image: NSImage?
     #endif
 
@@ -30,24 +31,24 @@ public nonisolated struct Artwork: Equatable, Sendable {
     /// A hash of the original image data, used for equality comparisons.
     public let hash: Int
 
-    /// Creates a new artwork container.
-    /// - Parameters:
-    ///   - image: The platform-specific image.
-    ///   - hash: A hash of the original image data.
     #if canImport(UIKit)
+        /// Creates a new artwork container.
+        /// - Parameters:
+        ///   - image: The platform-specific image.
+        ///   - hash: A hash of the original image data.
         public init(image: UIImage?, hash: Int) {
             self.image = image
             self.hash = hash
         }
 
     #elseif canImport(AppKit)
+        /// Creates a new artwork container.
+        /// - Parameters:
+        ///   - image: The platform-specific image.
+        ///   - hash: A hash of the original image data.
         public init(image: NSImage?, hash: Int) {
             self.image = image
             self.hash = hash
         }
     #endif
-
-    public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.hash == rhs.hash
-    }
 }

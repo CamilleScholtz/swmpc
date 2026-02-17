@@ -10,7 +10,6 @@ import SFSafeSymbols
 import SwiftUI
 
 struct AlbumView: View, Equatable {
-    @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
     private let album: Album
@@ -19,7 +18,7 @@ struct AlbumView: View, Equatable {
         self.album = album
     }
 
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.album == rhs.album
     }
 
@@ -98,10 +97,7 @@ struct AlbumView: View, Equatable {
             }
 
             VStack(alignment: .leading) {
-                Text(album.title)
-                    .font(.headline)
-                    .foregroundColor(mpd.status.song?.isIn(album) ?? false ? .accentColor : .primary)
-                    .lineLimit(2)
+                AlbumTitleText(album: album)
 
                 Text(album.artist.name)
                     .font(.subheadline)
@@ -132,5 +128,17 @@ struct AlbumView: View, Equatable {
 
                 artwork = try? await album.artwork()
             }
+    }
+}
+
+private struct AlbumTitleText: View {
+    @Environment(MPD.self) private var mpd
+    let album: Album
+
+    var body: some View {
+        Text(album.title)
+            .font(.headline)
+            .foregroundStyle(mpd.status.song?.isIn(album) ?? false ? Color.accentColor : .primary)
+            .lineLimit(2)
     }
 }

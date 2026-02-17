@@ -13,7 +13,9 @@ public nonisolated struct Playlist: Identifiable, Equatable, Hashable, Codable,
     Sendable
 {
     /// The unique identifier for the playlist, which is its name.
-    public nonisolated var id: String { name }
+    public nonisolated var id: String {
+        name
+    }
 
     /// The name of the playlist.
     public let name: String

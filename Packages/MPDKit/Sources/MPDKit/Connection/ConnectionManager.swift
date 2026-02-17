@@ -71,8 +71,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         connection = NetworkConnection(to: .hostPort(host: NWEndpoint.Host(
-            host), port: NWEndpoint.Port(integerLiteral: UInt16(port))))
-        {
+            host,
+        ), port: NWEndpoint.Port(integerLiteral: UInt16(port)))) {
             TCP()
                 .noDelay(true)
                 .connectionTimeout(3)
@@ -216,7 +216,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
 
         guard let data = (line + "\n").data(using: .utf8) else {
             throw ConnectionManagerError.protocolViolation(
-                "Failed to encode command to UTF-8.")
+                "Failed to encode command to UTF-8.",
+            )
         }
 
         try await connection.send(data)
@@ -326,7 +327,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     func readFixedLengthData(_ length: Int) async throws -> Data {
         guard length >= 0 else {
             throw ConnectionManagerError.malformedResponse(
-                "Invalid data length requested: \(length)")
+                "Invalid data length requested: \(length)",
+            )
         }
 
         guard length > 0 else {
@@ -370,7 +372,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
 
         guard let string = String(data: data, encoding: .utf8) else {
             throw ConnectionManagerError.malformedResponse(
-                "Failed to decode line from buffer (invalid UTF-8)")
+                "Failed to decode line from buffer (invalid UTF-8)",
+            )
         }
 
         return string
@@ -515,7 +518,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
 
         guard parts.count == 2 else {
             throw ConnectionManagerError.malformedResponse(
-                "Line does not contain exactly one colon")
+                "Line does not contain exactly one colon",
+            )
         }
 
         return (parts[0].lowercased(), parts[1])
@@ -529,7 +533,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     private func castResult<T>(_ value: some Any) throws -> T {
         guard let result = value as? T else {
             throw ConnectionManagerError.malformedResponse(
-                "Type mismatch: expected \(T.self) but created \(type(of: value))")
+                "Type mismatch: expected \(T.self) but created \(type(of: value))",
+            )
         }
 
         return result
@@ -562,7 +567,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
 
         guard let file = fields["file"] else {
             throw ConnectionManagerError.malformedResponse(
-                "Missing or invalid file field")
+                "Missing or invalid file field",
+            )
         }
 
         let artistName = fields["albumartist"] ?? fields["artist"]
@@ -643,7 +649,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             return try castResult(artist)
         default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Unsupported media type: \(type)")
+                "Unsupported media type: \(type)",
+            )
         }
     }
 

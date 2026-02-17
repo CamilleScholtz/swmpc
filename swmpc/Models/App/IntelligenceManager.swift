@@ -62,7 +62,9 @@ nonisolated struct ModelConfig {
 
 /// Available AI model providers for generating playlists.
 nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     case openAI
     case deepSeek
@@ -123,26 +125,47 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
     private var config: ModelConfig {
         guard let config = Self.configs[self] else {
             fatalError(
-                "Missing configuration for IntelligenceModel case: \(self)")
+                "Missing configuration for IntelligenceModel case: \(self)",
+            )
         }
 
         return config
     }
 
     /// Display name for the model provider.
-    var name: String { config.name }
+    var name: String {
+        config.name
+    }
+
     /// Specific model identifier to use.
-    var model: String { config.model }
+    var model: String {
+        config.model
+    }
+
     /// API host URL.
-    var host: String { config.host }
+    var host: String {
+        config.host
+    }
+
     /// API base path.
-    var path: String { config.path }
+    var path: String {
+        config.path
+    }
+
     /// UserDefaults key for storing the API token.
-    var setting: String { config.setting }
+    var setting: String {
+        config.setting
+    }
+
     /// Custom HTTP headers for API requests.
-    var headers: [String: String] { config.headers }
+    var headers: [String: String] {
+        config.headers
+    }
+
     /// Whether the model supports structured output.
-    var isEnabled: Bool { config.isEnabled }
+    var isEnabled: Bool {
+        config.isEnabled
+    }
 }
 
 /// Response structure for AI-generated playlists.
@@ -232,7 +255,8 @@ actor IntelligenceManager {
                 ? Array(albums.shuffled().prefix(1000))
                 : albums
             let albumDescriptions = selectedAlbums.map(\.description).joined(
-                separator: "\n")
+                separator: "\n",
+            )
 
             let result = try await client.chats(query: ChatQuery(
                 messages: [

@@ -11,7 +11,9 @@
 /// albums.
 public nonisolated struct Artist: Mediable {
     /// The unique identifier for the artist, which is the artist's name.
-    public nonisolated var id: String { name }
+    public nonisolated var id: String {
+        name
+    }
 
     /// The file path of the artist in the MPD database.
     public let file: String

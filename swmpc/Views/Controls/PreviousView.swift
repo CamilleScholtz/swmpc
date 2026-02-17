@@ -29,13 +29,12 @@ struct PreviousView: View {
     var body: some View {
         AsyncButton {
             withAnimation(.interactiveSpring(duration: 0.4, extraBounce: 0.3)) {
-                if !animating {
-                    animating = true
-                }
+                animating = true
+            }
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    animating = false
-                }
+            Task {
+                try? await Task.sleep(for: .milliseconds(400))
+                animating = false
             }
 
             try await ConnectionManager.command {

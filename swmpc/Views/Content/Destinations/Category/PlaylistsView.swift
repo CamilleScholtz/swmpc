@@ -40,8 +40,10 @@ struct PlaylistsView: View {
                                 return
                             }
 
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            Task {
+                                try? await Task.sleep(for: .milliseconds(200))
                                 isRenamingPlaylist = false
+
                                 playlistToRename = nil
                                 playlistName = ""
                             }

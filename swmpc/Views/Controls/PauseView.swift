@@ -33,7 +33,7 @@ struct PauseView: View {
             .font(.system(size: size))
             .foregroundStyle(.foreground)
             .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
-            .frame(width: size * 2.5, height: size * 2.5)
+            .frame(width: button ? size * 2.5 : size * 1.5, height: button ? size * 2.5 : size * 1.5)
             .glassEffect(button ? .regular.interactive() : .identity)
             .contentShape(Circle())
         }

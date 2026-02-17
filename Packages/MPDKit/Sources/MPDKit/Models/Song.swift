@@ -11,7 +11,9 @@
 /// disc and track numbers.
 public nonisolated struct Song: Mediable {
     /// The unique identifier for the song, which is its file path.
-    public nonisolated var id: String { file }
+    public nonisolated var id: String {
+        file
+    }
 
     /// The file path of the song in the MPD database.
     public let file: String

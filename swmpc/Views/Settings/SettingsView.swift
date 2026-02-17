@@ -33,8 +33,13 @@ struct SettingsView: View {
         #endif
         case intelligence = "Intelligence"
 
-        var id: Self { self }
-        var title: String { rawValue }
+        var id: Self {
+            self
+        }
+
+        var title: String {
+            rawValue
+        }
 
         #if os(iOS)
             static var allCases: [SettingCategory] {
@@ -135,7 +140,6 @@ struct SettingsView: View {
             }
         }
 
-        @ViewBuilder
         private var serversSection: some View {
             Section {
                 if serverManager.servers.isEmpty {
@@ -193,12 +197,11 @@ struct SettingsView: View {
                     Text(error.localizedDescription)
                         .font(.caption)
                         .monospaced()
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
 
-        @ViewBuilder
         private var discoverySection: some View {
             Section {
                 if bonjour.servers.isEmpty {
@@ -335,7 +338,7 @@ struct SettingsView: View {
                             Text("Show Song in Status Bar")
                             Text("If this is disabled, only the icon will be shown.")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                         .help("Display currently playing song next to the menu bar icon")
                         .disabled(!showStatusBar)
@@ -370,7 +373,7 @@ struct SettingsView: View {
                                     Text(model.name)
                                     Text(model.model)
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
                                 }
                                 .tag(model)
                             }
@@ -402,7 +405,7 @@ struct SettingsView: View {
                                     Text(model.name)
                                     Text(model.model)
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
                                 }
                                 .tag(model)
                             }

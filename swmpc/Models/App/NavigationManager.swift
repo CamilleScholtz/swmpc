@@ -116,7 +116,9 @@ import SwiftUI
 /// settings that are accessed through the tab bar.
 enum CategoryDestination: Identifiable, Codable, Hashable {
     /// Returns self as the stable identity for `Identifiable` conformance.
-    var id: Self { self }
+    var id: Self {
+        self
+    }
 
     /// The albums view showing all albums in the library.
     case albums
@@ -222,7 +224,9 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
 /// such as viewing a specific album's songs or an artist's albums.
 enum ContentDestination: Identifiable, Hashable {
     /// Returns self as the stable identity for `Identifiable` conformance.
-    var id: Self { self }
+    var id: Self {
+        self
+    }
 
     /// Navigation to a specific album's detail view.
     case album(Album)

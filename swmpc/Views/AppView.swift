@@ -153,7 +153,7 @@ struct AppView: View {
                                         Rectangle()
                                             .ignoresSafeArea(.container, edges: .top)
                                             .frame(width: 1)
-                                            .foregroundColor(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
+                                            .foregroundStyle(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
                                         alignment: .leading,
                                     )
                                     .transition(.move(edge: .trailing))

@@ -22,8 +22,8 @@ public extension ConnectionManager where Mode == ArtworkMode {
     /// - Returns: The result of the operation closure.
     /// - Throws: An error if the connection fails or if the operation throws.
     static func artwork<T: Sendable>(_ operation: @Sendable (
-        ConnectionManager<ArtworkMode>) async throws -> T) async throws -> T
-    {
+        ConnectionManager<ArtworkMode>,
+    ) async throws -> T) async throws -> T {
         let manager = ConnectionManager<ArtworkMode>()
         try await manager.connect()
 
@@ -67,7 +67,8 @@ public extension ConnectionManager where Mode == ArtworkMode {
         }
 
         throw lastError ?? ConnectionManagerError.malformedResponse(
-            "No artwork found")
+            "No artwork found",
+        )
     }
 
     /// Fetches artwork data in chunks from the media server using a specific
@@ -111,7 +112,8 @@ public extension ConnectionManager where Mode == ArtworkMode {
 
             guard let chunkSize else {
                 throw ConnectionManagerError.malformedResponse(
-                    "Missing chunk size")
+                    "Missing chunk size",
+                )
             }
 
             let binaryChunk = try await readFixedLengthData(chunkSize)

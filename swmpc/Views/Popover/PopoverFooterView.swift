@@ -24,7 +24,6 @@ struct PopoverFooterView: View {
                 HStack(spacing: 2) {
                     PreviousView(size: 14)
                     PauseView(size: 24, button: false)
-                        .frame(width: 20, height: 20)
                     NextView(size: 14)
                 }
 
@@ -35,7 +34,7 @@ struct PopoverFooterView: View {
             }
             .asyncButtonStyle(.pulse)
             .frame(width: Layout.Size.popoverContentWidth)
-            .offset(y: -4)
+            .offset(y: -2)
         }
         .frame(height: Layout.Size.popoverFooterHeight)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))

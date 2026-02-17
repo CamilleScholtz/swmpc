@@ -135,7 +135,8 @@ public extension ConnectionManager where Mode == CommandMode {
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
                 throw ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for this operation")
+                    "Playlist is required for this operation",
+                )
             }
 
             commands = songsToAdd.map {
@@ -143,7 +144,8 @@ public extension ConnectionManager where Mode == CommandMode {
             }
         case .database:
             throw ConnectionManagerError.unsupportedOperation(
-                "Cannot add songs to the database")
+                "Cannot add songs to the database",
+            )
         }
 
         try await run(commands)
@@ -197,18 +199,21 @@ public extension ConnectionManager where Mode == CommandMode {
                 }
                 if start == end {
                     commands.append(
-                        "playlistdelete \(escape(playlist.name)) \(start)")
+                        "playlistdelete \(escape(playlist.name)) \(start)",
+                    )
                 } else {
                     for pos in stride(from: Int(start), through: Int(end), by:
                         -1)
                     {
                         commands.append(
-                            "playlistdelete \(escape(playlist.name)) \(pos)")
+                            "playlistdelete \(escape(playlist.name)) \(pos)",
+                        )
                     }
                 }
             default:
                 throw ConnectionManagerError.unsupportedOperation(
-                    "Only queue and playlist sources are supported for removing songs")
+                    "Only queue and playlist sources are supported for removing songs",
+                )
             }
 
             i += 1
@@ -231,7 +236,8 @@ public extension ConnectionManager where Mode == CommandMode {
     func move(_ song: Song, to position: Int, in source: Source) async throws {
         guard let currentPosition = song.position else {
             throw ConnectionManagerError.unsupportedOperation(
-                "Cannot move song without a position")
+                "Cannot move song without a position",
+            )
         }
 
         switch source {
@@ -240,13 +246,15 @@ public extension ConnectionManager where Mode == CommandMode {
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
                 throw ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for this operation")
+                    "Playlist is required for this operation",
+                )
             }
 
             try await run(["playlistmove \(escape(playlist.name)) \(currentPosition) \(position)"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Only queue and playlist sources are supported for moving media")
+                "Only queue and playlist sources are supported for moving media",
+            )
         }
     }
 
@@ -280,12 +288,14 @@ public extension ConnectionManager where Mode == CommandMode {
             songs = [song]
         default:
             throw ConnectionManagerError.unsupportedOperation(
-                "Only Album, Artist, and Song types are supported for playback")
+                "Only Album, Artist, and Song types are supported for playback",
+            )
         }
 
         guard !songs.isEmpty else {
             throw ConnectionManagerError.malformedResponse(
-                "No songs found for the specified media")
+                "No songs found for the specified media",
+            )
         }
 
         let queue = try await getSongs(from: .queue)
@@ -318,7 +328,8 @@ public extension ConnectionManager where Mode == CommandMode {
 
         guard let id else {
             throw ConnectionManagerError.malformedResponse(
-                "Failed to determine song ID to play")
+                "Failed to determine song ID to play",
+            )
         }
 
         try await run(["playid \(id)"])

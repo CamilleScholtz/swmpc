@@ -132,7 +132,8 @@ private struct StyledButtonModifier: ViewModifier {
                         pressEndTask = Task {
                             do {
                                 try await Task.sleep(for: .seconds(
-                                    minimumPressDuration))
+                                    minimumPressDuration,
+                                ))
                                 try Task.checkCancellation()
 
                                 isVisuallyPressed = false

@@ -26,12 +26,12 @@ struct ErrorView: View {
             Group {
                 Text("Could not establish connection to MPD.")
                     .font(.headline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
 
                 HStack(spacing: 0) {
                     Text("Please check your ")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Button {
                         #if os(iOS)
                             navigator.showSettingsSheet = true
@@ -41,19 +41,19 @@ struct ErrorView: View {
                     } label: {
                         Text("connection settings")
                             .font(.subheadline)
-                            .foregroundColor(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
                     Text(" and server.")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let error = mpd.state.error {
                     Text(error.localizedDescription)
                         .font(.caption)
                         .monospaced()
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .padding(.top, 10)
                 }
             }

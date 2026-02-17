@@ -10,7 +10,6 @@ import MPDKit
 import SwiftUI
 
 struct ArtistView: View, Equatable {
-    @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
     private let artist: Artist
@@ -19,7 +18,7 @@ struct ArtistView: View, Equatable {
         self.artist = artist
     }
 
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.artist == rhs.artist
     }
 
@@ -56,10 +55,7 @@ struct ArtistView: View, Equatable {
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
             VStack(alignment: .leading) {
-                Text(artist.name)
-                    .font(.headline)
-                    .foregroundColor(mpd.status.song?.isBy(artist) ?? false ? .accentColor : .primary)
-                    .lineLimit(2)
+                ArtistNameText(artist: artist)
 
                 Text(albumCount == 1 ? "1 album" : "\(albumCount) albums")
                     .font(.subheadline)
@@ -83,5 +79,17 @@ struct ArtistView: View, Equatable {
 
             albumCount = await (try? artist.getAlbums().count) ?? 0
         }
+    }
+}
+
+private struct ArtistNameText: View {
+    @Environment(MPD.self) private var mpd
+    let artist: Artist
+
+    var body: some View {
+        Text(artist.name)
+            .font(.headline)
+            .foregroundStyle(mpd.status.song?.isBy(artist) ?? false ? Color.accentColor : .primary)
+            .lineLimit(2)
     }
 }

@@ -42,7 +42,8 @@ import Observation
                 try AVAudioSession.sharedInstance().setActive(true)
             } catch {
                 state = .error(
-                    "Audio session error: \(error.localizedDescription)")
+                    "Audio session error: \(error.localizedDescription)",
+                )
 
                 return
             }
