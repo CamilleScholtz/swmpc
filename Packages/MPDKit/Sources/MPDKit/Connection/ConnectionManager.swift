@@ -95,16 +95,21 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             onStateUpdate?(connection, state)
         }
 
-        let lines = try await readUntilOK()
-        guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
-            throw ConnectionManagerError.connectionFailure(
-                "Missing OK MPD line from server greeting",
-            )
-        }
+        do {
+            let lines = try await readUntilOK()
+            guard lines.contains(where: { $0.hasPrefix("OK MPD") }) else {
+                throw ConnectionManagerError.connectionFailure(
+                    "Missing OK MPD line from server greeting",
+                )
+            }
 
-        version = lines.first?.split(separator: " ").last.map(String.init)
-        try ensureVersionSupported()
-        try await ensureAuthentication()
+            version = lines.first?.split(separator: " ").last.map(String.init)
+            try ensureVersionSupported()
+            try await ensureAuthentication()
+        } catch {
+            disconnect()
+            throw error
+        }
     }
 
     /// Disconnects from the current network connection and clears internal

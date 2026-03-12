@@ -158,11 +158,9 @@ import Observation
                 ])
 
                 try? await performUpdates(for: changes)
-            } catch is ConnectionManagerError {
+            } catch {
                 await ConnectionManager.idle.disconnect()
                 try? await Task.sleep(for: .seconds(2))
-            } catch {
-                continue
             }
         }
     }
