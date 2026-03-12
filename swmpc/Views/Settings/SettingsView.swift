@@ -355,6 +355,9 @@ struct SettingsView: View {
         @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
         @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
 
+        @AppStorage(Setting.customHost) private var customHost = ""
+        @AppStorage(Setting.customModel) private var customModel = ""
+
         @State private var intelligenceToken = ""
 
         var body: some View {
@@ -371,9 +374,11 @@ struct SettingsView: View {
                             ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
                                 VStack(alignment: .leading) {
                                     Text(model.name)
-                                    Text(model.model)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    if model != .custom {
+                                        Text(model.model)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                                 .tag(model)
                             }
@@ -381,13 +386,30 @@ struct SettingsView: View {
                         .pickerStyle(.navigationLink)
                         .disabled(!isIntelligenceEnabled)
 
+                        if intelligenceModel == .custom {
+                            TextField("Base URL", text: $customHost)
+                                .textContentType(.URL)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .disabled(!isIntelligenceEnabled)
+
+                            TextField("Model Name", text: $customModel)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .disabled(!isIntelligenceEnabled)
+                        }
+
                         SecureField("API Token", text: $intelligenceToken)
                             .textContentType(.password)
                             .disabled(!isIntelligenceEnabled)
                     } header: {
                         Text("Provider")
                     } footer: {
-                        Text("Enter your API token for the selected AI provider.")
+                        if intelligenceModel == .custom {
+                            Text("Enter the base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1). API token is optional for local models.")
+                        } else {
+                            Text("Enter your API token for the selected AI provider.")
+                        }
                     }
                 #elseif os(macOS)
                     Section {
@@ -403,9 +425,11 @@ struct SettingsView: View {
                             ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
                                 HStack {
                                     Text(model.name)
-                                    Text(model.model)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    if model != .custom {
+                                        Text(model.model)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                                 .tag(model)
                             }
@@ -413,9 +437,19 @@ struct SettingsView: View {
                         .help("Select the AI model to use for intelligent features")
                         .disabled(!isIntelligenceEnabled)
 
+                        if intelligenceModel == .custom {
+                            TextField("Base URL", text: $customHost)
+                                .help("Base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1)")
+                                .disabled(!isIntelligenceEnabled)
+
+                            TextField("Model Name", text: $customModel)
+                                .help("Model identifier (e.g. llama3, mistral)")
+                                .disabled(!isIntelligenceEnabled)
+                        }
+
                         SecureField("API Token", text: $intelligenceToken)
                             .textContentType(.password)
-                            .help("API token for the selected AI service")
+                            .help(intelligenceModel == .custom ? "API token (optional for local models)" : "API token for the selected AI service")
                             .disabled(!isIntelligenceEnabled)
                     }
                 #endif

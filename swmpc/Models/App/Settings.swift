@@ -22,6 +22,9 @@ nonisolated enum Setting {
     static let geminiToken = "gemini_token"
     static let grokToken = "grok_token"
     static let claudeToken = "claude_token"
+    static let customToken = "custom_token"
+    static let customHost = "custom_host"
+    static let customModel = "custom_model"
 
     static let albumSearchFields = "album_search_fields"
     static let artistSearchFields = "artist_search_fields"

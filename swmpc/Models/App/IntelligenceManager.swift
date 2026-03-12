@@ -71,6 +71,7 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
     case gemini
     case grok
     case claude
+    case custom
 
     /// Model configurations for each provider.
     private static let configs: [IntelligenceModel: ModelConfig] = [
@@ -119,10 +120,38 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             headers: ["anthropic-beta": "structured-outputs-2025-11-13"],
             isEnabled: true,
         ),
+        .custom: ModelConfig(
+            name: "Custom",
+            model: "",
+            host: "localhost:11434",
+            path: "/v1",
+            setting: Setting.customToken,
+            headers: [:],
+            isEnabled: true,
+        ),
     ]
 
     /// Retrieves the configuration for this model.
     private var config: ModelConfig {
+        if self == .custom {
+            let host = UserDefaults.standard.string(forKey: Setting.customHost) ?? "localhost:11434"
+            let model = UserDefaults.standard.string(forKey: Setting.customModel) ?? ""
+
+            let url = URL(string: host.contains("://") ? host : "http://\(host)")
+            let hostComponent = url.flatMap { "\($0.host ?? "localhost")\($0.port.map { ":\($0)" } ?? "")" } ?? host
+            let pathComponent = url?.path.isEmpty == false ? url!.path : "/v1"
+
+            return ModelConfig(
+                name: "Custom",
+                model: model,
+                host: hostComponent,
+                path: pathComponent,
+                setting: Setting.customToken,
+                headers: [:],
+                isEnabled: true,
+            )
+        }
+
         guard let config = Self.configs[self] else {
             fatalError(
                 "Missing configuration for IntelligenceModel case: \(self)",
@@ -200,7 +229,7 @@ actor IntelligenceManager {
             .flatMap { IntelligenceModel(rawValue: $0) } ?? .openAI
         let token = UserDefaults.standard.string(forKey: model.setting) ?? ""
 
-        return settingEnabled && !token.isEmpty
+        return settingEnabled && (model == .custom || !token.isEmpty)
     }
 
     /// Creates an OpenAI client configured for the specified model provider.
