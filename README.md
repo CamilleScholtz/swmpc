@@ -52,3 +52,8 @@ The latest version of `swmpc` is available on the [App Store](https://apps.apple
 - macOS 26.0 or later
 - iOS 26.0 or later
 - MPD 0.22 or later
+
+
+## Also by me
+
+Check out my other project, [**Tripstitch**](https://tripstitch.app) — a smart trip planner that puts together your perfect itinerary.

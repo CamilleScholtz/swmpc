@@ -2440,6 +2440,9 @@
         }
       }
     },
+    "Enter the base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1). API token is optional for local models." : {
+
+    },
     "Enter your API token for the selected AI provider." : {
       "localizations" : {
         "de" : {
