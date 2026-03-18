@@ -125,13 +125,12 @@ struct IntelligenceView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .contentTransition(.numericText())
                     .padding(.horizontal)
                     .onReceive(
                         Timer.publish(every: 1.5, on: .main, in: .common).autoconnect(),
                     ) { _ in
-                        withAnimation(.spring) {
-                            loadingSentence = loadingSentences.randomElement() ?? "…"
-                        }
+                        loadingSentence = loadingSentences.randomElement() ?? "…"
                     }
 
                 Spacer()

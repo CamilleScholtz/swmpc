@@ -66,21 +66,22 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
         rawValue
     }
 
-    case openAI
+    case claude
     case deepSeek
     case gemini
     case grok
-    case claude
+    case mistral
+    case openAI
     case custom
 
     /// Model configurations for each provider.
     private static let configs: [IntelligenceModel: ModelConfig] = [
-        .openAI: ModelConfig(
-            name: "OpenAI",
-            model: "gpt-5-mini",
-            host: "api.openai.com",
+        .claude: ModelConfig(
+            name: "Claude",
+            model: "claude-haiku-4-5",
+            host: "api.anthropic.com",
             path: "/v1",
-            setting: Setting.openAIToken,
+            setting: Setting.claudeToken,
             headers: [:],
             isEnabled: true,
         ),
@@ -111,13 +112,22 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             headers: [:],
             isEnabled: true,
         ),
-        .claude: ModelConfig(
-            name: "Claude",
-            model: "claude-haiku-4-5",
-            host: "api.anthropic.com",
+        .mistral: ModelConfig(
+            name: "Mistral",
+            model: "mistral-small-latest",
+            host: "api.mistral.ai",
             path: "/v1",
-            setting: Setting.claudeToken,
-            headers: ["anthropic-beta": "structured-outputs-2025-11-13"],
+            setting: Setting.mistralToken,
+            headers: [:],
+            isEnabled: true,
+        ),
+        .openAI: ModelConfig(
+            name: "OpenAI",
+            model: "gpt-5-mini",
+            host: "api.openai.com",
+            path: "/v1",
+            setting: Setting.openAIToken,
+            headers: [:],
             isEnabled: true,
         ),
         .custom: ModelConfig(
