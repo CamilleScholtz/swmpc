@@ -238,6 +238,9 @@ private struct CategoryDatabaseView: View {
                         searchTask?.cancel()
                         searchQuery = ""
                         searchResults = nil
+                        #if os(macOS)
+                            searchTextField = nil
+                        #endif
                     }
                 }
                 .keyboardShortcut("f", modifiers: .command)
@@ -255,6 +258,9 @@ private struct CategoryDatabaseView: View {
             searchTask?.cancel()
             searchQuery = ""
             searchResults = nil
+            #if os(macOS)
+                searchTextField = nil
+            #endif
 
             scrollToCurrentMedia()
         }
@@ -296,6 +302,7 @@ private struct CategoryDatabaseView: View {
             }
 
             value.window?.makeFirstResponder(value)
+            value.currentEditor()?.selectedRange = NSRange(location: value.stringValue.count, length: 0)
         }
         #endif
     }
