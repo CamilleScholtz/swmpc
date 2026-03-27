@@ -88,10 +88,16 @@ struct DetailView: View {
 
                 if !mpd.queue.songs.isEmpty {
                     ToolbarItem {
-                        Button("Clear Queue", systemSymbol: .trash, role: .destructive) {
-                            navigator.showClearQueueAlert = true
+                        AsyncButton("Clear Queue", systemSymbol: .trash, role: .destructive) {
+                            if NSEvent.modifierFlags.contains(.shift) {
+                                try await ConnectionManager.command {
+                                    try await $0.clearQueue()
+                                }
+                            } else {
+                                navigator.showClearQueueAlert = true
+                            }
                         }
-                        .keyboardShortcut(.delete, modifiers: [.shift, .command])
+
                     }
 
                 } else {

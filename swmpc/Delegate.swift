@@ -127,8 +127,14 @@ struct Delegate: App {
                     }
                 }
 
-                Button("Clear Queue", systemSymbol: .trash) {
-                    navigator.showClearQueueAlert = true
+                AsyncButton("Clear Queue", systemSymbol: .trash) {
+                    if NSEvent.modifierFlags.contains(.shift) {
+                        try await ConnectionManager.command {
+                            try await $0.clearQueue()
+                        }
+                    } else {
+                        navigator.showClearQueueAlert = true
+                    }
                 }
                 .keyboardShortcut(.delete, modifiers: [.command, .option])
 
