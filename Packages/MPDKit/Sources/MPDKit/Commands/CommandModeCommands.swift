@@ -49,9 +49,9 @@ public extension ConnectionManager where Mode == CommandMode {
     /// - Throws: An error if the underlying command execution fails.
     func loadPlaylist(_ playlist: Playlist? = nil) async throws {
         if let playlist {
-            try await run(["clear", "load \(escape(playlist.name))"])
+            try await run(["clear", "load \(escape(playlist.name))", "play"])
         } else {
-            try await run(["clear", "add /"])
+            try await run(["clear", "add /", "play"])
         }
     }
 
