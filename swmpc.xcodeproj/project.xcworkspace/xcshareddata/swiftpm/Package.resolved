@@ -7,7 +7,7 @@
       "location" : "https://github.com/Dean151/ButtonKit",
       "state" : {
         "branch" : "main",
-        "revision" : "f1317fe981305708826dd89aaeedaa40aca2b77e"
+        "revision" : "6517851e4585d01cd4f1f00ddf460f5dfcf61706"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MacPaw/OpenAI",
       "state" : {
-        "revision" : "28884fcfb15946b119b6eb3498e5a900c1d8d595",
-        "version" : "0.4.7"
+        "revision" : "3f2cac98d3e98d6b4d90279bd737190fc343dbc4",
+        "version" : "0.4.8"
       }
     },
     {

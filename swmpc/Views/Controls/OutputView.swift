@@ -55,7 +55,7 @@ struct OutputView: View {
                         .foregroundStyle(.secondary)
 
                     HStack(spacing: Layout.Spacing.medium) {
-                        Text("\(Int(percentage * 100))%")
+                        Text(percentage, format: .percent.precision(.fractionLength(0)))
                         #if os(iOS)
                             .font(.subheadline.pointSize(12))
                         #elseif os(macOS)
