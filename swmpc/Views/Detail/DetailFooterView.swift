@@ -14,15 +14,28 @@ struct DetailFooterView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Layout.Spacing.small - 0.5) {
             HStack(alignment: .bottom) {
-                Text(mpd.status.song?.title ?? "No song playing")
-                #if os(iOS)
-                    .font(.system(size: 21))
-                #elseif os(macOS)
-                    .font(.system(size: 18))
-                #endif
-                    .fontWeight(.semibold)
-                    .fontDesign(.rounded)
-                    .lineLimit(2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(mpd.status.song?.title ?? "No song playing")
+                    #if os(iOS)
+                        .font(.system(size: 21))
+                    #elseif os(macOS)
+                        .font(.system(size: 18))
+                    #endif
+                        .fontWeight(.semibold)
+                        .fontDesign(.rounded)
+                        .lineLimit(1)
+
+                    if let artist = mpd.status.song?.artist {
+                        Text(artist)
+                        #if os(iOS)
+                            .font(.system(size: 15))
+                        #elseif os(macOS)
+                            .font(.system(size: 13))
+                        #endif
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
 
                 Spacer()
 
