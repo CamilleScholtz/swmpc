@@ -140,7 +140,7 @@ public extension ConnectionManager where Mode == CommandMode {
             }
 
             commands = songsToAdd.map {
-                "playlistadd \(playlist.name) \(escape($0.file))"
+                "playlistadd \(escape(playlist.name)) \(escape($0.file))"
             }
         case .database:
             throw ConnectionManagerError.unsupportedOperation(
