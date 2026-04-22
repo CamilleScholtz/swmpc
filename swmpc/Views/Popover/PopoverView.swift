@@ -20,11 +20,6 @@ struct PopoverView: View {
     @State private var showInfo = false
     @State private var hoverHandler = HoverTaskHandler()
 
-    private let willShowNotification = NotificationCenter.default
-        .publisher(for: NSPopover.willShowNotification)
-    private let didCloseNotification = NotificationCenter.default
-        .publisher(for: NSPopover.didCloseNotification)
-
     var body: some View {
         ZStack(alignment: .bottom) {
             ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
@@ -90,20 +85,20 @@ struct PopoverView: View {
             .animation(.spring, value: showInfo),
         )
         .frame(width: Layout.Size.artworkWidth, height: height)
-        .onReceive(willShowNotification) { _ in
-            showInfo = !mpd.status.isPlaying
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: NSPopover.willShowNotification) {
+                showInfo = !mpd.status.isPlaying
 
-            Task(priority: .userInitiated) {
                 guard let song = mpd.status.song else {
                     artwork = nil
                     height = Layout.Size.artworkWidth
-                    return
+                    continue
                 }
 
                 artwork = try? await song.artwork()
                 guard let image = artwork?.image else {
                     height = Layout.Size.artworkWidth
-                    return
+                    continue
                 }
 
                 height = (Double(image.size.height) / Double(image.size.width) * Layout.Size.artworkWidth).rounded(.down)
@@ -111,8 +106,10 @@ struct PopoverView: View {
                 try? await mpd.status.startTrackingElapsed()
             }
         }
-        .onReceive(didCloseNotification) { _ in
-            mpd.status.stopTrackingElapsed()
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: NSPopover.didCloseNotification) {
+                mpd.status.stopTrackingElapsed()
+            }
         }
         .task(id: mpd.status.song) {
             guard AppDelegate.shared?.popover.isShown == true else {

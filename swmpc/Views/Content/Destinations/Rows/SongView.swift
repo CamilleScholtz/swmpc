@@ -17,10 +17,6 @@ struct SongView: View, Equatable {
         self.source = source
     }
 
-    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.song == rhs.song && lhs.source == rhs.source
-    }
-
     #if os(macOS)
         @State private var isHovering = false
         @State private var isHoveringHandle = false
@@ -35,58 +31,59 @@ struct SongView: View, Equatable {
 
     var body: some View {
         ZStack(alignment: .trailing) {
-            HStack(spacing: Layout.Spacing.large) {
-                ZStack {
-                    Text(String(song.track))
-                        .font(.headline)
-                        .fontDesign(.rounded)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
-
-                    #if os(macOS)
-                        Image(systemSymbol: .playFill)
-                            .font(.title3)
-                            .foregroundStyle(Color.accentColor)
-                            .background(
-                                Rectangle()
-                                    .fill(.background)
-                                    .frame(width: trackSize, height: trackSize),
-                            )
-                            .opacity(isHovering ? 1 : 0)
-                    #endif
-
-                    SongPlayingOverlay(song: song, trackSize: trackSize)
+            Button {
+                Task(priority: .userInitiated) {
+                    try? await ConnectionManager.command {
+                        try await $0.play(song)
+                    }
                 }
-                .frame(width: trackSize, height: trackSize)
+            } label: {
+                HStack(spacing: Layout.Spacing.large) {
+                    ZStack {
+                        Text(String(song.track))
+                            .font(.headline)
+                            .fontDesign(.rounded)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
 
-                VStack(alignment: .leading) {
-                    SongTitleText(song: song)
+                        #if os(macOS)
+                            Image(systemSymbol: .playFill)
+                                .font(.title3)
+                                .foregroundStyle(.tint)
+                                .background(
+                                    Rectangle()
+                                        .fill(.background)
+                                        .frame(width: trackSize, height: trackSize),
+                                )
+                                .opacity(isHovering ? 1 : 0)
+                        #endif
 
-                    Text((song.artist) + " • " + song.duration.timeString)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        SongPlayingOverlay(song: song, trackSize: trackSize)
+                    }
+                    .frame(width: trackSize, height: trackSize)
+
+                    VStack(alignment: .leading) {
+                        SongTitleText(song: song)
+
+                        Text((song.artist) + " • " + song.duration.timeString)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer()
                 }
-
-                Spacer()
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
             #if os(iOS)
                 .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 10))
             #elseif os(macOS)
                 .onHoverWithDebounce(handler: hoverHandler) { hovering in
-                    withAnimation(.interactiveSpring) {
-                        isHovering = hovering
-                    }
+                    isHovering = hovering
                 }
+                .animation(.interactiveSpring, value: isHovering)
             #endif
-                .onTapGesture {
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command {
-                            try await $0.play(song)
-                        }
-                    }
-                }
                 .contextMenu {
                     ContextMenuView(for: song, source: source)
                 }
@@ -110,10 +107,9 @@ struct SongView: View, Equatable {
                         )
                         .opacity(isHoveringHandle ? 1 : 0)
                         .onHover { value in
-                            withAnimation(.interactiveSpring) {
-                                isHoveringHandle = value
-                            }
+                            isHoveringHandle = value
                         }
+                        .animation(.interactiveSpring, value: isHoveringHandle)
                 }
             #endif
         }
@@ -144,7 +140,7 @@ private struct SongTitleText: View {
     var body: some View {
         Text(song.title)
             .font(.headline)
-            .foregroundStyle(mpd.status.song == song ? Color.accentColor : .primary)
+            .foregroundStyle(mpd.status.song == song ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
             .lineLimit(2)
     }
 }

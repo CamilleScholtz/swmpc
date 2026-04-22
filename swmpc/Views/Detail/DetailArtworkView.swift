@@ -28,24 +28,39 @@ struct DetailArtworkView: View, Equatable {
             ShadowGradientView(artwork: artwork)
                 .opacity(colorScheme == .dark ? 0.4 : 0.8)
 
-            ArtworkView(image: artwork?.image)
-                .animation(.easeInOut(duration: 0.3), value: artwork)
-                .frame(width: Layout.Size.artworkWidth)
-                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-                .overlay(
-                    Color.clear
-                        .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
-                        .mask(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+            Button {
+                guard let song = mpd.status.song else {
+                    return
+                }
 
-                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                    .scale(0.9)
-                                    .blur(radius: 8)
-                                    .blendMode(.destinationOut)
-                            },
-                        ),
-                )
+                #if os(iOS)
+                    if navigator.category != .albums {
+                        navigator.category = .albums
+                    }
+                #endif
+
+                navigator.navigate(to: ContentDestination.album(song.album))
+            } label: {
+                ArtworkView(image: artwork?.image)
+                    .animation(.easeInOut(duration: 0.3), value: artwork)
+                    .frame(width: Layout.Size.artworkWidth)
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                    .overlay(
+                        Color.clear
+                            .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
+                            .mask(
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+
+                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                        .scale(0.9)
+                                        .blur(radius: 8)
+                                        .blendMode(.destinationOut)
+                                },
+                            ),
+                    )
+            }
+            .buttonStyle(.plain)
             #if os(macOS)
                 .scaleEffect(isHovering ? 1.02 : 1)
                 .animation(.spring, value: isHovering)
@@ -77,21 +92,6 @@ struct DetailArtworkView: View, Equatable {
                         }
                     },
                 )
-                .onTapGesture {
-                    Task(priority: .userInitiated) {
-                        guard let song = mpd.status.song else {
-                            return
-                        }
-
-                        #if os(iOS)
-                            if navigator.category != .albums {
-                                navigator.category = .albums
-                            }
-                        #endif
-
-                        navigator.navigate(to: ContentDestination.album(song.album))
-                    }
-                }
         }
     }
 }

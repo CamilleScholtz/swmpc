@@ -127,10 +127,11 @@ struct IntelligenceView: View {
                     .multilineTextAlignment(.center)
                     .contentTransition(.numericText())
                     .padding(.horizontal)
-                    .onReceive(
-                        Timer.publish(every: 1.5, on: .main, in: .common).autoconnect(),
-                    ) { _ in
-                        loadingSentence = loadingSentences.randomElement() ?? "…"
+                    .task {
+                        while !Task.isCancelled {
+                            try? await Task.sleep(for: .seconds(1.5))
+                            loadingSentence = loadingSentences.randomElement() ?? "…"
+                        }
                     }
 
                 Spacer()
@@ -147,9 +148,9 @@ struct IntelligenceView: View {
                     .padding(12)
                     .glassEffect(.regular.interactive())
                     .multilineTextAlignment(.center)
-                    .disableAutocorrection(true)
+                    .autocorrectionDisabled()
                     .focused($isFocused)
-                    .onAppear {
+                    .task {
                         isFocused = true
                     }
 

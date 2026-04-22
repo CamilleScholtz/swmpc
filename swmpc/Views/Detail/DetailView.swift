@@ -97,7 +97,6 @@ struct DetailView: View {
                                 navigator.showClearQueueAlert = true
                             }
                         }
-
                     }
 
                 } else {

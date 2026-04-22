@@ -32,70 +32,72 @@ struct AlbumSongsView: View {
             Group {
                 #if os(iOS)
                     VStack(spacing: Layout.Spacing.large) {
-                        ArtworkView(image: artwork?.image)
-                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-                            .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
-                            .frame(width: 180)
-                            .overlay(
-                                Color.clear
-                                    .glassEffect(.clear.interactive(), in: .rect(cornerRadius: Layout.CornerRadius.large))
-                                    .mask(
-                                        ZStack {
-                                            RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                        Button {
+                            guard !(mpd.status.song?.isIn(album) ?? false) else {
+                                return
+                            }
 
-                                            RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
-                                                .scale(0.9)
-                                                .blur(radius: 8)
-                                                .blendMode(.destinationOut)
-                                        },
-                                    ),
-                            )
-                            .overlay(
-                                ZStack(alignment: .bottomLeading) {
+                            Task(priority: .userInitiated) {
+                                try await ConnectionManager.command {
+                                    try await $0.play(album)
+                                }
+                            }
+                        } label: {
+                            ArtworkView(image: artwork?.image)
+                                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                                .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
+                                .frame(width: 180)
+                                .overlay(
                                     Color.clear
-                                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                                        .glassEffect(.clear.interactive(), in: .rect(cornerRadius: Layout.CornerRadius.large))
                                         .mask(
-                                            LinearGradient(
-                                                gradient: Gradient(stops: [
-                                                    .init(color: .black, location: 0.3),
-                                                    .init(color: .black.opacity(0), location: 1.0),
-                                                ]),
-                                                startPoint: .bottom,
-                                                endPoint: .top,
-                                            ),
-                                        )
-                                        .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
 
-                                    HStack(spacing: 5) {
-                                        Image(systemSymbol: .playFill)
-                                        Text("Playing")
-                                    }
-                                    .font(.caption2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.black)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(.white)
-                                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
-                                    .padding(14)
-                                }
-                                .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                                .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
-                            )
-                            .contextMenu {
-                                ContextMenuView(for: album)
-                            }
-                            .onTapGesture {
-                                guard !(mpd.status.song?.isIn(album) ?? false) else {
-                                    return
-                                }
+                                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                                    .scale(0.9)
+                                                    .blur(radius: 8)
+                                                    .blendMode(.destinationOut)
+                                            },
+                                        ),
+                                )
+                                .overlay(
+                                    ZStack(alignment: .bottomLeading) {
+                                        Color.clear
+                                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                                            .mask(
+                                                LinearGradient(
+                                                    gradient: Gradient(stops: [
+                                                        .init(color: .black, location: 0.3),
+                                                        .init(color: .black.opacity(0), location: 1.0),
+                                                    ]),
+                                                    startPoint: .bottom,
+                                                    endPoint: .top,
+                                                ),
+                                            )
+                                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
 
-                                Task(priority: .userInitiated) {
-                                    try await ConnectionManager.command {
-                                        try await $0.play(album)
+                                        HStack(spacing: 5) {
+                                            Image(systemSymbol: .playFill)
+                                            Text("Playing")
+                                        }
+                                        .font(.caption2)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.black)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(.white)
+                                        .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
+                                        .padding(14)
                                     }
-                                }
-                            }
+                                    .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
+                                    .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            ContextMenuView(for: album)
+                        }
 
                         VStack(alignment: .center) {
                             Text(album.title)
@@ -202,10 +204,9 @@ struct AlbumSongsView: View {
                             }
                         }
                         .onHover { value in
-                            withAnimation(.interactiveSpring) {
-                                isHovering = value
-                            }
+                            isHovering = value
                         }
+                        .animation(.interactiveSpring, value: isHovering)
                         .contextMenu {
                             ContextMenuView(for: album)
                         }

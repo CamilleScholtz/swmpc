@@ -11,7 +11,7 @@ import Observation
 import Synchronization
 
 /// Represents a discovered MPD server on the local network.
-nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
+nonisolated struct DiscoveredServer: Identifiable, Hashable {
     let id: String
     let name: String
     let host: String

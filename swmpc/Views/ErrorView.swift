@@ -41,7 +41,7 @@ struct ErrorView: View {
                     } label: {
                         Text("connection settings")
                             .font(.subheadline)
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(.tint)
                     }
                     .buttonStyle(.plain)
                     Text(" and server.")

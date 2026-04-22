@@ -33,33 +33,14 @@ struct PlaylistsView: View {
         List {
             ForEach(playlists) { playlist in
                 if isRenamingPlaylist, playlist == playlistToRename {
-                    TextField(playlistName, text: $playlistName)
-                        .focused($isFocused)
-                        .onChange(of: isFocused) { _, value in
-                            guard !value else {
-                                return
-                            }
-
-                            Task {
-                                try? await Task.sleep(for: .milliseconds(200))
-                                isRenamingPlaylist = false
-
-                                playlistToRename = nil
-                                playlistName = ""
-                            }
-                        }
-                        .onSubmit {
-                            Task(priority: .userInitiated) {
-                                try await ConnectionManager.command {
-                                    try await $0.renamePlaylist(playlist, to: playlistName)
-                                }
-
-                                isRenamingPlaylist = false
-                                playlistToRename = nil
-                                playlistName = ""
-                            }
-                        }
-                        .mediaRowStyle()
+                    RenamePlaylistField(
+                        playlist: playlist,
+                        isRenamingPlaylist: $isRenamingPlaylist,
+                        playlistToRename: $playlistToRename,
+                        playlistName: $playlistName,
+                        isFocused: $isFocused,
+                    )
+                    .mediaRowStyle()
                 } else {
                     Button {
                         navigator.path.append(ContentDestination.playlist(playlist))
@@ -160,10 +141,7 @@ struct PlaylistsView: View {
                 }
             }
 
-            ToolbarItem {
-                Color.clear
-                    .frame(width: 0)
-            }
+            ToolbarSpacer(.fixed)
         }
         .alert("New Playlist", isPresented: $isCreatingPlaylist) {
             TextField("Playlist Name", text: $playlistName)

@@ -36,14 +36,10 @@ struct CategoryDestinationView: View {
                 case .favorites:
                     if let playlist = navigator.category.source.playlist {
                         CategoryPlaylistView(playlist: playlist)
-                    } else {
-                        EmptyView()
                     }
                 case .playlist:
                     if let playlist = navigator.category.source.playlist {
                         CategoryPlaylistView(playlist: playlist)
-                    } else {
-                        EmptyView()
                     }
                 default:
                     EmptyView()
@@ -269,6 +265,7 @@ private struct CategoryDatabaseView: View {
                 return
             }
             loadedSort = sort
+            mpd.state.isLoading = true
 
             try? await mpd.database.set(idle: false, sort: sort)
 
@@ -280,9 +277,6 @@ private struct CategoryDatabaseView: View {
             }
 
             scrollToCurrentMedia()
-        }
-        .onChange(of: sort) {
-            mpd.state.isLoading = true
         }
         .onChange(of: searchQuery) { _, value in
             performSearch(query: value, fields: searchFields)
@@ -446,9 +440,6 @@ struct CategoryPlaylistView: View {
     @State private var scrollTarget: ScrollTarget?
     @State private var showReplaceQueueAlert = false
 
-    private let playlistModifiedNotification = NotificationCenter.default
-        .publisher(for: .playlistModifiedNotification)
-
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
@@ -499,17 +490,15 @@ struct CategoryPlaylistView: View {
             }
         }
         .task(id: playlist) {
+            mpd.state.isLoading = true
             songs = try? await mpd.playlists.getSongs(for: playlist)
 
             if songIsInPlaylist(mpd.status.song) {
                 scrollToCurrentSong()
             }
         }
-        .onChange(of: playlist) {
-            mpd.state.isLoading = true
-        }
-        .onReceive(playlistModifiedNotification) { _ in
-            Task(priority: .userInitiated) {
+        .task(id: playlist) {
+            for await _ in NotificationCenter.default.notifications(named: .playlistModifiedNotification) {
                 if playlist.name == "Favorites" {
                     try? await mpd.playlists.set(idle: false)
                     songs = mpd.playlists.favorites

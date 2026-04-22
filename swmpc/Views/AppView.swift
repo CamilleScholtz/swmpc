@@ -55,11 +55,13 @@ struct AppView: View {
                             }
                         }
                         .tabViewBottomAccessory {
-                            DetailMiniView(artwork: artwork)
-                                .onTapGesture {
-                                    navigator.showNowPlaying.toggle()
-                                }
-                                .matchedTransitionSource(id: 1, in: namespace)
+                            Button {
+                                navigator.showNowPlaying.toggle()
+                            } label: {
+                                DetailMiniView(artwork: artwork)
+                            }
+                            .buttonStyle(.plain)
+                            .matchedTransitionSource(id: 1, in: namespace)
                         }
                         .fullScreenCover(isPresented: $navigator.showNowPlaying) {
                             List {
@@ -163,10 +165,8 @@ struct AppView: View {
                 }
             }
         }
-        .onAppear {
-            WidgetCenter.shared.reloadAllTimelines()
-        }
         .task(priority: .medium) {
+            WidgetCenter.shared.reloadAllTimelines()
             try? await mpd.status.startTrackingElapsed()
         }
         .task(id: mpd.status.song) {

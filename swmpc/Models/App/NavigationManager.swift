@@ -182,7 +182,6 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case .songs: "Songs"
         case let .playlist(playlist): LocalizedStringResource(stringLiteral:
                 playlist.name)
-
         #if os(iOS)
             case .playlists: "Playlists"
         #endif
@@ -197,7 +196,6 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case .artists: .musicMicrophone
         case .songs: .musicNote
         case .playlist: .musicNoteList
-
         #if os(iOS)
             case .playlists: .musicNoteList
         #endif

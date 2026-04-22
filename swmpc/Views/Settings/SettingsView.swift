@@ -23,7 +23,7 @@ import SwiftUI
 
 struct SettingsView: View {
     #if os(macOS)
-        @State private var selection: SettingCategory? = .connections
+        @State private var selection: SettingCategory = .connections
     #endif
 
     private enum SettingCategory: String, Identifiable {
@@ -105,13 +105,11 @@ struct SettingsView: View {
         #elseif os(macOS)
             TabView(selection: $selection) {
                 ForEach(SettingCategory.allCases) { category in
-                    category.view
-                        .formStyle(.grouped)
-                        .tabItem {
-                            Label(category.title, systemSymbol: category.image)
-                        }
-                        .tag(category)
-                        .navigationTitle(category.title)
+                    Tab(category.title, systemSymbol: category.image, value: category) {
+                        category.view
+                            .formStyle(.grouped)
+                            .navigationTitle(category.title)
+                    }
                 }
             }
             .frame(width: Layout.Size.settingsWindowWidth)
@@ -269,45 +267,47 @@ struct SettingsView: View {
             #endif
 
             var body: some View {
-                HStack(spacing: Layout.Spacing.large) {
-                    Circle()
-                        .fill(isSelected ? mpd.state.connectionColor : .gray.opacity(0.5))
-                        .frame(width: 9, height: 9)
-
-                    VStack(alignment: .leading) {
-                        Text(server.displayName)
-                        Text(verbatim: "\(server.host):\(server.port)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    #if os(iOS)
-                        Button {
-                            onEdit()
-                        } label: {
-                            Image(systemSymbol: .infoCircle)
-                                .font(Font.system(size: 18))
-                                .foregroundStyle(.tint)
-                        }
-                        .buttonStyle(.plain)
-                    #elseif os(macOS)
-                        if isHovering {
-                            Button("Edit") {
-                                onEdit()
-                            }
-                        }
-                    #endif
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
+                Button {
                     onConnect()
+                } label: {
+                    HStack(spacing: Layout.Spacing.large) {
+                        Circle()
+                            .fill(isSelected ? mpd.state.connectionColor : .gray.opacity(0.5))
+                            .frame(width: 9, height: 9)
+
+                        VStack(alignment: .leading) {
+                            Text(server.displayName)
+                            Text(verbatim: "\(server.host):\(server.port)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        #if os(iOS)
+                            Button {
+                                onEdit()
+                            } label: {
+                                Image(systemSymbol: .infoCircle)
+                                    .font(Font.system(size: 18))
+                                    .foregroundStyle(.tint)
+                            }
+                            .buttonStyle(.plain)
+                        #elseif os(macOS)
+                            if isHovering {
+                                Button("Edit") {
+                                    onEdit()
+                                }
+                            }
+                        #endif
+                    }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 #if os(macOS)
-                .onHover { hovering in
-                    isHovering = hovering
-                }
+                    .onHover { hovering in
+                        isHovering = hovering
+                    }
                 #endif
             }
         }
@@ -454,17 +454,13 @@ struct SettingsView: View {
                     }
                 #endif
             }
-            .onAppear {
+            .task(id: intelligenceModel) {
                 @AppStorage(intelligenceModel.setting) var token = ""
                 intelligenceToken = token
             }
             .onChange(of: intelligenceToken) { _, value in
                 @AppStorage(intelligenceModel.setting) var token = ""
                 token = value.isEmpty ? "" : value
-            }
-            .onChange(of: intelligenceModel) {
-                @AppStorage(intelligenceModel.setting) var token = ""
-                intelligenceToken = token
             }
         }
     }
