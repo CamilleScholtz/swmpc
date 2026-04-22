@@ -8,6 +8,7 @@
 import Foundation
 import Network
 import Observation
+import Synchronization
 
 /// Represents a discovered MPD server on the local network.
 nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
@@ -35,9 +36,9 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
 
     /// The active browse task.
     ///
-    /// Marked as `nonisolated(unsafe)` to allow cancellation in deinit.
-    /// All other access occurs on the MainActor.
-    @ObservationIgnored private nonisolated(unsafe) var browseTask: Task<Void, Never>?
+    /// Stored under a `Mutex` so the `nonisolated deinit` can cancel it
+    /// without crossing actor boundaries.
+    @ObservationIgnored private nonisolated let browseTask = Mutex<Task<Void, Never>?>(nil)
 
     /// Duration in seconds to scan for servers before stopping.
     private let scanDuration: UInt64 = 5
@@ -54,11 +55,15 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
             return
         }
 
-        browseTask?.cancel()
         servers = []
 
-        browseTask = Task {
-            await performScan()
+        let task: Task<Void, Never> = Task { [weak self] in
+            await self?.performScan()
+        }
+
+        browseTask.withLock { existing in
+            existing?.cancel()
+            existing = task
         }
     }
 
@@ -314,6 +319,6 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable, Sendable {
     }
 
     nonisolated deinit {
-        browseTask?.cancel()
+        browseTask.withLock { $0?.cancel() }
     }
 }

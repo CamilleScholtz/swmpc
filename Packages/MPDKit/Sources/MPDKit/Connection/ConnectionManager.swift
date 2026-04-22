@@ -25,6 +25,9 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// The underlying network connection to the MPD server.
     private var connection: NetworkConnection<TCP>?
 
+    /// Continuation feeding the public state stream returned by `connect`.
+    private var stateContinuation: AsyncStream<ConnectionState>.Continuation?
+
     /// Buffer for accumulating incoming data from the network connection.
     private var buffer = Deque<UInt8>()
 
@@ -37,23 +40,26 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// Establishes a TCP connection to the MPD server.
     ///
     /// This asynchronous function sets up a new network connection using
-    /// `NetworkConnection` with TCP options configured for no-delay.
+    /// `NetworkConnection` with TCP options configured for no-delay, and
+    /// returns an `AsyncStream` of high-level `ConnectionState` events that
+    /// callers can observe to react to lifecycle changes.
     ///
-    /// - Parameter onStateUpdate: Optional closure called when connection state
-    ///                            changes. Receives the connection and the new
-    ///                            state.
+    /// The stream finishes when `disconnect()` is called. Returns `nil` if a
+    /// connection is already established — in that case the previously
+    /// returned stream remains the source of truth.
+    ///
+    /// - Returns: An `AsyncStream<ConnectionState>` of lifecycle events for
+    ///            the newly opened connection, or `nil` if already connected.
     /// - Throws: `ConnectionManagerError.invalidPort` if the port is
-    ///           invalid, `ConnectionManagerError.connectionSetupFailed` if the
+    ///           invalid, `ConnectionManagerError.connectionFailure` if the
     ///           connection cannot be created, the connection fails to become
     ///           ready, or the expected server greeting is not received,
     ///           `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
-    public func connect(onStateUpdate: (@Sendable (NetworkConnection<TCP>,
-                                                   NetworkConnection<TCP>.State)
-            -> Void)? = nil) async throws
-    {
+    @discardableResult
+    public func connect() async throws -> AsyncStream<ConnectionState>? {
         guard connection == nil else {
-            return
+            return nil
         }
 
         guard let server = ConnectionConfiguration.server else {
@@ -70,6 +76,11 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             throw ConnectionManagerError.invalidPort
         }
 
+        let (stream, continuation) = AsyncStream<ConnectionState>.makeStream(
+            bufferingPolicy: .unbounded,
+        )
+        stateContinuation = continuation
+
         connection = NetworkConnection(to: .hostPort(host: NWEndpoint.Host(
             host,
         ), port: NWEndpoint.Port(integerLiteral: UInt16(port)))) {
@@ -78,21 +89,13 @@ public actor ConnectionManager<Mode: ConnectionMode> {
                 .connectionTimeout(3)
         }
 
-        connection?.onStateUpdate { [weak self] connection, state in
-            Task {
-                switch state {
-                case .failed:
-                    await self?.disconnect()
-                case let .waiting(details):
-                    if case let .posix(code) = details, code == .ECONNREFUSED {
-                        await self?.disconnect()
-                    }
-                default:
-                    break
-                }
-            }
+        connection?.onStateUpdate { [weak self] _, rawState in
+            let state = ConnectionState(rawState)
+            continuation.yield(state)
 
-            onStateUpdate?(connection, state)
+            if state.requiresDisconnect {
+                Task { [weak self] in await self?.disconnect() }
+            }
         }
 
         do {
@@ -110,15 +113,20 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             disconnect()
             throw error
         }
+
+        return stream
     }
 
     /// Disconnects from the current network connection and clears internal
     /// data.
     ///
     /// Cancels any active connection, sets the connection to `nil`, removes all
-    /// buffered data, and resets the server version. This method should be
-    /// called to cleanly terminate the connection.
+    /// buffered data, and resets the server version. Any state stream returned
+    /// from `connect()` is finished.
     public func disconnect() {
+        stateContinuation?.finish()
+        stateContinuation = nil
+
         connection = nil
         version = nil
 
@@ -344,13 +352,26 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             try await receiveDataChunk(remaining: length - buffer.count)
         }
 
-        guard buffer.count >= length else {
-            throw ConnectionManagerError.connectionUnexpectedClosure
+        return consumePrefix(length)
+    }
+
+    /// Drains the first `count` bytes of the buffer into a freshly allocated
+    /// `Data`. Uses bulk `memcpy` from the deque's contiguous storage when
+    /// possible, falling back to elementwise copy when the buffer wraps.
+    private func consumePrefix(_ count: Int) -> Data {
+        var data = Data(count: count)
+        data.withUnsafeMutableBytes { dest in
+            let prefix = buffer.prefix(count)
+            let didFastCopy = prefix.withContiguousStorageIfAvailable { src in
+                dest.copyMemory(from: UnsafeRawBufferPointer(src))
+            } != nil
+            if !didFastCopy {
+                for (offset, byte) in prefix.enumerated() {
+                    dest[offset] = byte
+                }
+            }
         }
-
-        let data = Data(buffer.prefix(length))
-        buffer.removeFirst(length)
-
+        buffer.removeFirst(count)
         return data
     }
 
@@ -530,39 +551,22 @@ public actor ConnectionManager<Mode: ConnectionMode> {
         return (parts[0].lowercased(), parts[1])
     }
 
-    /// A private helper to safely cast a value to a generic type `T`.
+    /// Parses response lines into a single media object of the requested
+    /// `ParsableMedia` type.
     ///
-    /// - Parameter value: The value to be cast.
-    /// - Returns: The value cast to type `T`.
-    /// - Throws: `ConnectionManagerError.malformedResponse` if the cast fails.
-    private func castResult<T>(_ value: some Any) throws -> T {
-        guard let result = value as? T else {
-            throw ConnectionManagerError.malformedResponse(
-                "Type mismatch: expected \(T.self) but created \(type(of: value))",
-            )
-        }
-
-        return result
-    }
-
-    /// Parses response lines into a single media object of a specified generic
-    /// type.
-    ///
-    /// This function processes key-value pairs from MPD response lines and uses
-    /// them to initialize a `Song`, `Album`, or `Artist` object, which is then
-    /// cast to the requested generic type `T`.
+    /// Each conforming type (`Song`, `Album`, `Artist`) supplies its own
+    /// `parse(fields:index:)` implementation, so this function only has to
+    /// turn the response lines into a field map and delegate.
     ///
     /// - Parameters:
     ///   - lines: An array of strings representing the response lines from MPD.
-    ///   - type: The `MediaType` (.song, .album, .artist) to guide the initial
-    ///           parsing.
+    ///   - type: The concrete `ParsableMedia` type to construct.
     ///   - index: An optional index, typically used to set a song's position.
-    /// - Returns: A media object cast to the generic type `T`.
+    /// - Returns: An instance of `M`.
     /// - Throws: `ConnectionManagerError.malformedResponse` if mandatory fields
-    ///           are missing, the response is improperly formatted, or the
-    ///           created object cannot be cast to `T`.
-    func parseMediaResponse<T>(_ lines: [String], as type:
-        MediaType, index: Int? = nil) throws -> T
+    ///           are missing or the response is improperly formatted.
+    func parse<M: ParsableMedia>(_ lines: [String], as _: M.Type,
+                                 index: Int? = nil) throws -> M
     {
         var fields: [String: String] = [:]
         for line in lines where line != "OK" {
@@ -570,126 +574,35 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             fields[key] = value
         }
 
-        guard let file = fields["file"] else {
-            throw ConnectionManagerError.malformedResponse(
-                "Missing or invalid file field",
-            )
-        }
-
-        let artistName = fields["albumartist"] ?? fields["artist"]
-            ?? "Unknown Artist"
-
-        switch type {
-        case .song:
-            let artist: String
-            let title: String
-
-            if let name = fields["name"], fields["artist"] == nil,
-               fields["title"] == nil
-            {
-                if let separator = name.range(of: " - ") {
-                    artist = String(name[..<separator.lowerBound])
-                    title = String(name[separator.upperBound...])
-                } else {
-                    artist = "Unknown Artist"
-                    title = name
-                }
-            } else {
-                artist = fields["artist"] ?? "Unknown Artist"
-                title = fields["title"] ?? "Unknown Title"
-            }
-
-            let song = Song(
-                file: file,
-                identifier: fields["id"].flatMap { UInt32($0) },
-                position: fields["pos"].flatMap { UInt32($0) }
-                    ?? index.map { UInt32($0) },
-                artist: artist,
-                artistSort: fields["artistsort"],
-                title: title,
-                titleSort: fields["titlesort"],
-                duration: fields["duration"].flatMap { Double($0) } ?? 0,
-                disc: fields["disc"].flatMap { Int($0) } ?? 1,
-                track: fields["track"].flatMap { Int($0) } ?? 1,
-                genre: fields["genre"],
-                composer: fields["composer"],
-                performer: fields["performer"],
-                conductor: fields["conductor"],
-                ensemble: fields["ensemble"],
-                mood: fields["mood"],
-                comment: fields["comment"],
-                album: Album(
-                    file: file,
-                    title: fields["album"] ?? "Unknown Album",
-                    titleSort: fields["albumsort"],
-                    artist: Artist(
-                        file: file,
-                        name: artistName,
-                        nameSort: fields["albumartistsort"],
-                    ),
-                ),
-            )
-
-            return try castResult(song)
-        case .album:
-            let album = Album(
-                file: file,
-                title: fields["album"] ?? "Unknown Album",
-                titleSort: fields["albumsort"],
-                artist: Artist(
-                    file: file,
-                    name: artistName,
-                    nameSort: fields["albumartistsort"],
-                ),
-            )
-
-            return try castResult(album)
-        case .artist:
-            let artist = Artist(
-                file: file,
-                name: artistName,
-                nameSort: fields["albumartistsort"],
-            )
-
-            return try castResult(artist)
-        default:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Unsupported media type: \(type)",
-            )
-        }
+        return try M.parse(fields: fields, index: index)
     }
 
-    /// Parses response lines into an array of media objects of a specified
-    /// generic type.
+    /// Parses response lines into an array of media objects of the requested
+    /// `ParsableMedia` type.
     ///
-    /// This function chunks the response lines (typically by a "file:" line)
-    /// and processes each chunk to create a `Song`, `Album`, or `Artist`
-    /// object. The resulting objects are then cast to the requested generic
-    /// type `T`.
+    /// This function chunks the response lines (by their leading "file:" line)
+    /// and dispatches each chunk through `M.parse(fields:index:)`.
     ///
     /// - Parameters:
     ///   - lines: An array of strings from an MPD response.
-    ///   - type: The `MediaType` (.song, .album, .artist) to guide the parsing
-    ///           of each chunk.
-    ///   - index: If `true`, uses the enumeration index of each chunk as the
-    ///            song's position.
-    /// - Returns: An array of media objects, each cast to the generic type `T`.
+    ///   - type: The concrete `ParsableMedia` type to construct.
+    ///   - indexed: If `true`, uses each chunk's enumeration index as the
+    ///              song's position fallback.
+    /// - Returns: An array of `M` instances.
     /// - Throws: An error if parsing of any chunk fails.
-    func parseMediaResponseArray<T>(_ lines: [String],
-                                    as type: MediaType,
-                                    index: Bool = false)
-        throws -> [T]
+    func parseArray<M: ParsableMedia>(_ lines: [String], as _: M.Type,
+                                      indexed: Bool = false) throws -> [M]
     {
         let chunks = chunkLines(lines, startingWith: "file")
 
-        if index {
-            return try chunks.enumerated().compactMap { index, chunk in
-                try parseMediaResponse(chunk, as: type, index: index)
+        return try chunks.enumerated().map { offset, chunk in
+            var fields: [String: String] = [:]
+            for line in chunk where line != "OK" {
+                let (key, value) = try parseLine(line)
+                fields[key] = value
             }
-        }
 
-        return try chunks.compactMap { chunk in
-            try parseMediaResponse(chunk, as: type)
+            return try M.parse(fields: fields, index: indexed ? offset : nil)
         }
     }
 }

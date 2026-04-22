@@ -283,7 +283,7 @@ public extension ConnectionManager where Mode == CommandMode {
             songs = try await getSongs(in: album, from: .database)
         case let artist as Artist:
             let lines = try await run(["find \(filter(key: "artist", value: artist.name))"])
-            songs = try parseMediaResponseArray(lines, as: .song)
+            songs = try parseArray(lines, as: Song.self)
         case let song as Song:
             songs = [song]
         default:

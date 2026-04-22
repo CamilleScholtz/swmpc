@@ -7,7 +7,6 @@
 
 import Foundation
 import MPDKit
-import Network
 import Observation
 
 /// The main MPD client class that manages the connection and state
@@ -45,6 +44,9 @@ import Observation
 
     /// The task handling the current reinitialization, if any.
     @ObservationIgnored private var reinitializeTask: Task<Void, Never>?
+
+    /// The task forwarding connection-state events into `StateManager`.
+    @ObservationIgnored private var stateObservationTask: Task<Void, Never>?
 
     init() {
         database = DatabaseManager(state: state)
@@ -90,41 +92,46 @@ import Observation
     private func connect() async {
         while !Task.isCancelled {
             do {
-                try await ConnectionManager.idle.connect { [weak self] _,
-                    state in
-                    Task { @MainActor [weak self] in
-                        self?.state.connectionState = state
-
-                        switch state {
-                        case let .failed(details):
-                            self?.state.error = NSError(
-                                domain: "MPD",
-                                code: 0,
-                                userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(details.localizedDescription)"],
-                            )
-                        case let .waiting(details):
-                            self?.state.error = NSError(
-                                domain: "MPD",
-                                code: 0,
-                                userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(details.localizedDescription)"],
-                            )
-                        case .cancelled:
-                            self?.state.error = nil
-                        case .ready:
-                            self?.state.error = nil
-                        case .preparing, .setup:
-                            break
-                        @unknown default:
-                            break
-                        }
-                    }
+                if let states = try await ConnectionManager.idle.connect() {
+                    observeStates(states)
                 }
-
                 return
             } catch {
                 state.error = error
 
                 try? await Task.sleep(for: .seconds(2))
+            }
+        }
+    }
+
+    /// Forwards connection-state events from the idle connection's stream
+    /// into `StateManager`.
+    private func observeStates(_ states: AsyncStream<ConnectionState>) {
+        stateObservationTask?.cancel()
+        stateObservationTask = Task { [weak self] in
+            for await state in states {
+                guard let self else { return }
+
+                self.state.connectionState = state
+
+                switch state {
+                case let .failed(reason):
+                    self.state.error = NSError(
+                        domain: "MPD",
+                        code: 0,
+                        userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(reason)"],
+                    )
+                case let .waiting(reason, _):
+                    self.state.error = NSError(
+                        domain: "MPD",
+                        code: 0,
+                        userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(reason)"],
+                    )
+                case .ready, .cancelled:
+                    self.state.error = nil
+                case .preparing, .setup:
+                    break
+                }
             }
         }
     }

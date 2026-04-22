@@ -5,7 +5,7 @@
 //  Created by Camille Scholtz on 14/07/2025.
 //
 
-import Network
+import MPDKit
 import SwiftUI
 
 /// Manages the overall state of the MPD client including loading and connection
@@ -15,18 +15,14 @@ import SwiftUI
     var isLoading = true
 
     /// The current network connection state.
-    var connectionState: NetworkChannel<TCP>.State?
+    var connectionState: ConnectionState?
 
     /// The most recent connection or communication error, if any.
     var error: Error?
 
     /// Whether the connection is ready and connected.
     var isConnectionReady: Bool {
-        guard let state = connectionState else {
-            return false
-        }
-
-        return state == .ready
+        connectionState == .ready
     }
 
     /// The color representing the current connection state.
@@ -38,17 +34,11 @@ import SwiftUI
         switch state {
         case .ready:
             return .green
-        case .failed:
-            return .red
-        case .waiting:
+        case .failed, .waiting:
             return .red
         case .preparing:
             return .yellow
-        case .setup:
-            return .gray
-        case .cancelled:
-            return .gray
-        @unknown default:
+        case .setup, .cancelled:
             return .gray
         }
     }
@@ -72,8 +62,6 @@ import SwiftUI
             return "Setting up connection"
         case .cancelled:
             return "Connection cancelled"
-        @unknown default:
-            return "Unknown state"
         }
     }
 }

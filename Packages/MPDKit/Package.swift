@@ -22,6 +22,7 @@ let package = Package(
             name: "MPDKit",
             dependencies: [
                 .product(name: "DequeModule", package: "swift-collections"),
+                .product(name: "OrderedCollections", package: "swift-collections"),
             ],
         ),
     ],

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OrderedCollections
 
 /// Shared commands available to all connection modes.
 public extension ConnectionManager {
@@ -61,9 +62,7 @@ public extension ConnectionManager {
         let volume = fields["volume"].flatMap(Int.init)
 
         let song: Song? = if fields["file"] != nil {
-            try parseMediaResponse(fields.map {
-                "\($0.key): \($0.value)"
-            }, as: .song)
+            try Song.parse(fields: fields, index: nil)
         } else {
             nil
         }
@@ -125,19 +124,8 @@ public extension ConnectionManager {
     {
         let lines = try await run(["find \(filter(key: "track", value: "1")) sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
 
-        let albums: [Album] = try parseMediaResponseArray(lines, as: .album)
-
-        var seen: Set<String> = []
-        var unique: [Album] = []
-
-        for album in albums {
-            if !seen.contains(album.id) {
-                unique.append(album)
-                seen.insert(album.id)
-            }
-        }
-
-        return unique
+        let albums = try parseArray(lines, as: Album.self)
+        return Array(OrderedSet(albums))
     }
 
     /// Retrieves all albums by a specific artist from the given source.
@@ -165,19 +153,8 @@ public extension ConnectionManager {
             )
         }
 
-        let albums: [Album] = try parseMediaResponseArray(lines, as: .album)
-
-        var seen: Set<String> = []
-        var unique: [Album] = []
-
-        for album in albums {
-            if !seen.contains(album.id) {
-                unique.append(album)
-                seen.insert(album.id)
-            }
-        }
-
-        return unique
+        let albums = try parseArray(lines, as: Album.self)
+        return Array(OrderedSet(albums))
     }
 
     /// Retrieves all unique artists from the database.
@@ -193,20 +170,7 @@ public extension ConnectionManager {
         -> [Artist]
     {
         let albums = try await getAlbums(sort: sort)
-
-        var seen: Set<String> = []
-        var unique: [Artist] = []
-
-        for album in albums {
-            let artist = album.artist
-
-            if !seen.contains(artist.id) {
-                unique.append(artist)
-                seen.insert(artist.id)
-            }
-        }
-
-        return unique
+        return Array(OrderedSet(albums.map(\.artist)))
     }
 
     /// Retrieves all songs from a specified source.
@@ -238,7 +202,7 @@ public extension ConnectionManager {
             lines = try await run(["listplaylistinfo \(escape(playlist.name))"])
         }
 
-        return try parseMediaResponseArray(lines, as: .song, index: true)
+        return try parseArray(lines, as: Song.self, indexed: true)
     }
 
     /// Retrieves songs from the database or queue that match a specific album.
@@ -264,7 +228,7 @@ public extension ConnectionManager {
             )
         }
 
-        return try parseMediaResponseArray(lines, as: .song)
+        return try parseArray(lines, as: Song.self)
     }
 
     /// Retrieves all playlists.
