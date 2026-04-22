@@ -265,7 +265,6 @@ private struct CategoryDatabaseView: View {
                 return
             }
             loadedSort = sort
-            mpd.state.isLoading = true
 
             try? await mpd.database.set(idle: false, sort: sort)
 
@@ -277,6 +276,9 @@ private struct CategoryDatabaseView: View {
             }
 
             scrollToCurrentMedia()
+        }
+        .onChange(of: sort) {
+            mpd.state.isLoading = true
         }
         .onChange(of: searchQuery) { _, value in
             performSearch(query: value, fields: searchFields)
@@ -490,7 +492,6 @@ struct CategoryPlaylistView: View {
             }
         }
         .task(id: playlist) {
-            mpd.state.isLoading = true
             songs = try? await mpd.playlists.getSongs(for: playlist)
 
             if songIsInPlaylist(mpd.status.song) {
@@ -506,6 +507,9 @@ struct CategoryPlaylistView: View {
                     songs = try? await mpd.playlists.getSongs(for: playlist)
                 }
             }
+        }
+        .onChange(of: playlist) {
+            mpd.state.isLoading = true
         }
         .alert("Replace Queue", isPresented: $showReplaceQueueAlert) {
             Button("Cancel", role: .cancel) {}

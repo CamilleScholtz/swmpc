@@ -17,6 +17,10 @@ struct SongView: View, Equatable {
         self.source = source
     }
 
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.song == rhs.song && lhs.source == rhs.source
+    }
+
     #if os(macOS)
         @State private var isHovering = false
         @State private var isHoveringHandle = false
