@@ -167,12 +167,8 @@ private struct CategoryDatabaseView: View {
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
-                if let searchResults {
-                    mediaList(for: searchResults)
-                } else {
-                    mediaList(for: media)
-                        .id(navigator.category)
-                }
+                mediaList(for: searchResults ?? media)
+                    .id(navigator.category)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
