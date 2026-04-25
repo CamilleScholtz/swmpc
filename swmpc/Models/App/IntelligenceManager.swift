@@ -46,14 +46,16 @@ enum IntelligenceTarget {
 nonisolated struct ModelConfig {
     /// Display name for the model provider.
     let name: String
-    /// Specific model identifier to use.
-    let model: String
+    /// Default model identifier when the user has not selected one.
+    let defaultModel: String
     /// API host URL.
     let host: String
     /// API base path.
     let path: String
     /// UserDefaults key for storing the API token.
     let setting: String
+    /// UserDefaults key for storing the user-selected model identifier.
+    let modelSetting: String
     /// Custom HTTP headers for API requests.
     let headers: [String: String]
     /// Whether the model is enabled.
@@ -72,70 +74,88 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
     case grok
     case mistral
     case openAI
+    case openRouter
     case custom
 
     /// Model configurations for each provider.
     private static let configs: [IntelligenceModel: ModelConfig] = [
         .claude: ModelConfig(
             name: "Claude",
-            model: "claude-haiku-4-5",
+            defaultModel: "claude-haiku-4-5",
             host: "api.anthropic.com",
             path: "/v1",
             setting: Setting.claudeToken,
+            modelSetting: Setting.claudeModel,
             headers: [:],
             isEnabled: true,
         ),
         .deepSeek: ModelConfig(
             name: "DeepSeek",
-            model: "deepseek-chat",
+            defaultModel: "deepseek-chat",
             host: "api.deepseek.com",
             path: "/v1",
             setting: Setting.deepSeekToken,
+            modelSetting: Setting.deepSeekModel,
             headers: [:],
             isEnabled: false, // No stuctured output.
         ),
         .gemini: ModelConfig(
             name: "Gemini",
-            model: "gemini-2.5-flash-lite",
+            defaultModel: "gemini-2.5-flash-lite",
             host: "generativelanguage.googleapis.com",
             path: "/v1beta/openai",
             setting: Setting.geminiToken,
+            modelSetting: Setting.geminiModel,
             headers: [:],
             isEnabled: true,
         ),
         .grok: ModelConfig(
             name: "Grok",
-            model: "grok-4-1-fast-non-reasoning",
+            defaultModel: "grok-4-1-fast-non-reasoning",
             host: "api.x.ai",
             path: "/v1",
             setting: Setting.grokToken,
+            modelSetting: Setting.grokModel,
             headers: [:],
             isEnabled: true,
         ),
         .mistral: ModelConfig(
             name: "Mistral",
-            model: "mistral-small-latest",
+            defaultModel: "mistral-small-latest",
             host: "api.mistral.ai",
             path: "/v1",
             setting: Setting.mistralToken,
+            modelSetting: Setting.mistralModel,
             headers: [:],
             isEnabled: true,
         ),
         .openAI: ModelConfig(
             name: "OpenAI",
-            model: "gpt-5-mini",
+            defaultModel: "gpt-5-mini",
             host: "api.openai.com",
             path: "/v1",
             setting: Setting.openAIToken,
+            modelSetting: Setting.openAIModel,
+            headers: [:],
+            isEnabled: true,
+        ),
+        .openRouter: ModelConfig(
+            name: "OpenRouter",
+            defaultModel: "openai/gpt-5-mini",
+            host: "openrouter.ai",
+            path: "/api/v1",
+            setting: Setting.openRouterToken,
+            modelSetting: Setting.openRouterModel,
             headers: [:],
             isEnabled: true,
         ),
         .custom: ModelConfig(
             name: "Custom",
-            model: "",
+            defaultModel: "",
             host: "localhost:11434",
             path: "/v1",
             setting: Setting.customToken,
+            modelSetting: Setting.customModel,
             headers: [:],
             isEnabled: true,
         ),
@@ -145,7 +165,6 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
     private var config: ModelConfig {
         if self == .custom {
             let host = UserDefaults.standard.string(forKey: Setting.customHost) ?? "localhost:11434"
-            let model = UserDefaults.standard.string(forKey: Setting.customModel) ?? ""
 
             let url = URL(string: host.contains("://") ? host : "http://\(host)")
             let hostComponent = url.flatMap { "\($0.host ?? "localhost")\($0.port.map { ":\($0)" } ?? "")" } ?? host
@@ -153,10 +172,11 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
 
             return ModelConfig(
                 name: "Custom",
-                model: model,
+                defaultModel: "",
                 host: hostComponent,
                 path: pathComponent,
                 setting: Setting.customToken,
+                modelSetting: Setting.customModel,
                 headers: [:],
                 isEnabled: true,
             )
@@ -176,9 +196,15 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
         config.name
     }
 
-    /// Specific model identifier to use.
-    var model: String {
-        config.model
+    /// Hardcoded fallback model identifier.
+    var defaultModel: String {
+        config.defaultModel
+    }
+
+    /// User-selected model identifier, or the default if none is set.
+    var selectedModel: String {
+        let stored = UserDefaults.standard.string(forKey: config.modelSetting) ?? ""
+        return stored.isEmpty ? config.defaultModel : stored
     }
 
     /// API host URL.
@@ -194,6 +220,11 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
     /// UserDefaults key for storing the API token.
     var setting: String {
         config.setting
+    }
+
+    /// UserDefaults key for storing the user-selected model identifier.
+    var modelSetting: String {
+        config.modelSetting
     }
 
     /// Custom HTTP headers for API requests.
@@ -331,7 +362,7 @@ actor IntelligenceManager {
                     </available_albums>
                     """)!,
                 ],
-                model: model.model,
+                model: model.selectedModel,
                 responseFormat: .jsonSchema(
                     .init(
                         name: "playlist",

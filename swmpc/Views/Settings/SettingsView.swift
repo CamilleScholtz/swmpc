@@ -356,9 +356,9 @@ struct SettingsView: View {
         @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
 
         @AppStorage(Setting.customHost) private var customHost = ""
-        @AppStorage(Setting.customModel) private var customModel = ""
 
         @State private var intelligenceToken = ""
+        @State private var intelligenceModelID = ""
 
         var body: some View {
             Form {
@@ -370,17 +370,9 @@ struct SettingsView: View {
                     }
 
                     Section {
-                        Picker("Model", selection: $intelligenceModel) {
+                        Picker("Provider", selection: $intelligenceModel) {
                             ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
-                                VStack(alignment: .leading) {
-                                    Text(model.name)
-                                    if model != .custom {
-                                        Text(model.model)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                .tag(model)
+                                Text(model.name).tag(model)
                             }
                         }
                         .pickerStyle(.navigationLink)
@@ -392,23 +384,41 @@ struct SettingsView: View {
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                                 .disabled(!isIntelligenceEnabled)
-
-                            TextField("Model Name", text: $customModel)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                                .disabled(!isIntelligenceEnabled)
                         }
-
-                        SecureField("API Token", text: $intelligenceToken)
-                            .textContentType(.password)
-                            .disabled(!isIntelligenceEnabled)
                     } header: {
                         Text("Provider")
                     } footer: {
                         if intelligenceModel == .custom {
-                            Text("Enter the base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1). API token is optional for local models.")
+                            Text("Enter the base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1).")
+                        }
+                    }
+
+                    Section {
+                        TextField("Model", text: $intelligenceModelID)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .disabled(!isIntelligenceEnabled)
+                    } header: {
+                        Text("Model")
+                    } footer: {
+                        if intelligenceModel == .custom {
+                            Text("Model identifier (e.g. llama3, mistral).")
                         } else {
-                            Text("Enter your API token for the selected AI provider.")
+                            Text("Override the default model identifier for this provider.")
+                        }
+                    }
+
+                    Section {
+                        SecureField("API Token", text: $intelligenceToken)
+                            .textContentType(.password)
+                            .disabled(!isIntelligenceEnabled)
+                    } header: {
+                        Text("API Token")
+                    } footer: {
+                        if intelligenceModel == .custom {
+                            Text("Optional for local models.")
+                        } else {
+                            Text("Required to access the provider's API.")
                         }
                     }
                 #elseif os(macOS)
@@ -421,31 +431,23 @@ struct SettingsView: View {
                     }
 
                     Section("Provider") {
-                        Picker("Model", selection: $intelligenceModel) {
+                        Picker("Provider", selection: $intelligenceModel) {
                             ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
-                                HStack {
-                                    Text(model.name)
-                                    if model != .custom {
-                                        Text(model.model)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                .tag(model)
+                                Text(model.name).tag(model)
                             }
                         }
-                        .help("Select the AI model to use for intelligent features")
+                        .help("Select the AI provider")
                         .disabled(!isIntelligenceEnabled)
 
                         if intelligenceModel == .custom {
                             TextField("Base URL", text: $customHost)
                                 .help("Base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1)")
                                 .disabled(!isIntelligenceEnabled)
-
-                            TextField("Model Name", text: $customModel)
-                                .help("Model identifier (e.g. llama3, mistral)")
-                                .disabled(!isIntelligenceEnabled)
                         }
+
+                        TextField("Model", text: $intelligenceModelID)
+                            .help(intelligenceModel == .custom ? "Model identifier (e.g. llama3, mistral)" : "Model identifier for the selected provider")
+                            .disabled(!isIntelligenceEnabled)
 
                         SecureField("API Token", text: $intelligenceToken)
                             .textContentType(.password)
@@ -457,10 +459,17 @@ struct SettingsView: View {
             .task(id: intelligenceModel) {
                 @AppStorage(intelligenceModel.setting) var token = ""
                 intelligenceToken = token
+
+                @AppStorage(intelligenceModel.modelSetting) var storedModel = ""
+                intelligenceModelID = storedModel.isEmpty ? intelligenceModel.defaultModel : storedModel
             }
             .onChange(of: intelligenceToken) { _, value in
                 @AppStorage(intelligenceModel.setting) var token = ""
                 token = value.isEmpty ? "" : value
+            }
+            .onChange(of: intelligenceModelID) { _, value in
+                @AppStorage(intelligenceModel.modelSetting) var storedModel = ""
+                storedModel = value
             }
         }
     }

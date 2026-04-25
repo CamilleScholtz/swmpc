@@ -23,8 +23,17 @@ nonisolated enum Setting {
     static let grokToken = "grok_token"
     static let mistralToken = "mistral_token"
     static let openAIToken = "openai_token"
+    static let openRouterToken = "openrouter_token"
     static let customToken = "custom_token"
     static let customHost = "custom_host"
+
+    static let claudeModel = "claude_model"
+    static let deepSeekModel = "deepseek_model"
+    static let geminiModel = "gemini_model"
+    static let grokModel = "grok_model"
+    static let mistralModel = "mistral_model"
+    static let openAIModel = "openai_model"
+    static let openRouterModel = "openrouter_model"
     static let customModel = "custom_model"
 
     static let albumSearchFields = "album_search_fields"
