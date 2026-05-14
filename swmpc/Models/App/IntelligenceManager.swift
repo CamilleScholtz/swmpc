@@ -146,7 +146,10 @@ nonisolated enum IntelligenceModel: String, Identifiable, CaseIterable {
             path: "/api/v1",
             setting: Setting.openRouterToken,
             modelSetting: Setting.openRouterModel,
-            headers: [:],
+            headers: [
+                "HTTP-Referer": "https://github.com/CamilleScholtz/swmpc",
+                "X-OpenRouter-Title": "swmpc",
+            ],
             isEnabled: true,
         ),
         .custom: ModelConfig(
