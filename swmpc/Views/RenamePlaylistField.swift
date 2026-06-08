@@ -33,13 +33,17 @@ struct RenamePlaylistField: View {
             }
             .onSubmit {
                 Task(priority: .userInitiated) {
-                    try await ConnectionManager.command {
-                        try await $0.renamePlaylist(playlist, to: playlistName)
-                    }
+                    do {
+                        try await ConnectionManager.command {
+                            try await $0.renamePlaylist(playlist, to: playlistName)
+                        }
 
-                    isRenamingPlaylist = false
-                    playlistToRename = nil
-                    playlistName = ""
+                        isRenamingPlaylist = false
+                        playlistToRename = nil
+                        playlistName = ""
+                    } catch {
+                        // Rename failed; leave the field active so the user can retry.
+                    }
                 }
             }
     }

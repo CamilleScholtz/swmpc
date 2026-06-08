@@ -50,22 +50,7 @@ struct CategoryDestinationView: View {
         .navigationTitle(isSearchFieldExpanded ? "" : navigator.category.label)
         .navigationBarTitleDisplayMode(.inline)
         #elseif os(macOS)
-        .toolbar(removing: .title)
-        .toolbar {
-            if !isSearchFieldExpanded {
-                // XXX: I want to use DefaultToolbarItem, but that does not work for some reason.
-                ToolbarItem {
-                    Text(navigator.category.label)
-                        .font(.system(size: 15))
-                        .fontWeight(.semibold)
-                        .padding(.leading, 12)
-                        .foregroundStyle(controlActiveState == .inactive ? .secondary : .primary)
-                }
-                .sharedBackgroundVisibility(.hidden)
-
-                ToolbarSpacer(.flexible)
-            }
-        }
+        .toolbar(removing: isSearchFieldExpanded ? .title : nil)
         #endif
         .onChange(of: navigator.category) {
             isSearchFieldExpanded = false
@@ -179,6 +164,7 @@ private struct CategoryDatabaseView: View {
                     TextField("Search \(String(localized: navigator.category.label).lowercased())", text: $searchQuery)
                     #if os(macOS)
                         .frame(width: 195.5)
+                        .focusEffectDisabled()
                     #endif
                         .padding(.leading, Layout.Padding.small)
                         .autocorrectionDisabled()
@@ -411,20 +397,20 @@ private struct CategoryDatabaseView: View {
             return
         }
 
-        let index: Int? = switch navigator.category.type {
+        let id: String? = switch navigator.category.type {
         case .album:
-            (media as? [Album])?.firstIndex { $0.id == song.album.id }
+            (media as? [Album])?.first { $0.id == song.album.id }?.id
         case .artist:
-            (media as? [Artist])?.firstIndex { $0.id == song.album.artist.id }
+            (media as? [Artist])?.first { $0.id == song.album.artist.id }?.id
         default:
-            (media as? [Song])?.firstIndex { $0.id == song.id }
+            (media as? [Song])?.first { $0.id == song.id }?.id
         }
 
-        guard let index else {
+        guard let id else {
             return
         }
 
-        scrollTarget = ScrollTarget(index: index, animated: animated)
+        scrollTarget = ScrollTarget(id: id, animated: animated)
     }
 }
 
@@ -523,12 +509,12 @@ struct CategoryPlaylistView: View {
     private func scrollToCurrentSong(animated: Bool = false) {
         guard let song = mpd.status.song,
               let songs,
-              let index = songs.firstIndex(where: { $0.id == song.id })
+              songs.contains(where: { $0.id == song.id })
         else {
             return
         }
 
-        scrollTarget = ScrollTarget(index: index, animated: animated)
+        scrollTarget = ScrollTarget(id: song.id, animated: animated)
     }
 
     private func songIsInPlaylist(_ song: Song?) -> Bool {

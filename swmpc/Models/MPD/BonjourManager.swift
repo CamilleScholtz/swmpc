@@ -85,7 +85,7 @@ nonisolated struct DiscoveredServer: Identifiable, Hashable {
                 }
 
                 group.addTask {
-                    try await browser.run { [weak self] endpoints in
+                    try await browser.run { [weak self = self] endpoints in
                         guard let self else {
                             return .finish(())
                         }

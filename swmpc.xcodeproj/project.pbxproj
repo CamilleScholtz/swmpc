@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 100;
+	objectVersion = 110;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -247,7 +247,7 @@
 				91EF37792EE8C56100B222C4 /* XCLocalSwiftPackageReference "Packages/MPDKit" */,
 				91EF37A82EEA30EA00B222C4 /* XCLocalSwiftPackageReference "Packages/Shared" */,
 			);
-			preferredProjectObjectVersion = 100;
+			preferredProjectObjectVersion = 110;
 			productRefGroup = 91A141D72CDE3987000A74BC;
 			projectDirPath = "";
 			projectRoot = "";

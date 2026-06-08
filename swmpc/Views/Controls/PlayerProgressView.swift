@@ -61,8 +61,6 @@ struct PlayerProgressView: View {
                         return
                     }
 
-                    // XXX: One second animation does not work.
-                    // See: https://openradar.appspot.com/FB11802261
                     withAnimation(.linear(duration: 1)) {
                         sliderValue = value
                     }

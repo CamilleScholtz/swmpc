@@ -118,9 +118,8 @@ struct AppView: View {
                             .overlay(
                                 LoadingView(),
                             )
-                            .scrollEdgeEffectStyle(.soft, for: .vertical)
                         } detail: {
-                            // XXX: The scrollview is a hack to hide apply the .soft scroll edge effect.
+                            // XXX: The scrollview is a hack to hide apply the scroll edge effect.
                             ZStack {
                                 ScrollView {}
                                     .scrollContentBackground(.visible)
