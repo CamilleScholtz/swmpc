@@ -16,9 +16,6 @@ import SwiftUI
 struct CategoryDestinationView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
-    #if os(macOS)
-        @Environment(\.controlActiveState) private var controlActiveState
-    #endif
 
     @State private var isSearchFieldExpanded = false
 
@@ -77,9 +74,6 @@ private struct CategoryDatabaseView: View {
         @FocusState private var isSearchFieldFocused: Bool
     #endif
 
-    @State private var loadedCategory: CategoryDestination?
-    @State private var loadedSort: MPDKit.SortDescriptor?
-
     @State private var scrollTarget: ScrollTarget?
 
     @State private var searchTask: Task<Void, Never>?
@@ -114,45 +108,10 @@ private struct CategoryDatabaseView: View {
         }
     }
 
-    private func mediaList(for media: [any Mediable]) -> some View {
-        Group {
-            switch mpd.database.type {
-            case .album:
-                if let albums = media as? [Album] {
-                    List(albums, id: \.id) { album in
-                        AlbumView(for: album)
-                            .equatable()
-                            .mediaRowStyle()
-                    }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.album)
-                }
-            case .artist:
-                if let artists = media as? [Artist] {
-                    List(artists, id: \.id) { artist in
-                        ArtistView(for: artist)
-                            .equatable()
-                            .mediaRowStyle()
-                    }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.artist)
-                }
-            default:
-                if let songs = media as? [Song] {
-                    List(songs, id: \.id) { song in
-                        SongView(for: song, source: .database)
-                            .equatable()
-                            .mediaRowStyle()
-                    }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.song)
-                }
-            }
-        }
-        .scrollToItem($scrollTarget)
-    }
-
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
-                mediaList(for: searchResults ?? media)
+                MediaListView(media: searchResults ?? media, type: mpd.database.type, scrollTarget: $scrollTarget)
                     .id(navigator.category)
             } else {
                 EmptyCategoryView(destination: navigator.category)
@@ -171,7 +130,7 @@ private struct CategoryDatabaseView: View {
                     #if os(iOS)
                         .focused($isSearchFieldFocused)
                     #elseif os(macOS)
-                        .introspect(.textField, on: .macOS(.v26)) { value in
+                        .introspect(.textField, on: .macOS(.v26, .v27)) { value in
                             // XXX: Workaround for .focusEffectDisabled() not working in toolbar.
                             value.focusRingType = .none
 
@@ -224,13 +183,7 @@ private struct CategoryDatabaseView: View {
                 .keyboardShortcut("f", modifiers: .command)
             }
         }
-        .task(id: navigator.category) {
-            guard loadedCategory != navigator.category else {
-                return
-            }
-            loadedCategory = navigator.category
-            loadedSort = sort
-
+        .task(id: LoadParameters(category: navigator.category, sort: sort)) {
             try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
             searchTask?.cancel()
@@ -239,16 +192,6 @@ private struct CategoryDatabaseView: View {
             #if os(macOS)
                 searchTextField = nil
             #endif
-
-            scrollToCurrentMedia()
-        }
-        .task(id: sort) {
-            guard loadedSort != sort else {
-                return
-            }
-            loadedSort = sort
-
-            try? await mpd.database.set(idle: false, sort: sort)
 
             scrollToCurrentMedia()
         }
@@ -431,7 +374,6 @@ struct CategoryPlaylistView: View {
                     ForEach(songs) { song in
                         SongView(for: song, source: navigator.category.source)
                             .equatable()
-                            .id(song.id)
                     }
                     .onMove { indices, destination in
                         Task {
@@ -541,6 +483,52 @@ struct CategoryPlaylistView: View {
             try await $0.move(song, to: destination, in: navigator.category.source)
         }
         self.songs = try? await mpd.playlists.getSongs(for: playlist)
+    }
+}
+
+private struct LoadParameters: Equatable {
+    let category: CategoryDestination
+    let sort: MPDKit.SortDescriptor
+}
+
+private struct MediaListView: View {
+    let media: [any Mediable]
+    let type: MediaType
+    @Binding var scrollTarget: ScrollTarget?
+
+    var body: some View {
+        Group {
+            switch type {
+            case .album:
+                if let albums = media as? [Album] {
+                    List(albums, id: \.id) { album in
+                        AlbumView(for: album)
+                            .equatable()
+                            .mediaRowStyle()
+                    }
+                    .mediaListStyle(rowHeight: Layout.RowHeight.album)
+                }
+            case .artist:
+                if let artists = media as? [Artist] {
+                    List(artists, id: \.id) { artist in
+                        ArtistView(for: artist)
+                            .equatable()
+                            .mediaRowStyle()
+                    }
+                    .mediaListStyle(rowHeight: Layout.RowHeight.artist)
+                }
+            default:
+                if let songs = media as? [Song] {
+                    List(songs, id: \.id) { song in
+                        SongView(for: song, source: .database)
+                            .equatable()
+                            .mediaRowStyle()
+                    }
+                    .mediaListStyle(rowHeight: Layout.RowHeight.song)
+                }
+            }
+        }
+        .scrollToItem($scrollTarget)
     }
 }
 
