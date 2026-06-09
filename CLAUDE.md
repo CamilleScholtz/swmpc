@@ -4,7 +4,7 @@
 
 swmpc is a native MPD (Music Player Daemon) client for macOS and iOS, built with SwiftUI.
 
-- **Platforms**: macOS 26, iOS 26
+- **Platforms**: macOS 27, iOS 27
 - **Language**: Swift 6.2
 - **UI**: SwiftUI + Liquid Glass design language
 - **Build**: `swmpc.xcodeproj`, scheme: `swmpc`
