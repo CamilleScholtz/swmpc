@@ -103,7 +103,6 @@ struct DetailView: View {
                     ToolbarItem {
                         Button("Fill Queue with AI", systemSymbol: .sparkles) {
                             navigator.intelligenceTarget = .queue
-                            navigator.showIntelligenceSheet = true
                         }
                         .disabled(!IntelligenceManager.isEnabled)
                     }

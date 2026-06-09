@@ -35,11 +35,18 @@ enum IntelligenceManagerError: LocalizedError {
 }
 
 /// Target destination for intelligence-generated songs.
-enum IntelligenceTarget {
+enum IntelligenceTarget: Identifiable {
     /// Add songs to a specific playlist.
     case playlist(Playlist)
     /// Add songs directly to the playback queue.
     case queue
+
+    var id: String {
+        switch self {
+        case let .playlist(playlist): "playlist-\(playlist.name)"
+        case .queue: "queue"
+        }
+    }
 }
 
 /// Configuration for an AI model provider.

@@ -46,10 +46,8 @@ import SwiftUI
         var showNowPlaying = false
     #endif
 
-    /// Controls the presentation of the intelligence sheet.
-    var showIntelligenceSheet = false
-
-    /// The target for the intelligence sheet (queue or playlist).
+    /// The target for the intelligence sheet (queue or playlist); drives its
+    /// presentation when non-nil.
     var intelligenceTarget: IntelligenceTarget?
 
     /// Controls the presentation of the clear queue alert.

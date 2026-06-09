@@ -452,7 +452,6 @@ struct CategoryPlaylistView: View {
                 ToolbarItem {
                     Button("Fill playlist with AI", systemSymbol: .sparkles) {
                         navigator.intelligenceTarget = .playlist(playlist)
-                        navigator.showIntelligenceSheet = true
                     }
                     .disabled(!IntelligenceManager.isEnabled)
                 }

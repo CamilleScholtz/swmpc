@@ -13,7 +13,6 @@ struct PlaylistsView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    @State private var showDeleteAlert = false
     @State private var playlistToDelete: Playlist?
 
     @State private var isRenamingPlaylist = false
@@ -84,7 +83,6 @@ struct PlaylistsView: View {
 
                             Button("Delete Playlist", systemSymbol: .trash, role: .destructive) {
                                 playlistToDelete = playlist
-                                showDeleteAlert = true
                             }
                         }
                     }
@@ -96,28 +94,16 @@ struct PlaylistsView: View {
         .task {
             await loadPlaylistCounts()
         }
-        .alert("Delete Playlist", isPresented: $showDeleteAlert) {
-            Button("Cancel", role: .cancel) {
-                playlistToDelete = nil
-                showDeleteAlert = false
-            }
+        .alert("Delete Playlist", item: $playlistToDelete) { playlist in
+            Button("Cancel", role: .cancel) {}
 
             AsyncButton("Delete", role: .destructive) {
-                guard let playlist = playlistToDelete else {
-                    throw ViewError.missingData
-                }
-
                 try await ConnectionManager.command {
                     try await $0.removePlaylist(playlist)
                 }
-
-                playlistToDelete = nil
-                showDeleteAlert = false
             }
-        } message: {
-            if let playlist = playlistToDelete {
-                Text("Are you sure you want to delete playlist '\(playlist.name)'?")
-            }
+        } message: { playlist in
+            Text("Are you sure you want to delete playlist '\(playlist.name)'?")
         }
         .toolbar {
             ToolbarItem {

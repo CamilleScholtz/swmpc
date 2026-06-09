@@ -76,7 +76,6 @@ struct QueueView: View {
                         } else {
                             Button {
                                 navigator.intelligenceTarget = .queue
-                                navigator.showIntelligenceSheet = true
                             } label: {
                                 Image(systemSymbol: .sparkles)
                             }

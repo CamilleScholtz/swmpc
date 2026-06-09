@@ -82,12 +82,8 @@ struct AppView: View {
                             }
                             .mediaListStyle()
                             .navigationTransition(.zoom(sourceID: 1, in: namespace))
-                            .sheet(isPresented: $navigator.showIntelligenceSheet, onDismiss: {
-                                navigator.intelligenceTarget = nil
-                            }) {
-                                if let target = navigator.intelligenceTarget {
-                                    IntelligenceView(target: target)
-                                }
+                            .sheet(item: $navigator.intelligenceTarget) { target in
+                                IntelligenceView(target: target)
                             }
                             .alert("Clear Queue", isPresented: $navigator.showClearQueueAlert) {
                                 Button("Cancel", role: .cancel) {}
@@ -192,12 +188,8 @@ struct AppView: View {
             Text("Are you sure you want to clear the queue?")
         }
         #endif
-        .sheet(isPresented: $navigator.showIntelligenceSheet, onDismiss: {
-            navigator.intelligenceTarget = nil
-        }) {
-            if let target = navigator.intelligenceTarget {
-                IntelligenceView(target: target)
-            }
+        .sheet(item: $navigator.intelligenceTarget) { target in
+            IntelligenceView(target: target)
         }
         #if os(iOS)
         .sheet(isPresented: $navigator.showSettingsSheet) {
