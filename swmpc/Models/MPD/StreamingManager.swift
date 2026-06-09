@@ -61,7 +61,7 @@ import Observation
         }
 
         errorObserver = NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemFailedToPlayToEndTime,
+            forName: AVPlayerItem.failedToPlayToEndTimeNotification,
             object: playerItem,
             queue: .main,
         ) { [weak self] notification in

@@ -24,7 +24,7 @@ struct PlayerProgressView: View {
     }
 
     private var duration: Double {
-        mpd.status.song?.duration ?? 100
+        max(mpd.status.song?.duration ?? 100, 1)
     }
 
     var body: some View {
@@ -50,7 +50,7 @@ struct PlayerProgressView: View {
             .controlSize(.mini)
             #if os(iOS)
                 // XXX: .mini control size is still too large.
-                .introspect(.slider, on: .iOS(.v26)) { value in
+                .introspect(.slider, on: .iOS(.v26, .v27)) { value in
                     value.sliderStyle = .thumbless
                 }
             #endif
@@ -71,29 +71,33 @@ struct PlayerProgressView: View {
 
             if showTimestamps {
                 HStack(alignment: .center) {
-                    Text(mpd.status.elapsed?.timeString ?? "0:00")
-                        .monospacedDigit()
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                    #if os(iOS)
-                        .foregroundStyle(Color(.tertiaryLabel))
-                    #elseif os(macOS)
-                        .foregroundStyle(Color(.tertiaryLabelColor))
-                    #endif
+                    TimestampText(time: mpd.status.elapsed)
 
                     Spacer()
 
-                    Text(mpd.status.song?.duration.timeString ?? "0:00")
-                        .monospacedDigit()
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                    #if os(iOS)
-                        .foregroundStyle(Color(.tertiaryLabel))
-                    #elseif os(macOS)
-                        .foregroundStyle(Color(.tertiaryLabelColor))
-                    #endif
+                    TimestampText(time: mpd.status.song?.duration)
                 }
             }
         }
     }
+}
+
+private struct TimestampText: View {
+    let time: Double?
+
+    var body: some View {
+        Text(time?.timeString ?? "0:00")
+            .monospacedDigit()
+            .font(.caption2)
+            .fontWeight(.semibold)
+            .foregroundStyle(Color.timestampLabel)
+    }
+}
+
+private extension Color {
+    #if os(iOS)
+        static let timestampLabel = Color(.tertiaryLabel)
+    #elseif os(macOS)
+        static let timestampLabel = Color(.tertiaryLabelColor)
+    #endif
 }
