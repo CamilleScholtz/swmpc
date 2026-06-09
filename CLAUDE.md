@@ -156,14 +156,3 @@ Use `./l10n.sh` to work with `swmpc/Localizable.xcstrings` — the file is too l
 | `./l10n.sh stats` | Translation counts per language |
 | `./l10n.sh rename <old> <new>` | Rename a key, preserving translations |
 | `./l10n.sh delete <key> [lang]` | Remove a key or a single translation |
-
-## MCP Tools
-
-### xcodebuild-mini
-
-Use for building and testing. **Prefer MCP tools over raw `xcodebuild`**.
-**IMPORTANT**: Only build when explicitly requested by the user!
-
-### apple-docs
-
-Use to look up Apple APIs, especially for newer frameworks (Observation, NetworkConnection, Liquid Glass). Prefer `search_apple_docs` for API lookup and `get_wwdc_video` for implementation guidance.
