@@ -26,10 +26,10 @@ struct PopoverView: View {
                 .animation(.easeInOut(duration: 0.2), value: artwork)
                 .frame(width: Layout.Size.artworkWidth)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
-                .overlay(
+                .overlay {
                     Color.clear
                         .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 20))
-                        .mask(
+                        .mask {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 20)
 
@@ -37,9 +37,9 @@ struct PopoverView: View {
                                     .scale(0.8)
                                     .blur(radius: 8)
                                     .blendMode(.destinationOut)
-                            },
-                        ),
-                )
+                            }
+                        }
+                }
                 .scaleEffect(showInfo ? 0.7 : 1)
                 .offset(y: showInfo ? -7 : 0)
                 .animation(.spring(response: 0.7, dampingFraction: 1, blendDuration: 0.7), value: showInfo)
@@ -73,7 +73,7 @@ struct PopoverView: View {
                 .offset(y: showInfo ? -Layout.Padding.large : 90)
                 .animation(.spring, value: showInfo)
         }
-        .mask(
+        .mask {
             RadialGradient(
                 gradient: Gradient(colors: [.clear, .white]),
                 center: .top,
@@ -82,8 +82,8 @@ struct PopoverView: View {
             )
             .offset(x: 23)
             .scaleEffect(x: 1.5)
-            .animation(.spring, value: showInfo),
-        )
+            .animation(.spring, value: showInfo)
+        }
         .frame(width: Layout.Size.artworkWidth, height: height)
         .task {
             for await _ in NotificationCenter.default.notifications(named: NSPopover.willShowNotification) {

@@ -169,10 +169,10 @@ private struct StatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(
+        .background {
             RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
-                .fill(.background.opacity(0.4)),
-        )
+                .fill(.background.opacity(0.4))
+        }
     }
 }
 

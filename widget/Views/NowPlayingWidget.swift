@@ -44,7 +44,7 @@ struct NowPlayingWidgetView: View {
                 Rectangle()
                     .fill(.ultraThinMaterial)
                     .environment(\.colorScheme, .dark)
-                    .mask(
+                    .mask {
                         LinearGradient(
                             gradient: Gradient(stops: [
                                 .init(color: .black, location: 0.3),
@@ -52,8 +52,8 @@ struct NowPlayingWidgetView: View {
                             ]),
                             startPoint: .bottom,
                             endPoint: .top,
-                        ),
-                    )
+                        )
+                    }
             }
 
             VStack(alignment: .leading, spacing: 2) {

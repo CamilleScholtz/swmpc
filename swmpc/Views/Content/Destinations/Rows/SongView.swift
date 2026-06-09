@@ -54,11 +54,11 @@ struct SongView: View, Equatable {
                             Image(systemSymbol: .playFill)
                                 .font(.title3)
                                 .foregroundStyle(.tint)
-                                .background(
+                                .background {
                                     Rectangle()
                                         .fill(.background)
-                                        .frame(width: trackSize, height: trackSize),
-                                )
+                                        .frame(width: trackSize, height: trackSize)
+                                }
                                 .opacity(isHovering ? 1 : 0)
                         #endif
 
@@ -98,7 +98,7 @@ struct SongView: View, Equatable {
                         .font(.title2)
                         .foregroundStyle(.secondary)
                         .frame(maxHeight: .infinity)
-                        .background(
+                        .background {
                             LinearGradient(
                                 gradient: Gradient(stops: [
                                     .init(color: .clear, location: 0.0),
@@ -107,8 +107,8 @@ struct SongView: View, Equatable {
                                 startPoint: .leading,
                                 endPoint: .trailing,
                             )
-                            .frame(width: trackSize * 4),
-                        )
+                            .frame(width: trackSize * 4)
+                        }
                         .opacity(isHoveringHandle ? 1 : 0)
                         .onHover { value in
                             isHoveringHandle = value
@@ -128,11 +128,11 @@ private struct SongPlayingOverlay: View {
     var body: some View {
         if mpd.status.song == song {
             WaveView()
-                .background(
+                .background {
                     Rectangle()
                         .fill(.background)
-                        .frame(width: trackSize, height: trackSize),
-                )
+                        .frame(width: trackSize, height: trackSize)
+                }
         }
     }
 }

@@ -47,10 +47,10 @@ struct AlbumSongsView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
                                 .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
                                 .frame(width: 180)
-                                .overlay(
+                                .overlay {
                                     Color.clear
                                         .glassEffect(.clear.interactive(), in: .rect(cornerRadius: Layout.CornerRadius.large))
-                                        .mask(
+                                        .mask {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
 
@@ -58,14 +58,14 @@ struct AlbumSongsView: View {
                                                     .scale(0.9)
                                                     .blur(radius: 8)
                                                     .blendMode(.destinationOut)
-                                            },
-                                        ),
-                                )
-                                .overlay(
+                                            }
+                                        }
+                                }
+                                .overlay {
                                     ZStack(alignment: .bottomLeading) {
                                         Color.clear
                                             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-                                            .mask(
+                                            .mask {
                                                 LinearGradient(
                                                     gradient: Gradient(stops: [
                                                         .init(color: .black, location: 0.3),
@@ -73,8 +73,8 @@ struct AlbumSongsView: View {
                                                     ]),
                                                     startPoint: .bottom,
                                                     endPoint: .top,
-                                                ),
-                                            )
+                                                )
+                                            }
                                             .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
 
                                         HStack(spacing: 5) {
@@ -91,8 +91,8 @@ struct AlbumSongsView: View {
                                         .padding(14)
                                     }
                                     .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                                    .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
-                                )
+                                    .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false)
+                                }
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
@@ -138,10 +138,10 @@ struct AlbumSongsView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
                                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small, y: 4)
                                     .frame(width: 100)
-                                    .overlay(
+                                    .overlay {
                                         Color.clear
                                             .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.medium))
-                                            .mask(
+                                            .mask {
                                                 ZStack {
                                                     RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
 
@@ -149,14 +149,14 @@ struct AlbumSongsView: View {
                                                         .scale(0.9)
                                                         .blur(radius: 8)
                                                         .blendMode(.destinationOut)
-                                                },
-                                            ),
-                                    )
-                                    .overlay(
+                                                }
+                                            }
+                                    }
+                                    .overlay {
                                         ZStack(alignment: .bottomLeading) {
                                             Color.clear
                                                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
-                                                .mask(
+                                                .mask {
                                                     LinearGradient(
                                                         gradient: Gradient(stops: [
                                                             .init(color: .black, location: 0.3),
@@ -164,8 +164,8 @@ struct AlbumSongsView: View {
                                                         ]),
                                                         startPoint: .bottom,
                                                         endPoint: .top,
-                                                    ),
-                                                )
+                                                    )
+                                                }
                                                 .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
 
                                             HStack(spacing: 5) {
@@ -182,8 +182,8 @@ struct AlbumSongsView: View {
                                             .padding(10)
                                         }
                                         .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
-                                        .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false),
-                                    )
+                                        .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false)
+                                    }
                             }
 
                             if isHovering, !(mpd.status.song?.isIn(album) ?? false) {

@@ -32,7 +32,7 @@ struct ArtistView: View, Equatable {
                 Circle()
                     .fill(Color(.tertiarySystemFill))
                     .frame(width: Layout.RowHeight.artist, height: Layout.RowHeight.artist)
-                    .overlay(
+                    .overlay {
                         ZStack {
                             Text(artist.name.initials)
                                 .font(.system(size: 18))
@@ -42,7 +42,7 @@ struct ArtistView: View, Equatable {
 
                             Color.clear
                                 .glassEffect(.clear, in: Circle())
-                                .mask(
+                                .mask {
                                     RadialGradient(
                                         stops: [
                                             .init(color: .clear, location: 0.0),
@@ -51,10 +51,10 @@ struct ArtistView: View, Equatable {
                                         center: .center,
                                         startRadius: 0,
                                         endRadius: 45,
-                                    ),
-                                )
-                        },
-                    )
+                                    )
+                                }
+                        }
+                    }
                     .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
                 VStack(alignment: .leading) {

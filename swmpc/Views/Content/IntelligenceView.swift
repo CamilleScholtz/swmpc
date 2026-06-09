@@ -198,15 +198,15 @@ struct IntelligenceView: View {
                         y: 0,
                     ),
                 )
-                .mask(
+                .mask {
                     RadialGradient(
                         colors: [.black, .clear],
                         center: .init(x: 0.5, y: 0.1),
                         startRadius: 0,
                         endRadius: Layout.Size.intelligenceViewWidth / 2 + 30,
                     )
-                    .blur(radius: 50),
-                )
+                    .blur(radius: 50)
+                }
                 .ignoresSafeArea()
             }
             .task {

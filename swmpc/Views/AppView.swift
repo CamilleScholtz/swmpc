@@ -48,9 +48,9 @@ struct AppView: View {
                                                 ContentDestinationView(destination: destination)
                                             }
                                     }
-                                    .overlay(
-                                        LoadingView(),
-                                    )
+                                    .overlay {
+                                        LoadingView()
+                                    }
                                 }
                             }
                         }
@@ -111,9 +111,9 @@ struct AppView: View {
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                             .navigationSplitViewColumnWidth(Layout.Size.contentWidth)
-                            .overlay(
-                                LoadingView(),
-                            )
+                            .overlay {
+                                LoadingView()
+                            }
                         } detail: {
                             // XXX: The scrollview is a hack to hide apply the scroll edge effect.
                             ZStack {
@@ -146,13 +146,12 @@ struct AppView: View {
                             if showQueuePanel {
                                 QueueView()
                                     .frame(width: Layout.Size.contentWidth)
-                                    .overlay(
+                                    .overlay(alignment: .leading) {
                                         Rectangle()
                                             .ignoresSafeArea(.container, edges: .top)
                                             .frame(width: 1)
-                                            .foregroundStyle(colorScheme == .dark ? .black : Color(.secondarySystemFill)),
-                                        alignment: .leading,
-                                    )
+                                            .foregroundStyle(colorScheme == .dark ? .black : Color(.secondarySystemFill))
+                                    }
                                     .transition(.move(edge: .trailing))
                             }
                         }

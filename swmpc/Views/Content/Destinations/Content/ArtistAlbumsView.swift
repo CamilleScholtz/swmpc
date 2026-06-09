@@ -27,7 +27,7 @@ struct ArtistAlbumsView: View {
                         Circle()
                             .fill(Color(.tertiarySystemFill))
                             .frame(width: 90, height: 90)
-                            .overlay(
+                            .overlay {
                                 ZStack {
                                     Text(artist.name.initials)
                                         .font(.system(size: 40))
@@ -37,7 +37,7 @@ struct ArtistAlbumsView: View {
 
                                     Color.clear
                                         .glassEffect(.clear, in: Circle())
-                                        .mask(
+                                        .mask {
                                             RadialGradient(
                                                 stops: [
                                                     .init(color: .clear, location: 0.0),
@@ -46,10 +46,10 @@ struct ArtistAlbumsView: View {
                                                 center: .center,
                                                 startRadius: 0,
                                                 endRadius: 90,
-                                            ),
-                                        )
-                                },
-                            )
+                                            )
+                                        }
+                                }
+                            }
                             .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
 
                         VStack(alignment: .center) {

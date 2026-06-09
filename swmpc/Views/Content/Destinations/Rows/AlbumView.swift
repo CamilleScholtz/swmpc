@@ -32,6 +32,12 @@ struct AlbumView: View, Equatable {
         @State private var hoverHandler = HoverTaskHandler()
     #endif
 
+    #if os(iOS)
+        private let glassMaskInset = Layout.Padding.large
+    #elseif os(macOS)
+        private let glassMaskInset = Layout.Padding.small
+    #endif
+
     var body: some View {
         Button {
             navigator.navigate(to: ContentDestination.album(album))
@@ -49,11 +55,10 @@ struct AlbumView: View, Equatable {
                             .frame(width: Layout.RowHeight.album, height: Layout.RowHeight.album)
                             .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
                             .animation(.easeInOut(duration: 0.15), value: artwork != nil)
-                            .overlay(
+                            .overlay {
                                 Color.clear
                                     .glassEffect(.clear, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
-                                #if os(iOS)
-                                    .mask(
+                                    .mask {
                                         RadialGradient(
                                             stops: [
                                                 .init(color: .clear, location: 0.4),
@@ -61,23 +66,10 @@ struct AlbumView: View, Equatable {
                                             ],
                                             center: .center,
                                             startRadius: 0,
-                                            endRadius: Layout.RowHeight.album - Layout.Padding.large,
+                                            endRadius: Layout.RowHeight.album - glassMaskInset,
                                         )
-                                    )
-                                #elseif os(macOS)
-                                    .mask(
-                                        RadialGradient(
-                                            stops: [
-                                                .init(color: .clear, location: 0.4),
-                                                .init(color: .black, location: 1.0),
-                                            ],
-                                            center: .center,
-                                            startRadius: 0,
-                                            endRadius: Layout.RowHeight.album - Layout.Padding.small,
-                                        )
-                                    )
-                                #endif // swiftformat:options --trailing-commas multi-element-lists
-                            )
+                                    }
+                            }
                             .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small)
 
                         #if os(macOS)

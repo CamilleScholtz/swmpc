@@ -45,10 +45,10 @@ struct DetailArtworkView: View, Equatable {
                     .animation(.easeInOut(duration: 0.3), value: artwork)
                     .frame(width: Layout.Size.artworkWidth)
                     .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
-                    .overlay(
+                    .overlay {
                         Color.clear
                             .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
-                            .mask(
+                            .mask {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
 
@@ -56,9 +56,9 @@ struct DetailArtworkView: View, Equatable {
                                         .scale(0.9)
                                         .blur(radius: 8)
                                         .blendMode(.destinationOut)
-                                },
-                            ),
-                    )
+                                }
+                            }
+                    }
             }
             .buttonStyle(.plain)
             #if os(macOS)
@@ -119,30 +119,30 @@ private struct ShadowGradientView: View {
         ZStack {
             if let colors {
                 gradientLayer(colors: colors)
-                    .mask(
+                    .mask {
                         RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
                         #if os(iOS)
                             .frame(width: Layout.Size.artworkWidth * 2, height: artworkHeight * 2)
                         #elseif os(macOS)
                             .frame(width: Layout.Size.artworkWidth + Layout.Padding.large, height: artworkHeight + Layout.Padding.large)
                         #endif
-                            .blur(radius: 40),
-                    )
+                            .blur(radius: 40)
+                    }
                 #if os(iOS)
                     .blur(radius: 10)
                 #endif
                     .opacity(0.6)
 
                 gradientLayer(colors: colors)
-                    .mask(
+                    .mask {
                         RadialGradient(
                             colors: [.black, .clear],
                             center: .center,
                             startRadius: 0,
                             endRadius: Layout.Size.artworkWidth * 1.4,
                         )
-                        .frame(width: Layout.Size.artworkWidth * 2, height: Layout.Size.artworkWidth * 2),
-                    )
+                        .frame(width: Layout.Size.artworkWidth * 2, height: Layout.Size.artworkWidth * 2)
+                    }
                     .rotation3DEffect(.degrees(75), axis: (x: 1, y: 0, z: 0))
                     .opacity(0.5)
                     .offset(y: artworkHeight / 2)
