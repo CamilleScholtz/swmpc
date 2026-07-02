@@ -7,7 +7,6 @@
 
 import ButtonKit
 import MPDKit
-import Network
 import SFSafeSymbols
 import SwiftUI
 
@@ -72,7 +71,7 @@ struct SettingsView: View {
                     BehaviorView()
             #endif
             case .intelligence:
-                IntelligenceView()
+                IntelligenceSettingsView()
             }
         }
     }
@@ -351,57 +350,48 @@ struct SettingsView: View {
         }
     #endif
 
-    struct IntelligenceView: View {
-        @AppStorage(Setting.isIntelligenceEnabled) private var isIntelligenceEnabled = false
-        @AppStorage(Setting.intelligenceModel) var intelligenceModel = IntelligenceModel.openAI
-
+    struct IntelligenceSettingsView: View {
+        @AppStorage(Setting.intelligenceModel) private var provider = IntelligenceProvider.openAI
         @AppStorage(Setting.customHost) private var customHost = ""
 
-        @State private var intelligenceToken = ""
-        @State private var intelligenceModelID = ""
+        @State private var token = ""
+        @State private var modelID = ""
 
         var body: some View {
             Form {
                 #if os(iOS)
                     Section {
-                        Toggle("Enable AI Features", isOn: $isIntelligenceEnabled)
-                    } footer: {
-                        Text("Powers smart playlist and queue generation using AI.")
-                    }
-
-                    Section {
-                        Picker("Provider", selection: $intelligenceModel) {
-                            ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
-                                Text(model.name).tag(model)
+                        Picker("Provider", selection: $provider) {
+                            ForEach(IntelligenceProvider.allCases) { item in
+                                Text(item.name).tag(item)
                             }
                         }
                         .pickerStyle(.navigationLink)
-                        .disabled(!isIntelligenceEnabled)
 
-                        if intelligenceModel == .custom {
+                        if provider == .custom {
                             TextField("Base URL", text: $customHost)
                                 .textContentType(.URL)
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
-                                .disabled(!isIntelligenceEnabled)
                         }
                     } header: {
                         Text("Provider")
                     } footer: {
-                        if intelligenceModel == .custom {
+                        if provider == .custom {
                             Text("Enter the base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1).")
+                        } else {
+                            Text("Powers smart playlist and queue generation using AI.")
                         }
                     }
 
                     Section {
-                        TextField("Model", text: $intelligenceModelID)
+                        TextField("Model", text: $modelID)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
-                            .disabled(!isIntelligenceEnabled)
                     } header: {
                         Text("Model")
                     } footer: {
-                        if intelligenceModel == .custom {
+                        if provider == .custom {
                             Text("Model identifier (e.g. llama3, mistral).")
                         } else {
                             Text("Override the default model identifier for this provider.")
@@ -409,67 +399,51 @@ struct SettingsView: View {
                     }
 
                     Section {
-                        SecureField("API Token", text: $intelligenceToken)
+                        SecureField("API Token", text: $token)
                             .textContentType(.password)
-                            .disabled(!isIntelligenceEnabled)
                     } header: {
                         Text("API Token")
                     } footer: {
-                        if intelligenceModel == .custom {
+                        if provider == .custom {
                             Text("Optional for local models.")
                         } else {
                             Text("Required to access the provider's API.")
                         }
                     }
                 #elseif os(macOS)
-                    Section {
-                        Toggle(isOn: $isIntelligenceEnabled) {
-                            Text("Enable AI Features")
-                            Text("Powers smart playlist and queue generation using AI.")
-                        }
-                        .help("Enable AI-powered features for playlist generation")
-                    }
-
                     Section("Provider") {
-                        Picker("Provider", selection: $intelligenceModel) {
-                            ForEach(IntelligenceModel.allCases.filter(\.isEnabled)) { model in
-                                Text(model.name).tag(model)
+                        Picker("Provider", selection: $provider) {
+                            ForEach(IntelligenceProvider.allCases) { item in
+                                Text(item.name).tag(item)
                             }
                         }
                         .help("Select the AI provider")
-                        .disabled(!isIntelligenceEnabled)
 
-                        if intelligenceModel == .custom {
+                        if provider == .custom {
                             TextField("Base URL", text: $customHost)
                                 .help("Base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1)")
-                                .disabled(!isIntelligenceEnabled)
                         }
 
-                        TextField("Model", text: $intelligenceModelID)
-                            .help(intelligenceModel == .custom ? "Model identifier (e.g. llama3, mistral)" : "Model identifier for the selected provider")
-                            .disabled(!isIntelligenceEnabled)
+                        TextField("Model", text: $modelID)
+                            .help(provider == .custom ? "Model identifier (e.g. llama3, mistral)" : "Model identifier for the selected provider")
 
-                        SecureField("API Token", text: $intelligenceToken)
+                        SecureField("API Token", text: $token)
                             .textContentType(.password)
-                            .help(intelligenceModel == .custom ? "API token (optional for local models)" : "API token for the selected AI service")
-                            .disabled(!isIntelligenceEnabled)
+                            .help(provider == .custom ? "API token (optional for local models)" : "API token for the selected AI service")
                     }
                 #endif
             }
-            .task(id: intelligenceModel) {
-                @AppStorage(intelligenceModel.setting) var token = ""
-                intelligenceToken = token
+            .task(id: provider) {
+                token = provider.token
 
-                @AppStorage(intelligenceModel.modelSetting) var storedModel = ""
-                intelligenceModelID = storedModel.isEmpty ? intelligenceModel.defaultModel : storedModel
+                let storedModel = UserDefaults.standard.string(forKey: provider.modelKey) ?? ""
+                modelID = storedModel.isEmpty ? provider.defaultModel : storedModel
             }
-            .onChange(of: intelligenceToken) { _, value in
-                @AppStorage(intelligenceModel.setting) var token = ""
-                token = value.isEmpty ? "" : value
+            .onChange(of: token) { _, value in
+                Keychain.set(value, for: provider.tokenKey)
             }
-            .onChange(of: intelligenceModelID) { _, value in
-                @AppStorage(intelligenceModel.modelSetting) var storedModel = ""
-                storedModel = value
+            .onChange(of: modelID) { _, value in
+                UserDefaults.standard.set(value, forKey: provider.modelKey)
             }
         }
     }

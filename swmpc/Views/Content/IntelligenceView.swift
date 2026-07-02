@@ -167,7 +167,7 @@ struct IntelligenceView: View {
                         error = nil
 
                         do {
-                            try await IntelligenceManager.shared.fill(target: target, prompt: prompt)
+                            try await IntelligenceManager.fill(target: target, prompt: prompt)
                             dismiss()
                         } catch {
                             self.error = error

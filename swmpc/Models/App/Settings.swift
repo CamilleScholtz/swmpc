@@ -14,27 +14,8 @@ nonisolated enum Setting {
         static let showStatusbarSong = "show_statusbar_song"
     #endif
 
-    static let isIntelligenceEnabled = "is_intelligence_enabled"
     static let intelligenceModel = "intelligence_model"
-
-    static let claudeToken = "claude_token"
-    static let deepSeekToken = "deepseek_token"
-    static let geminiToken = "gemini_token"
-    static let grokToken = "grok_token"
-    static let mistralToken = "mistral_token"
-    static let openAIToken = "openai_token"
-    static let openRouterToken = "openrouter_token"
-    static let customToken = "custom_token"
     static let customHost = "custom_host"
-
-    static let claudeModel = "claude_model"
-    static let deepSeekModel = "deepseek_model"
-    static let geminiModel = "gemini_model"
-    static let grokModel = "grok_model"
-    static let mistralModel = "mistral_model"
-    static let openAIModel = "openai_model"
-    static let openRouterModel = "openrouter_model"
-    static let customModel = "custom_model"
 
     static let albumSearchFields = "album_search_fields"
     static let artistSearchFields = "artist_search_fields"

@@ -10,7 +10,6 @@
 		9114DB422DB11A8500DD5E6E /* ButtonKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9114DB412DB11A8500DD5E6E /* ButtonKit */; };
 		91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91489B852D6A6C6C0038092A /* SFSafeSymbols */; };
 		9168E5C02ED39DB500E116AB /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 9168E5BF2ED39DB500E116AB /* SwiftUIIntrospect */; };
-		9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 9182FEF32D97757000FED9D4 /* OpenAI */; };
 		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 		91EF376D2EE888A300B222C4 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF376C2EE888A300B222C4 /* SFSafeSymbols */; };
 		91EF37782EE8BFE200B222C4 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37772EE8BFE200B222C4 /* AsyncAlgorithms */; };
@@ -19,6 +18,7 @@
 		91EF37AA2EEA30EA00B222C4 /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37A92EEA30EA00B222C4 /* Shared */; };
 		91EF37AD2EEA310C00B222C4 /* Shared in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37AC2EEA310C00B222C4 /* Shared */; };
 		91EF3AD32EEAE93800B222C4 /* widget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 91EF3A0D2EEAE92400B222C4 /* widget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		91F31F902FF6B0B40013A892 /* AnyLanguageModel in Frameworks */ = {isa = PBXBuildFile; productRef = 91F31F8F2FF6B0B40013A892 /* AnyLanguageModel */; };
 		91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91F55B392CFE5D300027BBFE /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
@@ -114,13 +114,13 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
-				9182FEF42D97757000FED9D4 /* OpenAI in Frameworks */,
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
 				91EF377B2EE8C56100B222C4 /* MPDKit in Frameworks */,
 				9168E5C02ED39DB500E116AB /* SwiftUIIntrospect in Frameworks */,
 				91EF37AA2EEA30EA00B222C4 /* Shared in Frameworks */,
 				9114DB422DB11A8500DD5E6E /* ButtonKit in Frameworks */,
 				91F55B3A2CFE5D300027BBFE /* AsyncAlgorithms in Frameworks */,
+				91F31F902FF6B0B40013A892 /* AnyLanguageModel in Frameworks */,
 			);
 		};
 		91EF2E222EE844A700B222C4 /* Frameworks */ = {
@@ -172,11 +172,11 @@
 				91A142142CDEA27E000A74BC /* LaunchAtLogin */,
 				91F55B392CFE5D300027BBFE /* AsyncAlgorithms */,
 				91489B852D6A6C6C0038092A /* SFSafeSymbols */,
-				9182FEF32D97757000FED9D4 /* OpenAI */,
 				9114DB412DB11A8500DD5E6E /* ButtonKit */,
 				9168E5BF2ED39DB500E116AB /* SwiftUIIntrospect */,
 				91EF377A2EE8C56100B222C4 /* MPDKit */,
 				91EF37A92EEA30EA00B222C4 /* Shared */,
+				91F31F8F2FF6B0B40013A892 /* AnyLanguageModel */,
 			);
 			productName = swmpc;
 			productReference = 91EF3A0C2EEAE92400B222C4 /* swmpc.app */;
@@ -241,11 +241,11 @@
 				91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 				91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
-				91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */,
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
 				9168E5BE2ED39DB500E116AB /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
 				91EF37792EE8C56100B222C4 /* XCLocalSwiftPackageReference "Packages/MPDKit" */,
 				91EF37A82EEA30EA00B222C4 /* XCLocalSwiftPackageReference "Packages/Shared" */,
+				91F31F8E2FF6B0B40013A892 /* XCRemoteSwiftPackageReference "AnyLanguageModel" */,
 			);
 			preferredProjectObjectVersion = 110;
 			productRefGroup = 91A141D72CDE3987000A74BC;
@@ -647,14 +647,6 @@
 				minimumVersion = 7.0.0;
 			};
 		};
-		91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/MacPaw/OpenAI";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.4.8;
-			};
-		};
 		9168E5BE2ED39DB500E116AB /* XCRemoteSwiftPackageReference "swiftui-introspect" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/siteline/swiftui-introspect";
@@ -669,6 +661,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.1.0;
+			};
+		};
+		91F31F8E2FF6B0B40013A892 /* XCRemoteSwiftPackageReference "AnyLanguageModel" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/AnyLanguageModel";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.8.0;
 			};
 		};
 		91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
@@ -696,11 +696,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9168E5BE2ED39DB500E116AB /* XCRemoteSwiftPackageReference "swiftui-introspect" */;
 			productName = SwiftUIIntrospect;
-		};
-		9182FEF32D97757000FED9D4 /* OpenAI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91489BC22D7648350038092A /* XCRemoteSwiftPackageReference "OpenAI" */;
-			productName = OpenAI;
 		};
 		91A142142CDEA27E000A74BC /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -734,6 +729,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 91EF37A82EEA30EA00B222C4 /* XCLocalSwiftPackageReference "Packages/Shared" */;
 			productName = Shared;
+		};
+		91F31F8F2FF6B0B40013A892 /* AnyLanguageModel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91F31F8E2FF6B0B40013A892 /* XCRemoteSwiftPackageReference "AnyLanguageModel" */;
+			productName = AnyLanguageModel;
 		};
 		91F55B392CFE5D300027BBFE /* AsyncAlgorithms */ = {
 			isa = XCSwiftPackageProductDependency;

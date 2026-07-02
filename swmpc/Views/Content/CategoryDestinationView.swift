@@ -47,6 +47,7 @@ struct CategoryDestinationView: View {
         .navigationTitle(isSearchFieldExpanded ? "" : navigator.category.label)
         .navigationBarTitleDisplayMode(.inline)
         #elseif os(macOS)
+        .navigationTitle(navigator.category.label)
         .toolbar(removing: isSearchFieldExpanded ? .title : nil)
         #endif
         .onChange(of: navigator.category) {
