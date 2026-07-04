@@ -6,10 +6,19 @@
 //
 
 import ButtonKit
+import SFSafeSymbols
 import SwiftUI
 
 struct DetailFooterView: View {
     @Environment(MPD.self) private var mpd
+
+    private var songTitleForClipboard: String? {
+        guard let song = mpd.status.song else {
+            return nil
+        }
+
+        return "\(song.artist) - \(song.title)"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Layout.Spacing.small - 0.5) {
@@ -34,6 +43,13 @@ struct DetailFooterView: View {
                         #endif
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
+                    }
+                }
+                .contextMenu {
+                    if let songTitleForClipboard {
+                        Button("Copy Song Title", systemSymbol: .documentOnDocument) {
+                            songTitleForClipboard.copyToClipboard()
+                        }
                     }
                 }
 
