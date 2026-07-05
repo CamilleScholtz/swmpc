@@ -21,21 +21,14 @@ struct PauseView: View {
                 try await $0.pause(mpd.status.isPlaying)
             }
         } label: {
-            ZStack {
-                Image(systemSymbol: .pauseFill)
-                    .scaleEffect(mpd.status.isPlaying ? 1 : 0.1)
-                    .opacity(mpd.status.isPlaying ? 1 : 0.1)
-
-                Image(systemSymbol: .playFill)
-                    .scaleEffect(mpd.status.isPlaying ? 0.1 : 1)
-                    .opacity(mpd.status.isPlaying ? 0.1 : 1)
-            }
-            .font(.system(size: size))
-            .foregroundStyle(.foreground)
-            .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
-            .frame(width: button ? size * 2.5 : size * 1.5, height: button ? size * 2.5 : size * 1.5)
-            .glassEffect(button ? .regular.interactive() : .identity)
-            .contentShape(Circle())
+            Image(systemSymbol: mpd.status.isPlaying ? .pauseFill : .playFill)
+                .font(.system(size: size))
+                .contentTransition(.symbolEffect(.replace, options: .speed(2)))
+                .foregroundStyle(.foreground)
+                .animation(.interactiveSpring(duration: 0.4, extraBounce: 0.3), value: mpd.status.isPlaying)
+                .frame(width: button ? size * 2.5 : size * 1.5, height: button ? size * 2.5 : size * 1.5)
+                .glassEffect(button ? .regular.interactive() : .identity)
+                .contentShape(Circle())
         }
         .styledButton(hoverScale: 1.2)
         .disabled(mpd.status.song == nil)
