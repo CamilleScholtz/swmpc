@@ -150,7 +150,6 @@ private struct MediaList: View {
         try? await ConnectionManager.command {
             try await $0.move(song, to: destination, in: .queue)
         }
-        try? await mpd.queue.set()
     }
 }
 

@@ -89,19 +89,27 @@ import Observation
     /// This method attempts to connect to the MPD server repeatedly until
     /// successful or the task is cancelled. On failure, it waits 2 seconds
     /// before retrying.
-    private func connect() async {
+    ///
+    /// - Returns: `true` if a new connection was established, `false` if a
+    ///            connection already existed or the task was cancelled.
+    private func connect() async -> Bool {
         while !Task.isCancelled {
             do {
-                if let states = try await ConnectionManager.idle.connect() {
-                    observeStates(states)
+                guard let states = try await ConnectionManager.idle.connect()
+                else {
+                    return false
                 }
-                return
+
+                observeStates(states)
+                return true
             } catch {
                 state.error = error
 
                 try? await Task.sleep(for: .seconds(2))
             }
         }
+
+        return false
     }
 
     /// Forwards connection-state events from the idle connection's stream
@@ -138,20 +146,20 @@ import Observation
 
     /// The main update loop that maintains the MPD connection and state.
     ///
-    /// This method establishes the initial connection, loads the initial state,
-    /// and then continuously listens for changes using the idle command. When
-    /// changes are detected, it updates the appropriate subsystems.
+    /// This method continuously listens for changes using the idle command
+    /// and updates the appropriate subsystems when changes are detected.
+    /// Whenever a new connection is established — initially or after a
+    /// reconnect — all managers are re-synced, since changes that happened
+    /// while disconnected are never reported by idle events.
     private func updateLoop() async {
-        await connect()
-
-        try? await database.set()
-        try? await queue.set()
-        try? await playlists.set()
-        try? await status.set()
-        try? await outputs.set()
-
         while !Task.isCancelled {
-            await connect()
+            if await connect() {
+                try? await database.set()
+                try? await queue.set()
+                try? await playlists.set()
+                try? await status.set()
+                try? await outputs.set()
+            }
 
             do {
                 let changes = try await ConnectionManager.idle.idleForEvents(mask: [
@@ -166,6 +174,13 @@ import Observation
 
                 try? await performUpdates(for: changes)
             } catch {
+                // A cancelled loop must not tear down the connection: a
+                // successor loop (see `reinitialize`) may already own a new
+                // one.
+                guard !Task.isCancelled else {
+                    return
+                }
+
                 await ConnectionManager.idle.disconnect()
                 try? await Task.sleep(for: .seconds(2))
             }
@@ -174,32 +189,31 @@ import Observation
 
     /// Performs updates based on MPD idle events.
     ///
-    /// This method updates the appropriate subsystem based on the type of
-    /// change:
-    /// - `.playlists`: Updates the playlist list
-    /// - `.database`: Updates the music database
-    /// - `.queue`: Reloads the queue and posts a notification
-    /// - `.player`: Updates the player status
-    /// - `.options`: Updates the player status (includes random/repeat state)
+    /// A single idle response can report multiple changed subsystems; each
+    /// one is mapped to the manager that mirrors it. The status is refreshed
+    /// at most once, even when several subsystems that affect it changed.
     ///
-    /// - Parameter change: The type of change reported by the idle command.
+    /// - Parameter events: The changed subsystems reported by the idle
+    ///                     command.
     /// - Throws: An error if any update operation fails.
-    private func performUpdates(for event: IdleEvent) async throws {
-        switch event {
-        case .playlists:
+    private func performUpdates(for events: [IdleEvent]) async throws {
+        if events.contains(.playlists) {
             try await playlists.set()
-        case .database:
+        }
+
+        if events.contains(.database) {
             try await database.set()
-        case .queue:
+        }
+
+        if events.contains(.queue) {
             try await queue.set()
+        }
+
+        if !Set(events).isDisjoint(with: [.queue, .player, .options, .mixer]) {
             try await status.set()
-        case .player:
-            try await status.set()
-        case .options:
-            try await status.set()
-        case .mixer:
-            try await status.set()
-        case .output:
+        }
+
+        if events.contains(.output) {
             try await outputs.set()
         }
     }
