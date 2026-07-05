@@ -249,12 +249,27 @@ struct Delegate: App {
                 object: nil,
             )
 
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(handleTerminate),
-                name: NSApplication.willTerminateNotification,
-                object: nil,
-            )
+        }
+
+        func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
+            guard showStatusBar else {
+                return .terminateNow
+            }
+
+            popover.performClose(nil)
+
+            // On macOS 27, MenuBarAgent resurrects apps whose status items
+            // are still registered when the process exits. Remove them and
+            // delay termination so the cross-process removal lands first.
+            NSStatusBar.system.removeStatusItem(popoverAnchor)
+            NSStatusBar.system.removeStatusItem(statusItem)
+
+            Task {
+                try? await Task.sleep(for: .milliseconds(150))
+                NSApplication.shared.reply(toApplicationShouldTerminate: true)
+            }
+
+            return .terminateLater
         }
 
         func applicationDockMenu(_: NSApplication) -> NSMenu? {
@@ -419,11 +434,6 @@ struct Delegate: App {
                 of: button,
                 preferredEdge: .maxY,
             )
-        }
-
-        @objc private func handleTerminate(_: Notification) {
-            popover.performClose(nil)
-            NSApplication.shared.terminate(self)
         }
 
         @objc private func handleButtonAction(_ sender: NSStatusBarButton?) {
