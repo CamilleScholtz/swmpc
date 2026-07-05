@@ -7,12 +7,8 @@ import Foundation
 
 /// Commands specific to command mode connections.
 public extension ConnectionManager where Mode == CommandMode {
-    /// Executes a command operation with automatic connection cleanup.
-    ///
-    /// This method creates a new connection, executes the provided closure with
-    /// the connection manager, and ensures the connection is properly
-    /// disconnected when the operation completes (whether it succeeds or
-    /// throws).
+    /// Executes a command operation on a temporary connection with automatic
+    /// cleanup.
     ///
     /// - Parameter operation: A closure that receives a connected
     ///                        `ConnectionManager<CommandMode>` and performs
@@ -22,19 +18,7 @@ public extension ConnectionManager where Mode == CommandMode {
     static func command<T: Sendable>(_ operation: @Sendable (ConnectionManager<
         CommandMode,
     >) async throws -> T) async throws -> T {
-        let manager = ConnectionManager<CommandMode>()
-        try await manager.connect()
-
-        do {
-            let result = try await operation(manager)
-            await manager.disconnect()
-
-            return result
-        } catch {
-            await manager.disconnect()
-
-            throw error
-        }
+        try await withConnection(operation)
     }
 
     /// Loads a playlist into the queue.
@@ -124,6 +108,10 @@ public extension ConnectionManager where Mode == CommandMode {
         let existingSongs = try await getSongs(from: source)
         let songsToAdd = songs.filter { song in
             !existingSongs.contains { $0.file == song.file }
+        }
+
+        guard !songsToAdd.isEmpty else {
+            return
         }
 
         let commands: [String]

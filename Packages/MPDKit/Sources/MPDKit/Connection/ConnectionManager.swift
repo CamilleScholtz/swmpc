@@ -31,6 +31,11 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// Buffer for accumulating incoming data from the network connection.
     private var buffer = Deque<UInt8>()
 
+    /// Whether a command is currently awaiting its response. Guards against
+    /// interleaved commands on the same connection, which would corrupt the
+    /// response stream due to actor reentrancy.
+    private var isCommandInFlight = false
+
     /// The version of the MPD server obtained during connection handshake.
     public private(set) var version: String?
 
@@ -127,6 +132,8 @@ public actor ConnectionManager<Mode: ConnectionMode> {
         stateContinuation?.finish()
         stateContinuation = nil
 
+        // `NetworkConnection` exposes no explicit cancel; releasing the last
+        // reference cancels the underlying connection.
         connection = nil
         version = nil
 
@@ -156,9 +163,9 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is older than the minimum required.
     public func ensureVersionSupported() throws {
-        guard version?.compare("0.22", options: .numeric) !=
-            .orderedAscending
-        else {
+        if let version,
+           version.compare("0.22", options: .numeric) == .orderedAscending
+        {
             throw ConnectionManagerError.unsupportedServerVersion
         }
     }
@@ -176,7 +183,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             return
         }
 
-        try await run(["password", password])
+        try await run(["password \(escape(password))"])
     }
 
     /// Sends a ping command to the server.
@@ -194,12 +201,26 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// over the connection. The function then awaits a response that concludes
     /// with an `OK` message.
     ///
-    /// - Parameter commands: An array of command strings to execute.
+    /// - Parameter commands: An array of command strings to execute. An empty
+    ///                        array is a no-op and returns an empty response.
     /// - Returns: An array of response lines returned by the server.
-    /// - Throws: An error if writing to the connection or reading the response
-    ///           fails.
+    /// - Throws: `ConnectionManagerError.commandAlreadyInFlight` if another
+    ///           command on this connection is still awaiting its response,
+    ///           or an error if writing to the connection or reading the
+    ///           response fails.
     @discardableResult
     public func run(_ commands: [String]) async throws -> [String] {
+        guard !commands.isEmpty else {
+            return []
+        }
+
+        guard !isCommandInFlight else {
+            throw ConnectionManagerError.commandAlreadyInFlight
+        }
+
+        isCommandInFlight = true
+        defer { isCommandInFlight = false }
+
         var list = commands
 
         if list.count > 1 {
@@ -240,7 +261,9 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// This function escapes special characters in a string, such as
     /// backslashes and quotes, and optionally encloses the string in a quote
-    /// character.
+    /// character. Newlines and carriage returns are replaced with spaces, as
+    /// the protocol cannot represent them inside an argument and they would
+    /// otherwise inject additional commands.
     ///
     /// - Parameters:
     ///   - string: The string to be escaped.
@@ -251,7 +274,10 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     nonisolated func escape(_ string: String, quote: String? = "\"")
         -> String
     {
-        var escaped = string.replacingOccurrences(of: "\\", with: "\\\\")
+        var escaped = string
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+            .replacingOccurrences(of: "\\", with: "\\\\")
 
         guard let quote else {
             return escaped
@@ -311,7 +337,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// - Returns: A string representing the next complete line from the buffer.
     /// - Throws: An error if a protocol error is encountered or if underlying
     ///           I/O operations fail.
-    func readLine() async throws -> String? {
+    func readLine() async throws -> String {
         while true {
             if let line = try extractLineFromBuffer() {
                 if line.hasPrefix("ACK") {
@@ -488,20 +514,17 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// - Returns: An array of strings containing all lines read up to and
     ///            including the line that satisfies the condition.
     /// - Throws: An error if any underlying `readLine()` call fails.
-    func readUntil(_ condition: @escaping (String) -> Bool) async throws
-        -> [String]
-    {
+    func readUntil(_ condition: (String) -> Bool) async throws -> [String] {
         var lines: [String] = []
 
-        while let line = try await readLine() {
+        while true {
+            let line = try await readLine()
             lines.append(line)
 
             if condition(line) {
                 return lines
             }
         }
-
-        throw ConnectionManagerError.readUntilConditionNotMet
     }
 
     /// Reads lines from the connection until a line starting with `OK` is
@@ -509,14 +532,11 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// This function is a convenience wrapper around `readUntil`, using a
     /// condition that checks if a line begins with `OK`. It returns all lines
-    /// read up to and including the `OK` line. If the condition is never met or
-    /// an error occurs during reading, the function will throw an error.
+    /// read up to and including the `OK` line.
     ///
     /// - Returns: An array of strings containing the lines read, including the
     ///            final line that starts with `OK`.
-    /// - Throws: `ConnectionManagerError.readUntilConditionNotMet` if the
-    ///           condition is never met, or any error encountered by
-    ///           `readLine()`.
+    /// - Throws: Any error encountered by `readLine()`.
     func readUntilOK() async throws -> [String] {
         try await readUntil { $0.hasPrefix("OK") }
     }
@@ -603,6 +623,38 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             }
 
             return try M.parse(fields: fields, index: indexed ? offset : nil)
+        }
+    }
+}
+
+public extension ConnectionManager {
+    /// Executes an operation on a temporary connection with automatic cleanup.
+    ///
+    /// This method creates a new connection, executes the provided closure
+    /// with the connection manager, and ensures the connection is properly
+    /// disconnected when the operation completes (whether it succeeds or
+    /// throws).
+    ///
+    /// - Parameter operation: A closure that receives a connected
+    ///                        `ConnectionManager` and performs operations on
+    ///                        it.
+    /// - Returns: The result of the operation closure.
+    /// - Throws: An error if the connection fails or if the operation throws.
+    static func withConnection<T: Sendable>(_ operation: @Sendable (
+        ConnectionManager<Mode>,
+    ) async throws -> T) async throws -> T {
+        let manager = ConnectionManager<Mode>()
+        try await manager.connect()
+
+        do {
+            let result = try await operation(manager)
+            await manager.disconnect()
+
+            return result
+        } catch {
+            await manager.disconnect()
+
+            throw error
         }
     }
 }

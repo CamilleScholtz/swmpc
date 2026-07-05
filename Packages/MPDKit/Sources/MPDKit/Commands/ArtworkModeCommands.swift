@@ -9,12 +9,8 @@ import Foundation
 
 /// Commands specific to artwork mode connections.
 public extension ConnectionManager where Mode == ArtworkMode {
-    /// Executes an artwork operation with automatic connection cleanup.
-    ///
-    /// This method creates a new connection, executes the provided closure with
-    /// the connection manager, and ensures the connection is properly
-    /// disconnected when the operation completes (whether it succeeds or
-    /// throws).
+    /// Executes an artwork operation on a temporary connection with automatic
+    /// cleanup.
     ///
     /// - Parameter operation: A closure that receives a connected
     ///                        `ConnectionManager<ArtworkMode>` and performs
@@ -24,19 +20,7 @@ public extension ConnectionManager where Mode == ArtworkMode {
     static func artwork<T: Sendable>(_ operation: @Sendable (
         ConnectionManager<ArtworkMode>,
     ) async throws -> T) async throws -> T {
-        let manager = ConnectionManager<ArtworkMode>()
-        try await manager.connect()
-
-        do {
-            let result = try await operation(manager)
-            await manager.disconnect()
-
-            return result
-        } catch {
-            await manager.disconnect()
-
-            throw error
-        }
+        try await withConnection(operation)
     }
 
     /// Retrieves artwork data with automatic fallback based on the server's
@@ -88,16 +72,13 @@ public extension ConnectionManager where Mode == ArtworkMode {
         var offset = 0
         var totalSize: Int?
 
-        loop: while true {
+        while true {
             try await writeLine("\(command) \(escape(file)) \(offset)")
 
             var chunkSize: Int?
 
             while chunkSize == nil {
-                guard let line = try await readLine() else {
-                    continue
-                }
-
+                let line = try await readLine()
                 let (key, value) = try parseLine(line)
 
                 switch key {
@@ -119,19 +100,24 @@ public extension ConnectionManager where Mode == ArtworkMode {
             let binaryChunk = try await readFixedLengthData(chunkSize)
             data.append(binaryChunk)
 
-            while let line = try await readLine() {
+            while true {
+                let line = try await readLine()
                 if line.hasPrefix("OK") {
-                    offset += chunkSize
-
-                    if offset >= (totalSize ?? 0) {
-                        return data
-                    } else {
-                        continue loop
-                    }
+                    break
                 }
             }
 
-            throw ConnectionManagerError.malformedResponse("Missing 'OK' line")
+            offset += chunkSize
+
+            if offset >= (totalSize ?? 0) {
+                return data
+            }
+
+            guard chunkSize > 0 else {
+                throw ConnectionManagerError.malformedResponse(
+                    "Received empty binary chunk before end of data",
+                )
+            }
         }
     }
 }

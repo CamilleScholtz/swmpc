@@ -239,7 +239,6 @@ public extension ConnectionManager {
     ///           malformed.
     func getPlaylists() async throws -> [Playlist] {
         let lines = try await run(["listplaylists"])
-        var index: UInt32 = 0
         var playlists = [Playlist]()
 
         for line in lines {
@@ -251,8 +250,6 @@ public extension ConnectionManager {
 
             if key == "playlist" {
                 playlists.append(Playlist(name: value))
-
-                index += 1
             }
         }
 

@@ -16,7 +16,7 @@ public enum ConnectionManagerError: LocalizedError, Equatable {
     case connectionFailure(String)
     case connectionUnexpectedClosure
 
-    case readUntilConditionNotMet
+    case commandAlreadyInFlight
 
     case protocolViolation(String)
     case malformedResponse(String)
@@ -34,8 +34,8 @@ public enum ConnectionManagerError: LocalizedError, Equatable {
             "Network connection returned an error: \(details)"
         case .connectionUnexpectedClosure:
             "Network connection was closed unexpectedly during operation."
-        case .readUntilConditionNotMet:
-            "Failed to locate expected response termination sequence."
+        case .commandAlreadyInFlight:
+            "Another command is already awaiting a response on this connection."
         case let .protocolViolation(details):
             "MPD protocol violation: \(details)"
         case let .malformedResponse(details):
