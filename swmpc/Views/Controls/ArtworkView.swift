@@ -38,7 +38,7 @@ struct ArtworkView: View {
                 #endif
             } else {
                 Rectangle()
-                    .fill(Color(.systemFill))
+                    .fill(Color(.tertiarySystemFill))
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
                     .overlay {
                         Image(systemSymbol: .opticaldiscFill)

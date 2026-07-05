@@ -154,7 +154,7 @@ private struct ShadowGradientView: View {
         .animation(.easeInOut(duration: 0.6), value: colors)
         .task(id: artwork) {
             guard let image = artwork?.image else {
-                colors = nil
+                colors = Array(repeating: .gray, count: 4)
                 return
             }
 
