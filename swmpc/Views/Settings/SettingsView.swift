@@ -11,7 +11,7 @@ import SFSafeSymbols
 import SwiftUI
 
 #if os(macOS)
-    import LaunchAtLogin
+    import ServiceManagement
 #endif
 
 #if os(macOS)
@@ -323,7 +323,7 @@ struct SettingsView: View {
             var body: some View {
                 Form {
                     Section {
-                        LaunchAtLogin.Toggle()
+                        LaunchAtLoginToggle()
                             .help("Automatically start swmpc when you log in")
                     }
 
@@ -346,6 +346,28 @@ struct SettingsView: View {
                         }
                     }
                 }
+            }
+        }
+
+        struct LaunchAtLoginToggle: View {
+            @State private var isEnabled = SMAppService.mainApp.status == .enabled
+
+            var body: some View {
+                Toggle("Launch at Login", isOn: $isEnabled)
+                    .onChange(of: isEnabled) {
+                        do {
+                            if isEnabled {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
+                            }
+                        } catch {
+                            isEnabled = SMAppService.mainApp.status == .enabled
+                        }
+                    }
+                    .onAppear {
+                        isEnabled = SMAppService.mainApp.status == .enabled
+                    }
             }
         }
     #endif

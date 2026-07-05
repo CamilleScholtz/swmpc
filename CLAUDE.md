@@ -119,7 +119,7 @@ Prefer shared code. For platform-specific code, use conditional compilation with
 
 | Area | iOS | macOS |
 |------|-----|-------|
-| **Entry** (`Delegate.swift`) | Static `mpd` singleton, `WindowGroup` | `AppDelegate` with `NSStatusBar`, `NSPopover`, dock menu, `LaunchAtLogin` |
+| **Entry** (`Delegate.swift`) | Static `mpd` singleton, `WindowGroup` | `AppDelegate` with `NSStatusBar`, `NSPopover`, dock menu |
 | **Navigation** (`AppView.swift`) | `TabView` (Albums, Artists, Songs, Playlists); Now Playing/Queue as full-screen covers | `NavigationSplitView` (3-column); Queue as overlay panel |
 | **Settings** (`SettingsView.swift`) | Sheet with Connection + Intelligence | Dedicated scene with Connection + Behavior + Intelligence |
 
@@ -129,7 +129,6 @@ Prefer shared code. For platform-specific code, use conditional compilation with
 |---------|---------|----------|
 | `MPDKit` | MPD protocol, connections, types | `Packages/MPDKit` (local) |
 | `OpenAI` | Smart playlist generation | All |
-| `LaunchAtLogin` | Auto-start at login | macOS |
 | `ButtonKit` | Async button actions | All |
 | `DequeModule` | Connection buffering | MPDKit |
 | `Introspect` | UIKit/AppKit access from SwiftUI | All |

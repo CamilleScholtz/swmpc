@@ -10,7 +10,6 @@
 		9114DB422DB11A8500DD5E6E /* ButtonKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9114DB412DB11A8500DD5E6E /* ButtonKit */; };
 		91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91489B852D6A6C6C0038092A /* SFSafeSymbols */; };
 		9168E5C02ED39DB500E116AB /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 9168E5BF2ED39DB500E116AB /* SwiftUIIntrospect */; };
-		91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 91A142142CDEA27E000A74BC /* LaunchAtLogin */; };
 		91EF376D2EE888A300B222C4 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF376C2EE888A300B222C4 /* SFSafeSymbols */; };
 		91EF37782EE8BFE200B222C4 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF37772EE8BFE200B222C4 /* AsyncAlgorithms */; };
 		91EF377B2EE8C56100B222C4 /* MPDKit in Frameworks */ = {isa = PBXBuildFile; productRef = 91EF377A2EE8C56100B222C4 /* MPDKit */; };
@@ -113,7 +112,6 @@
 		91A141DD2CDE3988000A74BC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
-				91A142152CDEA27E000A74BC /* LaunchAtLogin in Frameworks */,
 				91489B862D6A6C6C0038092A /* SFSafeSymbols in Frameworks */,
 				91EF377B2EE8C56100B222C4 /* MPDKit in Frameworks */,
 				9168E5C02ED39DB500E116AB /* SwiftUIIntrospect in Frameworks */,
@@ -169,7 +167,6 @@
 			);
 			name = swmpc;
 			packageProductDependencies = (
-				91A142142CDEA27E000A74BC /* LaunchAtLogin */,
 				91F55B392CFE5D300027BBFE /* AsyncAlgorithms */,
 				91489B852D6A6C6C0038092A /* SFSafeSymbols */,
 				9114DB412DB11A8500DD5E6E /* ButtonKit */,
@@ -238,7 +235,6 @@
 			mainGroup = 91A141D72CDE3987000A74BC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 				91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				9114DB402DB11A8500DD5E6E /* XCRemoteSwiftPackageReference "ButtonKit" */,
@@ -655,14 +651,6 @@
 				minimumVersion = "27.0.0-beta";
 			};
 		};
-		91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.0;
-			};
-		};
 		91F31F8E2FF6B0B40013A892 /* XCRemoteSwiftPackageReference "AnyLanguageModel" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/huggingface/AnyLanguageModel";
@@ -696,11 +684,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9168E5BE2ED39DB500E116AB /* XCRemoteSwiftPackageReference "swiftui-introspect" */;
 			productName = SwiftUIIntrospect;
-		};
-		91A142142CDEA27E000A74BC /* LaunchAtLogin */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 91A142132CDEA27E000A74BC /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
-			productName = LaunchAtLogin;
 		};
 		91EF376C2EE888A300B222C4 /* SFSafeSymbols */ = {
 			isa = XCSwiftPackageProductDependency;
