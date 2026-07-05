@@ -19,6 +19,9 @@ struct ScrollTarget: Equatable {
     /// Whether to animate the scroll transition.
     let animated: Bool
 
+    /// The point of the visible area to align the item to.
+    var anchor: UnitPoint = .center
+
     /// The time this scroll target was created, used to distinguish identical scroll requests.
     let timestamp: Date = .init()
 }
@@ -26,7 +29,7 @@ struct ScrollTarget: Equatable {
 /// A view modifier that enables programmatic scrolling to specific items in a list.
 ///
 /// Uses a native `ScrollViewReader` to scroll the underlying list to a given item by
-/// identifier, centering it vertically in the visible area.
+/// identifier, aligning it to the target's anchor within the visible area.
 struct ScrollToItemModifier: ViewModifier {
     /// Binding to the scroll target. Set this to trigger a scroll operation.
     @Binding var scrollTarget: ScrollTarget?
@@ -44,18 +47,18 @@ struct ScrollToItemModifier: ViewModifier {
         }
     }
 
-    /// Executes the scroll operation to the specified target, centering it vertically.
+    /// Executes the scroll operation to the specified target, aligning it to the target's anchor.
     ///
     /// - Parameters:
-    ///   - target: The scroll target containing the item identifier and animation preference.
+    ///   - target: The scroll target containing the item identifier, anchor, and animation preference.
     ///   - proxy: The scroll view proxy used to perform the scroll.
     private func performScroll(to target: ScrollTarget, using proxy: ScrollViewProxy) {
         if target.animated {
             withAnimation {
-                proxy.scrollTo(target.id, anchor: .center)
+                proxy.scrollTo(target.id, anchor: target.anchor)
             }
         } else {
-            proxy.scrollTo(target.id, anchor: .center)
+            proxy.scrollTo(target.id, anchor: target.anchor)
         }
     }
 }
@@ -64,7 +67,8 @@ extension View {
     /// Enables programmatic scrolling to items in a list.
     ///
     /// Attach this modifier to a `List` view and control scrolling by setting the bound
-    /// `ScrollTarget` value. The list will scroll to center the specified item.
+    /// `ScrollTarget` value. The list will scroll to align the specified item to the
+    /// target's anchor.
     ///
     /// - Parameter scrollTarget: A binding to the scroll target. Set to a new `ScrollTarget`
     ///   to trigger scrolling, or `nil` to clear.

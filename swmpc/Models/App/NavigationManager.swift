@@ -60,6 +60,37 @@ import SwiftUI
     /// This is internal state that doesn't need to trigger view updates.
     @ObservationIgnored private var pathContents: [ContentDestination] = []
 
+    /// Scroll offsets the user manually scrolled to, per category, measured
+    /// from the top of the content. A present entry means the category
+    /// restores its browsed position instead of focusing the currently
+    /// playing media. This is internal state that doesn't need to trigger
+    /// view updates.
+    @ObservationIgnored private var scrollOffsets: [CategoryDestination: CGFloat] = [:]
+
+    /// Records the scroll offset the user scrolled to in a category.
+    /// - Parameters:
+    ///   - offset: The scroll offset, measured from the top of the content.
+    ///   - category: The category the offset belongs to.
+    func recordScrollOffset(_ offset: CGFloat, for category: CategoryDestination) {
+        scrollOffsets[category] = offset
+    }
+
+    /// The scroll offset to restore for a category.
+    /// - Parameter category: The category to restore the offset for.
+    /// - Returns: The remembered offset, or `nil` when the user hasn't
+    ///            manually scrolled the category and its list should focus
+    ///            the currently playing media instead.
+    func scrollOffset(for category: CategoryDestination) -> CGFloat? {
+        scrollOffsets[category]
+    }
+
+    /// Clears the remembered scroll offset for a category, re-enabling
+    /// focusing of the currently playing media.
+    /// - Parameter category: The category to clear the offset for.
+    func clearScrollOffset(for category: CategoryDestination) {
+        scrollOffsets[category] = nil
+    }
+
     /// Navigates to a specific content destination by appending it to the
     /// navigation path.
     /// - Parameter content: The content destination to navigate to (album or

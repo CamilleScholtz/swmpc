@@ -7,6 +7,23 @@
 
 import SwiftUI
 
+extension Layout.RowHeight {
+    /// The effective height of a media list row for the given row content
+    /// height, matching the minimum row height applied by
+    /// `mediaListStyle(rowHeight:bottomMargin:)`.
+    ///
+    /// - Parameter contentHeight: The height of the row content (excluding
+    ///                            padding).
+    /// - Returns: The row content height plus platform-appropriate padding.
+    static func effective(for contentHeight: CGFloat) -> CGFloat {
+        #if os(iOS)
+            return contentHeight + (Layout.Padding.medium * 2)
+        #elseif os(macOS)
+            return contentHeight + (Layout.Padding.small * 2)
+        #endif
+    }
+}
+
 /// View modifiers for consistent media list styling across the app.
 extension View {
     /// Applies consistent styling to media lists.
@@ -28,11 +45,7 @@ extension View {
         if let rowHeight {
             listStyle(.plain)
                 .safeAreaPadding(.bottom, bottomMargin)
-            #if os(iOS)
-                .environment(\.defaultMinListRowHeight, rowHeight + (Layout.Padding.medium * 2))
-            #elseif os(macOS)
-                .environment(\.defaultMinListRowHeight, rowHeight + (Layout.Padding.small * 2))
-            #endif
+                .environment(\.defaultMinListRowHeight, Layout.RowHeight.effective(for: rowHeight))
         } else {
             listStyle(.plain)
                 .safeAreaPadding(.bottom, bottomMargin)

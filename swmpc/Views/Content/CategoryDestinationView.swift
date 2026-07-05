@@ -114,6 +114,7 @@ private struct CategoryDatabaseView: View {
             if let media = mpd.database.media, !media.isEmpty {
                 MediaListView(media: searchResults ?? media, type: mpd.database.type, scrollTarget: $scrollTarget)
                     .id(navigator.category)
+                    .scrollMemory(for: navigator.category, scrollTarget: scrollTarget, isActive: searchResults == nil)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -146,6 +147,7 @@ private struct CategoryDatabaseView: View {
             } else {
                 ToolbarItem {
                     Button("Scroll to Current Media", systemSymbol: .dotViewfinder) {
+                        navigator.clearScrollOffset(for: navigator.category)
                         scrollToCurrentMedia(animated: true)
                     }
                     .disabled(mpd.status.song == nil)
@@ -194,16 +196,21 @@ private struct CategoryDatabaseView: View {
                 searchTextField = nil
             #endif
 
-            scrollToCurrentMedia()
+            if !restoreScrollPosition() {
+                scrollToCurrentMedia()
+            }
         }
         .onChange(of: mpd.status.song) { old, new in
-            guard old == nil, new != nil else {
+            guard old == nil, new != nil,
+                  navigator.scrollOffset(for: navigator.category) == nil
+            else {
                 return
             }
 
             scrollToCurrentMedia()
         }
         .onChange(of: sort) {
+            navigator.clearScrollOffset(for: navigator.category)
             mpd.state.isLoading = true
         }
         .onChange(of: searchQuery) { _, value in
@@ -334,6 +341,29 @@ private struct CategoryDatabaseView: View {
         .menuIndicator(.hidden)
     }
 
+    /// Restores the scroll position the user last browsed to in the current
+    /// category.
+    ///
+    /// - Returns: `true` if a remembered position was restored, `false` when
+    ///            the user hasn't manually scrolled the category.
+    private func restoreScrollPosition() -> Bool {
+        let rowContentHeight: CGFloat = switch navigator.category.type {
+        case .album: Layout.RowHeight.album
+        case .artist: Layout.RowHeight.artist
+        default: Layout.RowHeight.song
+        }
+
+        guard let offset = navigator.scrollOffset(for: navigator.category),
+              let target = ScrollTarget(restoring: offset, in: mpd.database.media ?? [], rowContentHeight: rowContentHeight)
+        else {
+            return false
+        }
+
+        scrollTarget = target
+
+        return true
+    }
+
     private func scrollToCurrentMedia(animated: Bool = false) {
         guard let song = mpd.status.song,
               let media = mpd.database.media
@@ -386,6 +416,7 @@ struct CategoryPlaylistView: View {
                 .mediaListStyle(rowHeight: Layout.RowHeight.song)
                 .scrollToItem($scrollTarget)
                 .id(playlist)
+                .scrollMemory(for: .playlist(playlist), scrollTarget: scrollTarget)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -401,6 +432,7 @@ struct CategoryPlaylistView: View {
             } else {
                 ToolbarItem {
                     Button("Scroll to Current Song", systemSymbol: .dotViewfinder) {
+                        navigator.clearScrollOffset(for: .playlist(playlist))
                         scrollToCurrentSong(animated: true)
                     }
                     .disabled(mpd.status.song == nil || !songIsInPlaylist(mpd.status.song))
@@ -418,7 +450,7 @@ struct CategoryPlaylistView: View {
         .task(id: playlist) {
             songs = try? await mpd.playlists.getSongs(for: playlist)
 
-            if songIsInPlaylist(mpd.status.song) {
+            if !restoreScrollPosition(), songIsInPlaylist(mpd.status.song) {
                 scrollToCurrentSong()
             }
         }
@@ -446,6 +478,23 @@ struct CategoryPlaylistView: View {
         } message: {
             Text("Are you sure you want to replace the current queue with this playlist?")
         }
+    }
+
+    /// Restores the scroll position the user last browsed to in this
+    /// playlist.
+    ///
+    /// - Returns: `true` if a remembered position was restored, `false` when
+    ///            the user hasn't manually scrolled the playlist.
+    private func restoreScrollPosition() -> Bool {
+        guard let offset = navigator.scrollOffset(for: .playlist(playlist)),
+              let target = ScrollTarget(restoring: offset, in: songs ?? [], rowContentHeight: Layout.RowHeight.song)
+        else {
+            return false
+        }
+
+        scrollTarget = target
+
+        return true
     }
 
     private func scrollToCurrentSong(animated: Bool = false) {
