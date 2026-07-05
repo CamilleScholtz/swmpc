@@ -33,7 +33,7 @@ struct FavoriteView: View {
             }
         } label: {
             Image(systemSymbol: .heartFill)
-                .foregroundStyle(isFavorited ? .red : Color(.systemFill))
+                .foregroundStyle(isFavorited ? AnyShapeStyle(.red) : AnyShapeStyle(.tertiary.opacity(0.65)))
                 .opacity(isFavorited ? 0.7 : 1)
                 .animation(.interactiveSpring, value: isFavorited)
                 .scaleEffect(isFavorited ? 1.1 : 1)

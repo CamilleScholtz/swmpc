@@ -56,12 +56,15 @@ struct PlayerProgressView: View {
             #endif
                 .disabled(mpd.status.song == nil)
                 .help("Seek to position in track")
-                .onChange(of: elapsed) { _, value in
+                .onChange(of: elapsed) { previous, value in
                     guard !isEditing else {
                         return
                     }
 
-                    withAnimation(.linear(duration: 1)) {
+                    let delta = value - previous
+                    let isTick = delta > 0 && delta < 2
+
+                    withAnimation(isTick ? .linear(duration: 1) : .snappy(duration: 0.25)) {
                         sliderValue = value
                     }
                 }
