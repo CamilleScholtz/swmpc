@@ -5,6 +5,7 @@
 //  Created by Camille Scholtz on 18/03/2025.
 //
 
+import SFSafeSymbols
 import SwiftUI
 
 struct ArtworkView: View {
@@ -37,8 +38,15 @@ struct ArtworkView: View {
                 #endif
             } else {
                 Rectangle()
-                    .fill(Color(.tertiarySystemFill))
+                    .fill(Color(.systemFill))
                     .aspectRatio(1.0, contentMode: aspectRatioMode)
+                    .overlay {
+                        Image(systemSymbol: .opticaldiscFill)
+                            .resizable()
+                            .scaledToFit()
+                            .scaleEffect(0.5)
+                            .foregroundStyle(.quinary)
+                    }
             }
         }
     }
