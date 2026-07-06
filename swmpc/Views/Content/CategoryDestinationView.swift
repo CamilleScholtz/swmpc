@@ -81,10 +81,6 @@ private struct CategoryDatabaseView: View {
     @State private var searchQuery = ""
     @State private var searchResults: [any Mediable]?
 
-    #if os(macOS)
-        @State private var searchTextField: NSTextField?
-    #endif
-
     private var searchFields: SearchFields {
         let fields = switch navigator.category {
         case .albums: albumSearchFields
@@ -132,11 +128,22 @@ private struct CategoryDatabaseView: View {
                     #if os(iOS)
                         .focused($isSearchFieldFocused)
                     #elseif os(macOS)
-                        .introspect(.textField, on: .macOS(.v26, .v27)) { value in
+                        .introspect(.textField, on: .macOS(.v27)) { value in
                             // XXX: Workaround for .focusEffectDisabled() not working in toolbar.
                             value.focusRingType = .none
 
-                            searchTextField = value
+                            // XXX: Workaround for @FocusState not working in
+                            // toolbar. Force the field to become first responder
+                            // once it lands in a window, but leave it alone after
+                            // it already has focus so typing isn't interrupted.
+                            guard let window = value.window, value.currentEditor() == nil else {
+                                return
+                            }
+
+                            Task { @MainActor in
+                                window.makeFirstResponder(value)
+                                value.currentEditor()?.selectedRange = NSRange(location: value.stringValue.count, length: 0)
+                            }
                         }
                     #endif
                 }
@@ -178,9 +185,6 @@ private struct CategoryDatabaseView: View {
                         searchTask?.cancel()
                         searchQuery = ""
                         searchResults = nil
-                        #if os(macOS)
-                            searchTextField = nil
-                        #endif
                     }
                 }
                 .keyboardShortcut("f", modifiers: .command)
@@ -192,9 +196,6 @@ private struct CategoryDatabaseView: View {
             searchTask?.cancel()
             searchQuery = ""
             searchResults = nil
-            #if os(macOS)
-                searchTextField = nil
-            #endif
 
             if !restoreScrollPosition() {
                 scrollToCurrentMedia()
@@ -222,16 +223,6 @@ private struct CategoryDatabaseView: View {
         #if os(iOS)
         .onChange(of: isSearchFieldExpanded) { _, value in
             isSearchFieldFocused = value
-        }
-        #elseif os(macOS)
-        // XXX: Workaround for @FocusState not working in toolbar.
-        .onChange(of: searchTextField) { _, value in
-            guard let value else {
-                return
-            }
-
-            value.window?.makeFirstResponder(value)
-            value.currentEditor()?.selectedRange = NSRange(location: value.stringValue.count, length: 0)
         }
         #endif
     }
