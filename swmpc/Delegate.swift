@@ -248,7 +248,6 @@ struct Delegate: App {
                 name: .statusBarSettingChangedNotification,
                 object: nil,
             )
-
         }
 
         func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
