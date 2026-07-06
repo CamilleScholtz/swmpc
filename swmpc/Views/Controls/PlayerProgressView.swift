@@ -7,9 +7,6 @@
 
 import MPDKit
 import SwiftUI
-#if os(iOS)
-    import SwiftUIIntrospect
-#endif
 
 struct PlayerProgressView: View {
     @Environment(MPD.self) private var mpd
@@ -48,29 +45,23 @@ struct PlayerProgressView: View {
                 },
             )
             .controlSize(.mini)
-            #if os(iOS)
-                // XXX: .mini control size is still too large.
-                .introspect(.slider, on: .iOS(.v26, .v27)) { value in
-                    value.sliderStyle = .thumbless
+            .disabled(mpd.status.song == nil)
+            .help("Seek to position in track")
+            .onChange(of: elapsed) { previous, value in
+                guard !isEditing else {
+                    return
                 }
-            #endif
-                .disabled(mpd.status.song == nil)
-                .help("Seek to position in track")
-                .onChange(of: elapsed) { previous, value in
-                    guard !isEditing else {
-                        return
-                    }
 
-                    let delta = value - previous
-                    let isTick = delta > 0 && delta < 2
+                let delta = value - previous
+                let isTick = delta > 0 && delta < 2
 
-                    withAnimation(isTick ? .linear(duration: 1) : .snappy(duration: 0.25)) {
-                        sliderValue = value
-                    }
+                withAnimation(isTick ? .linear(duration: 1) : .snappy(duration: 0.25)) {
+                    sliderValue = value
                 }
-                .onAppear {
-                    sliderValue = elapsed
-                }
+            }
+            .onAppear {
+                sliderValue = elapsed
+            }
 
             if showTimestamps {
                 HStack(alignment: .center) {
