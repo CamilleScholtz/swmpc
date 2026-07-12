@@ -57,7 +57,7 @@ struct SettingsView: View {
             #if os(macOS)
                 case .behavior: .sliderHorizontal3
             #endif
-            case .intelligence: .sparkles
+            case .intelligence: IntelligenceManager.symbol
             }
         }
 
@@ -373,7 +373,7 @@ struct SettingsView: View {
     #endif
 
     struct IntelligenceSettingsView: View {
-        @AppStorage(Setting.intelligenceModel) private var provider = IntelligenceProvider.openAI
+        @AppStorage(Setting.intelligenceModel) private var provider = IntelligenceProvider.apple
         @AppStorage(Setting.customHost) private var customHost = ""
 
         @State private var token = ""
@@ -381,90 +381,84 @@ struct SettingsView: View {
 
         var body: some View {
             Form {
-                #if os(iOS)
-                    Section {
-                        Picker("Provider", selection: $provider) {
-                            ForEach(IntelligenceProvider.allCases) { item in
-                                Text(item.name).tag(item)
-                            }
-                        }
-                        .pickerStyle(.navigationLink)
-
-                        if provider == .custom {
-                            TextField("Base URL", text: $customHost)
-                                .textContentType(.URL)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                        }
-                    } header: {
-                        Text("Provider")
-                    } footer: {
-                        if provider == .custom {
-                            Text("Enter the base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1).")
-                        } else {
-                            Text("Powers smart playlist and queue generation using AI.")
+                Section {
+                    Picker("Provider", selection: $provider) {
+                        ForEach(IntelligenceProvider.allCases) { item in
+                            Text(item.name).tag(item)
                         }
                     }
+                    #if os(iOS)
+                    .pickerStyle(.navigationLink)
+                    #elseif os(macOS)
+                    .help("Select the AI provider")
+                    #endif
 
-                    Section {
+                    if provider == .apple, !PrivateCloudCompute.isAvailable {
+                        Text("Apple Intelligence is not available on this device.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if provider == .custom {
+                        TextField("Base URL", text: $customHost)
+                            .autocorrectionDisabled()
+                        #if os(iOS)
+                            .textContentType(.URL)
+                            .textInputAutocapitalization(.never)
+                        #elseif os(macOS)
+                            .help("Base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1)")
+                        #endif
+                    }
+
+                    if provider != .apple {
                         TextField("Model", text: $modelID)
                             .autocorrectionDisabled()
+                        #if os(iOS)
                             .textInputAutocapitalization(.never)
-                    } header: {
-                        Text("Model")
-                    } footer: {
-                        if provider == .custom {
-                            Text("Model identifier (e.g. llama3, mistral).")
-                        } else {
-                            Text("Override the default model identifier for this provider.")
-                        }
-                    }
-
-                    Section {
-                        SecureField("API Token", text: $token)
-                            .textContentType(.password)
-                    } header: {
-                        Text("API Token")
-                    } footer: {
-                        if provider == .custom {
-                            Text("Optional for local models.")
-                        } else {
-                            Text("Required to access the provider's API.")
-                        }
-                    }
-                #elseif os(macOS)
-                    Section("Provider") {
-                        Picker("Provider", selection: $provider) {
-                            ForEach(IntelligenceProvider.allCases) { item in
-                                Text(item.name).tag(item)
-                            }
-                        }
-                        .help("Select the AI provider")
-
-                        if provider == .custom {
-                            TextField("Base URL", text: $customHost)
-                                .help("Base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1)")
-                        }
-
-                        TextField("Model", text: $modelID)
+                        #elseif os(macOS)
                             .help(provider == .custom ? "Model identifier (e.g. llama3, mistral)" : "Model identifier for the selected provider")
+                        #endif
 
                         SecureField("API Token", text: $token)
                             .textContentType(.password)
+                        #if os(macOS)
                             .help(provider == .custom ? "API token (optional for local models)" : "API token for the selected AI service")
+                        #endif
                     }
-                #endif
+                } header: {
+                    Text("Provider")
+                } footer: {
+                    if provider == .apple {
+                        Text("Powers smart playlist and queue generation. Apple Intelligence uses Private Cloud Compute and requires no API token.")
+                    } else if provider == .custom {
+                        Text("Enter the base URL of your OpenAI-compatible API (e.g. http://localhost:11434/v1). The API token is optional for local models.")
+                    } else {
+                        Text("The API token is required to access the provider's API.")
+                    }
+                }
             }
             .task(id: provider) {
+                guard provider != .apple else {
+                    return
+                }
+
                 token = provider.token
 
                 let storedModel = UserDefaults.standard.string(forKey: provider.modelKey) ?? ""
                 modelID = storedModel.isEmpty ? provider.defaultModel : storedModel
             }
             .onChange(of: token) { _, value in
+                guard provider != .apple else {
+                    return
+                }
+
                 Keychain.set(value, for: provider.tokenKey)
             }
             .onChange(of: modelID) { _, value in
+                guard provider != .apple else {
+                    return
+                }
+
                 UserDefaults.standard.set(value, forKey: provider.modelKey)
             }
         }

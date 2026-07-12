@@ -104,7 +104,7 @@ struct IntelligenceView: View {
                 Spacer()
             }
 
-            Image(systemSymbol: .sparkles)
+            Image(systemSymbol: IntelligenceManager.symbol)
                 .font(.system(size: isLoading ? 42 : 28))
                 .foregroundStyle(
                     LinearGradient(

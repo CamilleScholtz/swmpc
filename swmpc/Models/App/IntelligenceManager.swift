@@ -8,6 +8,7 @@
 import AnyLanguageModel
 import Foundation
 import MPDKit
+import SFSafeSymbols
 
 /// Errors that can occur during intelligence operations.
 enum IntelligenceManagerError: LocalizedError {
@@ -15,6 +16,8 @@ enum IntelligenceManagerError: LocalizedError {
     case missingToken
     /// The provider is misconfigured (e.g. an invalid custom base URL).
     case invalidConfiguration
+    /// Apple Intelligence is not available on this device.
+    case appleIntelligenceUnavailable
     /// The operation timed out.
     case timeout
 
@@ -24,6 +27,8 @@ enum IntelligenceManagerError: LocalizedError {
             "API token missing: Add a token in Settings"
         case .invalidConfiguration:
             "Invalid provider configuration: Check the base URL in Settings"
+        case .appleIntelligenceUnavailable:
+            "Apple Intelligence unavailable: Enable Apple Intelligence or select a provider in Settings"
         case .timeout:
             "Request timed out: Try again or check network connection"
         }
@@ -47,11 +52,14 @@ enum IntelligenceTarget: Identifiable {
 
 /// Available AI providers for generating playlists.
 ///
-/// Every provider is routed through Apple's Foundation Models `LanguageModel`
-/// protocol via the AnyLanguageModel package. Native model types are used for
-/// OpenAI, Anthropic, and Gemini; the OpenAI-compatible model (with a custom
-/// base URL) backs Grok, OpenRouter, and custom endpoints.
+/// Apple Intelligence (the default) talks to Private Cloud Compute directly
+/// through the FoundationModels framework and needs no API token. Every other
+/// provider is routed through the `LanguageModel` protocol of the
+/// AnyLanguageModel package. Native model types are used for OpenAI,
+/// Anthropic, and Gemini; the OpenAI-compatible model (with a custom base
+/// URL) backs Grok, OpenRouter, and custom endpoints.
 nonisolated enum IntelligenceProvider: String, Identifiable, CaseIterable {
+    case apple
     case openAI = "openai"
     case anthropic
     case gemini
@@ -66,6 +74,7 @@ nonisolated enum IntelligenceProvider: String, Identifiable, CaseIterable {
     /// Display name for the provider.
     var name: String {
         switch self {
+        case .apple: "Apple Intelligence"
         case .openAI: "OpenAI"
         case .anthropic: "Anthropic"
         case .gemini: "Gemini"
@@ -78,6 +87,7 @@ nonisolated enum IntelligenceProvider: String, Identifiable, CaseIterable {
     /// Fallback model identifier when the user has not selected one.
     var defaultModel: String {
         switch self {
+        case .apple: ""
         case .openAI: "gpt-5-mini"
         case .anthropic: "claude-haiku-4-5"
         case .gemini: "gemini-2.5-flash-lite"
@@ -149,6 +159,9 @@ nonisolated enum IntelligenceProvider: String, Identifiable, CaseIterable {
 
     /// Builds the AnyLanguageModel model for this provider.
     ///
+    /// Apple Intelligence is not backed by AnyLanguageModel; it is handled
+    /// directly by `PrivateCloudCompute` instead.
+    ///
     /// - Returns: A configured `LanguageModel` instance.
     /// - Throws: `IntelligenceManagerError.invalidConfiguration` for a bad
     ///           custom URL.
@@ -156,6 +169,8 @@ nonisolated enum IntelligenceProvider: String, Identifiable, CaseIterable {
         let key = token
 
         switch self {
+        case .apple:
+            throw IntelligenceManagerError.invalidConfiguration
         case .openAI:
             return OpenAILanguageModel(apiKey: key, model: selectedModel)
         case .anthropic:
@@ -212,18 +227,30 @@ nonisolated enum IntelligenceManager {
     </selection_guidelines>
     """
 
-    /// The currently selected provider, defaulting to OpenAI.
+    /// The currently selected provider, defaulting to Apple Intelligence.
     static var currentProvider: IntelligenceProvider {
         UserDefaults.standard.string(forKey: Setting.intelligenceModel)
-            .flatMap { IntelligenceProvider(rawValue: $0) } ?? .openAI
+            .flatMap { IntelligenceProvider(rawValue: $0) } ?? .apple
+    }
+
+    /// Symbol representing the current provider in AI-related controls.
+    static var symbol: SFSymbol {
+        currentProvider == .apple ? .siri : .sparkles
     }
 
     /// Whether the selected provider is configured and usable. This is the
-    /// sole gate for AI features — a provider with a token (or a custom
-    /// endpoint) is all that's required.
+    /// sole gate for AI features — Apple Intelligence just needs to be
+    /// available on the device; any other provider needs a token (or a custom
+    /// endpoint).
     static var isEnabled: Bool {
-        let provider = currentProvider
-        return provider == .custom || !provider.token.isEmpty
+        switch currentProvider {
+        case .apple:
+            PrivateCloudCompute.isAvailable
+        case .custom:
+            true
+        default:
+            !currentProvider.token.isEmpty
+        }
     }
 
     /// Generates a playlist based on a prompt and adds songs to the specified
@@ -240,10 +267,10 @@ nonisolated enum IntelligenceManager {
             let provider = currentProvider
 
             guard isEnabled else {
-                throw IntelligenceManagerError.missingToken
+                throw provider == .apple
+                    ? IntelligenceManagerError.appleIntelligenceUnavailable
+                    : IntelligenceManagerError.missingToken
             }
-
-            let model = try provider.makeModel()
 
             let albums = try await ConnectionManager.command { manager in
                 if case .playlist = target {
@@ -259,22 +286,36 @@ nonisolated enum IntelligenceManager {
                 : albums
             let albumDescriptions = selectedAlbums.map(\.description).joined(separator: "\n")
 
-            let session = LanguageModelSession(model: model, instructions: instructions)
+            let userPrompt = """
+            <playlist_description>
+            \(prompt)
+            </playlist_description>
 
-            let response = try await session.respond(
-                to: """
-                <playlist_description>
-                \(prompt)
-                </playlist_description>
+            <available_albums>
+            \(albumDescriptions)
+            </available_albums>
+            """
 
-                <available_albums>
-                \(albumDescriptions)
-                </available_albums>
-                """,
-                generating: IntelligenceResponse.self,
-            )
+            let playlist: [String]
+            if provider == .apple {
+                playlist = try await PrivateCloudCompute.generatePlaylist(
+                    instructions: instructions,
+                    prompt: userPrompt,
+                )
+            } else {
+                let session = try LanguageModelSession(
+                    model: provider.makeModel(),
+                    instructions: instructions,
+                )
+                let response = try await session.respond(
+                    to: userPrompt,
+                    generating: IntelligenceResponse.self,
+                )
 
-            let songs = try await collectSongs(from: response.content.playlist, albums: albums)
+                playlist = response.content.playlist
+            }
+
+            let songs = try await collectSongs(from: playlist, albums: albums)
 
             try await addSongs(songs, to: target)
         }

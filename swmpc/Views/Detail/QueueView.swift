@@ -77,7 +77,7 @@ struct QueueView: View {
                             Button {
                                 navigator.intelligenceTarget = .queue
                             } label: {
-                                Image(systemSymbol: .sparkles)
+                                Image(systemSymbol: IntelligenceManager.symbol)
                             }
                             .disabled(!IntelligenceManager.isEnabled)
                         }

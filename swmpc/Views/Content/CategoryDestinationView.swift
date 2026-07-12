@@ -415,7 +415,7 @@ struct CategoryPlaylistView: View {
         .toolbar {
             if songs?.isEmpty ?? true {
                 ToolbarItem {
-                    Button("Fill playlist with AI", systemSymbol: .sparkles) {
+                    Button("Fill playlist with AI", systemSymbol: IntelligenceManager.symbol) {
                         navigator.intelligenceTarget = .playlist(playlist)
                     }
                     .disabled(!IntelligenceManager.isEnabled)
