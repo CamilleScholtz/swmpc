@@ -50,7 +50,7 @@ import Observation
 
     init() {
         database = DatabaseManager(state: state)
-        queue = QueueManager(state: state)
+        queue = QueueManager()
         playlists = PlaylistManager(state: state)
 
         status.setupRemoteCommands()
