@@ -109,8 +109,14 @@ private struct CategoryDatabaseView: View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
                 MediaListView(media: searchResults ?? media, type: mpd.database.type, scrollTarget: $scrollTarget)
+                    // XXX: `isActive` also guards against the window during a
+                    // category switch where the list still shows the previous
+                    // category's media: geometry changes there would be
+                    // recorded against the new category, wiping its
+                    // remembered position.
+                    .scrollMemory(for: navigator.category, scrollTarget: scrollTarget,
+                                  isActive: searchResults == nil && mpd.database.type == navigator.category.type)
                     .id(navigator.category)
-                    .scrollMemory(for: navigator.category, scrollTarget: scrollTarget, isActive: searchResults == nil)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -210,8 +216,17 @@ private struct CategoryDatabaseView: View {
 
             scrollToCurrentMedia()
         }
-        .onChange(of: sort) {
-            navigator.clearScrollOffset(for: navigator.category)
+        .onChange(of: LoadParameters(category: navigator.category, sort: sort)) { old, new in
+            // Only react to sort changes within the same category: `sort` is
+            // computed from the category, so it also changes when switching
+            // to a category with a different sort descriptor, and clearing
+            // then would wipe that category's remembered scroll position.
+            // Same category here implies the sort is what changed.
+            guard old.category == new.category else {
+                return
+            }
+
+            navigator.clearScrollOffset(for: new.category)
             mpd.state.isLoading = true
         }
         .onChange(of: searchQuery) { _, value in
@@ -386,6 +401,7 @@ struct CategoryPlaylistView: View {
     let playlist: Playlist
 
     @State private var songs: [Song]?
+    @State private var loadedPlaylist: Playlist?
     @State private var scrollTarget: ScrollTarget?
     @State private var showReplaceQueueAlert = false
 
@@ -406,8 +422,12 @@ struct CategoryPlaylistView: View {
                 }
                 .mediaListStyle(rowHeight: Layout.RowHeight.song)
                 .scrollToItem($scrollTarget)
+                // XXX: `isActive` guards against the window during a playlist
+                // switch where the list still shows the previous playlist's
+                // songs; see `CategoryDatabaseView`.
+                .scrollMemory(for: .playlist(playlist), scrollTarget: scrollTarget,
+                              isActive: loadedPlaylist == playlist)
                 .id(playlist)
-                .scrollMemory(for: .playlist(playlist), scrollTarget: scrollTarget)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
@@ -440,6 +460,7 @@ struct CategoryPlaylistView: View {
         }
         .task(id: playlist) {
             songs = try? await mpd.playlists.getSongs(for: playlist)
+            loadedPlaylist = playlist
 
             if !restoreScrollPosition(), songIsInPlaylist(mpd.status.song) {
                 scrollToCurrentSong()
