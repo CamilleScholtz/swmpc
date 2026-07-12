@@ -57,7 +57,7 @@ struct SettingsView: View {
             #if os(macOS)
                 case .behavior: .sliderHorizontal3
             #endif
-            case .intelligence: IntelligenceManager.symbol
+            case .intelligence: .sparkles
             }
         }
 
