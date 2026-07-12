@@ -55,7 +55,11 @@ actor ArtworkManager {
             return (data as Data, hash)
         }
 
-        let task = tasks[file, default: Task {
+        if let task = tasks[file] {
+            return try await task.value
+        }
+
+        let task = Task {
             defer { tasks[file] = nil }
 
             let data = try await ConnectionManager.artwork {
@@ -71,7 +75,8 @@ actor ArtworkManager {
             }
 
             return (data, hash)
-        }]
+        }
+        tasks[file] = task
 
         return try await task.value
     }

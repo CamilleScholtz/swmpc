@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -13,8 +15,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
 	<key>INAlternativeAppNames</key>
 	<array>
 		<dict>
@@ -30,8 +30,6 @@
 	</array>
 	<key>NSAllowsLocalNetworking</key>
 	<true/>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>swmpc needs local network access to connect to your MPD server.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_mpd._tcp</string>

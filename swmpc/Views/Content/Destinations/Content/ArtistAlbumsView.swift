@@ -18,84 +18,16 @@ struct ArtistAlbumsView: View {
     }
 
     @State private var albums: [Album] = []
+    @State private var info: ArtistInfo?
 
     var body: some View {
         Section {
-            Group {
-                #if os(iOS)
-                    VStack(spacing: Layout.Spacing.large) {
-                        Circle()
-                            .fill(Color(.tertiarySystemFill))
-                            .frame(width: 90, height: 90)
-                            .overlay {
-                                ZStack {
-                                    Text(artist.name.initials)
-                                        .font(.system(size: 40))
-                                        .fontDesign(.rounded)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.secondary)
-
-                                    Color.clear
-                                        .glassEffect(.clear, in: Circle())
-                                        .mask {
-                                            RadialGradient(
-                                                stops: [
-                                                    .init(color: .clear, location: 0.0),
-                                                    .init(color: .black, location: 1.0),
-                                                ],
-                                                center: .center,
-                                                startRadius: 0,
-                                                endRadius: 90,
-                                            )
-                                        }
-                                }
-                            }
-                            .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
-
-                        VStack(alignment: .center) {
-                            Text(artist.name)
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .fontDesign(.rounded)
-                                .lineLimit(3)
-                                .multilineTextAlignment(.center)
-
-                            Text(albums.count == 1 ? "1 album" : "\(albums.count) albums")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom, Layout.Spacing.medium)
-                    .contextMenu {
-                        ContextMenuView(for: artist)
-                    }
-                #else
-                    HStack(spacing: Layout.Spacing.large) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(artist.name)
-                                .font(.system(size: 18))
-                                .fontWeight(.semibold)
-                                .fontDesign(.rounded)
-                                .lineLimit(3)
-                                .contextMenu {
-                                    ContextMenuView(for: artist)
-                                }
-
-                            Text(albums.count == 1 ? "1 album" : "\(albums.count) albums")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-                    }
-                    .padding(.bottom, Layout.Spacing.medium)
-                #endif
-            }
+            ArtistHeaderView(artist: artist, albumCount: albums.count, info: info)
         }
         .mediaRowStyle()
         .task {
             albums = await (try? artist.getAlbums()) ?? []
+            info = await ArtistArtworkManager.shared.info(for: artist)
         }
 
         Section {
@@ -105,5 +37,91 @@ struct ArtistAlbumsView: View {
                     .mediaRowStyle()
             }
         }
+    }
+}
+
+private struct ArtistHeaderView: View {
+    let artist: Artist
+    let albumCount: Int
+    let info: ArtistInfo?
+
+    var body: some View {
+        #if os(iOS)
+            VStack(spacing: Layout.Spacing.large) {
+                ArtistImageView(for: artist, size: 180, initialsFontSize: 80)
+                    .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
+                    .contextMenu {
+                        ContextMenuView(for: artist)
+                    }
+
+                VStack(alignment: .center) {
+                    Text(artist.name)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .fontDesign(.rounded)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.center)
+
+                    ArtistSummaryView(albumCount: albumCount, genres: info?.genres ?? [])
+                }
+
+                if let bio = info?.bio {
+                    Text(bio)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, Layout.Spacing.medium)
+        #elseif os(macOS)
+            HStack(spacing: Layout.Spacing.large) {
+                ArtistImageView(for: artist, size: 100, initialsFontSize: 44)
+                    .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small, y: 4)
+                    .contextMenu {
+                        ContextMenuView(for: artist)
+                    }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(artist.name)
+                        .font(.system(size: 18))
+                        .fontWeight(.semibold)
+                        .fontDesign(.rounded)
+                        .lineLimit(3)
+
+                    ArtistSummaryView(albumCount: albumCount, genres: info?.genres ?? [])
+
+                    if let bio = info?.bio {
+                        Text(bio)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                            .padding(.top, 3)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(.bottom, Layout.Spacing.medium)
+        #endif
+    }
+}
+
+private struct ArtistSummaryView: View {
+    let albumCount: Int
+    let genres: [String]
+
+    var body: some View {
+        let count = albumCount == 1
+            ? String(localized: "1 album")
+            : String(localized: "\(albumCount) albums")
+        let details = genres.isEmpty
+            ? count
+            : count + " • " + genres.prefix(2).joined(separator: " • ")
+
+        Text(details)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
     }
 }

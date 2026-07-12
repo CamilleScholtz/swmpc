@@ -7,6 +7,7 @@
 
 import ButtonKit
 import MPDKit
+import MusicKit
 import SFSafeSymbols
 import SwiftUI
 
@@ -345,6 +346,67 @@ struct SettingsView: View {
                             NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
                         }
                     }
+
+                    AppleMusicSection()
+                }
+            }
+        }
+
+        private struct AppleMusicSection: View {
+            @State private var status = MusicAuthorization.currentStatus
+
+            var body: some View {
+                Section {
+                    LabeledContent("Apple Music Access") {
+                        HStack(spacing: Layout.Spacing.small) {
+                            Circle()
+                                .fill(statusColor)
+                                .frame(width: 9, height: 9)
+
+                            statusText
+                        }
+                    }
+
+                    if status == .notDetermined {
+                        Button("Allow Access") {
+                            Task(priority: .userInitiated) {
+                                status = await MusicAuthorization.request()
+                            }
+                        }
+                        .help("Ask macOS for permission to access Apple Music")
+                    } else if status == .denied {
+                        Button("Open System Settings") {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Media") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .help("Access was denied; it can be re-enabled in System Settings under Privacy & Security")
+                    }
+                } header: {
+                    Text("Apple Music")
+                } footer: {
+                    Text("Artist images are fetched from the Apple Music catalog, which requires permission to access Apple Music.")
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                    status = MusicAuthorization.currentStatus
+                }
+            }
+
+            private var statusColor: Color {
+                switch status {
+                case .authorized: .green
+                case .denied, .restricted: .red
+                default: .gray.opacity(0.5)
+                }
+            }
+
+            private var statusText: Text {
+                switch status {
+                case .authorized: Text("Allowed")
+                case .denied: Text("Denied")
+                case .restricted: Text("Restricted")
+                case .notDetermined: Text("Not Requested")
+                @unknown default: Text("Unknown")
                 }
             }
         }

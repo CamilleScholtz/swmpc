@@ -29,32 +29,7 @@ struct ArtistView: View, Equatable {
             navigator.navigate(to: ContentDestination.artist(artist))
         } label: {
             HStack(spacing: Layout.Spacing.large) {
-                Circle()
-                    .fill(Color(.tertiarySystemFill))
-                    .frame(width: Layout.RowHeight.artist, height: Layout.RowHeight.artist)
-                    .overlay {
-                        ZStack {
-                            Text(artist.name.initials)
-                                .font(.system(size: 18))
-                                .fontDesign(.rounded)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.secondary)
-
-                            Color.clear
-                                .glassEffect(.clear, in: Circle())
-                                .mask {
-                                    RadialGradient(
-                                        stops: [
-                                            .init(color: .clear, location: 0.0),
-                                            .init(color: .black, location: 1.0),
-                                        ],
-                                        center: .center,
-                                        startRadius: 0,
-                                        endRadius: 45,
-                                    )
-                                }
-                        }
-                    }
+                ArtistImageView(for: artist, size: Layout.RowHeight.artist, initialsFontSize: 18)
                     .shadow(color: .black.opacity(0.15), radius: 8, y: 1)
 
                 VStack(alignment: .leading) {
