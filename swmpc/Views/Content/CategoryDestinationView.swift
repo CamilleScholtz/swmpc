@@ -134,7 +134,7 @@ private struct CategoryDatabaseView: View {
                     #if os(iOS)
                         .focused($isSearchFieldFocused)
                     #elseif os(macOS)
-                        .introspect(.textField, on: .macOS(.v27)) { value in
+                        .introspect(.textField, on: .macOS(.v26, .v27)) { value in
                             // XXX: Workaround for .focusEffectDisabled() not working in toolbar.
                             value.focusRingType = .none
 

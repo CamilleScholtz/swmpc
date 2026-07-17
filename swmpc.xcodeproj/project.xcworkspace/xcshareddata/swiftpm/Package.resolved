@@ -16,7 +16,7 @@
       "location" : "https://github.com/Dean151/ButtonKit",
       "state" : {
         "branch" : "main",
-        "revision" : "2d47b683326406e2895a3f7697af6f6fb082a918"
+        "revision" : "0f6974cd8b514c50bddad977002dec00d2b102d7"
       }
     },
     {
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio.git",
       "state" : {
-        "revision" : "cd3e1152083706d77b223fb29110e590efcc70c0",
-        "version" : "2.101.2"
+        "revision" : "0b18836bd8b0162e7e17a995a3fbee20ed8f3b2b",
+        "version" : "2.101.3"
       }
     },
     {
