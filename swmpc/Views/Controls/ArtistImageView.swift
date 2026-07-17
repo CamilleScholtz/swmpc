@@ -83,31 +83,42 @@ struct ArtistImageView: View {
             }
     }
 
-    /// The remote artist image. On OS 26 the request-based `AsyncImage` and
-    /// the dedicated cache session are unavailable, so images fall back to the
-    /// shared `URLCache`.
+    /// The remote artist image. The request-based `AsyncImage` and the
+    /// dedicated cache session require the OS 27 SDK (Swift 6.4 toolchain);
+    /// Xcode Cloud builds with the 26 SDK, so there — and at runtime on
+    /// OS 26 — images fall back to the shared `URLCache`.
     @ViewBuilder
     private func artistImage(for url: URL) -> some View {
-        if #available(iOS 27.0, macOS 27.0, *) {
-            AsyncImage(request: URLRequest(
-                url: url,
-                cachePolicy: .returnCacheDataElseLoad,
-            )) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Color.clear
+        #if compiler(>=6.4)
+            if #available(iOS 27.0, macOS 27.0, *) {
+                AsyncImage(request: URLRequest(
+                    url: url,
+                    cachePolicy: .returnCacheDataElseLoad,
+                )) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Color.clear
+                }
+                .asyncImageURLSession(Self.imageSession)
+            } else {
+                fallbackArtistImage(for: url)
             }
-            .asyncImageURLSession(Self.imageSession)
-        } else {
-            AsyncImage(url: url) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Color.clear
-            }
+        #else
+            fallbackArtistImage(for: url)
+        #endif
+    }
+
+    /// The `AsyncImage(url:)` image used when the request-based variant is
+    /// unavailable.
+    private func fallbackArtistImage(for url: URL) -> some View {
+        AsyncImage(url: url) { image in
+            image
+                .resizable()
+                .scaledToFill()
+        } placeholder: {
+            Color.clear
         }
     }
 }

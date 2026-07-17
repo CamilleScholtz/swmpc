@@ -26,20 +26,27 @@ private nonisolated struct PrivateCloudComputeResponse {
 /// device that supports Apple Intelligence. No API token is needed.
 nonisolated enum PrivateCloudCompute {
     /// Wrapper for the model handle, since `PrivateCloudComputeLanguageModel`
-    /// only exists on OS 27 while this namespace stays available on OS 26.
-    @available(iOS 27.0, macOS 27.0, *)
-    private nonisolated enum Model {
-        static let shared = PrivateCloudComputeLanguageModel()
-    }
+    /// only exists in the OS 27 SDK (Swift 6.4 toolchain) — Xcode Cloud
+    /// builds with the 26 SDK — while this namespace stays available on OS 26.
+    #if compiler(>=6.4)
+        @available(iOS 27.0, macOS 27.0, *)
+        private nonisolated enum Model {
+            static let shared = PrivateCloudComputeLanguageModel()
+        }
+    #endif
 
     /// Whether the device and system are ready to serve PCC requests. Always
-    /// `false` below iOS/macOS 27.
+    /// `false` below iOS/macOS 27 and in builds made with the 26 SDK.
     static var isAvailable: Bool {
-        guard #available(iOS 27.0, macOS 27.0, *) else {
-            return false
-        }
+        #if compiler(>=6.4)
+            guard #available(iOS 27.0, macOS 27.0, *) else {
+                return false
+            }
 
-        return Model.shared.isAvailable
+            return Model.shared.isAvailable
+        #else
+            return false
+        #endif
     }
 
     /// Generates a playlist by prompting the Private Cloud Compute model.
@@ -53,20 +60,24 @@ nonisolated enum PrivateCloudCompute {
     ///           iOS/macOS 27, `PrivateCloudComputeLanguageModel.Error` or
     ///           generation errors.
     static func generatePlaylist(instructions: String, prompt: String) async throws -> [String] {
-        guard #available(iOS 27.0, macOS 27.0, *) else {
+        #if compiler(>=6.4)
+            guard #available(iOS 27.0, macOS 27.0, *) else {
+                throw IntelligenceManagerError.appleIntelligenceUnavailable
+            }
+
+            let session = LanguageModelSession(
+                model: Model.shared,
+                instructions: Instructions(instructions),
+            )
+
+            let response = try await session.respond(
+                to: Prompt(prompt),
+                generating: PrivateCloudComputeResponse.self,
+            )
+
+            return response.content.playlist
+        #else
             throw IntelligenceManagerError.appleIntelligenceUnavailable
-        }
-
-        let session = LanguageModelSession(
-            model: Model.shared,
-            instructions: Instructions(instructions),
-        )
-
-        let response = try await session.respond(
-            to: Prompt(prompt),
-            generating: PrivateCloudComputeResponse.self,
-        )
-
-        return response.content.playlist
+        #endif
     }
 }

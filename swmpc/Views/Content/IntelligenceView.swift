@@ -222,7 +222,14 @@ struct IntelligenceView: View {
                 }
             }
             .animation(.spring, value: isLoading)
-            .alert("Something went wrong", item: $error) { _ in
+            .alert(
+                "Something went wrong",
+                isPresented: Binding(
+                    get: { error != nil },
+                    set: { if !$0 { error = nil } },
+                ),
+                presenting: error,
+            ) { _ in
                 Button("OK", role: .cancel) {}
             } message: { error in
                 Text(error.localizedDescription)

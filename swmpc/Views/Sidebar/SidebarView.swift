@@ -127,7 +127,14 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .toolbar(removing: .sidebarToggle)
-        .alert("Delete Playlist", item: $playlistToDelete) { playlist in
+        .alert(
+            "Delete Playlist",
+            isPresented: Binding(
+                get: { playlistToDelete != nil },
+                set: { if !$0 { playlistToDelete = nil } },
+            ),
+            presenting: playlistToDelete,
+        ) { playlist in
             Button("Cancel", role: .cancel) {}
 
             AsyncButton("Delete", role: .destructive) {
