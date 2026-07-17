@@ -7,7 +7,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-FILE="${L10N_FILE:-$PROJECT_ROOT/Tripstitch/Localizable.xcstrings}"
+FILE="${L10N_FILE:-$PROJECT_ROOT/swmpc/Localizable.xcstrings}"
 
 # Re-serialize the catalog in Xcode's exact .xcstrings format. jq (and most JSON
 # tools) emit "key": value, but Xcode writes "key" : value (spaces around the

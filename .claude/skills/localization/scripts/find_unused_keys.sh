@@ -1,5 +1,5 @@
 #!/bin/bash
-# Find unused translation keys in Tripstitch project
+# Find unused translation keys in swmpc project
 # Handles format specifiers, special characters, and interpolation patterns.
 #
 # Lives at .claude/skills/localization/scripts/find_unused_keys.sh. The project
@@ -11,7 +11,7 @@ cd "$PROJECT_ROOT"
 
 # Combine all Swift source files into one temp file for searching
 COMBINED=$(mktemp)
-find Tripstitch -name '*.swift' -type f -exec cat {} + > "$COMBINED"
+find swmpc widget Packages -name '*.swift' -type f -exec cat {} + > "$COMBINED"
 
 # Get all keys
 KEYS_FILE=$(mktemp)

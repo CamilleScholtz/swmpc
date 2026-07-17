@@ -142,19 +142,10 @@ Prefer shared code. For platform-specific code, use conditional compilation with
 
 ## Localization
 
-Use `./l10n.sh` to work with `swmpc/Localizable.xcstrings` — the file is too large to read/edit directly.
-
-| Command | Purpose |
-|---------|---------|
-| `./l10n.sh keys` | List all translatable keys |
-| `./l10n.sh search <pattern>` | Search keys (case-insensitive) |
-| `./l10n.sh get <key>` | Show translations for a key |
-| `./l10n.sh set <key> <lang> <value>` | Set a translation |
-| `./l10n.sh batch-set <file.tsv>` | Bulk set from TSV (key, lang, value) |
-| `./l10n.sh missing <lang>` | List keys missing a translation |
-| `./l10n.sh stats` | Translation counts per language |
-| `./l10n.sh rename <old> <new>` | Rename a key, preserving translations |
-| `./l10n.sh delete <key> [lang]` | Remove a key or a single translation |
+Use the `localization` skill to work with `swmpc/Localizable.xcstrings` — the file is too
+large to read/edit directly. The skill bundles `l10n.sh` (keys, search, get, set, batch-set,
+missing, stats, rename, delete, normalize) and `find_unused_keys.sh` under
+`.claude/skills/localization/scripts/`.
 
 ## App Store Connect
 
