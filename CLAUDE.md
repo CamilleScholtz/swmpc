@@ -155,3 +155,31 @@ Use `./l10n.sh` to work with `swmpc/Localizable.xcstrings` — the file is too l
 | `./l10n.sh stats` | Translation counts per language |
 | `./l10n.sh rename <old> <new>` | Rename a key, preserving translations |
 | `./l10n.sh delete <key> [lang]` | Remove a key or a single translation |
+
+## App Store Connect
+
+Releases, TestFlight, metadata, and crash triage run through the `asc` CLI via the `asc-*`
+skills — e.g. `asc-release-flow`, `asc-metadata-sync`, and `asc-localize-metadata`.
+App ID: `6743818735`. Store locales match the app's languages: en-US, de-DE, es-ES, fr-FR, nl-NL.
+
+Canonical App Store metadata lives in `Store/`:
+
+```
+Store/
+├── app-info/<locale>.json        # App-level: name, subtitle, privacy URL (shared)
+├── version/<version>/<locale>.json  # macOS: description, keywords, whatsNew, promotionalText, URLs
+└── ios/
+    ├── app-info -> ../app-info   # Symlink — app-info is app-level, not per-platform
+    └── version/<version>/<locale>.json  # iOS variant
+```
+
+The macOS and iOS trees differ deliberately: descriptions swap the platform name order and
+iOS drops the menu-bar bullet; What's New omits macOS-only items (menu bar, launch at login)
+on iOS and iOS-only items on macOS. Keep them separate. Sync with:
+
+```sh
+asc metadata push --app 6743818735 --version <ver> --platform MAC_OS --dir ./Store --dry-run
+asc metadata push --app 6743818735 --version <ver> --platform IOS --dir ./Store/ios --dry-run
+```
+
+Always `asc metadata validate --dir <dir>` and `--dry-run` before applying.
