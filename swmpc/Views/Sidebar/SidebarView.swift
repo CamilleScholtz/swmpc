@@ -66,7 +66,7 @@ struct SidebarView: View {
                         )
                     } else {
                         NavigationLink(value: CategoryDestination.playlist(playlist)) {
-                            Label(playlist.name, systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)
+                            Label(playlist.name, systemSymbol: playlist.symbol)
                         }
                         .keyboardShortcut(.none)
                         .help(Text(playlist.name))

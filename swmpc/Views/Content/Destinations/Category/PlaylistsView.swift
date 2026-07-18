@@ -45,7 +45,7 @@ struct PlaylistsView: View {
                         navigator.path.append(ContentDestination.playlist(playlist))
                     } label: {
                         HStack(spacing: Layout.Spacing.large) {
-                            Image(systemSymbol: playlist.name == "Favorites" ? .heart : .musicNoteList)
+                            Image(systemSymbol: playlist.symbol)
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.secondary)

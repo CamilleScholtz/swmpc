@@ -240,7 +240,7 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case .albums: .squareStack
         case .artists: .musicMicrophone
         case .songs: .musicNote
-        case .playlist: .musicNoteList
+        case let .playlist(playlist): playlist.symbol
         #if os(iOS)
             case .playlists: .musicNoteList
         #endif

@@ -20,9 +20,26 @@ public nonisolated struct Playlist: Identifiable, Equatable, Hashable, Codable,
     /// The name of the playlist.
     public let name: String
 
+    /// The raw SF Symbol name representing this playlist in the UI. `nil`
+    /// until one has been assigned.
+    public var symbolName: String?
+
     /// Creates a new playlist with the given name.
-    /// - Parameter name: The name of the playlist.
-    public init(name: String) {
+    /// - Parameters:
+    ///   - name: The name of the playlist.
+    ///   - symbolName: The raw SF Symbol name representing the playlist.
+    public init(name: String, symbolName: String? = nil) {
         self.name = name
+        self.symbolName = symbolName
+    }
+
+    /// Playlist identity is the name alone; the symbol is derived metadata
+    /// and must not affect equality, hashing, or navigation selection.
+    public static func == (lhs: Playlist, rhs: Playlist) -> Bool {
+        lhs.name == rhs.name
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
     }
 }

@@ -154,8 +154,8 @@ private struct SourceToggleButton<Media: Mediable>: View {
             }
         case .favorites:
             .heart
-        case .playlist:
-            .musicNoteList
+        case let .playlist(playlist):
+            playlist.symbol
         default:
             .plusCircle
         }
