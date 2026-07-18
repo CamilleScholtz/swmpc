@@ -95,7 +95,7 @@ struct PopoverView: View {
                     continue
                 }
 
-                artwork = try? await song.artwork()
+                artwork = try? await song.artwork(fitting: Layout.Size.artworkWidth)
                 guard let image = artwork?.image else {
                     height = Layout.Size.artworkWidth
                     continue
@@ -122,7 +122,7 @@ struct PopoverView: View {
                 return
             }
 
-            artwork = try? await song.artwork()
+            artwork = try? await song.artwork(fitting: Layout.Size.artworkWidth)
             guard let image = artwork?.image else {
                 height = Layout.Size.artworkWidth
                 return

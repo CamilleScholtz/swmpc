@@ -13,12 +13,14 @@ import SwiftUI
 struct DetailMiniView: View {
     @Environment(MPD.self) private var mpd
 
-    let artwork: Artwork?
+    @State private var artwork: Artwork?
+
+    private static let artworkSize: CGFloat = 32
 
     var body: some View {
         HStack(spacing: Layout.Spacing.small) {
             ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
-                .frame(width: 32, height: 32)
+                .frame(width: Self.artworkSize, height: Self.artworkSize)
                 .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small / 1.5))
 
             VStack(alignment: .leading, spacing: 2) {
@@ -40,5 +42,13 @@ struct DetailMiniView: View {
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .padding(.horizontal, Layout.Padding.large)
+        .task(id: mpd.status.song) {
+            guard let song = mpd.status.song else {
+                artwork = nil
+                return
+            }
+
+            artwork = try? await song.artwork(fitting: Self.artworkSize)
+        }
     }
 }

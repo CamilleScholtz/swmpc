@@ -28,8 +28,6 @@ struct AppView: View {
         @State private var columnVisibility: NavigationSplitViewVisibility = .all
     #endif
 
-    @State private var artwork: Artwork?
-
     var body: some View {
         @Bindable var navigator = navigator
 
@@ -42,7 +40,7 @@ struct AppView: View {
                         TabView(selection: $navigator.category) {
                             ForEach(CategoryDestination.categories) { category in
                                 Tab(value: category) {
-                                    NavigationStack(path: $navigator.path) {
+                                    NavigationStack(path: $navigator[path: category]) {
                                         CategoryDestinationView()
                                             .navigationDestination(for: ContentDestination.self) { destination in
                                                 ContentDestinationView(destination: destination)
@@ -64,7 +62,7 @@ struct AppView: View {
                             Button {
                                 navigator.showNowPlaying.toggle()
                             } label: {
-                                DetailMiniView(artwork: artwork)
+                                DetailMiniView()
                             }
                             .buttonStyle(.plain)
                             .matchedTransitionSource(id: 1, in: namespace)
@@ -79,7 +77,7 @@ struct AppView: View {
                                     .listRowInsets(.init())
                                     .listRowBackground(Color.clear)
 
-                                DetailView(artwork: artwork)
+                                DetailView()
                                     .frame(height: 580)
                                     .listRowSeparator(.hidden)
                                     .listRowInsets(.horizontal, Layout.Padding.large)
@@ -126,7 +124,7 @@ struct AppView: View {
                                 ScrollView {}
                                     .scrollContentBackground(.visible)
 
-                                DetailView(artwork: artwork, showQueuePanel: $showQueuePanel)
+                                DetailView(showQueuePanel: $showQueuePanel)
                             }
                             .scrollEdgeEffectStyle(.soft, for: .vertical)
                         }
@@ -169,14 +167,6 @@ struct AppView: View {
             WidgetCenter.shared.reloadAllTimelines()
             try? await mpd.status.startTrackingElapsed()
         }
-        .task(id: mpd.status.song) {
-            guard let song = mpd.status.song else {
-                artwork = nil
-                return
-            }
-
-            artwork = try? await song.artwork()
-        }
         .onDisappear {
             mpd.status.stopTrackingElapsed()
         }
@@ -200,8 +190,46 @@ struct AppView: View {
         .sheet(isPresented: $navigator.showSettingsSheet) {
             SettingsView()
         }
+        .modifier(ForegroundResyncModifier())
         #elseif os(macOS)
         .frame(minWidth: Layout.Size.sidebarWidth + Layout.Size.contentWidth + Layout.Size.detailWidth, minHeight: Layout.Size.detailWidth)
         #endif
     }
 }
+
+#if os(iOS)
+    /// Re-syncs MPD state when the app returns to the foreground after having
+    /// been backgrounded, since the idle connection may have died while the
+    /// app was suspended.
+    ///
+    /// This lives in its own modifier so that `AppView` itself takes no
+    /// `scenePhase` dependency: only this modifier's lightweight body
+    /// re-evaluates on scene phase changes.
+    private struct ForegroundResyncModifier: ViewModifier {
+        @Environment(MPD.self) private var mpd
+        @Environment(\.scenePhase) private var scenePhase
+
+        @State private var wasBackgrounded = false
+
+        func body(content: Content) -> some View {
+            content
+                .onChange(of: scenePhase) { _, phase in
+                    switch phase {
+                    case .background:
+                        wasBackgrounded = true
+                    case .active:
+                        guard wasBackgrounded else {
+                            return
+                        }
+                        wasBackgrounded = false
+
+                        Task {
+                            await mpd.resync()
+                        }
+                    default:
+                        break
+                    }
+                }
+        }
+    }
+#endif

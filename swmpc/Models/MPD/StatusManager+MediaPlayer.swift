@@ -215,8 +215,9 @@ extension StatusManager {
     private func fetchNowPlayingArtwork(for song: Song) async ->
         MPMediaItemArtwork?
     {
-        guard let artworkData = try? await song.artwork(),
-              let image = artworkData.image
+        guard let artworkData = try? await song.artwork(fitting:
+            Layout.Size.artworkWidth),
+            let image = artworkData.image
         else {
             return nil
         }

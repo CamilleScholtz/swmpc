@@ -34,7 +34,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// Whether a command is currently awaiting its response. Guards against
     /// interleaved commands on the same connection, which would corrupt the
     /// response stream due to actor reentrancy.
-    private var isCommandInFlight = false
+    private(set) var isCommandInFlight = false
 
     /// The version of the MPD server obtained during connection handshake.
     public private(set) var version: String?

@@ -13,32 +13,39 @@ import SwiftUI
 /// Types conforming to `Artworkable` can fetch artwork images from the MPD
 /// server. Artwork is automatically cached and deduplicated by content hash.
 protocol Artworkable {
-    /// Fetches the artwork for this media item.
+    /// Fetches the artwork for this media item, decoded to fit the given size
+    /// in points.
     ///
+    /// - Parameter pointSize: The largest dimension, in points, at which the
+    ///                        artwork will be displayed.
     /// - Returns: An `Artwork` instance if artwork is available, or `nil` if no
     ///            artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
-    func artwork() async throws -> Artwork?
+    func artwork(fitting pointSize: CGFloat) async throws -> Artwork?
 }
 
 extension Artworkable where Self: Mediable {
     /// Default implementation that fetches artwork from the MPD server using
     /// the media item's file.
     ///
-    /// This implementation uses the `ArtworkManager` to retrieve artwork. The
-    /// returned `Artwork` includes a hash of the image data for efficient
-    /// equality comparisons.
+    /// This implementation uses the `ArtworkManager` to retrieve artwork,
+    /// decoded and downsampled to the display size so that showing a
+    /// thumbnail costs thumbnail-sized memory. The returned `Artwork`
+    /// includes a hash of the image data for efficient equality comparisons.
     ///
+    /// - Parameter pointSize: The largest dimension, in points, at which the
+    ///                        artwork will be displayed.
     /// - Returns: An `Artwork` instance if artwork is available, or `nil` if no
     ///            artwork is found.
     /// - Throws: An error if the artwork retrieval fails.
-    func artwork() async throws -> Artwork? {
-        let (data, hash) = try await ArtworkManager.shared.get(for: file)
+    func artwork(fitting pointSize: CGFloat) async throws -> Artwork? {
+        guard let (image, hash) = try await ArtworkManager.shared.image(
+            for: file, fitting: pointSize)
+        else {
+            return nil
+        }
 
-        return Artwork(
-            image: PlatformImage(data: data),
-            hash: hash,
-        )
+        return Artwork(image: image, hash: hash)
     }
 }
 

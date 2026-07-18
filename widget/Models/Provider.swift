@@ -69,7 +69,11 @@ struct Provider: TimelineProvider {
                 if let data = try? await ConnectionManager.artwork({
                     try await $0.getArtworkData(for: file)
                 }) {
-                    artwork = PlatformImage(data: data)
+                    // Widget extensions run under a tight memory cap;
+                    // decoding the embedded artwork at full resolution can
+                    // exceed it, and no widget renders larger than this.
+                    artwork = Artwork.downsampledImage(from: data,
+                                                       maxPixelSize: 1024)
                 }
             }
 

@@ -21,13 +21,14 @@ public extension ConnectionManager where Mode == IdleMode {
     /// - Parameter mask: An array of `IdleEvent` values specifying which events
     ///                   to listen for.
     /// - Returns: The `IdleEvent`s that triggered the idle state, as indicated
-    ///            by the server response.
-    /// - Throws: A `ConnectionManagerError.malformedResponse` if the server
-    ///           response does not contain any known `changed` line.
+    ///            by the server response. Empty when the idle command was
+    ///            cancelled via `noidle()` before any subsystem changed.
+    /// - Throws: An error if writing the command or reading the response
+    ///           fails.
     func idleForEvents(mask: [IdleEvent]) async throws -> [IdleEvent] {
         let lines = try await run(["idle \(mask.map(\.rawValue).joined(separator: " "))"])
 
-        let events = lines.compactMap { line -> IdleEvent? in
+        return lines.compactMap { line -> IdleEvent? in
             guard line.hasPrefix("changed: ") else {
                 return nil
             }
@@ -36,13 +37,23 @@ public extension ConnectionManager where Mode == IdleMode {
                 line.dropFirst("changed: ".count),
             ))
         }
+    }
 
-        guard !events.isEmpty else {
-            throw ConnectionManagerError.malformedResponse(
-                "Missing 'changed' line",
-            )
+    /// Cancels a pending `idleForEvents` call by sending `noidle`.
+    ///
+    /// MPD replies to the pending `idle` immediately — with any changed
+    /// subsystems, or nothing — so this also serves as a liveness probe for
+    /// the idle connection: on a socket that died silently (for example while
+    /// the app was suspended), the write or the pending read fails, causing
+    /// the owning update loop to tear down the connection and reconnect. A
+    /// no-op when no idle command is pending.
+    ///
+    /// - Throws: An error if writing to the connection fails.
+    func noidle() async throws {
+        guard isCommandInFlight else {
+            return
         }
 
-        return events
+        try await writeLine("noidle")
     }
 }

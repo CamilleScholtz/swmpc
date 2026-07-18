@@ -23,6 +23,12 @@ struct AlbumSongsView: View {
     @State private var artwork: Artwork?
     @State private var songs: [Int: [Song]]?
 
+    #if os(iOS)
+        private static let artworkSize: CGFloat = 180
+    #elseif os(macOS)
+        private static let artworkSize: CGFloat = 100
+    #endif
+
     #if os(macOS)
         @State private var isHovering = false
     #endif
@@ -46,7 +52,7 @@ struct AlbumSongsView: View {
                             ArtworkView(image: artwork?.image)
                                 .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
                                 .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
-                                .frame(width: 180)
+                                .frame(width: Self.artworkSize)
                                 .overlay {
                                     Color.clear
                                         .glassEffect(.clear.interactive(), in: .rect(cornerRadius: Layout.CornerRadius.large))
@@ -137,7 +143,7 @@ struct AlbumSongsView: View {
                                 ArtworkView(image: artwork?.image)
                                     .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
                                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small, y: 4)
-                                    .frame(width: 100)
+                                    .frame(width: Self.artworkSize)
                                     .overlay {
                                         Color.clear
                                             .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.medium))
@@ -246,7 +252,7 @@ struct AlbumSongsView: View {
         }
         .mediaRowStyle()
         .task {
-            artwork = try? await album.artwork()
+            artwork = try? await album.artwork(fitting: Self.artworkSize)
 
             let fetchedSongs = await (try? album.getSongs()) ?? []
             songs = Dictionary(grouping: fetchedSongs, by: { $0.disc })

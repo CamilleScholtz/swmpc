@@ -23,6 +23,16 @@ import Observation
     /// Observer for playback errors.
     @ObservationIgnored private var errorObserver: NSObjectProtocol?
 
+    #if os(iOS)
+        /// Observer for audio session interruptions (phone calls, Siri, other
+        /// apps claiming the session).
+        @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
+
+        /// Observer for audio route changes (e.g. headphones being
+        /// disconnected).
+        @ObservationIgnored private var routeChangeObserver: NSObjectProtocol?
+    #endif
+
     /// Two-way access to the streaming state, usable as a key path binding
     /// (`$streaming[isStreamingFrom: server]`).
     subscript(isStreamingFrom server: Server) -> Bool {
@@ -89,6 +99,57 @@ import Observation
             }
         }
 
+        #if os(iOS)
+            interruptionObserver = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.interruptionNotification,
+                object: AVAudioSession.sharedInstance(),
+                queue: .main,
+            ) { [weak self] notification in
+                guard let typeValue = notification.userInfo?[
+                    AVAudioSessionInterruptionTypeKey,
+                ] as? UInt,
+                    let type = AVAudioSession.InterruptionType(rawValue:
+                        typeValue)
+                else {
+                    return
+                }
+
+                let shouldResume = (notification.userInfo?[
+                    AVAudioSessionInterruptionOptionKey,
+                ] as? UInt).map {
+                    AVAudioSession.InterruptionOptions(rawValue: $0)
+                        .contains(.shouldResume)
+                } ?? false
+
+                Task { @MainActor [weak self] in
+                    self?.handleInterruption(type: type, shouldResume:
+                        shouldResume)
+                }
+            }
+
+            routeChangeObserver = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.routeChangeNotification,
+                object: AVAudioSession.sharedInstance(),
+                queue: .main,
+            ) { [weak self] notification in
+                guard let reasonValue = notification.userInfo?[
+                    AVAudioSessionRouteChangeReasonKey,
+                ] as? UInt,
+                    let reason = AVAudioSession.RouteChangeReason(rawValue:
+                        reasonValue),
+                    reason == .oldDeviceUnavailable
+                else {
+                    return
+                }
+
+                // The active output device disappeared (e.g. headphones were
+                // disconnected); stop rather than continue on the speaker.
+                Task { @MainActor [weak self] in
+                    self?.stopStreaming()
+                }
+            }
+        #endif
+
         player?.play()
     }
 
@@ -101,6 +162,18 @@ import Observation
             NotificationCenter.default.removeObserver(errorObserver)
         }
         errorObserver = nil
+
+        #if os(iOS)
+            if let interruptionObserver {
+                NotificationCenter.default.removeObserver(interruptionObserver)
+            }
+            interruptionObserver = nil
+
+            if let routeChangeObserver {
+                NotificationCenter.default.removeObserver(routeChangeObserver)
+            }
+            routeChangeObserver = nil
+        #endif
 
         player?.pause()
         player = nil
@@ -122,6 +195,31 @@ import Observation
             startStreaming(from: server)
         }
     }
+
+    #if os(iOS)
+        /// Handles audio session interruptions.
+        ///
+        /// The player is paused for the duration of the interruption. When the
+        /// interruption ends, playback resumes only if the system indicates it
+        /// should (e.g. after a phone call); otherwise the stream is stopped,
+        /// since another app has taken over audio.
+        private func handleInterruption(type: AVAudioSession.InterruptionType,
+                                        shouldResume: Bool)
+        {
+            switch type {
+            case .began:
+                player?.pause()
+            case .ended:
+                if shouldResume {
+                    player?.play()
+                } else {
+                    stopStreaming()
+                }
+            @unknown default:
+                break
+            }
+        }
+    #endif
 
     private func handleTimeControlStatusChange(_ status:
         AVPlayer.TimeControlStatus)

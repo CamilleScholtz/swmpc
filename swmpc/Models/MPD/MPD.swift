@@ -84,6 +84,25 @@ import Observation
         await reinitializeTask?.value
     }
 
+    /// Brings all manager state up to date and verifies the idle connection
+    /// is still alive.
+    ///
+    /// Intended for when the app returns to the foreground: while the app was
+    /// suspended, the idle connection may have died without the socket ever
+    /// reporting it, leaving the update loop parked on a read that never
+    /// completes. The managers are refreshed over the command connection
+    /// first, so the UI is current immediately, then `noidle` forces traffic
+    /// on the idle socket — if the connection is dead, that write (or the
+    /// pending read) fails and the update loop reconnects and re-syncs.
+    func resync() async {
+        try? await status.set(idle: false)
+        try? await queue.set(idle: false)
+        try? await playlists.set(idle: false)
+        try? await outputs.set(idle: false)
+
+        try? await ConnectionManager.idle.noidle()
+    }
+
     /// Establishes a connection to the MPD server.
     ///
     /// This method attempts to connect to the MPD server repeatedly until

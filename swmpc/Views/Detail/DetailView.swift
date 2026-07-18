@@ -18,11 +18,11 @@ struct DetailView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    let artwork: Artwork?
-
     #if os(macOS)
         @Binding var showQueuePanel: Bool
     #endif
+
+    @State private var artwork: Artwork?
 
     #if os(iOS)
         private var progress: Float {
@@ -63,6 +63,14 @@ struct DetailView: View {
             #elseif os(macOS)
             .padding(Layout.Padding.large * 4)
             #endif
+        }
+        .task(id: mpd.status.song) {
+            guard let song = mpd.status.song else {
+                artwork = nil
+                return
+            }
+
+            artwork = try? await song.artwork(fitting: Layout.Size.artworkWidth)
         }
         #if os(macOS)
         .ignoresSafeArea(edges: .vertical)

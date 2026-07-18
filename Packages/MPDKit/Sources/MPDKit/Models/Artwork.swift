@@ -5,6 +5,8 @@
 //  Created by Camille Scholtz on 20/06/2025.
 //
 
+import ImageIO
+
 #if canImport(UIKit)
     import UIKit
 #elseif canImport(AppKit)
@@ -51,4 +53,84 @@ public nonisolated struct Artwork: Equatable, Sendable {
             self.hash = hash
         }
     #endif
+
+    #if canImport(UIKit)
+        /// Decodes artwork data into a bitmap no larger than the given pixel
+        /// size.
+        ///
+        /// `UIImage(data:)` defers decoding to render time and decodes at the
+        /// embedded artwork's full resolution regardless of the display size.
+        /// This decodes eagerly via ImageIO instead, bounded by
+        /// `maxPixelSize`, so displaying a thumbnail costs thumbnail-sized
+        /// memory and no decode happens during rendering.
+        ///
+        /// - Parameters:
+        ///   - data: The compressed artwork data.
+        ///   - maxPixelSize: The maximum width or height of the decoded
+        ///                   bitmap, in pixels.
+        /// - Returns: The decoded image, or `nil` if the data is not a valid
+        ///            image.
+        public static func downsampledImage(from data: Data, maxPixelSize:
+            Int) -> UIImage?
+        {
+            guard let cgImage = downsampledCGImage(from: data, maxPixelSize:
+                maxPixelSize)
+            else {
+                return nil
+            }
+
+            return UIImage(cgImage: cgImage)
+        }
+
+    #elseif canImport(AppKit)
+        /// Decodes artwork data into a bitmap no larger than the given pixel
+        /// size.
+        ///
+        /// `NSImage(data:)` defers decoding to render time and decodes at the
+        /// embedded artwork's full resolution regardless of the display size.
+        /// This decodes eagerly via ImageIO instead, bounded by
+        /// `maxPixelSize`, so displaying a thumbnail costs thumbnail-sized
+        /// memory and no decode happens during rendering.
+        ///
+        /// - Parameters:
+        ///   - data: The compressed artwork data.
+        ///   - maxPixelSize: The maximum width or height of the decoded
+        ///                   bitmap, in pixels.
+        /// - Returns: The decoded image, or `nil` if the data is not a valid
+        ///            image.
+        public static func downsampledImage(from data: Data, maxPixelSize:
+            Int) -> NSImage?
+        {
+            guard let cgImage = downsampledCGImage(from: data, maxPixelSize:
+                maxPixelSize)
+            else {
+                return nil
+            }
+
+            return NSImage(cgImage: cgImage, size: .zero)
+        }
+    #endif
+
+    /// Decodes and downsamples image data via ImageIO.
+    private static func downsampledCGImage(from data: Data, maxPixelSize:
+        Int) -> CGImage?
+    {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+
+        guard let source = CGImageSourceCreateWithData(data as CFData,
+                                                       sourceOptions)
+        else {
+            return nil
+        }
+
+        let thumbnailOptions = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+        ] as CFDictionary
+
+        return CGImageSourceCreateThumbnailAtIndex(source, 0,
+                                                   thumbnailOptions)
+    }
 }

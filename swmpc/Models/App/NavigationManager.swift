@@ -12,28 +12,47 @@ import SwiftUI
 /// Manages navigation state for the application, handling both category-level
 /// navigation and content navigation within those categories.
 ///
-/// This class uses SwiftUI's `NavigationPath` to maintain a navigation stack
-/// while also tracking the current category selection. When the category
-/// changes, the navigation path is automatically reset to provide a clean
-/// navigation state.
+/// This class maintains a SwiftUI `NavigationPath` per category, so each
+/// category keeps its own navigation stack: switching categories preserves
+/// where the user was, and re-selecting the current category pops its stack
+/// back to the root.
 @Observable final class NavigationManager {
-    /// The navigation path representing the current navigation stack within the
-    /// selected category. This stack contains `ContentDestination` values that
-    /// represent navigation to specific albums or artists.
-    var path = NavigationPath() {
-        didSet {
-            syncPathContents()
+    /// The navigation paths per category. Each stack contains
+    /// `ContentDestination` values that represent navigation to specific
+    /// albums or artists.
+    private var paths: [CategoryDestination: NavigationPath] = [:]
+
+    /// Two-way access to a specific category's navigation path, usable as a
+    /// key path binding (`$navigator[path: category]`) so each tab owns its
+    /// own stack.
+    subscript(path category: CategoryDestination) -> NavigationPath {
+        get {
+            paths[category] ?? NavigationPath()
+        }
+        set {
+            paths[category] = newValue
+            syncPathContents(for: category)
+        }
+    }
+
+    /// The navigation path of the currently selected category.
+    var path: NavigationPath {
+        get {
+            self[path: category]
+        }
+        set {
+            self[path: category] = newValue
         }
     }
 
     /// The currently selected category destination (e.g., albums, artists,
-    /// songs, playlists). When this value changes, the navigation path is
-    /// automatically reset to ensure a clean navigation state for the new
-    /// category.
+    /// songs, playlists). Re-selecting the already-current category (tapping
+    /// the active tab, or clicking the active sidebar row) pops its
+    /// navigation stack back to the root.
     var category: CategoryDestination = .albums {
         didSet {
-            if oldValue != category {
-                reset()
+            if oldValue == category {
+                popToRoot()
             }
         }
     }
@@ -56,9 +75,10 @@ import SwiftUI
     /// Controls the presentation of the ratings sheet.
     var showRatingsSheet = false
 
-    /// Tracks the content destinations in the path for duplicate prevention.
-    /// This is internal state that doesn't need to trigger view updates.
-    @ObservationIgnored private var pathContents: [ContentDestination] = []
+    /// Tracks the content destinations in each category's path for duplicate
+    /// prevention. This is internal state that doesn't need to trigger view
+    /// updates.
+    @ObservationIgnored private var pathContents: [CategoryDestination: [ContentDestination]] = [:]
 
     /// Scroll offsets the user manually scrolled to, per category, measured
     /// from the top of the content. A present entry means the category
@@ -92,47 +112,43 @@ import SwiftUI
     }
 
     /// Navigates to a specific content destination by appending it to the
-    /// navigation path.
+    /// current category's navigation path.
     /// - Parameter content: The content destination to navigate to (album or
     ///                      artist).
     func navigate(to content: ContentDestination) {
-        if let last = pathContents.last, last == content {
+        if let last = pathContents[category]?.last, last == content {
             return
         }
 
         path.append(content)
-        pathContents.append(content)
+        pathContents[category, default: []].append(content)
     }
 
-    /// Removes the last item from the navigation path, effectively going back
-    /// one level. If the path is already empty, this method does nothing.
+    /// Removes the last item from the current category's navigation path,
+    /// effectively going back one level. If the path is already empty, this
+    /// method does nothing.
     func goBack() {
         guard !path.isEmpty else {
             return
         }
 
         path.removeLast()
-        if !pathContents.isEmpty {
-            pathContents.removeLast()
-        }
     }
 
-    /// Resets the navigation path to an empty state, returning to the root of
-    /// the current category.
-    func reset() {
+    /// Pops the current category's navigation path back to its root.
+    func popToRoot() {
         path = NavigationPath()
-        pathContents = []
     }
 
-    /// Synchronizes the pathContents array with the actual NavigationPath
-    /// count. This ensures our tracking stays in sync when SwiftUI modifies the
-    /// path directly (e.g., via the back button).
-    private func syncPathContents() {
-        let currentCount = path.count
-        let trackedCount = pathContents.count
+    /// Synchronizes a category's tracked content destinations with its actual
+    /// `NavigationPath` count. This ensures the tracking stays in sync when
+    /// SwiftUI modifies the path directly (e.g., via the back button).
+    private func syncPathContents(for category: CategoryDestination) {
+        let currentCount = paths[category]?.count ?? 0
+        let tracked = pathContents[category] ?? []
 
-        if currentCount < trackedCount {
-            pathContents = Array(pathContents.prefix(currentCount))
+        if currentCount < tracked.count {
+            pathContents[category] = Array(tracked.prefix(currentCount))
         }
     }
 }
