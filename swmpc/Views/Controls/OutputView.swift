@@ -130,14 +130,13 @@ struct OutputView: View {
                             Spacer()
 
                             if let server = serverManager.selectedServer {
-                                Toggle("", isOn: Binding(
-                                    get: { mpd.streaming.state != .stopped },
-                                    set: { _ in mpd.streaming.toggleStreaming(from: server) },
-                                ))
-                                .labelsHidden()
-                                .toggleStyle(.switch)
-                                .controlSize(.mini)
-                                .disabled(!mpd.outputs.httpd.contains { $0.isEnabled })
+                                @Bindable var streaming = mpd.streaming
+
+                                Toggle("", isOn: $streaming[isStreamingFrom: server])
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                                    .controlSize(.mini)
+                                    .disabled(!mpd.outputs.httpd.contains { $0.isEnabled })
                             }
                         }
 
@@ -180,6 +179,8 @@ private struct OutputRow: View {
     }
 
     var body: some View {
+        @Bindable var outputs = mpd.outputs
+
         HStack(spacing: Layout.Spacing.medium) {
             Image(systemSymbol: output.isHttpd ? .antennaRadiowavesLeftAndRight : .speakerWave2)
                 .foregroundStyle(.secondary)
@@ -190,21 +191,10 @@ private struct OutputRow: View {
 
             Spacer()
 
-            Toggle("", isOn: Binding(
-                get: { output.isEnabled },
-                set: { _ in
-                    Task(priority: .userInitiated) {
-                        try? await ConnectionManager.command {
-                            try await $0.toggleOutput(output)
-                        }
-
-                        try? await mpd.outputs.set(idle: false)
-                    }
-                },
-            ))
-            .labelsHidden()
-            .toggleStyle(.switch)
-            .controlSize(.mini)
+            Toggle("", isOn: $outputs[isEnabled: output])
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
         }
     }
 }

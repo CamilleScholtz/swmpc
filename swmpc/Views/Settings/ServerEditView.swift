@@ -115,7 +115,7 @@ struct ServerEditView: View {
                     .autocapitalization(.none)
                     .keyboardType(.URL)
                 #endif
-                TextField("Port", value: $port, formatter: NumberFormatter())
+                TextField("Port", value: $port, format: .number.grouping(.never))
                 #if os(iOS)
                     .keyboardType(.numberPad)
                 #endif
@@ -148,7 +148,7 @@ struct ServerEditView: View {
             }
 
             Section {
-                TextField("Port", value: $streamingPort, formatter: NumberFormatter())
+                TextField("Port", value: $streamingPort, format: .number.grouping(.never))
                 #if os(iOS)
                     .keyboardType(.numberPad)
                 #endif

@@ -118,7 +118,7 @@ struct AlbumSongsView: View {
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
-                                Button(String(localized: "Copy Artist Name"), systemSymbol: .documentOnDocument) {
+                                Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
                                     album.artist.name.copyToClipboard()
                                 }
                             }
@@ -228,7 +228,7 @@ struct AlbumSongsView: View {
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
-                                Button(String(localized: "Copy Artist Name"), systemSymbol: .documentOnDocument) {
+                                Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
                                     album.artist.name.copyToClipboard()
                                 }
                             }

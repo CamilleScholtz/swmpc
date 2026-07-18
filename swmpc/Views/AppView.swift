@@ -41,7 +41,7 @@ struct AppView: View {
                     #if os(iOS)
                         TabView(selection: $navigator.category) {
                             ForEach(CategoryDestination.categories) { category in
-                                Tab(String(localized: category.label), systemSymbol: category.symbol, value: category) {
+                                Tab(value: category) {
                                     NavigationStack(path: $navigator.path) {
                                         CategoryDestinationView()
                                             .navigationDestination(for: ContentDestination.self) { destination in
@@ -50,6 +50,12 @@ struct AppView: View {
                                     }
                                     .overlay {
                                         LoadingView()
+                                    }
+                                } label: {
+                                    Label {
+                                        Text(category.label)
+                                    } icon: {
+                                        Image(systemSymbol: category.symbol)
                                     }
                                 }
                             }

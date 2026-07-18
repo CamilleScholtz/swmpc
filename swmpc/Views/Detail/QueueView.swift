@@ -17,31 +17,29 @@ struct QueueView: View {
     @Environment(MPD.self) private var mpd
 
     var body: some View {
-        Group {
-            #if os(iOS)
-                Group {
-                    QueueHeaderView()
-                        .listRowSeparator(.visible)
-                        .listRowInsets(.horizontal, Layout.Padding.large)
+        #if os(iOS)
+            Group {
+                QueueHeaderView()
+                    .listRowSeparator(.visible)
+                    .listRowInsets(.horizontal, Layout.Padding.large)
 
-                    if mpd.queue.songs.isEmpty {
-                        EmptyQueueView()
-                            .mediaRowStyle()
-                    } else {
-                        MediaList()
-                    }
+                if mpd.queue.songs.isEmpty {
+                    EmptyQueueView()
+                        .mediaRowStyle()
+                } else {
+                    MediaList()
                 }
-            #elseif os(macOS)
-                VStack(spacing: 0) {
-                    if mpd.queue.songs.isEmpty {
-                        EmptyQueueView()
-                    } else {
-                        MediaList()
-                    }
+            }
+        #elseif os(macOS)
+            VStack(spacing: 0) {
+                if mpd.queue.songs.isEmpty {
+                    EmptyQueueView()
+                } else {
+                    MediaList()
                 }
-                .background(.background)
-            #endif
-        }
+            }
+            .background(.background)
+        #endif
     }
 }
 

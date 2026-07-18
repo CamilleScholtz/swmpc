@@ -162,7 +162,7 @@ struct IntelligenceView: View {
                     .keyboardShortcut(.cancelAction)
                     .help("Cancel and close")
 
-                    AsyncButton(String(localized: actionButtonTitle), role: .confirm) {
+                    AsyncButton(role: .confirm) {
                         isLoading = true
                         error = nil
 
@@ -174,6 +174,8 @@ struct IntelligenceView: View {
                         }
 
                         isLoading = false
+                    } label: {
+                        Text(actionButtonTitle)
                     }
                     .buttonStyle(.borderedProminent)
                     .asyncButtonStyle(.pulse)

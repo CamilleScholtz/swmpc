@@ -11,7 +11,7 @@ import Foundation
 ///
 /// Outputs are audio destinations that MPD can send audio to, such as speakers,
 /// files, or HTTP streams. Each output has a unique ID, name, and plugin type.
-public nonisolated struct Output: Identifiable, Sendable {
+public nonisolated struct Output: Identifiable, Equatable, Hashable, Sendable {
     /// The unique identifier for this output.
     public let id: Int
 

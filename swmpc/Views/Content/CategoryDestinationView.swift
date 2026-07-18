@@ -124,7 +124,7 @@ private struct CategoryDatabaseView: View {
         .toolbar {
             if isSearchFieldExpanded {
                 ToolbarItem {
-                    TextField("Search \(String(localized: navigator.category.label).lowercased())", text: $searchQuery)
+                    TextField("Search \(String(localized: navigator.category.label).localizedLowercase)", text: $searchQuery)
                     #if os(macOS)
                         .frame(width: 195.5)
                         .focusEffectDisabled()
@@ -601,7 +601,7 @@ private struct EmptyCategoryView: View {
         VStack {
             switch destination {
             case .albums, .artists, .songs:
-                Text("No \(String(localized: destination.label).lowercased()) in library.")
+                Text("No \(String(localized: destination.label).localizedLowercase) in library.")
                     .font(.headline)
 
                 Text("Add songs to your library.")

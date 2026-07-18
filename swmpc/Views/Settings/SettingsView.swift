@@ -26,19 +26,25 @@ struct SettingsView: View {
         @State private var selection: SettingCategory = .connections
     #endif
 
-    private enum SettingCategory: String, Identifiable {
-        case connections = "Connections"
+    private enum SettingCategory: Identifiable {
+        case connections
         #if os(macOS)
-            case behavior = "Behavior"
+            case behavior
         #endif
-        case intelligence = "Intelligence"
+        case intelligence
 
         var id: Self {
             self
         }
 
-        var title: String {
-            rawValue
+        var title: LocalizedStringResource {
+            switch self {
+            case .connections: "Connections"
+            #if os(macOS)
+                case .behavior: "Behavior"
+            #endif
+            case .intelligence: "Intelligence"
+            }
         }
 
         #if os(iOS)
@@ -83,10 +89,14 @@ struct SettingsView: View {
                 List {
                     ForEach(SettingCategory.allCases) { category in
                         NavigationLink(destination: category.view
-                            .navigationTitle(category.title)
+                            .navigationTitle(Text(category.title))
                             .navigationBarTitleDisplayMode(.inline))
                         {
-                            Label(category.title, systemSymbol: category.image)
+                            Label {
+                                Text(category.title)
+                            } icon: {
+                                Image(systemSymbol: category.image)
+                            }
                         }
                     }
 
@@ -105,10 +115,16 @@ struct SettingsView: View {
         #elseif os(macOS)
             TabView(selection: $selection) {
                 ForEach(SettingCategory.allCases) { category in
-                    Tab(category.title, systemSymbol: category.image, value: category) {
+                    Tab(value: category) {
                         category.view
                             .formStyle(.grouped)
-                            .navigationTitle(category.title)
+                            .navigationTitle(Text(category.title))
+                    } label: {
+                        Label {
+                            Text(category.title)
+                        } icon: {
+                            Image(systemSymbol: category.image)
+                        }
                     }
                 }
             }

@@ -45,7 +45,11 @@ struct SidebarView: View {
 
             ForEach(CategoryDestination.categories) { category in
                 NavigationLink(value: category) {
-                    Label(String(localized: category.label), systemSymbol: category.symbol)
+                    Label {
+                        Text(category.label)
+                    } icon: {
+                        Image(systemSymbol: category.symbol)
+                    }
                 }
                 .keyboardShortcut(category.shortcut ?? .none)
             }

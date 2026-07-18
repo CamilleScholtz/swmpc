@@ -23,6 +23,21 @@ import Observation
     /// Observer for playback errors.
     @ObservationIgnored private var errorObserver: NSObjectProtocol?
 
+    /// Two-way access to the streaming state, usable as a key path binding
+    /// (`$streaming[isStreamingFrom: server]`).
+    subscript(isStreamingFrom server: Server) -> Bool {
+        get {
+            state != .stopped
+        }
+        set {
+            if newValue {
+                startStreaming(from: server)
+            } else {
+                stopStreaming()
+            }
+        }
+    }
+
     /// Starts streaming audio from the specified server.
     ///
     /// - Parameter server: The server configuration to stream from.

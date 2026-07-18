@@ -22,7 +22,7 @@ struct DetailMiniView: View {
                 .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small / 1.5))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(mpd.status.song?.title ?? "No song playing")
+                Text(mpd.status.song?.title ?? String(localized: "No song playing"))
                     .font(.headline.pointSize(14))
                     .lineLimit(1)
 

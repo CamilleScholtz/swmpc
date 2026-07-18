@@ -275,7 +275,9 @@ struct Delegate: App {
             let menu = NSMenu()
 
             let playPauseItem = NSMenuItem(
-                title: mpd.status.isPlaying ? "Pause" : "Play",
+                title: mpd.status.isPlaying
+                    ? String(localized: "Pause")
+                    : String(localized: "Play"),
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: "",
             )
@@ -284,7 +286,7 @@ struct Delegate: App {
             menu.addItem(playPauseItem)
 
             let nextItem = NSMenuItem(
-                title: "Next song",
+                title: String(localized: "Next Song"),
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: "",
             )
@@ -293,7 +295,7 @@ struct Delegate: App {
             menu.addItem(nextItem)
 
             let previousItem = NSMenuItem(
-                title: "Previous song",
+                title: String(localized: "Previous Song"),
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: "",
             )
@@ -304,7 +306,7 @@ struct Delegate: App {
             menu.addItem(NSMenuItem.separator())
 
             let favoritesItem = NSMenuItem(
-                title: "Add current song to favorites",
+                title: String(localized: "Add Current Song to Favorites"),
                 action: #selector(AppDelegate.handleMenuItemAction(_:)),
                 keyEquivalent: "",
             )

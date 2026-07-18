@@ -22,6 +22,28 @@ import Observation
         outputs.filter(\.isHttpd)
     }
 
+    /// Two-way access to an output's enabled state, usable as a key path
+    /// binding (`$outputs[isEnabled: output]`). Setting the value toggles the
+    /// output on the server and refreshes the outputs list.
+    subscript(isEnabled output: Output) -> Bool {
+        get {
+            outputs.first { $0.id == output.id }?.isEnabled ?? output.isEnabled
+        }
+        set {
+            guard newValue != self[isEnabled: output] else {
+                return
+            }
+
+            Task(priority: .userInitiated) {
+                try? await ConnectionManager.command {
+                    try await $0.toggleOutput(output)
+                }
+
+                try? await self.set(idle: false)
+            }
+        }
+    }
+
     /// Updates the outputs list from the MPD server.
     ///
     /// - Parameter idle: Whether to use the idle connection or a command

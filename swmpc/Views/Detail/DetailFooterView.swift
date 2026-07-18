@@ -24,7 +24,7 @@ struct DetailFooterView: View {
         VStack(alignment: .leading, spacing: Layout.Spacing.small - 0.5) {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(mpd.status.song?.title ?? "No song playing")
+                    Text(mpd.status.song?.title ?? String(localized: "No song playing"))
                     #if os(iOS)
                         .font(.system(size: 21))
                     #elseif os(macOS)

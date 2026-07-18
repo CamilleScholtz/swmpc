@@ -137,13 +137,8 @@ struct AboutView: View {
     }
 
     private func formatDate(_ timestamp: Int) -> String {
-        let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
-        let formatter = DateFormatter()
-
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-
-        return formatter.string(from: date)
+        Date(timeIntervalSince1970: TimeInterval(timestamp))
+            .formatted(date: .abbreviated, time: .shortened)
     }
 }
 

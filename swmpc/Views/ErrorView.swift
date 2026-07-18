@@ -28,26 +28,21 @@ struct ErrorView: View {
                     .font(.headline)
                     .foregroundStyle(.secondary)
 
-                HStack(spacing: 0) {
-                    Text("Please check your ")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Button {
+                // A single string with an inline link, so translators can
+                // reorder the sentence; the link is intercepted below instead
+                // of being opened as a URL.
+                Text("Please check your [connection settings](swmpc://settings) and server.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .environment(\.openURL, OpenURLAction { _ in
                         #if os(iOS)
                             navigator.showSettingsSheet = true
                         #elseif os(macOS)
                             openSettings()
                         #endif
-                    } label: {
-                        Text("connection settings")
-                            .font(.subheadline)
-                            .foregroundStyle(.tint)
-                    }
-                    .buttonStyle(.plain)
-                    Text(" and server.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+
+                        return .handled
+                    })
 
                 if let error = mpd.state.error {
                     Text(error.localizedDescription)
