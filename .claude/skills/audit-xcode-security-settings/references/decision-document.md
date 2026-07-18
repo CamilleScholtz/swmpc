@@ -1,15 +1,16 @@
 # Decision Document
 
-Maintain a persistent `xcode-security-settings.md` that records every setting considered, its status, and the rationale. This file is version-controlled and serves as the single source of truth for security build setting decisions.
+Maintain a persistent `xcode-security-settings.md` that records every setting considered, its status, and the rationale.
+This file is version-controlled and serves as the single source of truth for security build setting decisions.
+All settings must be recorded in the decision document.
 
 ## Step 1: Locate or Create the File
 
-The skill searches for an existing `xcode-security-settings.md` early in the workflow. If found, its path is known.
+The decision document path comes from the plan file approved in Phase 4 (the `Path:` value under the "Decision document" heading).
 
-1. If the file was already found, use that path. Skip to Step 2.
-2. If not found, explain the value of tracking these decisions: "I'd like to create a decision document that records which security settings were enabled, disabled, or deferred, and why. This helps future audits build on past decisions instead of re-evaluating from scratch." Then ask via `AskUserQuestion`: "Where should I place it?" Options: "Project root (next to .xcodeproj)", "docs/ subdirectory", or let the user type a custom path.
-3. Create the file with the initial structure (see Document Structure below).
-4. Add the file to the Xcode project
+1. If a file at the planned path exists, use it. Skip to Step 2.
+2. If it doesn't, create the file at the planned path with the initial structure (see Document Structure below).
+3. Add the file to the Xcode project.
 
 ## Step 2: Merge Decisions
 
@@ -22,8 +23,6 @@ For each setting considered in this run:
 - **Status changed** (e.g., moved from Deferred to Enabled) — move the entry to the correct section. Preserve the old rationale as context (e.g., "Previously deferred because too noisy. Now enabled after codebase cleanup.").
 
 Never remove entries. The document is append/update only.
-
-All settings must be recorded in this document — it is the single source of truth for security build setting decisions.
 
 Sections:
 - **Enabled settings** — settings that are active.

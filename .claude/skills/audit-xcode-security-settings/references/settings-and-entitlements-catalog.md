@@ -27,6 +27,7 @@ Complete catalog of security build settings and entitlements managed by this ski
 |---|---|---|---|
 | `ENABLE_ENHANCED_SECURITY` | `YES` | Enables the Enhanced Security capability (build-setting + entitlements) | See `enhanced-security.md` |
 | `ENABLE_POINTER_AUTHENTICATION` | `YES` | Builds for arm64e pointer signing | Set at project level; override to NO on non-arm64e targets. NO is expected on unsupported platforms. |
+| `ARCHS` | `arm64 arm64e` | Produces a universal binary containing both slices | Set at **target level** on library/framework targets only. Apps stay arm64e-only. See `universal-binaries-for-libraries.md`. |
 
 **Cascaded by `ENABLE_ENHANCED_SECURITY` (do not set manually):**
 

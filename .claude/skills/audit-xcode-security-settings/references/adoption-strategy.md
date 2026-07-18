@@ -38,7 +38,7 @@ These features require active code changes — annotations, pointer type updates
 
 **Action:** Prioritize security-critical code paths first (parsers, network handlers, IPC).
 
-Additionally, consider adopting **C Bounds Safety** (`-fbounds-safety`) as a complementary feature for C codebases — see Xcode's `bounds-safety` skill.
+Additionally, consider adopting **C Bounds Safety** (`-fbounds-safety`) as a complementary feature for C codebases — see the `adopt-c-bounds-safety` skill.
 
 ## Phase 4: Hardware-Dependent Protections
 

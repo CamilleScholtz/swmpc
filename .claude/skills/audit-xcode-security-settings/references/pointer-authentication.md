@@ -60,6 +60,10 @@ Set the flags for each platform your project targets.
 
 For binary SPM dependencies (XCFrameworks), the XCFramework must include an arm64e slice. If it only contains arm64, linking will fail. Contact the dependency vendor for a universal (arm64 + arm64e) build.
 
+## Library and Framework Authors
+
+Pointer authentication is **highly recommended** for libraries and frameworks distributed to other developers (e.g. a Swift Package, CocoaPod, or `.xcframework`). The standard recipe is to ship a **universal binary** — set `ARCHS = "arm64 arm64e"` at target level on each library/framework target — so the resulting binary contains both slices and consumers pick whichever matches their own build. Do not disable pointer authentication on the library to avoid the larger artifact; the size increase is the accepted tradeoff for control-flow integrity in shipped library code, and only one slice is loaded at runtime. See `universal-binaries-for-libraries.md` for the full recipe, qualifying product types, and XCFramework guidance.
+
 ## Platform Availability
 
 **Platforms that support arm64e:**

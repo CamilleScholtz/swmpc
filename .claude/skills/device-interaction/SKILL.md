@@ -11,13 +11,13 @@ DO NOT TRIGGER when: user asks about unit tests only, build-only requests withou
 
 # For the Main Agent
 
-**This is a SUBAGENT skill.** Invoke it via the Agent tool when device verification is needed.
+**This is a SUBAGENT skill.** Invoke it via the Agent tool when device verification is needed. If there is an open session for that work, provide that session identifier to a subagent for exclusive use by that subagent.
 
 ```
 Agent tool:
 - subagent_type: "general-purpose"
 - description: "Verify login feature works"
-- prompt: "Using the device-interaction skill, verify that the login feature works correctly on session <device-interaction-session>. Launch the app, capture screenshot and UI hierarchy, check that the login button is visible and tappable, and report if the implementation is working correctly."
+- prompt: "Using the device-interaction skill, verify that the login feature works correctly on session <session-identifier>. Launch the app, capture screenshot and UI hierarchy, check that the login button is visible and tappable, and report if the implementation is working correctly."
 ```
 
 **After implementing a UI-affecting feature, invoke this skill to verify the implementation works on a device.**
@@ -72,6 +72,8 @@ UIView {{100, 200}, {50, 30}}, center: {125.0, 215.0}
 - `center: {125.0, 215.0}` - calculated center point (best for tapping)
 
 **Always prefer the center coordinates for touch events.**
+
+Warning: Elements marked `isRemoteLeafPlaceholder` do not report child elements — interacting with them requires falling back to screenshot-estimated coordinates.
 
 ## Interaction Command Syntax
 

@@ -18,6 +18,12 @@ Enhanced Security only applies on iOS, macOS, visionOS, and DriverKit, to these 
 - `com.apple.product-type.system-extension`
 - `com.apple.product-type.tool`
 
+## Libraries and Frameworks
+
+Library and framework targets (frameworks, static frameworks, static libraries, dynamic libraries) are deliberately absent from the supported product-type list above — the `com.apple.security.hardened-process` entitlement family applies only to executable targets that run directly on the OS, not to code linked into someone else's executable. The audit therefore skips entitlement edits on these targets.
+
+The build settings cascaded by `ENABLE_ENHANCED_SECURITY = YES`, however, do still benefit library/framework targets — pointer authentication, security compiler warnings, typed allocator support, and C++ stdlib hardening all apply at compile time. **Enable pointer authentication on these targets** and ship a **universal binary** (`ARCHS = "arm64 arm64e"` at target level) so consumers can pick the slice that matches their architecture. Do not skip pointer authentication on a library to avoid the larger artifact: the size increase is the accepted tradeoff for control-flow integrity in shipped library code, and only one slice is loaded at runtime. See `universal-binaries-for-libraries.md` for the full recipe and qualifying product types.
+
 ## Part A — Build Settings
 
 Two settings the audit needs to resolve to `YES` on every supported target:
