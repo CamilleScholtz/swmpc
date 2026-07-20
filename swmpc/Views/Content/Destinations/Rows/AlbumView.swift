@@ -53,11 +53,11 @@ struct AlbumView: View, Equatable {
                     ZStack {
                         ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
                             .frame(width: Layout.RowHeight.album, height: Layout.RowHeight.album)
-                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
+                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small, style: .continuous))
                             .animation(.easeInOut(duration: 0.15), value: artwork != nil)
                             .overlay {
                                 Color.clear
-                                    .glassEffect(.clear, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.small))
+                                    .glassEffect(.clear, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.small, style: .continuous))
                                     .mask {
                                         RadialGradient(
                                             stops: [

@@ -81,7 +81,7 @@ struct SongView: View, Equatable {
             }
             .buttonStyle(.plain)
             #if os(iOS)
-                .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 10))
+                .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 10, style: .continuous))
             #elseif os(macOS)
                 .onHoverWithDebounce(handler: hoverHandler) { hovering in
                     isHovering = hovering
@@ -170,7 +170,7 @@ private struct WaveView: View {
         let normalized = (sin(phase * speed * .pi * 2) + 1) / 2
         let height = low + (high - low) * normalized
 
-        return RoundedRectangle(cornerRadius: 2)
+        return RoundedRectangle(cornerRadius: 2, style: .continuous)
             .fill(.secondary)
             .frame(width: 2, height: height * 12)
     }

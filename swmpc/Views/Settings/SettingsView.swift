@@ -305,7 +305,7 @@ struct SettingsView: View {
                                 onEdit()
                             } label: {
                                 Image(systemSymbol: .infoCircle)
-                                    .font(Font.system(size: 18))
+                                    .font(.title3)
                                     .foregroundStyle(.tint)
                             }
                             .buttonStyle(.plain)

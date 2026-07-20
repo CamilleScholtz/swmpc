@@ -30,7 +30,6 @@ public enum Layout {
         public static let small: CGFloat = 12
         public static let medium: CGFloat = 18
         public static let large: CGFloat = 30
-        public static let rounded: CGFloat = 100
     }
 
     public enum Size {

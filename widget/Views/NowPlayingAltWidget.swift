@@ -51,12 +51,13 @@ struct NowPlayingAltWidgetView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.title)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.headline)
                     .foregroundStyle(.white)
                     .lineLimit(2)
 
                 Text(entry.artist)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.caption)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.white.opacity(0.7))
                     .lineLimit(1)
             }
@@ -66,13 +67,14 @@ struct NowPlayingAltWidgetView: View {
         .overlay(alignment: .topLeading) {
             artworkView
                 .frame(width: 75, height: 75)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(.rect(corners: .concentric(minimum: 12)))
                 .shadow(color: .black.opacity(0.15), radius: 7.5)
                 .padding(15)
         }
         .overlay(alignment: .topTrailing) {
             Image(systemSymbol: .opticaldiscFill)
-                .font(.system(size: 20, weight: .medium))
+                .font(.title3)
+                .fontWeight(.medium)
                 .foregroundStyle(.white)
                 .padding(15)
         }
@@ -94,11 +96,12 @@ struct NowPlayingAltWidgetView: View {
             #endif
         } else {
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
+                ContainerRelativeShape()
                     .fill(.white.opacity(0.2))
 
                 Image(systemSymbol: .musicNote)
-                    .font(.system(size: 24, weight: .medium))
+                    .font(.title2)
+                    .fontWeight(.medium)
                     .foregroundStyle(.white.opacity(0.8))
             }
         }

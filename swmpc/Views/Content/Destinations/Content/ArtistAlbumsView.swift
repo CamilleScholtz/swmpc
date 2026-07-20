@@ -85,7 +85,7 @@ private struct ArtistHeaderView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(artist.name)
-                        .font(.system(size: 18))
+                        .font(.title2)
                         .fontWeight(.semibold)
                         .fontDesign(.rounded)
                         .lineLimit(3)

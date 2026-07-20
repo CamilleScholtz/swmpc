@@ -94,14 +94,14 @@ struct AppView: View {
                             .sheet(item: $navigator.intelligenceTarget) { target in
                                 IntelligenceView(target: target)
                             }
-                            .alert("Clear Queue", isPresented: $navigator.showClearQueueAlert) {
-                                Button("Cancel", role: .cancel) {}
-
+                            .confirmationDialog("Clear Queue", isPresented: $navigator.showClearQueueAlert, titleVisibility: .visible) {
                                 AsyncButton("Clear", role: .destructive) {
                                     try await ConnectionManager.command {
                                         try await $0.clearQueue()
                                     }
                                 }
+
+                                Button("Cancel", role: .cancel) {}
                             } message: {
                                 Text("Are you sure you want to clear the queue?")
                             }
@@ -176,14 +176,14 @@ struct AppView: View {
             mpd.status.stopTrackingElapsed()
         }
         #if os(macOS)
-        .alert("Clear Queue", isPresented: $navigator.showClearQueueAlert) {
-            Button("Cancel", role: .cancel) {}
-
+        .confirmationDialog("Clear Queue", isPresented: $navigator.showClearQueueAlert, titleVisibility: .visible) {
             AsyncButton("Clear", role: .destructive) {
                 try await ConnectionManager.command {
                     try await $0.clearQueue()
                 }
             }
+
+            Button("Cancel", role: .cancel) {}
         } message: {
             Text("Are you sure you want to clear the queue?")
         }

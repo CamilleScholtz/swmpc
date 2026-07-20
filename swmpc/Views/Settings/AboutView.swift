@@ -39,7 +39,7 @@ struct AboutView: View {
                         Image(uiImage: image)
                             .resizable()
                             .frame(width: 64, height: 64)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
                     }
                 #elseif os(macOS)
@@ -150,12 +150,13 @@ private struct StatCard: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemSymbol: symbol)
-                .font(.system(size: 24))
+                .font(.title)
                 .foregroundStyle(.accent)
                 .frame(height: 32)
 
             Text(value ?? "?")
-                .font(.system(size: 20, weight: .semibold))
+                .font(.title3)
+                .fontWeight(.semibold)
                 .monospacedDigit()
 
             Text(label)
@@ -165,7 +166,7 @@ private struct StatCard: View {
         .frame(maxWidth: .infinity)
         .padding()
         .background {
-            RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
+            RoundedRectangle(cornerRadius: Layout.CornerRadius.medium, style: .continuous)
                 .fill(.background.opacity(0.4))
         }
     }
@@ -181,7 +182,7 @@ private struct StatRow: View {
             VStack(alignment: .leading) {
                 HStack(spacing: 12) {
                     Image(systemSymbol: symbol)
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.accent)
                         .frame(width: 20)
@@ -199,7 +200,7 @@ private struct StatRow: View {
         #elseif os(macOS)
             HStack(spacing: 12) {
                 Image(systemSymbol: symbol)
-                    .font(.system(size: 14))
+                    .font(.body)
                     .foregroundStyle(.accent)
                     .frame(width: 20)
 

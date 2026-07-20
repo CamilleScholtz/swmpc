@@ -25,15 +25,15 @@ struct PopoverView: View {
             ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
                 .animation(.easeInOut(duration: 0.2), value: artwork)
                 .frame(width: Layout.Size.artworkWidth)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .overlay {
                     Color.clear
                         .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 20))
                         .mask {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
 
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
                                     .scale(0.8)
                                     .blur(radius: 8)
                                     .blendMode(.destinationOut)

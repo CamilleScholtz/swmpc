@@ -37,6 +37,6 @@ struct PopoverFooterView: View {
             .offset(y: -2)
         }
         .frame(height: Layout.Size.popoverFooterHeight)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium, style: .continuous))
     }
 }

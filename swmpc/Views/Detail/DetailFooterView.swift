@@ -12,6 +12,8 @@ import SwiftUI
 struct DetailFooterView: View {
     @Environment(MPD.self) private var mpd
 
+    @ScaledMetric(relativeTo: .title2) private var titleSize: CGFloat = 19
+
     private var songTitleForClipboard: String? {
         guard let song = mpd.status.song else {
             return nil
@@ -25,11 +27,7 @@ struct DetailFooterView: View {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(mpd.status.song?.title ?? String(localized: "No song playing"))
-                    #if os(iOS)
-                        .font(.system(size: 21))
-                    #elseif os(macOS)
-                        .font(.system(size: 18))
-                    #endif
+                        .font(.system(size: titleSize))
                         .fontWeight(.semibold)
                         .fontDesign(.rounded)
                         .lineLimit(1)
@@ -37,9 +35,9 @@ struct DetailFooterView: View {
                     if let artist = mpd.status.song?.artist {
                         Text(artist)
                         #if os(iOS)
-                            .font(.system(size: 15))
+                            .font(.subheadline)
                         #elseif os(macOS)
-                            .font(.system(size: 13))
+                            .font(.body)
                         #endif
                             .foregroundStyle(.secondary)
                             .lineLimit(1)

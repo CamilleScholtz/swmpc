@@ -44,15 +44,15 @@ struct DetailArtworkView: View, Equatable {
                 ArtworkView(image: artwork?.image)
                     .animation(.easeInOut(duration: 0.3), value: artwork)
                     .frame(width: Layout.Size.artworkWidth)
-                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous))
                     .overlay {
                         Color.clear
                             .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.large))
                             .mask {
                                 ZStack {
-                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous)
 
-                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous)
                                         .scale(0.9)
                                         .blur(radius: 8)
                                         .blendMode(.destinationOut)
@@ -120,7 +120,7 @@ private struct ShadowGradientView: View {
             if let colors {
                 gradientLayer(colors: colors)
                     .mask {
-                        RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                        RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous)
                         #if os(iOS)
                             .frame(width: Layout.Size.artworkWidth * 2, height: artworkHeight * 2)
                         #elseif os(macOS)

@@ -19,27 +19,12 @@ struct OutputView: View {
     @State private var volume: Double = 0
     @State private var percentage = 0.5
 
-    private var volumeSymbol: SFSymbol {
-        let volume = Int(volume)
-
-        if volume == 0 {
-            return .speakerSlashFill
-        } else if volume < 33 {
-            return .speakerFill
-        } else if volume < 66 {
-            return .speakerWave1Fill
-        } else if volume < 100 {
-            return .speakerWave2Fill
-        } else {
-            return .speakerWave3Fill
-        }
-    }
-
     var body: some View {
         Button {
             showPopover.toggle()
         } label: {
-            Image(systemSymbol: volumeSymbol)
+            Image(systemSymbol: volume == 0 ? .speakerSlashFill : .speakerWave3Fill,
+                  variableValue: volume / 100)
                 .foregroundStyle(.tertiary.opacity(0.65))
                 .frame(width: 20, height: 16)
                 .padding(3)
@@ -57,11 +42,10 @@ struct OutputView: View {
                     HStack(spacing: Layout.Spacing.medium) {
                         Text(percentage, format: .percent.precision(.fractionLength(0)))
                         #if os(iOS)
-                            .font(.subheadline.pointSize(12))
+                            .font(.caption)
                         #elseif os(macOS)
                             .font(.subheadline)
                         #endif
-                            .font(.subheadline)
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                             .frame(width: 40)

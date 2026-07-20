@@ -94,14 +94,14 @@ struct PlaylistsView: View {
         .task {
             await loadPlaylistCounts()
         }
-        .alert("Delete Playlist", item: $playlistToDelete) { playlist in
-            Button("Cancel", role: .cancel) {}
-
+        .confirmationDialog("Delete Playlist", item: $playlistToDelete, titleVisibility: .visible) { playlist in
             AsyncButton("Delete", role: .destructive) {
                 try await ConnectionManager.command {
                     try await $0.removePlaylist(playlist)
                 }
             }
+
+            Button("Cancel", role: .cancel) {}
         } message: { playlist in
             Text("Are you sure you want to delete playlist ‘\(playlist.name)’?")
         }

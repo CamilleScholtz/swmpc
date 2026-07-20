@@ -27,6 +27,9 @@ struct IntelligenceView: View {
     @State private var loadingSentence: LocalizedStringResource = "…"
     @State private var colorOffset: CGFloat = 0
 
+    @ScaledMetric(relativeTo: .largeTitle) private var symbolSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .largeTitle) private var loadingSymbolSize: CGFloat = 42
+
     @FocusState private var isFocused: Bool
 
     private let loadingSentences: [LocalizedStringResource] = [
@@ -105,7 +108,7 @@ struct IntelligenceView: View {
             }
 
             Image(systemSymbol: IntelligenceManager.symbol)
-                .font(.system(size: isLoading ? 42 : 28))
+                .font(.system(size: isLoading ? loadingSymbolSize : symbolSize))
                 .foregroundStyle(
                     LinearGradient(
                         colors: colors.map { $0.opacity(0.8) },

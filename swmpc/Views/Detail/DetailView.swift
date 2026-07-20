@@ -80,7 +80,7 @@ struct DetailView: View {
             if showQueuePanel {
                 ToolbarItem {
                     Text("Queue")
-                        .font(.system(size: 15))
+                        .font(.title3)
                         .fontWeight(.semibold)
                         .offset(x: queueTextWidth - 148)
                 }

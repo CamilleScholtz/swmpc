@@ -50,7 +50,7 @@ struct AlbumSongsView: View {
                             }
                         } label: {
                             ArtworkView(image: artwork?.image)
-                                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous))
                                 .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
                                 .frame(width: Self.artworkSize)
                                 .overlay {
@@ -58,9 +58,9 @@ struct AlbumSongsView: View {
                                         .glassEffect(.clear.interactive(), in: .rect(cornerRadius: Layout.CornerRadius.large))
                                         .mask {
                                             ZStack {
-                                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous)
 
-                                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large)
+                                                RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous)
                                                     .scale(0.9)
                                                     .blur(radius: 8)
                                                     .blendMode(.destinationOut)
@@ -70,7 +70,7 @@ struct AlbumSongsView: View {
                                 .overlay {
                                     ZStack(alignment: .bottomLeading) {
                                         Color.clear
-                                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous))
                                             .mask {
                                                 LinearGradient(
                                                     gradient: Gradient(stops: [
@@ -81,7 +81,7 @@ struct AlbumSongsView: View {
                                                     endPoint: .top,
                                                 )
                                             }
-                                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large))
+                                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.large, style: .continuous))
 
                                         HStack(spacing: 5) {
                                             Image(systemSymbol: .playFill)
@@ -93,7 +93,7 @@ struct AlbumSongsView: View {
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 4)
                                         .background(.white)
-                                        .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
+                                        .clipShape(Capsule())
                                         .padding(14)
                                     }
                                     .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
@@ -141,7 +141,7 @@ struct AlbumSongsView: View {
                         ZStack {
                             ZStack(alignment: .bottom) {
                                 ArtworkView(image: artwork?.image)
-                                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
+                                    .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium, style: .continuous))
                                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small, y: 4)
                                     .frame(width: Self.artworkSize)
                                     .overlay {
@@ -149,9 +149,9 @@ struct AlbumSongsView: View {
                                             .glassEffect(.clear, in: .rect(cornerRadius: Layout.CornerRadius.medium))
                                             .mask {
                                                 ZStack {
-                                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
+                                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.medium, style: .continuous)
 
-                                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.medium)
+                                                    RoundedRectangle(cornerRadius: Layout.CornerRadius.medium, style: .continuous)
                                                         .scale(0.9)
                                                         .blur(radius: 8)
                                                         .blendMode(.destinationOut)
@@ -161,7 +161,7 @@ struct AlbumSongsView: View {
                                     .overlay {
                                         ZStack(alignment: .bottomLeading) {
                                             Color.clear
-                                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
+                                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Layout.CornerRadius.medium, style: .continuous))
                                                 .mask {
                                                     LinearGradient(
                                                         gradient: Gradient(stops: [
@@ -172,7 +172,7 @@ struct AlbumSongsView: View {
                                                         endPoint: .top,
                                                     )
                                                 }
-                                                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium))
+                                                .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.medium, style: .continuous))
 
                                             HStack(spacing: 5) {
                                                 Image(systemSymbol: .playFill)
@@ -184,7 +184,7 @@ struct AlbumSongsView: View {
                                             .padding(.horizontal, 10)
                                             .padding(.vertical, 4)
                                             .background(.white)
-                                            .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.rounded))
+                                            .clipShape(Capsule())
                                             .padding(10)
                                         }
                                         .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
@@ -219,7 +219,7 @@ struct AlbumSongsView: View {
 
                         VStack(alignment: .leading, spacing: 3) {
                             Text(album.title)
-                                .font(.system(size: 18))
+                                .font(.title2)
                                 .fontWeight(.semibold)
                                 .fontDesign(.rounded)
                                 .lineLimit(3)
@@ -228,7 +228,7 @@ struct AlbumSongsView: View {
                                 navigator.navigate(to: ContentDestination.artist(album.artist))
                             } label: {
                                 Text(album.artist.name)
-                                    .font(.system(size: 12))
+                                    .font(.callout)
                                     .fontWeight(.semibold)
                                     .lineLimit(2)
                             }

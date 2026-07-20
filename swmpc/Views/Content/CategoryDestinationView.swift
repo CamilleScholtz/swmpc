@@ -491,14 +491,14 @@ struct CategoryPlaylistView: View {
         .onChange(of: playlist) {
             mpd.state.isLoading = true
         }
-        .alert("Replace Queue", isPresented: $showReplaceQueueAlert) {
-            Button("Cancel", role: .cancel) {}
-
+        .confirmationDialog("Replace Queue", isPresented: $showReplaceQueueAlert, titleVisibility: .visible) {
             AsyncButton("Replace", role: .destructive) {
                 try await ConnectionManager.command {
                     try await $0.loadPlaylist(playlist)
                 }
             }
+
+            Button("Cancel", role: .cancel) {}
         } message: {
             Text("Are you sure you want to replace the current queue with this playlist?")
         }

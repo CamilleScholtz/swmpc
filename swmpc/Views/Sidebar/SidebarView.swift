@@ -37,7 +37,7 @@ struct SidebarView: View {
 
         List(selection: $navigator.category) {
             Text("swmpc")
-                .font(.system(size: 18))
+                .font(.title2)
                 .foregroundStyle(.secondary)
                 .fontWeight(.semibold)
                 .fontDesign(.rounded)
@@ -131,14 +131,14 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .toolbar(removing: .sidebarToggle)
-        .alert("Delete Playlist", item: $playlistToDelete) { playlist in
-            Button("Cancel", role: .cancel) {}
-
+        .confirmationDialog("Delete Playlist", item: $playlistToDelete, titleVisibility: .visible) { playlist in
             AsyncButton("Delete", role: .destructive) {
                 try await ConnectionManager.command {
                     try await $0.removePlaylist(playlist)
                 }
             }
+
+            Button("Cancel", role: .cancel) {}
         } message: { playlist in
             Text("Are you sure you want to delete playlist ‘\(playlist.name)’?")
         }
