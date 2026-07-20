@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "xcode": {
+      "type": "stdio",
+      "command": "xcrun",
+      "args": [
+        "mcpbridge"
+      ],
+      "env": {}
+    },
+    "sosumi": {
+      "type": "http",
+      "url": "https://sosumi.ai/mcp"
+    }
+  }
+}

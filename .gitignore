@@ -133,5 +133,5 @@ iOSInjectionProject/
 
 # End of https://www.toptal.com/developers/gitignore/api/swift,xcode,macos
 
-.mcp.json
 AuthKey_*.p8
+.asc_key.p8
