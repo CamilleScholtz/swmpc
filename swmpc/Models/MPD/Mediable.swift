@@ -40,7 +40,8 @@ extension Artworkable where Self: Mediable {
     /// - Throws: An error if the artwork retrieval fails.
     func artwork(fitting pointSize: CGFloat) async throws -> Artwork? {
         guard let (image, hash) = try await ArtworkManager.shared.image(
-            for: file, fitting: pointSize)
+            for: file, fitting: pointSize,
+        )
         else {
             return nil
         }
