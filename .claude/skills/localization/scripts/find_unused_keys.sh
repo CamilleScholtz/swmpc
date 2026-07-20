@@ -1,116 +1,108 @@
 #!/bin/bash
-# Find unused translation keys in swmpc project
-# Handles format specifiers, special characters, and interpolation patterns.
+# Find catalog keys that are not referenced anywhere in the project sources.
+# Handles format specifiers (%@, %lld, …), Swift string-escape forms, and
+# interpolation patterns. Purely textual — it cannot see dynamically built
+# keys, so verify each hit before deleting.
 #
 # Lives at .claude/skills/localization/scripts/find_unused_keys.sh. The project
-# root is resolved from this script's own location so it works from any directory.
+# root is resolved from this script's own location so it works from any
+# directory; the catalog comes from `l10n.sh file` (override with $L10N_FILE).
+
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
-cd "$PROJECT_ROOT"
+FILE="$("$SCRIPT_DIR/l10n.sh" file)"
 
-# Combine all Swift source files into one temp file for searching
-COMBINED=$(mktemp)
-find swmpc widget Packages -name '*.swift' -type f -exec cat {} + > "$COMBINED"
+command -v python3 >/dev/null 2>&1 || { echo "error: python3 is required" >&2; exit 1; }
 
-# Get all keys
-KEYS_FILE=$(mktemp)
-"$SCRIPT_DIR/l10n.sh" keys > "$KEYS_FILE" 2>/dev/null
+python3 - "$FILE" "$PROJECT_ROOT" <<'PY'
+import json
+import os
+import re
+import sys
 
-unused_keys=()
+catalog_path, root = sys.argv[1], sys.argv[2]
 
-while IFS= read -r key; do
-    [ -z "$key" ] && continue
+with open(catalog_path, encoding="utf-8") as f:
+    catalog = json.load(f)
 
-    # 1. Try exact literal match first (handles most keys)
-    if grep -qF "$key" "$COMBINED" 2>/dev/null; then
+keys = [k for k, v in catalog["strings"].items()
+        if v.get("shouldTranslate") is not False]
+stale = {k for k, v in catalog["strings"].items()
+         if v.get("extractionState") == "stale"}
+
+# Directories that never contain app source referencing catalog keys.
+PRUNE = {".build", "DerivedData", "Pods", "Carthage", "node_modules"}
+EXTS = (".swift", ".m", ".mm", ".h", ".storyboard", ".xib", ".intentdefinition")
+
+chunks = []
+for dirpath, dirnames, filenames in os.walk(root):
+    dirnames[:] = [d for d in dirnames
+                   if d not in PRUNE and not d.startswith(".")]
+    for name in filenames:
+        if name.endswith(EXTS):
+            try:
+                with open(os.path.join(dirpath, name),
+                          encoding="utf-8", errors="ignore") as fh:
+                    chunks.append(fh.read())
+            except OSError:
+                pass
+source = "\n".join(chunks)
+
+def swift_escaped(s):
+    """The form a key takes inside a Swift string literal."""
+    return (s.replace("\\", "\\\\").replace('"', '\\"')
+             .replace("\n", "\\n").replace("\t", "\\t"))
+
+def found(fragment):
+    return fragment in source or swift_escaped(fragment) in source
+
+# Placeholders: in code these keys use Swift interpolation ("\(count)"), so
+# only the static segments between placeholders can be matched. Covers printf
+# format specifiers and App Intents parameter placeholders ("${mode}", written
+# in code as "\(\.$mode)").
+SPEC = re.compile(r"%(?:\d+\$)?(?:@|lld|llu|ld|lu|d|u|lf|f|e|g|s|c|\.\d+f)|%%|\$\{[^}]*\}")
+
+unused, unverifiable = [], []
+for key in keys:
+    if found(key):
         continue
-    fi
+    if not SPEC.search(key):
+        unused.append(key)
+        continue
+    segments = [seg.strip() for seg in SPEC.split(key)]
+    segments = [seg for seg in segments if seg]
+    if not segments:
+        # Placeholder-only key like "%lld%%" — nothing textual to match.
+        unverifiable.append(key)
+        continue
+    if all(found(seg) for seg in segments):
+        continue
+    # A single long segment matching is strong evidence the key is used but
+    # assembled with different interpolation around it.
+    if any(len(seg) >= 3 and found(seg) for seg in segments):
+        continue
+    unused.append(key)
 
-    # 2. For keys with format specifiers, the key in code uses Swift interpolation
-    has_specifier=false
-    if echo "$key" | grep -qE '%(@|lld|lf|d|f|s|%%|\d+\$@|\d+\$lld)|\^\['; then
-        has_specifier=true
-    fi
+def annotate(k):
+    return f"{k}\t[also marked stale by Xcode]" if k in stale else k
 
-    if $has_specifier; then
-        # Replace format specifiers with newlines to get static segments
-        cleaned=$(echo "$key" | sed -E 's/%[0-9]*\$?(@|lld|lf|d|f|s)|%%/\n/g' | sed -E 's/\^\[//g')
-
-        # Collect ALL non-empty static segments
-        meaningful_segments=()
-        while IFS= read -r segment; do
-            trimmed=$(echo "$segment" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-            if [ ${#trimmed} -ge 1 ]; then
-                meaningful_segments+=("$trimmed")
-            fi
-        done < <(echo "$cleaned")
-
-        # If we have meaningful segments, check if ALL appear in source
-        # For segments with non-ASCII chars (like ≈), also try Unicode escape forms
-        if [ ${#meaningful_segments[@]} -gt 0 ]; then
-            all_found=true
-            for seg in "${meaningful_segments[@]}"; do
-                if ! grep -qF "$seg" "$COMBINED" 2>/dev/null; then
-                    # Try checking for Unicode escapes of non-ASCII chars
-                    # Convert non-ASCII chars to \u{XXXX} pattern and search
-                    has_non_ascii=$(echo "$seg" | LC_ALL=C grep -c '[^\x00-\x7F]')
-                    if [ "$has_non_ascii" -gt 0 ]; then
-                        # Non-ASCII char present; likely used via \u{...} escape in source
-                        # Check if ASCII parts of the segment are present
-                        ascii_part=$(echo "$seg" | LC_ALL=C sed 's/[^\x00-\x7F]//g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-                        if [ ${#ascii_part} -ge 1 ] && grep -qF "$ascii_part" "$COMBINED" 2>/dev/null; then
-                            continue  # This segment found via ASCII fallback
-                        fi
-                    fi
-                    all_found=false
-                    break
-                fi
-            done
-            if $all_found; then
-                continue
-            fi
-        fi
-
-        # Fallback: check if the key is purely format specifiers (like "%lld%%")
-        # These appear in code as "\(value)%" - check for )% pattern
-        only_specifiers=$(echo "$key" | sed -E 's/%[0-9]*\$?(@|lld|lf|d|f|s)|%%//g' | sed 's/[[:space:]]//g')
-        if [ -z "$only_specifiers" ]; then
-            # Key is purely format specifiers like "%lld%%"
-            # The %% becomes literal % in output - check for )%" pattern
-            if grep -q ')%"' "$COMBINED" 2>/dev/null; then
-                continue
-            fi
-        fi
-
-        # Fallback: try prefix before first specifier (>= 3 chars)
-        prefix=$(echo "$key" | sed -E 's/(%[0-9]*\$?(@|lld|lf|d|f|s)|%%|\^\[).*//')
-        if [ ${#prefix} -ge 3 ]; then
-            if grep -qF "$prefix" "$COMBINED" 2>/dev/null; then
-                continue
-            fi
-        fi
-
-        # Fallback: try suffix after last specifier (>= 3 chars)
-        suffix=$(echo "$key" | sed -E 's/.*(%[0-9]*\$?(@|lld|lf|d|f|s)|%%|\])//')
-        suffix_trimmed=$(echo "$suffix" | sed 's/^[[:space:]]*//')
-        if [ ${#suffix_trimmed} -ge 3 ]; then
-            if grep -qF "$suffix_trimmed" "$COMBINED" 2>/dev/null; then
-                continue
-            fi
-        fi
-    fi
-
-    # 3. Key not found
-    unused_keys+=("$key")
-
-done < "$KEYS_FILE"
-
-echo "=== UNUSED TRANSLATION KEYS ==="
-echo "Total unused: ${#unused_keys[@]}"
-echo ""
-for k in "${unused_keys[@]}"; do
-    echo "$k"
-done
-
-rm -f "$COMBINED" "$KEYS_FILE"
+print(f"Checked {len(keys)} translatable keys against sources under {root}")
+print()
+if unused:
+    print(f"=== LIKELY UNUSED ({len(unused)}) ===")
+    for k in sorted(unused):
+        print(annotate(k))
+else:
+    print("No unused keys found.")
+if unverifiable:
+    print()
+    print(f"=== UNVERIFIABLE — placeholder-only keys ({len(unverifiable)}) ===")
+    for k in sorted(unverifiable):
+        print(k)
+print()
+print("Note: matching is textual; dynamically built keys "
+      "(e.g. String(localized: someVariable)) are invisible to it.")
+print("Verify each key before removing it with: l10n.sh delete <key>")
+PY

@@ -46,7 +46,7 @@ struct SidebarView: View {
             ForEach(CategoryDestination.categories) { category in
                 NavigationLink(value: category) {
                     Label {
-                        Text(category.label)
+                        category.label
                     } icon: {
                         Image(systemSymbol: category.symbol)
                     }
@@ -140,7 +140,7 @@ struct SidebarView: View {
                 }
             }
         } message: { playlist in
-            Text("Are you sure you want to delete playlist ’\(playlist.name)’?")
+            Text("Are you sure you want to delete playlist ‘\(playlist.name)’?")
         }
     }
 }

@@ -51,7 +51,7 @@ struct AppView: View {
                                     }
                                 } label: {
                                     Label {
-                                        Text(category.label)
+                                        category.label
                                     } icon: {
                                         Image(systemSymbol: category.symbol)
                                     }

@@ -31,31 +31,30 @@ struct SetPlaybackModeIntent: AppIntent, AudioPlaybackIntent {
     var mode: PlaybackMode
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let newState: Bool
-        let modeName: String
+        let dialog: IntentDialog
 
         switch mode {
         case .shuffle:
-            newState = await !(mpd.status.isRandom ?? false)
+            let newState = await !(mpd.status.isRandom ?? false)
             try await ConnectionManager.command {
                 try await $0.random(newState)
             }
-            modeName = "Shuffle"
+            dialog = newState ? IntentDialog("Shuffle enabled") : IntentDialog("Shuffle disabled")
         case .repeat:
-            newState = await !(mpd.status.isRepeat ?? false)
+            let newState = await !(mpd.status.isRepeat ?? false)
             try await ConnectionManager.command {
                 try await $0.repeat(newState)
             }
-            modeName = "Repeat"
+            dialog = newState ? IntentDialog("Repeat enabled") : IntentDialog("Repeat disabled")
         case .consume:
-            newState = await !(mpd.status.isConsume ?? false)
+            let newState = await !(mpd.status.isConsume ?? false)
             try await ConnectionManager.command {
                 try await $0.consume(newState)
             }
-            modeName = "Consume"
+            dialog = newState ? IntentDialog("Consume enabled") : IntentDialog("Consume disabled")
         }
 
-        return .result(dialog: IntentDialog("\(modeName) \(newState ? "enabled" : "disabled")"))
+        return .result(dialog: dialog)
     }
 
     static let openAppWhenRun: Bool = false

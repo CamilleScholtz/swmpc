@@ -219,16 +219,16 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         }
     }
 
-    /// The localized display label for this category destination.
-    var label: LocalizedStringResource {
+    /// The display label for this category destination. Fixed categories are
+    /// localized; playlist names are user data and shown verbatim.
+    var label: Text {
         switch self {
-        case .albums: "Albums"
-        case .artists: "Artists"
-        case .songs: "Songs"
-        case let .playlist(playlist): LocalizedStringResource(stringLiteral:
-                playlist.name)
+        case .albums: Text("Albums")
+        case .artists: Text("Artists")
+        case .songs: Text("Songs")
+        case let .playlist(playlist): Text(verbatim: playlist.name)
         #if os(iOS)
-            case .playlists: "Playlists"
+            case .playlists: Text("Playlists")
         #endif
         }
     }

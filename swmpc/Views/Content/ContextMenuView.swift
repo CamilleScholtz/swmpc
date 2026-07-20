@@ -48,19 +48,17 @@ struct ContextMenuView<Media: Mediable>: View {
     }
 
     private var playlistMenuTitle: String {
-        let mediaType = switch media {
-        case is Song: String(localized: "Song")
-        case is Album: String(localized: "Album")
-        case is Artist: String(localized: "Artist")
+        switch media {
+        case is Song: String(localized: "Add or Remove Song from Playlist")
+        case is Album: String(localized: "Add or Remove Album from Playlist")
+        case is Artist: String(localized: "Add or Remove Artist from Playlist")
         default: ""
         }
-
-        return String(localized: "Add or Remove \(mediaType) from Playlist")
     }
 
     var body: some View {
         if source != .database {
-            SourceToggleButton(media: media, source: source, forceAction: .remove)
+            SourceToggleButton(media: media, source: source, forceRemove: true)
         } else {
             SourceToggleButton(media: media, source: .queue)
         }
@@ -104,54 +102,13 @@ private struct SourceToggleButton<Media: Mediable>: View {
 
     let media: Media
     let source: Source
-    var forceAction: SourceToggleButtonAction?
+    var forceRemove = false
     var title: String?
-
-    enum SourceToggleButtonAction {
-        case add
-        case remove
-    }
-
-    private var mediaTypeName: LocalizedStringResource {
-        switch media {
-        case is Album: "Album"
-        case is Artist: "Artist"
-        case is Song: "Song"
-        default: LocalizedStringResource(stringLiteral: "")
-        }
-    }
-
-    private var sourceName: LocalizedStringResource {
-        switch source {
-        case .queue: "Queue"
-        case .favorites: "Favorites"
-        case let .playlist(playlist): LocalizedStringResource(stringLiteral: playlist.name)
-        default: LocalizedStringResource(stringLiteral: "")
-        }
-    }
-
-    private var action: LocalizedStringResource {
-        if let forceAction {
-            switch forceAction {
-            case .add: "Add"
-            case .remove: "Remove"
-            }
-        } else {
-            "Add or Remove"
-        }
-    }
 
     private var symbol: SFSymbol {
         switch source {
         case .queue:
-            if let forceAction {
-                switch forceAction {
-                case .add: .plusCircle
-                case .remove: .minusCircle
-                }
-            } else {
-                .musicNoteList
-            }
+            forceRemove ? .minusCircle : .musicNoteList
         case .favorites:
             .heart
         case let .playlist(playlist):
@@ -166,11 +123,26 @@ private struct SourceToggleButton<Media: Mediable>: View {
             return title!
         }
 
-        return switch source {
-        case .playlist:
-            String(localized: "\(String(localized: action)) \(String(localized: mediaTypeName)) from Playlist")
-        default:
-            String(localized: "\(String(localized: action)) \(String(localized: mediaTypeName)) from \(String(localized: sourceName))")
+        return switch (media, source, forceRemove) {
+        case (is Song, .queue, false): String(localized: "Add or Remove Song from Queue")
+        case (is Song, .queue, true): String(localized: "Remove Song from Queue")
+        case (is Song, .favorites, false): String(localized: "Add or Remove Song from Favorites")
+        case (is Song, .favorites, true): String(localized: "Remove Song from Favorites")
+        case (is Song, .playlist, false): String(localized: "Add or Remove Song from Playlist")
+        case (is Song, .playlist, true): String(localized: "Remove Song from Playlist")
+        case (is Album, .queue, false): String(localized: "Add or Remove Album from Queue")
+        case (is Album, .queue, true): String(localized: "Remove Album from Queue")
+        case (is Album, .favorites, false): String(localized: "Add or Remove Album from Favorites")
+        case (is Album, .favorites, true): String(localized: "Remove Album from Favorites")
+        case (is Album, .playlist, false): String(localized: "Add or Remove Album from Playlist")
+        case (is Album, .playlist, true): String(localized: "Remove Album from Playlist")
+        case (is Artist, .queue, false): String(localized: "Add or Remove Artist from Queue")
+        case (is Artist, .queue, true): String(localized: "Remove Artist from Queue")
+        case (is Artist, .favorites, false): String(localized: "Add or Remove Artist from Favorites")
+        case (is Artist, .favorites, true): String(localized: "Remove Artist from Favorites")
+        case (is Artist, .playlist, false): String(localized: "Add or Remove Artist from Playlist")
+        case (is Artist, .playlist, true): String(localized: "Remove Artist from Playlist")
+        default: ""
         }
     }
 
@@ -211,11 +183,7 @@ private struct SourceToggleButton<Media: Mediable>: View {
 
             let existingFiles = Set(existingSongs.map(\.file))
 
-            let shouldRemove: Bool = if let forceAction {
-                forceAction == .remove
-            } else {
-                songs.contains(where: { existingFiles.contains($0.file) })
-            }
+            let shouldRemove = forceRemove || songs.contains(where: { existingFiles.contains($0.file) })
 
             if shouldRemove {
                 try await ConnectionManager.command {

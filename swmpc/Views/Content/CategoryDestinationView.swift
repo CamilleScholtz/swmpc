@@ -44,7 +44,7 @@ struct CategoryDestinationView: View {
             }
         }
         #if os(iOS)
-        .navigationTitle(isSearchFieldExpanded ? "" : navigator.category.label)
+        .navigationTitle(isSearchFieldExpanded ? Text(verbatim: "") : navigator.category.label)
         .navigationBarTitleDisplayMode(.inline)
         #elseif os(macOS)
         .navigationTitle(navigator.category.label)
@@ -105,6 +105,15 @@ private struct CategoryDatabaseView: View {
         }
     }
 
+    private var searchPrompt: String {
+        switch navigator.category {
+        case .albums: String(localized: "Search albums")
+        case .artists: String(localized: "Search artists")
+        case .songs: String(localized: "Search songs")
+        default: String(localized: "Search")
+        }
+    }
+
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
@@ -124,7 +133,7 @@ private struct CategoryDatabaseView: View {
         .toolbar {
             if isSearchFieldExpanded {
                 ToolbarItem {
-                    TextField("Search \(String(localized: navigator.category.label).localizedLowercase)", text: $searchQuery)
+                    TextField(searchPrompt, text: $searchQuery)
                     #if os(macOS)
                         .frame(width: 195.5)
                         .focusEffectDisabled()
@@ -597,11 +606,19 @@ private struct MediaListView: View {
 private struct EmptyCategoryView: View {
     let destination: CategoryDestination
 
+    private var emptyLibraryTitle: LocalizedStringResource {
+        switch destination {
+        case .albums: "No albums in library."
+        case .artists: "No artists in library."
+        default: "No songs in library."
+        }
+    }
+
     var body: some View {
         VStack {
             switch destination {
             case .albums, .artists, .songs:
-                Text("No \(String(localized: destination.label).localizedLowercase) in library.")
+                Text(emptyLibraryTitle)
                     .font(.headline)
 
                 Text("Add songs to your library.")

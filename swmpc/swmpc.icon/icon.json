@@ -1,4 +1,8 @@
 {
+  "features" : [
+    "refractivity",
+    "specular-location"
+  ],
   "fill" : {
     "linear-gradient" : [
       "srgb:0.98824,0.70196,0.00000,1.00000",
@@ -7,10 +11,11 @@
   },
   "groups" : [
     {
-      "blur-material" : 1,
+      "blur-material" : null,
       "hidden" : false,
       "layers" : [
         {
+          "glass" : true,
           "hidden" : false,
           "image-name" : "12.png",
           "name" : "Disk",
@@ -23,14 +28,19 @@
           }
         }
       ],
+      "refractivity" : {
+        "depth" : 0.50046875,
+        "enabled" : true,
+        "strength" : -0.5269921875
+      },
       "shadow" : {
         "kind" : "layer-color",
         "opacity" : 0.36
       },
-      "specular" : true,
+      "specular" : "inside",
       "translucency" : {
         "enabled" : true,
-        "value" : 0.55
+        "value" : 0.23
       }
     }
   ],

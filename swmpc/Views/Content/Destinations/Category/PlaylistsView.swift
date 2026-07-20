@@ -103,7 +103,7 @@ struct PlaylistsView: View {
                 }
             }
         } message: { playlist in
-            Text("Are you sure you want to delete playlist '\(playlist.name)'?")
+            Text("Are you sure you want to delete playlist ‘\(playlist.name)’?")
         }
         .toolbar {
             ToolbarItem {
