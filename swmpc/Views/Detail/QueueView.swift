@@ -96,16 +96,14 @@ private struct MediaList: View {
 
     var body: some View {
         #if os(iOS)
+            // The matching `.reorderContainer` lives on the `List` in
+            // `AppView` that hosts this `ForEach`.
             ForEach(mpd.queue.songs, id: \.id) { song in
                 SongView(for: song, source: .queue)
                     .equatable()
                     .mediaRowStyle()
             }
-            .onMove { indices, destination in
-                Task {
-                    await handleReorder(indices: indices, destination: destination)
-                }
-            }
+            .reorderable()
         #elseif os(macOS)
             List {
                 ForEach(mpd.queue.songs, id: \.id) { song in
@@ -113,10 +111,11 @@ private struct MediaList: View {
                         .equatable()
                         .mediaRowStyle()
                 }
-                .onMove { indices, destination in
-                    Task {
-                        await handleReorder(indices: indices, destination: destination)
-                    }
+                .reorderable()
+            }
+            .reorderContainer(for: Song.self) { difference in
+                Task {
+                    await difference.perform(on: mpd.queue.songs, in: .queue)
                 }
             }
             .mediaListStyle()
@@ -131,23 +130,6 @@ private struct MediaList: View {
                 scrollTarget = ScrollTarget(id: song.id, animated: false)
             }
         #endif
-    }
-
-    private func handleReorder(indices: IndexSet, destination: Int) async {
-        guard let index = indices.first else {
-            return
-        }
-
-        let songs = mpd.queue.songs
-        guard index < songs.count else {
-            return
-        }
-
-        let song = songs[index]
-
-        try? await ConnectionManager.command {
-            try await $0.move(song, to: destination, in: .queue)
-        }
     }
 }
 

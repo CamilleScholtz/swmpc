@@ -57,9 +57,19 @@ struct ArtistImageView: View {
                         .foregroundStyle(.secondary)
 
                     if let url {
-                        artistImage(for: url)
-                            .frame(width: size, height: size)
-                            .clipShape(Circle())
+                        AsyncImage(request: URLRequest(
+                            url: url,
+                            cachePolicy: .returnCacheDataElseLoad,
+                        )) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            Color.clear
+                        }
+                        .asyncImageURLSession(Self.imageSession)
+                        .frame(width: size, height: size)
+                        .clipShape(Circle())
                     }
 
                     Color.clear
@@ -81,33 +91,5 @@ struct ArtistImageView: View {
             .task(id: artist, priority: .medium) {
                 url = await ArtistArtworkManager.shared.info(for: artist)?.url
             }
-    }
-
-    /// The remote artist image. On OS 26 the request-based `AsyncImage` and
-    /// the dedicated cache session are unavailable, so images fall back to the
-    /// shared `URLCache`.
-    @ViewBuilder
-    private func artistImage(for url: URL) -> some View {
-        if #available(iOS 27.0, macOS 27.0, *) {
-            AsyncImage(request: URLRequest(
-                url: url,
-                cachePolicy: .returnCacheDataElseLoad,
-            )) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Color.clear
-            }
-            .asyncImageURLSession(Self.imageSession)
-        } else {
-            AsyncImage(url: url) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Color.clear
-            }
-        }
     }
 }

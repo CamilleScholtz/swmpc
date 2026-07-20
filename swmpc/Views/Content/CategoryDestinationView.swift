@@ -46,6 +46,7 @@ struct CategoryDestinationView: View {
         #if os(iOS)
         .navigationTitle(isSearchFieldExpanded ? Text(verbatim: "") : navigator.category.label)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarMinimizeBehavior(.onScrollDown, for: .navigationBar)
         #elseif os(macOS)
         .navigationTitle(navigator.category.label)
         .toolbar(removing: isSearchFieldExpanded ? .title : nil)
@@ -422,12 +423,14 @@ struct CategoryPlaylistView: View {
                         SongView(for: song, source: navigator.category.source)
                             .equatable()
                     }
-                    .onMove { indices, destination in
-                        Task {
-                            await handleReorder(indices: indices, destination: destination)
-                        }
-                    }
+                    .reorderable()
                     .mediaRowStyle()
+                }
+                .reorderContainer(for: Song.self) { difference in
+                    Task {
+                        await difference.perform(on: songs, in: navigator.category.source)
+                        self.songs = try? await mpd.playlists.getSongs(for: playlist)
+                    }
                 }
                 .mediaListStyle(rowHeight: Layout.RowHeight.song)
                 .scrollToItem($scrollTarget)
@@ -535,25 +538,6 @@ struct CategoryPlaylistView: View {
         }
 
         return songs.contains { $0.id == song.id }
-    }
-
-    private func handleReorder(indices: IndexSet, destination: Int) async {
-        guard let index = indices.first,
-              let songs
-        else {
-            return
-        }
-
-        guard index < songs.count else {
-            return
-        }
-
-        let song = songs[index]
-
-        try? await ConnectionManager.command {
-            try await $0.move(song, to: destination, in: navigator.category.source)
-        }
-        self.songs = try? await mpd.playlists.getSongs(for: playlist)
     }
 }
 

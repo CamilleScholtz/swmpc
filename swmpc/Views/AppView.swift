@@ -84,6 +84,11 @@ struct AppView: View {
 
                                 QueueView()
                             }
+                            .reorderContainer(for: Song.self) { difference in
+                                Task {
+                                    await difference.perform(on: mpd.queue.songs, in: .queue)
+                                }
+                            }
                             .mediaListStyle()
                             .navigationTransition(.zoom(sourceID: 1, in: namespace))
                             .sheet(item: $navigator.intelligenceTarget) { target in

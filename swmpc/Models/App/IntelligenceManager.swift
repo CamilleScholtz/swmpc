@@ -394,7 +394,7 @@ nonisolated enum IntelligenceManager {
                 try await $0.add(songs: songs, to: .playlist(playlist))
             }
 
-            NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
+            await NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
         case .queue:
             try await ConnectionManager.command {
                 try await $0.add(songs: songs, to: .queue)
