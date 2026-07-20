@@ -101,17 +101,17 @@ private struct MediaList: View {
             ForEach(mpd.queue.songs, id: \.id) { song in
                 SongView(for: song, source: .queue)
                     .equatable()
-                    .mediaRowStyle()
             }
             .reorderable()
+            .mediaRowStyle()
         #elseif os(macOS)
             List {
                 ForEach(mpd.queue.songs, id: \.id) { song in
                     SongView(for: song, source: .queue)
                         .equatable()
-                        .mediaRowStyle()
                 }
                 .reorderable()
+                .mediaRowStyle()
             }
             .reorderContainer(for: Song.self) { difference in
                 Task {
