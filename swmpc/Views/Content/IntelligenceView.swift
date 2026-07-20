@@ -180,6 +180,7 @@ struct IntelligenceView: View {
                     .buttonStyle(.borderedProminent)
                     .asyncButtonStyle(.pulse)
                     .keyboardShortcut(.defaultAction)
+                    .disabled(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 .padding(.top, Layout.Padding.medium)
             }

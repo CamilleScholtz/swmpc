@@ -15,7 +15,7 @@ import FoundationModels
 @Generable
 private nonisolated struct PrivateCloudComputeResponse {
     /// Array of album names in "Artist - Album" format.
-    @Guide(description: "Album names in 'Artist - Album' format, selected from the user's provided list")
+    @Guide(description: "Album names copied verbatim from the user's provided list, in 'Artist - Album' format, ordered for playback")
     var playlist: [String]
 }
 

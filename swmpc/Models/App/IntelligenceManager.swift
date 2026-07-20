@@ -20,6 +20,8 @@ enum IntelligenceManagerError: LocalizedError {
     case appleIntelligenceUnavailable
     /// The operation timed out.
     case timeout
+    /// None of the albums the model returned exist in the library.
+    case noMatches
 
     var errorDescription: String? {
         switch self {
@@ -31,6 +33,8 @@ enum IntelligenceManagerError: LocalizedError {
             "Apple Intelligence unavailable: Enable Apple Intelligence or select a provider in Settings"
         case .timeout:
             "Request timed out: Try again or check network connection"
+        case .noMatches:
+            "No matching albums found: Try rephrasing the description"
         }
     }
 }
@@ -192,7 +196,7 @@ nonisolated enum IntelligenceProvider: String, Identifiable, CaseIterable {
 @Generable
 nonisolated struct IntelligenceResponse {
     /// Array of album names in "Artist - Album" format.
-    @Guide(description: "Album names in 'Artist - Album' format, selected from the user's provided list")
+    @Guide(description: "Album names copied verbatim from the user's provided list, in 'Artist - Album' format, ordered for playback")
     var playlist: [String]
 }
 
@@ -220,11 +224,19 @@ nonisolated enum IntelligenceManager {
 
     <selection_guidelines>
     - Select 5-20 albums depending on request specificity
-    - Prioritize strong matches over weak connections
+    - Prioritize strong matches over weak connections; if only a few albums truly fit, return just those rather than padding with loose matches
     - For broad requests (e.g., "best albums"): select diverse, highly-regarded works
     - For specific requests (e.g., "ambient electronic from the 90s"): focus tightly on criteria
     - Balance variety with coherence unless the description requires otherwise
+    - The description may be written in any language; interpret it and match against the list regardless of language
     </selection_guidelines>
+
+    <output_rules>
+    - Copy each selected entry verbatim from the list, character for character, including punctuation, dashes, and capitalization
+    - Never invent, translate, or reformat album names, and never include an album that is not in the list
+    - List each album at most once
+    - Order the albums so they flow well when played back to back (e.g., by energy, mood, or era)
+    </output_rules>
     """
 
     /// The currently selected provider, defaulting to Apple Intelligence.
@@ -260,8 +272,10 @@ nonisolated enum IntelligenceManager {
     ///   - target: Destination for generated songs (playlist or queue).
     ///   - prompt: Natural language description of desired playlist.
     /// - Throws: `IntelligenceManagerError.timeout` if operation exceeds 30
-    ///           seconds, an error if the provider is disabled or
-    ///           misconfigured, or connection/command/generation errors.
+    ///           seconds, `IntelligenceManagerError.noMatches` if nothing the
+    ///           model returned exists in the library, an error if the
+    ///           provider is disabled or misconfigured, or
+    ///           connection/command/generation errors.
     static func fill(target: IntelligenceTarget, prompt: String) async throws {
         try await withTimeout(seconds: 30) {
             let provider = currentProvider
@@ -272,12 +286,8 @@ nonisolated enum IntelligenceManager {
                     : IntelligenceManagerError.missingToken
             }
 
-            let albums = try await ConnectionManager.command { manager in
-                if case .playlist = target {
-                    try await manager.loadPlaylist()
-                }
-
-                return try await manager.getAlbums()
+            let albums = try await ConnectionManager.command {
+                try await $0.getAlbums()
             }
 
             // Only sample randomly when the full library is too large to fit.
@@ -316,12 +326,28 @@ nonisolated enum IntelligenceManager {
             }
 
             let songs = try await collectSongs(from: playlist, albums: albums)
+            guard !songs.isEmpty else {
+                throw IntelligenceManagerError.noMatches
+            }
 
             try await addSongs(songs, to: target)
         }
     }
 
-    /// Collects songs from album names in the AI response.
+    /// Normalizes an album description for lookup, forgiving the small
+    /// transcription drift models introduce: casing, diacritics, dash
+    /// variants, and whitespace runs.
+    private static func matchKey(_ description: String) -> String {
+        description
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+            .replacingOccurrences(of: "–", with: "-")
+            .replacingOccurrences(of: "—", with: "-")
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+    }
+
+    /// Collects songs from album names in the AI response, preserving the
+    /// order the model chose and skipping duplicates and unknown albums.
     ///
     /// - Parameters:
     ///   - playlist: Array of album names in "Artist - Album" format.
@@ -331,12 +357,17 @@ nonisolated enum IntelligenceManager {
     private static func collectSongs(from playlist: [String], albums: [Album]) async
         throws -> [Song]
     {
+        let albumsByKey = Dictionary(
+            albums.map { (matchKey($0.description), $0) },
+            uniquingKeysWith: { first, _ in first },
+        )
+
+        var seen = Set<String>()
         var songs: [Song] = []
 
         for albumName in playlist {
-            guard let album = albums.first(where: { $0.description ==
-                    albumName
-            }) else {
+            let key = matchKey(albumName)
+            guard seen.insert(key).inserted, let album = albumsByKey[key] else {
                 continue
             }
 
@@ -348,6 +379,10 @@ nonisolated enum IntelligenceManager {
 
     /// Adds collected songs to the specified target destination.
     ///
+    /// Songs are only added; playback is never started. For the playlist
+    /// target a `.playlistModifiedNotification` is posted so an open playlist
+    /// view reloads its songs (queue changes propagate via idle events).
+    ///
     /// - Parameters:
     ///   - songs: Songs to add.
     ///   - target: Destination (playlist or queue).
@@ -355,10 +390,11 @@ nonisolated enum IntelligenceManager {
     private static func addSongs(_ songs: [Song], to target: IntelligenceTarget) async throws {
         switch target {
         case let .playlist(playlist):
-            try await ConnectionManager.command { manager in
-                try await manager.add(songs: songs, to: .playlist(playlist))
-                try await manager.loadPlaylist(playlist)
+            try await ConnectionManager.command {
+                try await $0.add(songs: songs, to: .playlist(playlist))
             }
+
+            NotificationCenter.default.post(name: .playlistModifiedNotification, object: nil)
         case .queue:
             try await ConnectionManager.command {
                 try await $0.add(songs: songs, to: .queue)
