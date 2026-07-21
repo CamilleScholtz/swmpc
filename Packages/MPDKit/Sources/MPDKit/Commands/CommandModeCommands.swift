@@ -270,8 +270,7 @@ public extension ConnectionManager where Mode == CommandMode {
         case let album as Album:
             songs = try await getSongs(in: album, from: .database)
         case let artist as Artist:
-            let lines = try await run(["find \(filter(key: "artist", value: artist.name))"])
-            songs = try parseArray(lines, as: Song.self)
+            songs = try await getSongs(by: artist)
         case let song as Song:
             songs = [song]
         default:

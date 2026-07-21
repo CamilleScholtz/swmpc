@@ -207,6 +207,10 @@ public extension ConnectionManager {
 
     /// Retrieves songs from the database or queue that match a specific album.
     ///
+    /// Database results are sorted by disc and then track number; MPD's `sort`
+    /// only supports a single tag, so this ordering is applied client-side.
+    /// Queue results keep their queue order.
+    ///
     /// - Parameters:
     ///   - album: The `Album` object for which the songs should be retrieved.
     ///   - source: The source from which to retrieve the songs.
@@ -217,18 +221,44 @@ public extension ConnectionManager {
     func getSongs(in album: Album, from source: Source) async throws -> [Song] {
         let filters = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist.name, quote: false)))\""
 
-        let lines = switch source {
+        switch source {
         case .database:
-            try await run(["find \(filters) sort track"])
+            let lines = try await run(["find \(filters)"])
+            return try parseArray(lines, as: Song.self)
+                .sorted { ($0.disc, $0.track) < ($1.disc, $1.track) }
         case .queue:
-            try await run(["playlistfind \(filters)"])
+            let lines = try await run(["playlistfind \(filters)"])
+            return try parseArray(lines, as: Song.self)
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving songs in an album",
             )
         }
+    }
 
-        return try parseArray(lines, as: Song.self)
+    /// Retrieves songs from the database that are performed by a specific
+    /// artist.
+    ///
+    /// Songs are returned album by album in release-date order (matching
+    /// `getAlbums(by:from:)`), with each album's songs sorted by disc and
+    /// then track number. MPD's `sort` only supports a single tag, so the
+    /// disc/track ordering is applied client-side.
+    ///
+    /// - Parameter artist: The `Artist` object for which the songs should be
+    ///                     retrieved.
+    /// - Returns: An array of `Song` objects performed by the specified
+    ///            artist.
+    /// - Throws: An error if the command execution fails or if the response is
+    ///           malformed.
+    func getSongs(by artist: Artist) async throws -> [Song] {
+        let lines = try await run(["find \(filter(key: "artist", value: artist.name)) sort date"])
+        let songs = try parseArray(lines, as: Song.self)
+
+        return OrderedDictionary(grouping: songs, by: \.album.id)
+            .values
+            .flatMap { albumSongs in
+                albumSongs.sorted { ($0.disc, $0.track) < ($1.disc, $1.track) }
+            }
     }
 
     /// Retrieves all playlists.
