@@ -93,6 +93,55 @@ struct AppShortcuts: AppShortcutsProvider {
             shortTitle: "What's Playing",
             systemImageName: "music.note",
         )
+
+        AppShortcut(
+            intent: PlayPlaylistIntent(),
+            phrases: [
+                "Play playlist \(\.$playlist) in \(.applicationName)",
+                "Play \(\.$playlist) in \(.applicationName)",
+                "Put on \(\.$playlist) in \(.applicationName)",
+                "Listen to \(\.$playlist) in \(.applicationName)",
+            ],
+            shortTitle: "Play Playlist",
+            systemImageName: "music.note.list",
+        )
+
+        AppShortcut(
+            intent: SearchAndPlayIntent(),
+            phrases: [
+                "Search and play in \(.applicationName)",
+                "Play something in \(.applicationName)",
+                "Search for music in \(.applicationName)",
+                "Find and play music in \(.applicationName)",
+            ],
+            shortTitle: "Search and Play",
+            systemImageName: "magnifyingglass",
+        )
+
+        AppShortcut(
+            intent: FavoriteSongIntent(),
+            phrases: [
+                "Favorite this song in \(.applicationName)",
+                "Add this song to favorites in \(.applicationName)",
+                "Like this song in \(.applicationName)",
+                "Unfavorite this song in \(.applicationName)",
+                "Remove this song from favorites in \(.applicationName)",
+            ],
+            shortTitle: "Favorite Song",
+            systemImageName: "heart",
+        )
+
+        AppShortcut(
+            intent: GeneratePlaylistIntent(),
+            phrases: [
+                "Generate a playlist in \(.applicationName)",
+                "Make me a playlist in \(.applicationName)",
+                "Create a playlist in \(.applicationName)",
+                "Generate a queue in \(.applicationName)",
+            ],
+            shortTitle: "Generate Playlist",
+            systemImageName: "sparkles",
+        )
     }
 
     static let shortcutTileColor: ShortcutTileColor = .yellow

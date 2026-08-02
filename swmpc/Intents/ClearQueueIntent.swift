@@ -14,7 +14,7 @@ struct ClearQueueIntent: AppIntent, AudioPlaybackIntent {
     static let description = IntentDescription("Clear all songs from the playback queue")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        try await ConnectionManager.command {
+        try await command {
             try await $0.clearQueue()
         }
 

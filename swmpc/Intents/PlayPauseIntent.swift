@@ -14,11 +14,14 @@ struct PlayPauseIntent: AppIntent, AudioPlaybackIntent {
     static let description = IntentDescription("Toggle playback of the current song")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        try await ConnectionManager.command {
-            try await $0.pause(mpd.status.isPlaying)
+        let wasPlaying = try await command {
+            let isPlaying = try await $0.getStatusData().state == .play
+            try await $0.pause(isPlaying)
+
+            return isPlaying
         }
 
-        return await .result(dialog: IntentDialog(mpd.status.isPlaying ? "Paused playback" : "Resumed playback"))
+        return .result(dialog: IntentDialog(wasPlaying ? "Paused playback" : "Resumed playback"))
     }
 
     static let openAppWhenRun: Bool = false

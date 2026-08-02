@@ -27,11 +27,9 @@ struct Delegate: App {
 
     let navigator = NavigationManager()
 
-    #if os(macOS)
-        init() {
-            AppShortcuts.updateAppShortcutParameters()
-        }
-    #endif
+    init() {
+        AppShortcuts.updateAppShortcutParameters()
+    }
 
     var body: some Scene {
         WindowGroup {

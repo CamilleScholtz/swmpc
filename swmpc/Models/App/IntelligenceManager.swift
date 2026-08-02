@@ -271,13 +271,22 @@ nonisolated enum IntelligenceManager {
     /// - Parameters:
     ///   - target: Destination for generated songs (playlist or queue).
     ///   - prompt: Natural language description of desired playlist.
-    /// - Throws: `IntelligenceManagerError.timeout` if operation exceeds 30
-    ///           seconds, `IntelligenceManagerError.noMatches` if nothing the
+    ///   - timeout: Maximum time to wait before cancelling.
+    ///   - onProgress: Called with a completed fraction and a stage
+    ///                 description as the generation advances.
+    /// - Returns: The songs that were added to the target.
+    /// - Throws: `IntelligenceManagerError.timeout` if operation exceeds the
+    ///           timeout, `IntelligenceManagerError.noMatches` if nothing the
     ///           model returned exists in the library, an error if the
     ///           provider is disabled or misconfigured, or
     ///           connection/command/generation errors.
-    static func fill(target: IntelligenceTarget, prompt: String) async throws {
-        try await withTimeout(seconds: 30) {
+    @discardableResult
+    static func fill(target: IntelligenceTarget, prompt: String,
+                     timeout: TimeInterval = 30,
+                     onProgress: (@Sendable (Double, String) -> Void)? = nil)
+        async throws -> [Song]
+    {
+        try await withTimeout(seconds: timeout) {
             let provider = currentProvider
 
             guard isEnabled else {
@@ -285,6 +294,8 @@ nonisolated enum IntelligenceManager {
                     ? IntelligenceManagerError.appleIntelligenceUnavailable
                     : IntelligenceManagerError.missingToken
             }
+
+            onProgress?(0.1, String(localized: "Fetching library"))
 
             let albums = try await ConnectionManager.command {
                 try await $0.getAlbums()
@@ -306,6 +317,8 @@ nonisolated enum IntelligenceManager {
             </available_albums>
             """
 
+            onProgress?(0.3, String(localized: "Choosing albums"))
+
             let playlist: [String]
             if provider == .apple {
                 playlist = try await PrivateCloudCompute.generatePlaylist(
@@ -325,12 +338,18 @@ nonisolated enum IntelligenceManager {
                 playlist = response.content.playlist
             }
 
+            onProgress?(0.7, String(localized: "Collecting songs"))
+
             let songs = try await collectSongs(from: playlist, albums: albums)
             guard !songs.isEmpty else {
                 throw IntelligenceManagerError.noMatches
             }
 
             try await addSongs(songs, to: target)
+
+            onProgress?(1.0, String(localized: "Done"))
+
+            return songs
         }
     }
 

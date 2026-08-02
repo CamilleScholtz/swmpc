@@ -6,6 +6,7 @@
 //
 
 import AppIntents
+import MPDKit
 
 extension AppIntent {
     /// Provides access to the shared MPD instance appropriate for the current
@@ -20,5 +21,18 @@ extension AppIntent {
         #elseif os(macOS)
             AppDelegate.shared!.mpd
         #endif
+    }
+
+    /// Runs an MPD command, converting failures into an error whose message
+    /// Siri can speak, instead of surfacing a technical connection error.
+    func command<T: Sendable>(
+        _ operation: @Sendable (ConnectionManager<CommandMode>) async throws
+            -> T,
+    ) async throws -> T {
+        do {
+            return try await ConnectionManager.command(operation)
+        } catch {
+            throw AppIntentError(description: "Could not reach the MPD server")
+        }
     }
 }

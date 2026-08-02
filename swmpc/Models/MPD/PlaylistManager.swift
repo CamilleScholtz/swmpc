@@ -5,6 +5,8 @@
 //  Created by Camille Scholtz on 20/06/2025.
 //
 
+import AppIntents
+import CoreSpotlight
 import Foundation
 import FoundationModels
 import MPDKit
@@ -151,6 +153,13 @@ private nonisolated enum PlaylistSymbolCandidates {
         }
         self.favorites = favorites
 
+        AppShortcuts.updateAppShortcutParameters()
+
+        Task {
+            try? await CSSearchableIndex.default().indexAppEntities(
+                allPlaylists.map { PlaylistEntity(id: $0.name) })
+        }
+
         Task {
             await assignSymbols()
         }
@@ -263,7 +272,7 @@ extension Playlist {
     /// The SF Symbol shown for this playlist in the UI: a heart for
     /// Favorites, the assigned symbol, or the generic playlist symbol while
     /// none has been assigned yet.
-    var symbol: SFSymbol {
+    nonisolated var symbol: SFSymbol {
         guard name != "Favorites" else {
             return .heart
         }

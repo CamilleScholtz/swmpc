@@ -14,11 +14,12 @@ struct PreviousSongIntent: AppIntent, AudioPlaybackIntent {
     static let description = IntentDescription("Go back to the previous song")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        try await ConnectionManager.command {
+        let song = try await command {
             try await $0.previous()
+            return try await $0.getStatusData().song
         }
 
-        guard let song = await mpd.status.song else {
+        guard let song else {
             return .result(dialog: IntentDialog("Playing previous song"))
         }
 

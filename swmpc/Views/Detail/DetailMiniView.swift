@@ -21,7 +21,7 @@ struct DetailMiniView: View {
         HStack(spacing: Layout.Spacing.small) {
             ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
                 .frame(width: Self.artworkSize, height: Self.artworkSize)
-                .clipShape(.rect(corners: .concentric(minimum: Layout.CornerRadius.small / 1.5)))
+                .clipShape(.rect(corners: .concentric(minimum: .fixed(Layout.CornerRadius.small / 1.5))))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(mpd.status.song?.title ?? String(localized: "No song playing"))

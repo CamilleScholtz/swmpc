@@ -31,27 +31,32 @@ struct SetPlaybackModeIntent: AppIntent, AudioPlaybackIntent {
     var mode: PlaybackMode
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let dialog: IntentDialog
+        let newState = try await command { [mode] connection in
+            let data = try await connection.getStatusData()
 
-        switch mode {
-        case .shuffle:
-            let newState = await !(mpd.status.isRandom ?? false)
-            try await ConnectionManager.command {
-                try await $0.random(newState)
+            switch mode {
+            case .shuffle:
+                let value = !(data.isRandom ?? false)
+                try await connection.random(value)
+                return value
+            case .repeat:
+                let value = !(data.isRepeat ?? false)
+                try await connection.repeat(value)
+                return value
+            case .consume:
+                let value = !(data.isConsume ?? false)
+                try await connection.consume(value)
+                return value
             }
-            dialog = newState ? IntentDialog("Shuffle enabled") : IntentDialog("Shuffle disabled")
-        case .repeat:
-            let newState = await !(mpd.status.isRepeat ?? false)
-            try await ConnectionManager.command {
-                try await $0.repeat(newState)
-            }
-            dialog = newState ? IntentDialog("Repeat enabled") : IntentDialog("Repeat disabled")
-        case .consume:
-            let newState = await !(mpd.status.isConsume ?? false)
-            try await ConnectionManager.command {
-                try await $0.consume(newState)
-            }
-            dialog = newState ? IntentDialog("Consume enabled") : IntentDialog("Consume disabled")
+        }
+
+        let dialog: IntentDialog = switch (mode, newState) {
+        case (.shuffle, true): IntentDialog("Shuffle enabled")
+        case (.shuffle, false): IntentDialog("Shuffle disabled")
+        case (.repeat, true): IntentDialog("Repeat enabled")
+        case (.repeat, false): IntentDialog("Repeat disabled")
+        case (.consume, true): IntentDialog("Consume enabled")
+        case (.consume, false): IntentDialog("Consume disabled")
         }
 
         return .result(dialog: dialog)

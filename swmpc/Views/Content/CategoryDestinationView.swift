@@ -46,7 +46,9 @@ struct CategoryDestinationView: View {
         #if os(iOS)
         .navigationTitle(isSearchFieldExpanded ? Text(verbatim: "") : navigator.category.label)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarMinimizeBehavior(.onScrollDown, for: .navigationBar)
+        // The current iOS 27 beta SDK does not ship toolbarMinimizeBehavior;
+        // restore once it lands.
+        // .toolbarMinimizeBehavior(.onScrollDown, for: .navigationBar)
         #elseif os(macOS)
         .navigationTitle(navigator.category.label)
         .toolbar(removing: isSearchFieldExpanded ? .title : nil)
