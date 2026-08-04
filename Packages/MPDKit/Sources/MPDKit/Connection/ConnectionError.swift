@@ -29,7 +29,7 @@ public enum ConnectionManagerError: LocalizedError, Equatable {
         case .invalidPort:
             "Invalid port provided. Port must be between 1 and 65535."
         case .unsupportedServerVersion:
-            "Unsupported MPD server version. Minimum required version is 0.22."
+            "Unsupported MPD server version. Minimum required version is 0.21."
         case let .connectionFailure(details):
             "Network connection returned an error: \(details)"
         case .connectionUnexpectedClosure:

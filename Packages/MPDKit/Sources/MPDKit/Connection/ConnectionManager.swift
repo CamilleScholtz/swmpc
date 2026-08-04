@@ -157,17 +157,33 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// Ensures that the server version is supported.
     ///
     /// This function checks the version of the MPD server obtained after
-    /// connecting. The minimum supported version is 0.22. If the version is
+    /// connecting. The minimum supported version is 0.21. If the version is
     /// `nil` (not yet known), the check passes.
     ///
     /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is older than the minimum required.
     public func ensureVersionSupported() throws {
-        if let version,
-           version.compare("0.22", options: .numeric) == .orderedAscending
-        {
+        if version != nil, !isVersionAtLeast("0.21") {
             throw ConnectionManagerError.unsupportedServerVersion
         }
+    }
+
+    /// Returns whether the server's protocol version is at least the given
+    /// version.
+    ///
+    /// Use this to gate commands or parameters that require a newer server
+    /// than the minimum supported one. Returns `false` if the version is not
+    /// yet known.
+    ///
+    /// - Parameter minimum: The version to compare against, e.g. `"0.24"`.
+    /// - Returns: `true` if the server version is known and not older than
+    ///            `minimum`.
+    public func isVersionAtLeast(_ minimum: String) -> Bool {
+        guard let version else {
+            return false
+        }
+
+        return version.compare(minimum, options: .numeric) != .orderedAscending
     }
 
     /// Ensures that the client is authenticated with the server.

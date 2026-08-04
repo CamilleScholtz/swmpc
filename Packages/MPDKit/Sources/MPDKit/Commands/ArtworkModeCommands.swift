@@ -20,21 +20,43 @@ public extension ConnectionManager where Mode == ArtworkMode {
     static func artwork<T: Sendable>(_ operation: @Sendable (
         ConnectionManager<ArtworkMode>,
     ) async throws -> T) async throws -> T {
-        try await withConnection(operation)
+        try await withConnection { manager in
+            try await manager.raiseBinaryLimit()
+
+            return try await operation(manager)
+        }
+    }
+
+    /// Raises the server's binary response chunk size from the default 8 KB
+    /// to reduce the number of round trips needed to transfer large artwork.
+    ///
+    /// The `binarylimit` command is only available since MPD 0.22.4; on older
+    /// servers this is a no-op.
+    ///
+    /// - Throws: An error if the command fails on a supporting server.
+    private func raiseBinaryLimit() async throws {
+        guard isVersionAtLeast("0.22.4") else {
+            return
+        }
+
+        try await run(["binarylimit 131072"])
     }
 
     /// Retrieves artwork data with automatic fallback based on the server's
     /// artwork getter configuration.
     ///
     /// This method tries each configured MPD command in order (e.g., albumart
-    /// then readpicture) and returns the first successful result.
+    /// then readpicture) and returns the first successful result. The
+    /// `readpicture` command is only available since MPD 0.22 and is skipped
+    /// on older servers.
     ///
     /// - Parameter file: The file path representing the artwork resource.
     /// - Returns: A `Data` object containing the complete binary artwork data.
     /// - Throws: An error if all configured methods fail to retrieve artwork.
     func getArtworkData(for file: String) async throws -> Data {
-        let commands = ConnectionConfiguration.server?.artworkGetter.commands
-            ?? ["albumart"]
+        let commands = (ConnectionConfiguration.server?.artworkGetter.commands
+            ?? ["albumart"])
+            .filter { $0 != "readpicture" || isVersionAtLeast("0.22") }
         var lastError: Error?
 
         for command in commands {

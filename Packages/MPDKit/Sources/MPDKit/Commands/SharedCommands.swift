@@ -130,6 +130,10 @@ public extension ConnectionManager {
 
     /// Retrieves all albums by a specific artist from the given source.
     ///
+    /// Database results are sorted by release date. Queue results are sorted
+    /// by release date on servers that support it (`playlistfind` only
+    /// supports `sort` since MPD 0.24) and keep their queue order otherwise.
+    ///
     /// - Parameters:
     ///   - artist: The `Artist` to find albums for.
     ///   - source: The source to search within (either `.database` or
@@ -146,7 +150,8 @@ public extension ConnectionManager {
         case .database:
             lines = try await run(["find \(filter(key: "albumartist", value: artist.name)) sort date"])
         case .queue:
-            lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name)) sort date"])
+            let sort = isVersionAtLeast("0.24") ? " sort date" : ""
+            lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))\(sort)"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving albums by artist",
