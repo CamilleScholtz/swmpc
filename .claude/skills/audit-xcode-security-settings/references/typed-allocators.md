@@ -1,15 +1,17 @@
 # Typed Allocators
 
+> **Apple developer documentation:** [Adopting type-aware memory allocation](doc://com.apple.documentation/documentation/Xcode/adopting-type-aware-memory-allocation).
+
 Typed allocator support has two complementary pieces that can be enabled separately but are most effective in combination:
 
-1. **Entitlement (`com.apple.security.hardened-process.hardened-heap`)** — adds extra type-isolation buckets to the allocator at runtime, regardless of compiler settings. This provides baseline type isolation.
+1. **Entitlement ([`com.apple.security.hardened-process.hardened-heap`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.hardened-heap))** — adds extra type-isolation buckets to the allocator at runtime, regardless of compiler settings. This provides baseline type isolation.
 2. **Build settings (`CLANG_ENABLE_C_TYPED_ALLOCATOR_SUPPORT`, `CLANG_ENABLE_CPLUSPLUS_TYPED_ALLOCATOR_SUPPORT`)** — the compiler communicates type information to the allocator, allowing it to do a better job isolating different types and improving protection against use-after-free vulnerabilities.
 
 Both are enabled by default when you add the Enhanced Security capability (the entitlement as a default-ON sub-option, the build settings as cascaded settings).
 
 ## What It Does
 
-When the build settings are enabled, the compiler tracks the intended type of memory allocations. This means that `malloc`, `calloc`, and similar allocator functions produce pointers that carry type information. Combined with the `hardened-heap` entitlement's runtime type-isolation buckets, this makes it harder for an attacker to exploit type confusion vulnerabilities where memory allocated for one type is used as another.
+When the build settings are enabled, the compiler tracks the intended type of memory allocations. This means that `malloc`, `calloc`, and similar allocator functions produce pointers that carry type information. Combined with the `hardened-heap` sub-option's runtime type-isolation buckets, this makes it harder for an attacker to exploit type confusion vulnerabilities where memory allocated for one type is used as another.
 
 ## What Vulnerabilities It Mitigates
 

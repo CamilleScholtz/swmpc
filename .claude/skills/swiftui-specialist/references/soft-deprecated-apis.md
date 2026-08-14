@@ -188,6 +188,7 @@ Generated from: iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0
   - Provide `UTType`s as the `types` instead.
 - `View.statusBarHidden(_ hidden: Bool = true) -> some View` (iOS, macOS, tvOS, watchOS, visionOS)
   - Use .toolbarVisibility(_, for: .statusBar) instead
+  - Note: `ToolbarPlacement.statusBar` is iOS-only. On visionOS the modifier has no effect (visionOS has no status bar) — remove the call instead of suggesting a replacement.
 - `View.statusBar(hidden: Bool) -> some View` (iOS, macOS, tvOS, watchOS, visionOS)
   - Renamed to statusBarHidden(_:)
 - `View.autocapitalization(_ style: UITextAutocapitalizationType) -> some View` (iOS, tvOS, visionOS)

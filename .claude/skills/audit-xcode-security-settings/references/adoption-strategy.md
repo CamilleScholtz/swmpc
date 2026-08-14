@@ -46,7 +46,7 @@ These require specific hardware and OS versions.
 
 | Feature | Requirement | Reference |
 |---------|------------|-----------|
-| **Hardware Memory Tagging** | iPhone 17 family, M5-based Macs/iPads/Vision Pro | `hardware-memory-tagging.md` |
+| **Hardware Memory Tagging** | iPhone/iPad with an A19 chip or later; Mac/Vision Pro with an M5 chip or later | `hardware-memory-tagging.md` |
 
 **Action:**
 1. Enable with soft mode first — this generates simulated crash reports without terminating the app
@@ -65,7 +65,7 @@ Use this to decide which features to prioritize based on your codebase:
 | Has C++ code | All of Phase 1-3, especially C++ Hardening |
 | Processes untrusted input | All features, prioritize bounds checking and memory tagging |
 | Uses Mach IPC | Review runtime restrictions carefully before enabling |
-| Targets MTE-capable hardware (iPhone 17, M5 Macs/iPads/Vision Pro) | Consider hardware memory tagging (start with soft mode) |
+| Targets MTE-capable hardware (iPhone/iPad with A19+, Mac/Vision Pro with M5+) | Consider hardware memory tagging (start with soft mode) |
 | Is a DriverKit extension | All applicable features — elevated privilege means higher stakes |
 
 ## General Principles

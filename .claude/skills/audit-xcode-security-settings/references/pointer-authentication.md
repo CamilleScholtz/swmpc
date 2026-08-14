@@ -2,9 +2,11 @@
 
 Pointer authentication protects against control-flow hijacking attacks by signing pointers with cryptographic metadata and verifying the signatures before use.
 
+> **Apple developer documentation:** [Preparing your app to work with pointer authentication](doc://com.apple.documentation/documentation/Security/preparing-your-app-to-work-with-pointer-authentication).
+
 ## What It Does
 
-When enabled, Xcode builds your app for the **arm64e** architecture and enables pointer authentication. The system:
+When enabled, the build system adds an **arm64e** slice — it appends `arm64e` to `ARCHS_STANDARD` alongside the existing `arm64`, so the target builds both slices — and arm64e enables pointer authentication. The system:
 
 1. Generates signature metadata for pointers your app creates (memory allocation, C++ object construction)
 2. Validates that signatures are unchanged when your app accesses memory through those pointers
@@ -62,7 +64,7 @@ For binary SPM dependencies (XCFrameworks), the XCFramework must include an arm6
 
 ## Library and Framework Authors
 
-Pointer authentication is **highly recommended** for libraries and frameworks distributed to other developers (e.g. a Swift Package, CocoaPod, or `.xcframework`). The standard recipe is to ship a **universal binary** — set `ARCHS = "arm64 arm64e"` at target level on each library/framework target — so the resulting binary contains both slices and consumers pick whichever matches their own build. Do not disable pointer authentication on the library to avoid the larger artifact; the size increase is the accepted tradeoff for control-flow integrity in shipped library code, and only one slice is loaded at runtime. See `universal-binaries-for-libraries.md` for the full recipe, qualifying product types, and XCFramework guidance.
+Pointer authentication is **highly recommended** for libraries and frameworks distributed to other developers (e.g. a Swift Package, CocoaPod, or `.xcframework`). Enabling it already builds a **universal binary** — `arm64e` is appended alongside `arm64`, so the artifact contains both slices and consumers pick whichever matches their own build. For a distributed target, just make sure the shipped (Release) configuration builds the full arch list (`ONLY_ACTIVE_ARCH = NO`); optionally pin `ARCHS = "arm64 arm64e"` at target level as belt-and-suspenders to keep both slices independent of the pointer-authentication cascade. Do not disable pointer authentication on the library to avoid the larger artifact; the size increase is the accepted tradeoff for control-flow integrity in shipped library code, and only one slice is loaded at runtime. See `universal-binaries-for-libraries.md` for the full recipe, qualifying product types, and XCFramework guidance.
 
 ## Platform Availability
 
@@ -71,15 +73,15 @@ Pointer authentication is **highly recommended** for libraries and frameworks di
 - macOS (SDKROOT: `macosx`)
 - visionOS (SDKROOT: `xros`)
 - DriverKit (SDKROOT: `driverkit`)
+- tvOS (SDKROOT: `appletvos`)
+- watchOS (SDKROOT: `watchos`)
+
+Every device platform defines an `arm64e` architecture and carries `arm64` in `ARCHS_STANDARD`, so enabling pointer authentication appends an `arm64e` slice on each of them — the build system treats them identically.
 
 **Platforms that do NOT support arm64e:**
-- watchOS (SDKROOT: `watchos`)
-- tvOS (SDKROOT: `appletvos`)
-- Simulator (any `*simulator` SDKROOT)
+- Simulator (any `*simulator` SDKROOT) — the simulator SDKs define no `arm64e` architecture.
 
-Requires arm64e-capable hardware (A12 chip or later, M1 or later).
-
-When `ENABLE_ENHANCED_SECURITY = YES` cascades `ENABLE_POINTER_AUTHENTICATION = YES` project-wide, targets on non-arm64e platforms need an explicit target-level `ENABLE_POINTER_AUTHENTICATION = NO` override to prevent build failures. Detect via `SDKROOT` or `SUPPORTED_PLATFORMS`.
+When `ENABLE_ENHANCED_SECURITY = YES` cascades `ENABLE_POINTER_AUTHENTICATION = YES` project-wide, `arm64e` is appended to the architecture list for every destination whose `ARCHS_STANDARD` contains `arm64`. This is safe for the Simulator with **no action required**: simulator SDKs define no `arm64e` architecture, so the build system drops `arm64e` from a simulator build's effective architectures automatically. The simulator slice simply builds as `arm64` (plus `x86_64`) without pointer authentication, while device builds still get the `arm64e` slice. Do **not** add an `ENABLE_POINTER_AUTHENTICATION = NO` override for the simulator: it is unnecessary, an unconditional one would also disable pointer authentication on device builds, and the SDK-conditional form (`ENABLE_POINTER_AUTHENTICATION[sdk=*simulator*] = NO`) can't be written by `UpdateTargetBuildSetting` (no conditional support) or entered in Xcode's Build Settings UI anyway.
 
 ## Performance and Stability Impact
 

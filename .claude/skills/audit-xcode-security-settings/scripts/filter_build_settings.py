@@ -10,15 +10,16 @@ import json
 import re
 from pathlib import Path
 
-CATALOG_PATH = (
+REFERENCE_PATH = (
     Path(__file__).resolve().parent.parent
     / "references"
-    / "settings-and-entitlements-catalog.md"
+    / "security-settings-reference.md"
 )
 
-# Settings the script needs that aren't documented in the catalog as security
-# settings but are required to interpret results (target type, SDK, etc.).
-EXTRA_NAMES = ("CODE_SIGN_ENTITLEMENTS", "PRODUCT_TYPE", "SDKROOT", "SUPPORTED_PLATFORMS")
+# Settings the script needs that aren't documented in the security reference
+# as security settings but are required to interpret results (entitlements
+# path, SDK, supported platforms).
+EXTRA_NAMES = ("CODE_SIGN_ENTITLEMENTS", "SDKROOT", "SUPPORTED_PLATFORMS")
 
 # Tokens inside backticks that look like build-setting macro names.
 _NAME_RX = re.compile(r"`([A-Z][A-Z0-9_]{2,})`")
@@ -26,7 +27,7 @@ _NAME_RX = re.compile(r"`([A-Z][A-Z0-9_]{2,})`")
 HARDENED_VALUES = {"YES", "YES_AGGRESSIVE", "YES_ERROR"}
 
 
-def _load_catalog_names(path: Path) -> list[str]:
+def _load_reference_names(path: Path) -> list[str]:
     text = path.read_text()
     names = set(_NAME_RX.findall(text))
     names.update(EXTRA_NAMES)
@@ -35,14 +36,14 @@ def _load_catalog_names(path: Path) -> list[str]:
 
 
 def _default_regex() -> str:
-    return "|".join(re.escape(n) for n in _load_catalog_names(CATALOG_PATH))
+    return "|".join(re.escape(n) for n in _load_reference_names(REFERENCE_PATH))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("saved_file", help="Path to the saved GetTargetBuildSettings JSON")
     parser.add_argument("--regex", default=None,
-                        help="Override the catalog-derived default regex")
+                        help="Override the reference-derived default regex")
     parser.add_argument("--show-overrides", action="store_true",
                         help="Annotate target-level overrides with [target-override]")
     parser.add_argument("--unhardened-only", action="store_true",

@@ -2,6 +2,8 @@
 
 Hardware memory tagging (Memory Integrity Enforcement) uses ARM Memory Tagging Extension (MTE) to detect use-after-free and out-of-bounds memory access at runtime.
 
+> **Apple developer documentation:** entitlement reference for [`com.apple.security.hardened-process.checked-allocations`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.checked-allocations) (and its sub-options [`soft-mode`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.checked-allocations.soft-mode), [`enable-pure-data`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.checked-allocations.enable-pure-data), [`no-tagged-receive`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.checked-allocations.no-tagged-receive)).
+
 ## What It Does
 
 Each memory allocation and pointer receives an embedded **tag** value. When your app accesses memory through a pointer, the hardware checks that the pointer's tag matches the allocation's tag. If the tags don't match — because of a use-after-free, buffer overflow, or other memory corruption — the app crashes instead of performing the unsafe access.
@@ -50,7 +52,7 @@ Remove the `com.apple.security.hardened-process.checked-allocations` entitlement
 
 ## Platform Availability
 
-- **Hardware:** Available on iPhone 17, iPhone 17 Pro, iPhone 17 Pro Max, iPhone 17 Air, M5-based Macs, iPads, and Vision Pro — and subsequent releases.
+- **Hardware:** Available on iPhone and iPad with an A19 chip or later, and Mac and Apple Vision Pro with an M5 chip or later. (The iPhone 17 family is the first A19 generation.)
 
 ## Performance and Stability Impact
 

@@ -2,6 +2,8 @@
 
 Marks regions of memory used by the platform for internal state (such as the dynamic loader) as read-only, preventing tampering.
 
+> **Apple developer documentation:** entitlement reference for [`com.apple.security.hardened-process.dyld-ro`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.dyld-ro).
+
 ## What It Does
 
 Informs the system to mark memory regions in your process that the platform uses for its internal state as **read-only**. This primarily protects the dynamic loader (dyld) internal data structures from being modified by an attacker who has achieved code execution in your process.

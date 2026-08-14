@@ -2,6 +2,8 @@
 
 Adds runtime checks on dynamic libraries your app loads and Mach messages your app receives, preventing common code injection and privilege escalation attacks.
 
+> **Apple developer documentation:** entitlement reference for [`com.apple.security.hardened-process.platform-restrictions-string`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.platform-restrictions-string).
+
 ## What It Does
 
 Informs the system to perform additional checks on:

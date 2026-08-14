@@ -722,6 +722,51 @@ struct ScoreboardView: View {
 }
 ```
 
+You don't need to use a subscript for no-argument projections.
+
+```swift
+@Observable
+final class PlayerModel {
+  /// 0 means paused; any positive value is the playback speed.
+  var rate: Double = 0
+}
+
+// ❌ BAD: A subscript with a marker enum dresses up an argument-less projection.
+// There are no arguments for the projection to depend on, so this is just a
+// computed property with extra ceremony.
+
+/// Marker selecting the play/pause projection on `PlayerModel`.
+private enum PlaybackProjection {
+  case isPlaying
+}
+
+extension PlayerModel {
+  /// Projects whether playback is active. Setting it to `false` pauses by
+  /// zeroing the rate, and `true` resumes at normal speed.
+  fileprivate subscript(playback _: PlaybackProjection) -> Bool {
+    get { rate > 0 }
+    set { rate = newValue ? 1 : 0 }
+  }
+}
+
+@Bindable var model = model
+Toggle("Play", isOn: $model[playback: .isPlaying])
+
+// ✅ GOOD: Just use a boolean property, no need for a subscript.
+
+extension PlayerModel {
+  /// Projects whether playback is active. Setting it to `false` pauses by
+  /// zeroing the rate, and `true` resumes at normal speed.
+  fileprivate var isPlaying: Bool {
+    get { rate > 0 }
+    set { rate = newValue ? 1 : 0 }
+  }
+}
+
+@Bindable var model = model
+Toggle("Play", isOn: $model.isPlaying)
+```
+
 # `@Entry` macro
 
 When defining custom environment, transaction, container, or focused values, always prefer to use `@Entry` to reduce boilerplate code and avoid mistakes.
