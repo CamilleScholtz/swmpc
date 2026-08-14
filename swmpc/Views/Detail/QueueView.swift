@@ -63,6 +63,8 @@ struct QueueView: View {
                             }
                         } label: {
                             Image(systemSymbol: mpd.status.isConsume ?? false ? .flameFill : .flame)
+                                .contentTransition(.symbolEffect(.replace))
+                                .animation(.snappy(duration: 0.25), value: mpd.status.isConsume)
                         }
 
                         if !mpd.queue.songs.isEmpty {

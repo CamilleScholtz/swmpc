@@ -92,6 +92,8 @@ struct DetailView: View {
                             try await $0.consume(!(mpd.status.isConsume ?? false))
                         }
                     }
+                    .contentTransition(.symbolEffect(.replace))
+                    .animation(.snappy(duration: 0.25), value: mpd.status.isConsume)
                 }
 
                 if !mpd.queue.songs.isEmpty {

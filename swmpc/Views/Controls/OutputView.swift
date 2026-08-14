@@ -25,10 +25,12 @@ struct OutputView: View {
         } label: {
             Image(systemSymbol: volume == 0 ? .speakerSlashFill : .speakerWave3Fill,
                   variableValue: volume / 100)
+                .contentTransition(.symbolEffect(.replace))
                 .foregroundStyle(.tertiary.opacity(0.65))
                 .frame(width: 20, height: 16)
                 .padding(3)
                 .offset(y: volume == 0 ? 1 : 0)
+                .animation(.snappy(duration: 0.25), value: volume == 0)
         }
         .buttonStyle(.plain)
         .popover(isPresented: $showPopover) {

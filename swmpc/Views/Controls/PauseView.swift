@@ -30,7 +30,7 @@ struct PauseView: View {
                 .glassEffect(button ? .regular.interactive() : .identity)
                 .contentShape(Circle())
         }
-        .styledButton(hoverScale: 1.2)
+        .styledButton(hoverScale: 1.2, pressScale: button ? 1.0 : 0.9)
         .disabled(mpd.status.song == nil)
         .help(mpd.status.isPlaying ? "Pause playback" : "Resume playback")
     }

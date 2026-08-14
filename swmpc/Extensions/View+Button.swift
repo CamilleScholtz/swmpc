@@ -16,7 +16,10 @@ extension View {
     ///   - hoverScale: The scale factor to apply on hover (macOS only,
     ///                 default: 1.2)
     ///   - pressScale: The scale factor to apply when pressed (default: 0.9,
-    ///                 automatically adjusted by -0.05 on iOS)
+    ///                 automatically adjusted by -0.05 on iOS). Pass `1.0` to
+    ///                 disable the press scale entirely, for content that
+    ///                 already provides its own press response such as an
+    ///                 interactive `glassEffect`.
     ///   - minimumPressDuration: The minimum time the press effect should
     ///                           visually last (default: 0.1 seconds)
     /// - Returns: A view with hover and press effects applied.
@@ -26,7 +29,7 @@ extension View {
         minimumPressDuration: TimeInterval = 0.1,
     ) -> some View {
         #if os(iOS)
-            let pressScale = pressScale - 0.05
+            let pressScale = pressScale < 1.0 ? pressScale - 0.05 : pressScale
         #endif
 
         return modifier(StyledButtonModifier(
@@ -44,10 +47,26 @@ struct PressedButtonStyle: ButtonStyle {
     let scale: CGFloat
     let minimumDuration: TimeInterval
 
+    func makeBody(configuration: Configuration) -> some View {
+        PressedButtonStyleBody(configuration: configuration, scale: scale,
+                               minimumDuration: minimumDuration)
+    }
+}
+
+/// The view body of ``PressedButtonStyle``.
+///
+/// A `ButtonStyle` is not a `View`, so `@State` declared on the style itself is
+/// not installed in the view graph and behaves unreliably. The state lives here
+/// instead, in a real view returned from `makeBody`.
+private struct PressedButtonStyleBody: View {
+    let configuration: PressedButtonStyle.Configuration
+    let scale: CGFloat
+    let minimumDuration: TimeInterval
+
     @State private var isVisuallyPressed: Bool = false
     @State private var pressEndTask: Task<Void, Never>? = nil
 
-    func makeBody(configuration: Configuration) -> some View {
+    var body: some View {
         configuration.label
             .scaleEffect(isVisuallyPressed ? scale : 1.0)
             .animation(.interactiveSpring, value: isVisuallyPressed)

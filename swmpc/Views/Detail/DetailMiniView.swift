@@ -40,6 +40,7 @@ struct DetailMiniView: View {
                 .offset(x: Layout.Spacing.medium)
             NextView(size: 16)
         }
+        .asyncButtonStyle(.pulse)
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .padding(.horizontal, Layout.Padding.large)
