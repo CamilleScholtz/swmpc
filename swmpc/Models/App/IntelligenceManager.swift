@@ -75,6 +75,9 @@ nonisolated enum IntelligenceProvider: String, Identifiable, CaseIterable {
         rawValue
     }
 
+    /// Providers that reach an external API and need user configuration.
+    static let configurable: [IntelligenceProvider] = allCases.filter { $0 != .apple }
+
     /// Display name for the provider.
     var name: String {
         switch self {
