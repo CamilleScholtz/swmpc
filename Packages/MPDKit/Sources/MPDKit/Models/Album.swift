@@ -12,9 +12,11 @@
 public nonisolated struct Album: Mediable {
     /// The unique identifier for the album, which is the artist-title
     /// description.
-    public nonisolated var id: String {
-        description
-    }
+    ///
+    /// Stored rather than computed: equality, hashing, and list row identity
+    /// all go through it, and composing it on every access would allocate a
+    /// string per comparison.
+    public let id: String
 
     /// The file path of the album in the MPD database.
     public let file: String
@@ -31,7 +33,7 @@ public nonisolated struct Album: Mediable {
 
     /// A human-readable description combining artist name and album title.
     public nonisolated var description: String {
-        "\(artist.name) - \(title)"
+        id
     }
 
     /// Creates a new album.
@@ -43,9 +45,27 @@ public nonisolated struct Album: Mediable {
     public init(file: String, title: String, titleSort: String?, artist:
         Artist)
     {
+        id = "\(artist.name) - \(title)"
+
         self.file = file
         self.title = title
         self.titleSort = titleSort
         self.artist = artist
+    }
+
+    /// The coded properties, omitting the derived identifier.
+    private enum CodingKeys: String, CodingKey {
+        case file, title, titleSort, artist
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        let file = try container.decode(String.self, forKey: .file)
+        let title = try container.decode(String.self, forKey: .title)
+        let titleSort = try container.decodeIfPresent(String.self, forKey: .titleSort)
+        let artist = try container.decode(Artist.self, forKey: .artist)
+
+        self.init(file: file, title: title, titleSort: titleSort, artist: artist)
     }
 }
