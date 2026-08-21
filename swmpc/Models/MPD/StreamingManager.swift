@@ -24,9 +24,13 @@ import Observation
     @ObservationIgnored private var errorObserver: NSObjectProtocol?
 
     #if os(iOS)
-        /// Observer for audio session interruptions (phone calls, Siri, other
-        /// apps claiming the session).
-        @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
+        /// Observer for the audio session being deactivated (phone calls,
+        /// Siri, other apps claiming the session).
+        @ObservationIgnored private var deactivationObserver: NSObjectProtocol?
+
+        /// Observer for the system's recommendation on whether to resume after
+        /// a deactivation.
+        @ObservationIgnored private var resumptionObserver: NSObjectProtocol?
 
         /// Observer for audio route changes (e.g. headphones being
         /// disconnected).
@@ -100,30 +104,36 @@ import Observation
         }
 
         #if os(iOS)
-            interruptionObserver = NotificationCenter.default.addObserver(
-                forName: AVAudioSession.interruptionNotification,
+            deactivationObserver = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.didBecomeInactiveNotification,
                 object: AVAudioSession.sharedInstance(),
                 queue: .main,
             ) { [weak self] notification in
-                guard let typeValue = notification.userInfo?[
-                    AVAudioSessionInterruptionTypeKey,
-                ] as? UInt,
-                    let type = AVAudioSession.InterruptionType(rawValue:
-                        typeValue)
+                guard let context = notification.userInfo?[
+                    AVAudioSession.deactivationContextKey,
+                ] as? AVAudioSession.DeactivationContext,
+                    context.source == .system
                 else {
                     return
                 }
 
+                Task { @MainActor [weak self] in
+                    self?.player?.pause()
+                }
+            }
+
+            resumptionObserver = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.resumptionRecommendationNotification,
+                object: AVAudioSession.sharedInstance(),
+                queue: .main,
+            ) { [weak self] notification in
                 let shouldResume = (notification.userInfo?[
-                    AVAudioSessionInterruptionOptionKey,
-                ] as? UInt).map {
-                    AVAudioSession.InterruptionOptions(rawValue: $0)
-                        .contains(.shouldResume)
-                } ?? false
+                    AVAudioSession.resumptionContextKey,
+                ] as? AVAudioSession.ResumptionContext)?
+                    .recommendation == .shouldResume
 
                 Task { @MainActor [weak self] in
-                    self?.handleInterruption(type: type, shouldResume:
-                        shouldResume)
+                    self?.handleResumption(shouldResume: shouldResume)
                 }
             }
 
@@ -164,10 +174,15 @@ import Observation
         errorObserver = nil
 
         #if os(iOS)
-            if let interruptionObserver {
-                NotificationCenter.default.removeObserver(interruptionObserver)
+            if let deactivationObserver {
+                NotificationCenter.default.removeObserver(deactivationObserver)
             }
-            interruptionObserver = nil
+            deactivationObserver = nil
+
+            if let resumptionObserver {
+                NotificationCenter.default.removeObserver(resumptionObserver)
+            }
+            resumptionObserver = nil
 
             if let routeChangeObserver {
                 NotificationCenter.default.removeObserver(routeChangeObserver)
@@ -197,26 +212,17 @@ import Observation
     }
 
     #if os(iOS)
-        /// Handles audio session interruptions.
+        /// Handles the system's recommendation on whether to resume playback
+        /// after the audio session was deactivated.
         ///
-        /// The player is paused for the duration of the interruption. When the
-        /// interruption ends, playback resumes only if the system indicates it
-        /// should (e.g. after a phone call); otherwise the stream is stopped,
-        /// since another app has taken over audio.
-        private func handleInterruption(type: AVAudioSession.InterruptionType,
-                                        shouldResume: Bool)
-        {
-            switch type {
-            case .began:
-                player?.pause()
-            case .ended:
-                if shouldResume {
-                    player?.play()
-                } else {
-                    stopStreaming()
-                }
-            @unknown default:
-                break
+        /// Playback resumes only if the system recommends it (e.g. after a
+        /// phone call); otherwise the stream is stopped, since another app has
+        /// taken over audio.
+        private func handleResumption(shouldResume: Bool) {
+            if shouldResume {
+                player?.play()
+            } else {
+                stopStreaming()
             }
         }
     #endif
