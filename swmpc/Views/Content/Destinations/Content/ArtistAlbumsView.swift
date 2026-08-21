@@ -50,6 +50,7 @@ private struct ArtistHeaderView: View {
             VStack(spacing: Layout.Spacing.large) {
                 ArtistImageView(for: artist, size: 180, initialsFontSize: 80)
                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.medium, y: 6)
+                    .accessibilityLabel(Text(verbatim: artist.name))
                     .contextMenu {
                         ContextMenuView(for: artist)
                     }
@@ -79,6 +80,7 @@ private struct ArtistHeaderView: View {
             HStack(spacing: Layout.Spacing.large) {
                 ArtistImageView(for: artist, size: 100, initialsFontSize: 44)
                     .shadow(color: .black.opacity(0.2), radius: Layout.Padding.small, y: 4)
+                    .accessibilityLabel(Text(verbatim: artist.name))
                     .contextMenu {
                         ContextMenuView(for: artist)
                     }

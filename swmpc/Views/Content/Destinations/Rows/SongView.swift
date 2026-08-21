@@ -53,6 +53,7 @@ struct SongView: View, Equatable {
                             .fontDesign(.rounded)
                             .fontWeight(.semibold)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
 
                         #if os(macOS)
                             Image(systemSymbol: .playFill)
@@ -64,6 +65,7 @@ struct SongView: View, Equatable {
                                         .frame(width: trackSize, height: trackSize)
                                 }
                                 .opacity(isHovering ? 1 : 0)
+                                .accessibilityHidden(true)
                         #endif
 
                         SongPlayingOverlay(song: song, trackSize: trackSize)
@@ -102,6 +104,7 @@ struct SongView: View, Equatable {
                     Image(systemSymbol: .line3HorizontalCircle)
                         .font(.title2)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                         .frame(maxHeight: .infinity)
                         .background {
                             LinearGradient(
@@ -138,6 +141,8 @@ private struct SongPlayingOverlay: View {
                         .fill(.background)
                         .frame(width: trackSize, height: trackSize)
                 }
+                .accessibilityElement()
+                .accessibilityLabel(Text("Now Playing"))
         }
     }
 }

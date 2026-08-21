@@ -27,6 +27,7 @@ struct DetailArtworkView: View, Equatable {
         ZStack {
             ShadowGradientView(artwork: artwork)
                 .opacity(colorScheme == .dark ? 0.4 : 0.8)
+                .accessibilityHidden(true)
 
             Button {
                 guard let song = mpd.status.song else {
@@ -61,6 +62,8 @@ struct DetailArtworkView: View, Equatable {
                     }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text("Album Artwork"))
+            .accessibilityHint(Text("Opens the album"))
             #if os(macOS)
                 .scaleEffect(isHovering ? 1.02 : 1)
                 .animation(.spring, value: isHovering)
@@ -69,6 +72,8 @@ struct DetailArtworkView: View, Equatable {
                 }
             #endif
                 .swipeActions(
+                    leftLabel: "Next Song",
+                    rightLabel: "Previous Song",
                     onSwipeLeft: {
                         guard mpd.status.song != nil else {
                             return

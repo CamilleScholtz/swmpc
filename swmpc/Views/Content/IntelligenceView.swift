@@ -108,6 +108,7 @@ struct IntelligenceView: View {
             }
 
             Image(systemSymbol: IntelligenceManager.symbol)
+                .accessibilityHidden(true)
                 .font(.system(size: isLoading ? loadingSymbolSize : symbolSize))
                 .foregroundStyle(
                     LinearGradient(
@@ -163,7 +164,6 @@ struct IntelligenceView: View {
                     }
                     .buttonStyle(.bordered)
                     .keyboardShortcut(.cancelAction)
-                    .help("Cancel and close")
 
                     AsyncButton(role: .confirm) {
                         isLoading = true

@@ -20,6 +20,14 @@ struct OutputView: View {
     @State private var percentage = 0.5
     @State private var feedback = ActionFeedback()
 
+    private var streamingLabel: LocalizedStringResource {
+        #if os(iOS)
+            "Stream to iPhone"
+        #elseif os(macOS)
+            "Stream to this device"
+        #endif
+    }
+
     var body: some View {
         Button {
             showPopover.toggle()
@@ -34,6 +42,8 @@ struct OutputView: View {
                 .animation(.snappy(duration: 0.25), value: volume == 0)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text("Volume and Outputs"))
+        .accessibilityValue(Text(percentage, format: .percent.precision(.fractionLength(0))))
         .popover(isPresented: $showPopover) {
             VStack(alignment: .leading, spacing: Layout.Spacing.medium) {
                 VStack(alignment: .leading, spacing: Layout.Spacing.small) {
@@ -76,6 +86,8 @@ struct OutputView: View {
                         }
                         .controlSize(.mini)
                         .frame(minWidth: 150)
+                        .accessibilityLabel(Text("Volume"))
+                        .accessibilityValue(Text(percentage, format: .percent.precision(.fractionLength(0))))
                         .actionFeedback(feedback)
                     }
                 }
@@ -108,21 +120,17 @@ struct OutputView: View {
                             Image(systemSymbol: .antennaRadiowavesLeftAndRight)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 40)
+                                .accessibilityHidden(true)
 
-                            #if os(iOS)
-                                Text("Stream to iPhone")
-                                    .font(.subheadline)
-                            #elseif os(macOS)
-                                Text("Stream to this device")
-                                    .font(.subheadline)
-                            #endif
+                            Text(streamingLabel)
+                                .font(.subheadline)
 
                             Spacer()
 
                             if let server = serverManager.selectedServer {
                                 @Bindable var streaming = mpd.streaming
 
-                                Toggle("", isOn: $streaming[isStreamingFrom: server])
+                                Toggle(String(localized: streamingLabel), isOn: $streaming[isStreamingFrom: server])
                                     .labelsHidden()
                                     .toggleStyle(.switch)
                                     .controlSize(.mini)
@@ -175,13 +183,14 @@ private struct OutputRow: View {
             Image(systemSymbol: output.isHttpd ? .antennaRadiowavesLeftAndRight : .speakerWave2)
                 .foregroundStyle(.secondary)
                 .frame(width: 40)
+                .accessibilityHidden(true)
 
             Text(output.name)
                 .font(.subheadline)
 
             Spacer()
 
-            Toggle("", isOn: $outputs[isEnabled: output])
+            Toggle(output.name, isOn: $outputs[isEnabled: output])
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.mini)

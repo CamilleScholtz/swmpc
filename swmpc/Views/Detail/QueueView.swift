@@ -75,6 +75,9 @@ struct QueueView: View {
                                 .contentTransition(.symbolEffect(.replace))
                                 .animation(.snappy(duration: 0.25), value: mpd.status.isConsume)
                         }
+                        .accessibilityLabel(Text("Consume"))
+                        .accessibilityValue(isConsume ? Text("On") : Text("Off"))
+                        .accessibilityAddTraits(isConsume ? .isSelected : [])
 
                         if !mpd.queue.songs.isEmpty {
                             Button {
@@ -82,6 +85,7 @@ struct QueueView: View {
                             } label: {
                                 Image(systemSymbol: .trash)
                             }
+                            .accessibilityLabel(Text("Clear Queue"))
                         } else {
                             Button {
                                 navigator.intelligenceTarget = .queue
@@ -89,6 +93,7 @@ struct QueueView: View {
                                 Image(systemSymbol: IntelligenceManager.symbol)
                             }
                             .disabled(!IntelligenceManager.isEnabled)
+                            .accessibilityLabel(Text("Fill Queue with AI"))
                         }
                     }
                 }

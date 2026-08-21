@@ -309,6 +309,7 @@ struct SettingsView: View {
                                     .foregroundStyle(.tint)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel(Text("Edit Server"))
                         #elseif os(macOS)
                             if isHovering {
                                 Button("Edit") {
@@ -341,12 +342,10 @@ struct SettingsView: View {
                 Form {
                     Section {
                         LaunchAtLoginToggle()
-                            .help("Automatically start swmpc when you log in")
                     }
 
                     Section("Status Bar") {
                         Toggle("Show in Status Bar", isOn: $showStatusBar)
-                            .help("Display swmpc icon in the menu bar")
                             .onChange(of: showStatusBar) {
                                 NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
                             }
@@ -356,7 +355,6 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        .help("Display currently playing song next to the menu bar icon")
                         .disabled(!showStatusBar)
                         .onChange(of: showStatusbarSong) {
                             NotificationCenter.default.post(name: .statusBarSettingChangedNotification, object: nil)
@@ -389,7 +387,6 @@ struct SettingsView: View {
                                 status = await MusicAuthorization.request()
                             }
                         }
-                        .help("Ask macOS for permission to access Apple Music")
                     } else if status == .denied {
                         Button("Open System Settings") {
                             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Media") {

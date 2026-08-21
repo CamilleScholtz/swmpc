@@ -55,6 +55,7 @@ struct ArtistImageView: View {
                         .fontDesign(.rounded)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
 
                     if let url {
                         AsyncImage(request: URLRequest(

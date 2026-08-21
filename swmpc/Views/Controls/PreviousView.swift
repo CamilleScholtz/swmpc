@@ -66,7 +66,7 @@ struct PreviousView: View {
         }
         .styledButton()
         .disabled(mpd.status.song == nil)
-        .help("Skip to previous track")
+        .accessibilityLabel(Text("Previous Song"))
         .actionFeedback(feedback)
     }
 }

@@ -78,6 +78,7 @@ struct AppView: View {
                                 DetailMiniView()
                             }
                             .buttonStyle(.plain)
+                            .accessibilityHint(Text("Opens Now Playing"))
                             .matchedTransitionSource(id: 1, in: namespace)
                         }
                         .fullScreenCover(isPresented: $navigator.showNowPlaying) {

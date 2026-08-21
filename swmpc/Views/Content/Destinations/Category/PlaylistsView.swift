@@ -50,6 +50,7 @@ struct PlaylistsView: View {
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.secondary)
                                 .frame(width: 30)
+                                .accessibilityHidden(true)
 
                             VStack(alignment: .leading) {
                                 Text(playlist.name)
@@ -125,6 +126,7 @@ struct PlaylistsView: View {
                 } label: {
                     Image(systemSymbol: .ellipsis)
                 }
+                .accessibilityLabel(Text("More Options"))
             }
 
             ToolbarSpacer(.fixed)

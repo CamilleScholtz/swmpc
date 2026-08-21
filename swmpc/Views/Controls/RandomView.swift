@@ -40,7 +40,9 @@ struct RandomView: View {
             .contentShape(Circle())
         }
         .styledButton()
-        .help(mpd.status.isRandom ?? false ? "Disable shuffle mode" : "Enable shuffle mode")
+        .accessibilityLabel(Text("Shuffle"))
+        .accessibilityValue(isRandom ? Text("On") : Text("Off"))
+        .accessibilityAddTraits(isRandom ? .isSelected : [])
         .actionFeedback(feedback)
     }
 }

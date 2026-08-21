@@ -43,7 +43,11 @@ struct PopoverView: View {
                 .scaleEffect(showInfo ? 0.7 : 1)
                 .offset(y: showInfo ? -7 : 0)
                 .animation(.spring(response: 0.7, dampingFraction: 1, blendDuration: 0.7), value: showInfo)
+                .accessibilityElement()
+                .accessibilityLabel(Text("Album Artwork"))
                 .swipeActions(
+                    leftLabel: "Next Song",
+                    rightLabel: "Previous Song",
                     onSwipeLeft: {
                         guard mpd.status.song != nil else {
                             return

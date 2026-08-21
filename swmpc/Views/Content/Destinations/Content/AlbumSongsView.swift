@@ -99,11 +99,14 @@ struct AlbumSongsView: View {
                                         .clipShape(Capsule())
                                         .padding(14)
                                     }
+                                    .accessibilityHidden(true)
                                     .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
                                     .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false)
                                 }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Play \(album.title)"))
+                        .accessibilityAddTraits(mpd.status.song?.isIn(album) ?? false ? .isSelected : [])
                         .actionFeedback(feedback)
                         .contextMenu {
                             ContextMenuView(for: album)
@@ -127,6 +130,7 @@ struct AlbumSongsView: View {
                                     .multilineTextAlignment(.center)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityHint(Text("Opens the artist"))
                             .contextMenu {
                                 Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
                                     album.artist.name.copyToClipboard()
@@ -191,6 +195,7 @@ struct AlbumSongsView: View {
                                             .clipShape(Capsule())
                                             .padding(10)
                                         }
+                                        .accessibilityHidden(true)
                                         .opacity(mpd.status.song?.isIn(album) ?? false ? 1 : 0)
                                         .animation(.interactiveSpring, value: mpd.status.song?.isIn(album) ?? false)
                                     }
@@ -211,6 +216,7 @@ struct AlbumSongsView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .asyncButtonStyle(.pulse)
+                                .accessibilityLabel(Text("Play \(album.title)"))
                             }
                         }
                         .onHover { value in
@@ -237,6 +243,7 @@ struct AlbumSongsView: View {
                                     .lineLimit(2)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityHint(Text("Opens the artist"))
                             .contextMenu {
                                 Button("Copy Artist Name", systemSymbol: .documentOnDocument) {
                                     album.artist.name.copyToClipboard()

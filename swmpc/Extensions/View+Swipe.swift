@@ -12,17 +12,28 @@ extension View {
     /// for next/previous actions. Includes visual feedback (offset, rotation)
     /// and sensory feedback on threshold crossing.
     ///
+    /// The gesture is invisible to assistive technologies, so both closures
+    /// are also exposed as named accessibility actions.
+    ///
     /// - Parameters:
+    ///   - leftLabel: The name of the accessibility action mirroring a left
+    ///                swipe.
+    ///   - rightLabel: The name of the accessibility action mirroring a right
+    ///                 swipe.
     ///   - onSwipeLeft: An closure executed when a left swipe gesture ends
     ///                  beyond the threshold.
     ///   - onSwipeRight: An closure executed when a right swipe gesture ends
     ///                   beyond the threshold.
     /// - Returns: A view modified with the interactive swipe gesture.
     func swipeActions(
+        leftLabel: LocalizedStringResource,
+        rightLabel: LocalizedStringResource,
         onSwipeLeft: @escaping () -> Void,
         onSwipeRight: @escaping () -> Void,
     ) -> some View {
-        modifier(SwipeModifier(onSwipeLeft: onSwipeLeft,
+        modifier(SwipeModifier(leftLabel: leftLabel,
+                               rightLabel: rightLabel,
+                               onSwipeLeft: onSwipeLeft,
                                onSwipeRight: onSwipeRight))
     }
 }
@@ -30,6 +41,8 @@ extension View {
 /// View modifier implementing interactive swipe gestures with visual feedback.
 /// Provides offset, rotation, and haptic feedback when crossing thresholds.
 struct SwipeModifier: ViewModifier {
+    let leftLabel: LocalizedStringResource
+    let rightLabel: LocalizedStringResource
     let onSwipeLeft: () -> Void
     let onSwipeRight: () -> Void
 
@@ -55,6 +68,8 @@ struct SwipeModifier: ViewModifier {
                 value: dragOffset,
             )
             .sensoryFeedback(.start, trigger: lastTriggeredThreshold)
+            .accessibilityAction(named: Text(leftLabel), onSwipeLeft)
+            .accessibilityAction(named: Text(rightLabel), onSwipeRight)
             .onDisappear {
                 reset()
             }

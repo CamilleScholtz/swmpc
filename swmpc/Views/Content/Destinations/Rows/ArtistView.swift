@@ -46,6 +46,7 @@ struct ArtistView: View, Equatable {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint(Text("Opens the artist"))
         .contextMenu {
             ContextMenuView(for: artist)
         }

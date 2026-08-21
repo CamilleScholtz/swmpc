@@ -46,6 +46,7 @@ struct ArtworkView: View {
                             .scaledToFit()
                             .scaleEffect(0.5)
                             .foregroundStyle(.quinary)
+                            .accessibilityHidden(true)
                     }
             }
         }

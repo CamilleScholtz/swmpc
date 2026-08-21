@@ -36,7 +36,7 @@ struct PauseView: View {
         }
         .styledButton(hoverScale: 1.2, pressScale: button ? 1.0 : 0.9)
         .disabled(mpd.status.song == nil)
-        .help(mpd.status.isPlaying ? "Pause playback" : "Resume playback")
+        .accessibilityLabel(mpd.status.isPlaying ? Text("Pause") : Text("Play"))
         .actionFeedback(feedback)
     }
 }

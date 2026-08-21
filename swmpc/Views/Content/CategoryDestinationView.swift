@@ -413,6 +413,11 @@ private struct CategoryDatabaseView: View {
             #endif
         }
         .menuIndicator(.hidden)
+        #if os(iOS)
+        .accessibilityLabel(Text("More Options"))
+        #elseif os(macOS)
+        .accessibilityLabel(Text("Sort"))
+        #endif
     }
 
     /// Restores the scroll position the user last browsed to in the current

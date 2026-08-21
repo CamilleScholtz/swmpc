@@ -58,7 +58,8 @@ struct PlayerProgressView: View {
                 }
             #endif
                 .disabled(mpd.status.song == nil)
-                .help("Seek to position in track")
+                .accessibilityLabel(Text("Playback Position"))
+                .accessibilityValue(Text("\(elapsed.timeString) of \(duration.timeString)"))
                 .actionFeedback(feedback)
                 .onChange(of: elapsed) { previous, value in
                     guard !isEditing else {
@@ -84,6 +85,7 @@ struct PlayerProgressView: View {
 
                     TimestampText(time: mpd.status.song?.duration)
                 }
+                .accessibilityHidden(true)
             }
         }
     }

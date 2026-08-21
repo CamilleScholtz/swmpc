@@ -40,7 +40,9 @@ struct RepeatView: View {
             .contentShape(Circle())
         }
         .styledButton()
-        .help(mpd.status.isRepeat ?? false ? "Disable repeat mode" : "Enable repeat mode")
+        .accessibilityLabel(Text("Repeat"))
+        .accessibilityValue(isRepeat ? Text("On") : Text("Off"))
+        .accessibilityAddTraits(isRepeat ? .isSelected : [])
         .actionFeedback(feedback)
     }
 }

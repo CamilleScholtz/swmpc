@@ -91,6 +91,7 @@ struct AlbumView: View, Equatable {
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text("Play \(album.title)"))
                 #if os(macOS)
                     .onHover { value in
                         isHoveringArtwork = value
@@ -112,6 +113,7 @@ struct AlbumView: View, Equatable {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint(Text("Opens the album"))
         .actionFeedback(feedback)
         #if os(macOS)
             .onHoverWithDebounce(handler: hoverHandler) { hovering in
