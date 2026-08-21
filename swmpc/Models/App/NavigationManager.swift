@@ -177,9 +177,15 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
     #if os(iOS)
         /// The playlists view showing all available playlists (iOS only).
         case playlists
+        /// The library-wide search destination behind the tab bar's search
+        /// button (iOS only).
+        case search
     #endif
 
     /// Returns the available category destinations for the current platform.
+    ///
+    /// Search is left out on iOS: it is a pinned tab of its own rather than
+    /// one of the browsable categories.
     /// - iOS: Returns albums, artists, songs, and playlists
     /// - macOS: Returns albums, artists, and songs
     static var categories: [Self] {
@@ -192,6 +198,9 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
 
     /// The media type associated with this category destination.
     /// Used to determine how to display and interact with the content.
+    ///
+    /// Search has no media type of its own, since it matches every type at
+    /// once and never drives the shared database load.
     var type: MediaType {
         switch self {
         case .albums: .album
@@ -200,6 +209,7 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case .playlist: .playlist
         #if os(iOS)
             case .playlists: .playlist
+            case .search: .playlist
         #endif
         }
     }
@@ -213,7 +223,7 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case let .playlist(playlist):
             playlist.name == "Favorites" ? .favorites : .playlist(playlist)
         #if os(iOS)
-            case .playlists:
+            case .playlists, .search:
                 .database
         #endif
         }
@@ -229,6 +239,7 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case let .playlist(playlist): Text(verbatim: playlist.name)
         #if os(iOS)
             case .playlists: Text("Playlists")
+            case .search: Text("Search")
         #endif
         }
     }
@@ -243,6 +254,7 @@ enum CategoryDestination: Identifiable, Codable, Hashable {
         case let .playlist(playlist): playlist.symbol
         #if os(iOS)
             case .playlists: .musicNoteList
+            case .search: .magnifyingglass
         #endif
         }
     }

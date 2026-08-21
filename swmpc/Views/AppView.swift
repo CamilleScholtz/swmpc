@@ -57,6 +57,19 @@ struct AppView: View {
                                     }
                                 }
                             }
+
+                            Tab(value: CategoryDestination.search, role: .search) {
+                                NavigationStack(path: $navigator[path: .search]) {
+                                    SearchView()
+                                        .navigationDestination(for: ContentDestination.self) { destination in
+                                            ContentDestinationView(destination: destination)
+                                        }
+                                }
+                            }
+                        }
+                        .tabViewSearchActivation(.searchTabSelection)
+                        .background {
+                            SearchShortcut()
                         }
                         .tabViewBottomAccessory {
                             Button {
@@ -203,6 +216,22 @@ struct AppView: View {
 }
 
 #if os(iOS)
+    /// An invisible button that maps command-F to the search tab, so that a
+    /// hardware keyboard can start a search the way the menu bar command does
+    /// on macOS.
+    private struct SearchShortcut: View {
+        @Environment(NavigationManager.self) private var navigator
+
+        var body: some View {
+            Button("Search") {
+                navigator.category = .search
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .opacity(0)
+            .accessibilityHidden(true)
+        }
+    }
+
     /// Re-syncs MPD state when the app returns to the foreground after having
     /// been backgrounded, since the idle connection may have died while the
     /// app was suspended.

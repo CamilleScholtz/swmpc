@@ -76,3 +76,30 @@ extension Album {
         }
     }
 }
+
+/// A media item that has a primary display name.
+///
+/// Used to rank search matches without having to switch over the concrete
+/// media types at runtime.
+nonisolated protocol Nameable {
+    /// The name shown as the item's primary label.
+    var displayName: String { get }
+}
+
+extension Song: Nameable {
+    var displayName: String {
+        title
+    }
+}
+
+extension Album: Nameable {
+    var displayName: String {
+        title
+    }
+}
+
+extension Artist: Nameable {
+    var displayName: String {
+        name
+    }
+}

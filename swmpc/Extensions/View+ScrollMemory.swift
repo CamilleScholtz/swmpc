@@ -79,13 +79,55 @@ extension ScrollTarget {
     ///   - media: The media items shown in the list.
     ///   - rowContentHeight: The height of the row content (excluding
     ///                       padding).
-    init?(restoring offset: CGFloat, in media: [any Mediable], rowContentHeight: CGFloat) {
-        guard !media.isEmpty else {
+    init?(restoring offset: CGFloat, in media: [some Mediable], rowContentHeight: CGFloat) {
+        guard let index = Self.index(restoring: offset, count: media.count,
+                                     rowContentHeight: rowContentHeight)
+        else {
+            return nil
+        }
+
+        self.init(id: media[index].id, animated: false, anchor: .top)
+    }
+
+    /// Creates a target that restores a remembered scroll offset, snapping
+    /// to the nearest row.
+    ///
+    /// - Parameters:
+    ///   - offset: The remembered scroll offset, measured from the top of
+    ///             the content.
+    ///   - media: The collection shown in the list.
+    ///   - rowContentHeight: The height of the row content (excluding
+    ///                       padding).
+    init?(restoring offset: CGFloat, in media: MediaCollection, rowContentHeight: CGFloat) {
+        guard let index = Self.index(restoring: offset, count: media.count,
+                                     rowContentHeight: rowContentHeight),
+              let id = media.id(at: index)
+        else {
+            return nil
+        }
+
+        self.init(id: id, animated: false, anchor: .top)
+    }
+
+    /// The row a remembered scroll offset lands on.
+    ///
+    /// - Parameters:
+    ///   - offset: The remembered scroll offset, measured from the top of
+    ///             the content.
+    ///   - count: The number of rows in the list.
+    ///   - rowContentHeight: The height of the row content (excluding
+    ///                       padding).
+    /// - Returns: The index of the nearest row, or `nil` if the list is
+    ///            empty.
+    private static func index(restoring offset: CGFloat, count: Int,
+                              rowContentHeight: CGFloat) -> Int?
+    {
+        guard count > 0 else {
             return nil
         }
 
         let index = Int((offset / Layout.RowHeight.effective(for: rowContentHeight)).rounded())
 
-        self.init(id: media[min(max(0, index), media.count - 1)].id, animated: false, anchor: .top)
+        return min(max(0, index), count - 1)
     }
 }

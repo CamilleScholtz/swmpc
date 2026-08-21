@@ -174,8 +174,34 @@ public extension ConnectionManager {
     func getArtists(sort: SortDescriptor = SortDescriptor.default) async throws
         -> [Artist]
     {
+        try await getArtistsWithAlbumCounts(sort: sort).artists
+    }
+
+    /// Retrieves all unique artists from the database along with how many
+    /// albums each of them has.
+    ///
+    /// The counts are derived from the same album listing the artists
+    /// themselves come from, so they cost no additional round trip. They
+    /// therefore describe the albums the app can show for an artist, which
+    /// is what `getAlbums(sort:)` finds.
+    ///
+    /// - Parameter sort: The sorting descriptor used to retrieve albums, which
+    ///                   indirectly affects the artist order.
+    /// - Returns: The unique artists, and their album counts keyed by artist
+    ///            identifier.
+    /// - Throws: An error if the underlying album lookup fails.
+    func getArtistsWithAlbumCounts(sort: SortDescriptor = SortDescriptor
+        .default) async throws
+        -> (artists: [Artist], albumCounts: [String: Int])
+    {
         let albums = try await getAlbums(sort: sort)
-        return Array(OrderedSet(albums.map(\.artist)))
+
+        var albumCounts: [String: Int] = [:]
+        for album in albums {
+            albumCounts[album.artist.id, default: 0] += 1
+        }
+
+        return (Array(OrderedSet(albums.map(\.artist))), albumCounts)
     }
 
     /// Retrieves all songs from a specified source.

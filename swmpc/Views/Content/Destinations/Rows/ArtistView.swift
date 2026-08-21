@@ -13,16 +13,16 @@ struct ArtistView: View, Equatable {
     @Environment(NavigationManager.self) private var navigator
 
     private let artist: Artist
+    private let albumCount: Int
 
-    init(for artist: Artist) {
+    init(for artist: Artist, albumCount: Int) {
         self.artist = artist
+        self.albumCount = albumCount
     }
 
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.artist == rhs.artist
+        lhs.artist == rhs.artist && lhs.albumCount == rhs.albumCount
     }
-
-    @State private var albumCount: Int = 0
 
     var body: some View {
         Button {
@@ -48,13 +48,6 @@ struct ArtistView: View, Equatable {
         .buttonStyle(.plain)
         .contextMenu {
             ContextMenuView(for: artist)
-        }
-        .task(id: artist, priority: .medium) {
-            guard !Task.isCancelled else {
-                return
-            }
-
-            albumCount = await (try? artist.getAlbums().count) ?? 0
         }
     }
 }

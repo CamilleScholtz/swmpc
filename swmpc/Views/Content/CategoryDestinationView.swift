@@ -17,7 +17,9 @@ struct CategoryDestinationView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    @State private var isSearchFieldExpanded = false
+    #if os(macOS)
+        @State private var isSearchFieldExpanded = false
+    #endif
 
     var body: some View {
         Group {
@@ -29,7 +31,11 @@ struct CategoryDestinationView: View {
             default:
                 switch navigator.category.source {
                 case .database:
-                    CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
+                    #if os(iOS)
+                        CategoryDatabaseView()
+                    #elseif os(macOS)
+                        CategoryDatabaseView(isSearchFieldExpanded: $isSearchFieldExpanded)
+                    #endif
                 case .favorites:
                     if let playlist = navigator.category.source.playlist {
                         CategoryPlaylistView(playlist: playlist)
@@ -44,17 +50,22 @@ struct CategoryDestinationView: View {
             }
         }
         #if os(iOS)
-        .navigationTitle(isSearchFieldExpanded ? Text(verbatim: "") : navigator.category.label)
+        .navigationTitle(navigator.category.label)
         .navigationBarTitleDisplayMode(.inline)
-        // The current iOS 27 beta SDK does not ship toolbarMinimizeBehavior;
-        // restore once it lands.
-        // .toolbarMinimizeBehavior(.onScrollDown, for: .navigationBar)
+        .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
         #elseif os(macOS)
         .navigationTitle(navigator.category.label)
         .toolbar(removing: isSearchFieldExpanded ? .title : nil)
         #endif
-        .onChange(of: navigator.category) {
-            isSearchFieldExpanded = false
+        .onChange(of: navigator.category) { _, value in
+            #if os(iOS)
+                guard value != .search else {
+                    return
+                }
+            #elseif os(macOS)
+                isSearchFieldExpanded = false
+            #endif
+
             mpd.state.isLoading = true
         }
     }
@@ -64,40 +75,51 @@ private struct CategoryDatabaseView: View {
     @Environment(MPD.self) private var mpd
     @Environment(NavigationManager.self) private var navigator
 
-    @AppStorage(Setting.albumSearchFields) private var albumSearchFields = SearchFields.default
-    @AppStorage(Setting.artistSearchFields) private var artistSearchFields = SearchFields.default
-    @AppStorage(Setting.songSearchFields) private var songSearchFields = SearchFields.default
+    #if os(macOS)
+        @AppStorage(Setting.albumSearchFields) private var albumSearchFields = SearchFields.default
+        @AppStorage(Setting.artistSearchFields) private var artistSearchFields = SearchFields.default
+        @AppStorage(Setting.songSearchFields) private var songSearchFields = SearchFields.default
+    #endif
 
     @AppStorage(Setting.albumSortOption) private var albumSort = MPDKit.SortDescriptor.default
     @AppStorage(Setting.artistSortOption) private var artistSort = MPDKit.SortDescriptor.default
     @AppStorage(Setting.songSortOption) private var songSort = MPDKit.SortDescriptor.default
 
-    @Binding var isSearchFieldExpanded: Bool
-
-    #if os(iOS)
-        @FocusState private var isSearchFieldFocused: Bool
+    #if os(macOS)
+        @Binding var isSearchFieldExpanded: Bool
     #endif
 
     @State private var scrollTarget: ScrollTarget?
 
-    @State private var searchTask: Task<Void, Never>?
-    @State private var searchQuery = ""
-    @State private var searchResults: [any Mediable]?
+    #if os(macOS)
+        @State private var searchTask: Task<Void, Never>?
+        @State private var searchQuery = ""
+        @State private var searchResults: MediaCollection?
 
-    private var searchFields: SearchFields {
-        let fields = switch navigator.category {
-        case .albums: albumSearchFields
-        case .artists: artistSearchFields
-        case .songs: songSearchFields
-        default: SearchFields.default
+        private var searchFields: SearchFields {
+            let fields = switch navigator.category {
+            case .albums: albumSearchFields
+            case .artists: artistSearchFields
+            case .songs: songSearchFields
+            default: SearchFields.default
+            }
+
+            if fields.isEmpty {
+                return navigator.category.source.defaultSearchFields(for: navigator.category.type)
+            }
+
+            return fields
         }
 
-        if fields.isEmpty {
-            return navigator.category.source.defaultSearchFields(for: navigator.category.type)
+        private var searchPrompt: String {
+            switch navigator.category {
+            case .albums: String(localized: "Search albums")
+            case .artists: String(localized: "Search artists")
+            case .songs: String(localized: "Search songs")
+            default: String(localized: "Search")
+            }
         }
-
-        return fields
-    }
+    #endif
 
     private var sort: MPDKit.SortDescriptor {
         switch navigator.category {
@@ -108,112 +130,146 @@ private struct CategoryDatabaseView: View {
         }
     }
 
-    private var searchPrompt: String {
-        switch navigator.category {
-        case .albums: String(localized: "Search albums")
-        case .artists: String(localized: "Search artists")
-        case .songs: String(localized: "Search songs")
-        default: String(localized: "Search")
+    /// The media the list shows, which is the search results while a search
+    /// is active.
+    ///
+    /// - Parameter media: The media loaded for the current category.
+    /// - Returns: The media to build rows for.
+    private func displayed(_ media: MediaCollection) -> MediaCollection {
+        #if os(macOS)
+            searchResults ?? media
+        #elseif os(iOS)
+            media
+        #endif
+    }
+
+    /// Whether the user's scroll position is recorded.
+    ///
+    /// Search results are temporary content, so scrolling them is not
+    /// remembered. This also guards against the window during a category
+    /// switch where the list still shows the previous category's media:
+    /// geometry changes there would be recorded against the new category,
+    /// wiping its remembered position.
+    private var isScrollMemoryActive: Bool {
+        let type = mpd.database.type
+
+        #if os(macOS)
+            let isSearching = searchResults != nil
+
+            return !isSearching && type == navigator.category.type
+        #elseif os(iOS)
+            return type == navigator.category.type
+        #endif
+    }
+
+    private var scrollToCurrentMediaButton: some View {
+        Button("Scroll to Current Media", systemSymbol: .dotViewfinder) {
+            navigator.clearScrollOffset(for: navigator.category)
+            scrollToCurrentMedia(animated: true)
         }
+        .disabled(mpd.status.song == nil)
     }
 
     var body: some View {
         Group {
             if let media = mpd.database.media, !media.isEmpty {
-                MediaListView(media: searchResults ?? media, type: mpd.database.type, scrollTarget: $scrollTarget)
-                    // XXX: `isActive` also guards against the window during a
-                    // category switch where the list still shows the previous
-                    // category's media: geometry changes there would be
-                    // recorded against the new category, wiping its
-                    // remembered position.
+                MediaListView(media: displayed(media), scrollTarget: $scrollTarget)
                     .scrollMemory(for: navigator.category, scrollTarget: scrollTarget,
-                                  isActive: searchResults == nil && mpd.database.type == navigator.category.type)
+                                  isActive: isScrollMemoryActive)
                     .id(navigator.category)
             } else {
                 EmptyCategoryView(destination: navigator.category)
             }
         }
         .toolbar {
-            if isSearchFieldExpanded {
-                ToolbarItem {
-                    TextField(searchPrompt, text: $searchQuery)
-                    #if os(macOS)
-                        .frame(width: 195.5)
-                        .focusEffectDisabled()
-                    #endif
-                        .padding(.leading, Layout.Padding.small)
-                        .autocorrectionDisabled()
-                    #if os(iOS)
-                        .focused($isSearchFieldFocused)
-                    #elseif os(macOS)
-                        .introspect(.textField, on: .macOS(.v26, .v27)) { value in
-                            // XXX: Workaround for .focusEffectDisabled() not working in toolbar.
-                            value.focusRingType = .none
-
-                            // XXX: Workaround for @FocusState not working in
-                            // toolbar. Force the field to become first responder
-                            // once it lands in a window, but leave it alone after
-                            // it already has focus so typing isn't interrupted.
-                            guard let window = value.window, value.currentEditor() == nil else {
-                                return
-                            }
-
-                            Task { @MainActor in
-                                window.makeFirstResponder(value)
-                                value.currentEditor()?.selectedRange = NSRange(location: value.stringValue.count, length: 0)
-                            }
-                        }
-                    #endif
-                }
-
-                ToolbarItem {
-                    searchFieldsMenu
-                }
-            } else {
-                ToolbarItem {
-                    Button("Scroll to Current Media", systemSymbol: .dotViewfinder) {
-                        navigator.clearScrollOffset(for: navigator.category)
-                        scrollToCurrentMedia(animated: true)
-                    }
-                    .disabled(mpd.status.song == nil)
-                }
-            }
-
-            ToolbarSpacer(.fixed)
-
             #if os(iOS)
-                if !isSearchFieldExpanded {
-                    ToolbarItem {
-                        sortMenu
-                    }
+                ToolbarItem {
+                    scrollToCurrentMediaButton
+                }
+
+                ToolbarSpacer(.fixed)
+
+                ToolbarItem {
+                    sortMenu
                 }
             #elseif os(macOS)
+                if isSearchFieldExpanded {
+                    ToolbarItem {
+                        TextField(searchPrompt, text: $searchQuery)
+                            .frame(width: 195.5)
+                            .focusEffectDisabled()
+                            .padding(.leading, Layout.Padding.small)
+                            .autocorrectionDisabled()
+                            .introspect(.textField, on: .macOS(.v26, .v27)) { value in
+                                // XXX: Workaround for .focusEffectDisabled() not working in toolbar.
+                                value.focusRingType = .none
+
+                                // XXX: Workaround for @FocusState not working in
+                                // toolbar. Force the field to become first responder
+                                // once it lands in a window, but leave it alone after
+                                // it already has focus so typing isn't interrupted.
+                                guard let window = value.window, value.currentEditor() == nil else {
+                                    return
+                                }
+
+                                Task { @MainActor in
+                                    window.makeFirstResponder(value)
+                                    value.currentEditor()?.selectedRange = NSRange(location: value.stringValue.count, length: 0)
+                                }
+                            }
+                    }
+
+                    ToolbarItem {
+                        searchFieldsMenu
+                    }
+                } else {
+                    ToolbarItem {
+                        scrollToCurrentMediaButton
+                    }
+                }
+
+                ToolbarSpacer(.fixed)
+
                 if !isSearchFieldExpanded, navigator.category.source.isSortable {
                     ToolbarItem {
                         sortMenu
                     }
                 }
-            #endif
 
-            ToolbarItem {
-                Button("Search", systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass) {
-                    isSearchFieldExpanded.toggle()
+                ToolbarItem {
+                    Button("Search", systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass) {
+                        isSearchFieldExpanded.toggle()
 
-                    if !isSearchFieldExpanded {
-                        searchTask?.cancel()
-                        searchQuery = ""
-                        searchResults = nil
+                        if !isSearchFieldExpanded {
+                            searchTask?.cancel()
+                            searchQuery = ""
+                            searchResults = nil
+                        }
                     }
                 }
-                .keyboardShortcut("f", modifiers: .command)
+            #endif
+        }
+        #if os(macOS)
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: .startSearchingNotication) {
+                isSearchFieldExpanded = true
             }
         }
+        #endif
         .task(id: LoadParameters(category: navigator.category, sort: sort)) {
+            #if os(iOS)
+                guard navigator.category != .search else {
+                    return
+                }
+            #endif
+
             try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
 
-            searchTask?.cancel()
-            searchQuery = ""
-            searchResults = nil
+            #if os(macOS)
+                searchTask?.cancel()
+                searchQuery = ""
+                searchResults = nil
+            #endif
 
             if !restoreScrollPosition() {
                 scrollToCurrentMedia()
@@ -241,71 +297,71 @@ private struct CategoryDatabaseView: View {
             navigator.clearScrollOffset(for: new.category)
             mpd.state.isLoading = true
         }
+        #if os(macOS)
         .onChange(of: searchQuery) { _, value in
             performSearch(query: value, fields: searchFields)
         }
         .onChange(of: searchFields) { _, value in
             performSearch(query: searchQuery, fields: value)
         }
-        #if os(iOS)
-        .onChange(of: isSearchFieldExpanded) { _, value in
-            isSearchFieldFocused = value
-        }
         #endif
     }
 
-    private func performSearch(query: String, fields: SearchFields) {
-        searchTask?.cancel()
+    #if os(macOS)
+        private func performSearch(query: String, fields: SearchFields) {
+            searchTask?.cancel()
 
-        guard query.count >= 2, !fields.isEmpty else {
-            searchResults = nil
-            return
-        }
-
-        searchTask = Task {
-            try? await Task.sleep(for: .milliseconds(100))
-            guard !Task.isCancelled else {
+            guard query.count >= 2, !fields.isEmpty else {
+                searchResults = nil
                 return
             }
 
-            let results = await mpd.database.search(query, fields: fields)
-            guard !Task.isCancelled else {
-                return
+            searchTask = Task {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard !Task.isCancelled else {
+                    return
+                }
+
+                let results = await mpd.database.search(query, fields: fields)
+                guard !Task.isCancelled else {
+                    return
+                }
+
+                searchResults = results
             }
-
-            searchResults = results
         }
-    }
 
-    private var searchFieldsMenu: some View {
-        Menu {
-            ForEach(navigator.category.source.availableSearchFields(for: mpd.database.type), id: \.self) { field in
-                Toggle(isOn: Binding(
-                    get: { searchFields.contains(field) },
-                    set: { _ in
-                        var newFields = searchFields
-                        newFields.toggle(field)
+        private var searchFieldsMenu: some View {
+            Menu {
+                ForEach(navigator.category.source.availableSearchFields(for: mpd.database.type), id: \.self) { field in
+                    Toggle(isOn: Binding(
+                        get: { searchFields.contains(field) },
+                        set: { _ in
+                            var newFields = searchFields
+                            newFields.toggle(field)
 
-                        switch navigator.category {
-                        case .albums: albumSearchFields = newFields
-                        case .artists: artistSearchFields = newFields
-                        case .songs: songSearchFields = newFields
-                        default: break
+                            switch navigator.category {
+                            case .albums: albumSearchFields = newFields
+                            case .artists: artistSearchFields = newFields
+                            case .songs: songSearchFields = newFields
+                            default: break
+                            }
+                        },
+                    )) {
+                        Label {
+                            Text(field.label)
+                        } icon: {
+                            Image(systemSymbol: field.symbol)
                         }
-                    },
-                )) {
-                    Label {
-                        Text(field.label)
-                    } icon: {
-                        Image(systemSymbol: field.symbol)
                     }
                 }
+            } label: {
+                Image(systemSymbol: .sliderHorizontal3)
             }
-        } label: {
-            Image(systemSymbol: .sliderHorizontal3)
+            .menuIndicator(.hidden)
+            .accessibilityLabel(Text("Search Fields"))
         }
-        .menuIndicator(.hidden)
-    }
+    #endif
 
     private var sortMenu: some View {
         Menu {
@@ -371,8 +427,9 @@ private struct CategoryDatabaseView: View {
         default: Layout.RowHeight.song
         }
 
-        guard let offset = navigator.scrollOffset(for: navigator.category),
-              let target = ScrollTarget(restoring: offset, in: mpd.database.media ?? [], rowContentHeight: rowContentHeight)
+        guard let media = mpd.database.media,
+              let offset = navigator.scrollOffset(for: navigator.category),
+              let target = ScrollTarget(restoring: offset, in: media, rowContentHeight: rowContentHeight)
         else {
             return false
         }
@@ -389,13 +446,13 @@ private struct CategoryDatabaseView: View {
             return
         }
 
-        let id: String? = switch navigator.category.type {
-        case .album:
-            (media as? [Album])?.first { $0.id == song.album.id }?.id
-        case .artist:
-            (media as? [Artist])?.first { $0.id == song.album.artist.id }?.id
-        default:
-            (media as? [Song])?.first { $0.id == song.id }?.id
+        let id: String? = switch media {
+        case let .albums(albums):
+            albums.first { $0.id == song.album.id }?.id
+        case let .artists(artists):
+            artists.first { $0.id == song.album.artist.id }?.id
+        case let .songs(songs):
+            songs.first { $0.id == song.id }?.id
         }
 
         guard let id else {
@@ -549,40 +606,37 @@ private struct LoadParameters: Equatable {
 }
 
 private struct MediaListView: View {
-    let media: [any Mediable]
-    let type: MediaType
+    @Environment(MPD.self) private var mpd
+
+    let media: MediaCollection
     @Binding var scrollTarget: ScrollTarget?
 
     var body: some View {
         Group {
-            switch type {
-            case .album:
-                if let albums = media as? [Album] {
-                    List(albums, id: \.id) { album in
-                        AlbumView(for: album)
-                            .equatable()
-                            .mediaRowStyle()
-                    }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.album)
+            switch media {
+            case let .albums(albums):
+                List(albums, id: \.id) { album in
+                    AlbumView(for: album)
+                        .equatable()
+                        .mediaRowStyle()
                 }
-            case .artist:
-                if let artists = media as? [Artist] {
-                    List(artists, id: \.id) { artist in
-                        ArtistView(for: artist)
-                            .equatable()
-                            .mediaRowStyle()
-                    }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.artist)
+                .mediaListStyle(rowHeight: Layout.RowHeight.album)
+            case let .artists(artists):
+                let albumCounts = mpd.database.artistAlbumCounts
+
+                List(artists, id: \.id) { artist in
+                    ArtistView(for: artist, albumCount: albumCounts[artist.id] ?? 0)
+                        .equatable()
+                        .mediaRowStyle()
                 }
-            default:
-                if let songs = media as? [Song] {
-                    List(songs, id: \.id) { song in
-                        SongView(for: song, source: .database)
-                            .equatable()
-                            .mediaRowStyle()
-                    }
-                    .mediaListStyle(rowHeight: Layout.RowHeight.song)
+                .mediaListStyle(rowHeight: Layout.RowHeight.artist)
+            case let .songs(songs):
+                List(songs, id: \.id) { song in
+                    SongView(for: song, source: .database)
+                        .equatable()
+                        .mediaRowStyle()
                 }
+                .mediaListStyle(rowHeight: Layout.RowHeight.song)
             }
         }
         .scrollToItem($scrollTarget)
