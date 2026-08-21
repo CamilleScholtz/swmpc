@@ -638,7 +638,7 @@
 			repositoryURL = "https://github.com/Dean151/ButtonKit";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.8.0;
+				minimumVersion = 0.8.1;
 			};
 		};
 		91489B842D6A6C6C0038092A /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
