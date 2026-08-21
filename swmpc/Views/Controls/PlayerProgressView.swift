@@ -52,8 +52,8 @@ struct PlayerProgressView: View {
             )
             .controlSize(.mini)
             #if os(iOS)
-                // XXX: .mini control size is still too large on iOS 26.
-                .introspect(.slider, on: .iOS(.v26)) { value in
+                // XXX: .mini control size is still too large on iOS 26 and 27.
+                .introspect(.slider, on: .iOS(.v26, .v27)) { value in
                     value.sliderStyle = .thumbless
                 }
             #endif
