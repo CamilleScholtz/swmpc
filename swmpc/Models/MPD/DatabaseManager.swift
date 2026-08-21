@@ -145,42 +145,6 @@ struct SearchResults: Sendable {
         }
     }
 
-    /// Searches through the locally cached media library on a background
-    /// thread.
-    ///
-    /// This function performs a localized case-insensitive search through the
-    /// cached media, matching the query against fields determined by the search
-    /// fields.
-    ///
-    /// - Parameters:
-    ///   - query: The search query string to match against the selected fields.
-    ///   - fields: The search fields that determine which fields to search.
-    /// - Returns: The media items matching the search criteria, in the same
-    ///            collection type as the loaded media.
-    func search(_ query: String, fields: SearchFields) async
-        -> MediaCollection?
-    {
-        guard !query.isEmpty, !fields.isEmpty, let media else {
-            return nil
-        }
-
-        let query = query.folded
-        let fields = fields.fields
-
-        return await Task { @concurrent in
-            let results: MediaCollection = switch media {
-            case let .albums(albums):
-                .albums(albums.filter { matches($0, query: query, fields: fields) })
-            case let .artists(artists):
-                .artists(artists.filter { matches($0, query: query, fields: fields) })
-            case let .songs(songs):
-                .songs(songs.filter { matches($0, query: query, fields: fields) })
-            }
-
-            return results
-        }.value
-    }
-
     /// Checks if a song matches the search query against specified fields.
     ///
     /// - Parameters:
@@ -259,6 +223,10 @@ struct SearchResults: Sendable {
     /// changes since every keystroke matches against all of them.
     @ObservationIgnored private var library: Library?
 
+    /// The preparation currently in flight, so that a caller overlapping
+    /// with it awaits the same fetch instead of starting a second one.
+    @ObservationIgnored private var preparation: Task<Void, any Error>?
+
     /// Loads the collections that `searchLibrary(_:artistFields:albumFields:songFields:)`
     /// matches against, unless they are already cached.
     ///
@@ -272,6 +240,10 @@ struct SearchResults: Sendable {
     func prepareSearch() async throws {
         guard library == nil else {
             return
+        }
+
+        if let preparation {
+            return try await preparation.value
         }
 
         let loadedAlbums: [Album]?
@@ -289,29 +261,39 @@ struct SearchResults: Sendable {
             loadedSongs = nil
         }
 
-        library = try await ConnectionManager.command { connection in
-            let albums = try await DatabaseManager.reuse(loadedAlbums) {
-                try await connection.getAlbums()
-            }
-            let songs = try await DatabaseManager.reuse(loadedSongs) {
-                try await connection.getSongs(from: Source.database)
-            }
-
-            var artistAlbumCounts: [String: Int] = [:]
-            var seen: Set<String> = []
-            var artists: [Artist] = []
-
-            for album in albums {
-                artistAlbumCounts[album.artist.id, default: 0] += 1
-
-                if seen.insert(album.artist.id).inserted {
-                    artists.append(album.artist)
+        let preparation = Task<Void, any Error> {
+            let loaded = try await ConnectionManager.command { connection in
+                let albums = try await DatabaseManager.reuse(loadedAlbums) {
+                    try await connection.getAlbums()
                 }
+                let songs = try await DatabaseManager.reuse(loadedSongs) {
+                    try await connection.getSongs(from: Source.database)
+                }
+
+                var artistAlbumCounts: [String: Int] = [:]
+                var seen: Set<String> = []
+                var artists: [Artist] = []
+
+                for album in albums {
+                    artistAlbumCounts[album.artist.id, default: 0] += 1
+
+                    if seen.insert(album.artist.id).inserted {
+                        artists.append(album.artist)
+                    }
+                }
+
+                return Library(artists: artists, albums: albums, songs: songs,
+                               artistAlbumCounts: artistAlbumCounts)
             }
 
-            return Library(artists: artists, albums: albums, songs: songs,
-                           artistAlbumCounts: artistAlbumCounts)
+            library = loaded
         }
+
+        self.preparation = preparation
+
+        defer { self.preparation = nil }
+
+        try await preparation.value
     }
 
     /// Searches the entire library on a background thread, matching artists,

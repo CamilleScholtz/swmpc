@@ -36,6 +36,18 @@ extension SearchField {
     }
 }
 
+extension SearchFields {
+    /// The fields to match a media type against, falling back to its
+    /// defaults when the user turned all of them off, which would otherwise
+    /// match nothing at all.
+    ///
+    /// - Parameter type: The media type the fields belong to.
+    /// - Returns: The fields to search.
+    func resolved(for type: MediaType) -> SearchFields {
+        isEmpty ? Source.database.defaultSearchFields(for: type) : self
+    }
+}
+
 /// The current state of the streaming player.
 enum StreamState: Equatable {
     /// No stream is playing.

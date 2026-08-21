@@ -50,6 +50,10 @@ public enum Layout {
         public static let popoverContentWidth: CGFloat = 220 // popoverWidth - 30
 
         public static let dotIndicator: CGFloat = 4
+
+        /// The width toolbar symbols are laid out in, so that swapping one
+        /// symbol for another doesn't shift the buttons beside it.
+        public static let toolbarSymbol: CGFloat = 18
     }
 
     public enum RowHeight {
