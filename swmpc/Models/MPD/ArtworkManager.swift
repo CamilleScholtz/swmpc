@@ -7,6 +7,30 @@
 
 import Foundation
 import MPDKit
+import Synchronization
+
+/// A cache of decoded artwork images that is safe to read from any isolation.
+///
+/// `NSCache` is documented as safe to use from multiple threads but isn't
+/// marked `Sendable`, so this wrapper vouches for it.
+private final nonisolated class ImageCache: @unchecked Sendable {
+    private let cache = NSCache<NSString, PlatformImage>()
+
+    /// Creates a cache holding at most `totalCostLimit` bytes of images.
+    init(totalCostLimit: Int) {
+        cache.totalCostLimit = totalCostLimit
+    }
+
+    /// The image stored under a key, if it hasn't been evicted.
+    func image(forKey key: NSString) -> PlatformImage? {
+        cache.object(forKey: key)
+    }
+
+    /// Stores an image under a key, at the given cost in bytes.
+    func setImage(_ image: PlatformImage, forKey key: NSString, cost: Int) {
+        cache.setObject(image, forKey: key, cost: cost)
+    }
+}
 
 /// Manages artwork fetching and caching for media items.
 ///
@@ -22,7 +46,11 @@ actor ArtworkManager {
     static let shared = ArtworkManager()
 
     /// Maps file paths to their artwork data hash for quick lookups.
-    private var fileToHash: [String: Int] = [:]
+    ///
+    /// Guarded by a mutex rather than by actor isolation so that a view can
+    /// resolve a file to its already-decoded image while building a row, see
+    /// ``cachedImage(for:fitting:)``.
+    private nonisolated let fileToHash = Mutex<[String: Int]>([:])
 
     /// Caches compressed artwork data by hash, deduplicating identical
     /// artwork.
@@ -31,16 +59,55 @@ actor ArtworkManager {
     /// Caches decoded, downsampled images keyed by artwork hash and pixel
     /// size, so scrolling back to a row doesn't decode the same artwork
     /// again.
-    private let imageCache = NSCache<NSString, PlatformImage>()
+    private nonisolated let imageCache = ImageCache(totalCostLimit: 64 * 1024 * 1024)
 
     /// Tracks in-flight fetch tasks to deduplicate concurrent requests.
     private var tasks: [String: Task<(Data, Int), Error>] = [:]
 
-    /// Private initializer to enforce singleton pattern. Sets up both caches
-    /// with a 64MB memory limit.
+    /// Private initializer to enforce singleton pattern. Sets up the data
+    /// cache with a 64MB memory limit.
     private init() {
         dataCache.totalCostLimit = 64 * 1024 * 1024
-        imageCache.totalCostLimit = 64 * 1024 * 1024
+    }
+
+    /// Returns the artwork already decoded for a file at the given size.
+    ///
+    /// Unlike ``image(for:fitting:)`` this never fetches or decodes, so a
+    /// view can call it while building a row to show artwork it has shown
+    /// before instead of filling it in a frame later.
+    ///
+    /// - Parameters:
+    ///   - file: The file path of the artwork.
+    ///   - pointSize: The largest dimension, in points, at which the artwork
+    ///                will be displayed.
+    /// - Returns: The decoded image, or `nil` when it isn't cached.
+    nonisolated func cachedImage(for file: String, fitting pointSize: CGFloat)
+        -> PlatformImage?
+    {
+        guard let hash = fileToHash.withLock({ $0[file] }) else {
+            return nil
+        }
+
+        return imageCache.image(forKey: Self.imageKey(hash: hash, fitting:
+            pointSize))
+    }
+
+    /// The cache key identifying decoded artwork at a given display size.
+    private nonisolated static func imageKey(hash: Int, fitting pointSize:
+        CGFloat) -> NSString
+    {
+        "\(hash)-\(maxPixelSize(fitting: pointSize))" as NSString
+    }
+
+    /// The largest pixel dimension artwork is decoded to for a given display
+    /// size.
+    ///
+    /// 3x covers the densest displays; the overshoot on 2x displays is cheap
+    /// at these sizes.
+    private nonisolated static func maxPixelSize(fitting pointSize: CGFloat)
+        -> Int
+    {
+        Int(pointSize * 3)
     }
 
     /// Fetches artwork for a file and decodes it into a bitmap that fits the
@@ -63,14 +130,13 @@ actor ArtworkManager {
     {
         let (data, hash) = try await get(for: file)
 
-        // 3x covers the densest displays; the overshoot on 2x displays is
-        // cheap at these sizes.
-        let maxPixelSize = Int(pointSize * 3)
-        let key = "\(hash)-\(maxPixelSize)" as NSString
+        let key = Self.imageKey(hash: hash, fitting: pointSize)
 
-        if let image = imageCache.object(forKey: key) {
+        if let image = imageCache.image(forKey: key) {
             return (image, hash)
         }
+
+        let maxPixelSize = Self.maxPixelSize(fitting: pointSize)
 
         guard let image = Artwork.downsampledImage(from: data, maxPixelSize:
             maxPixelSize)
@@ -78,7 +144,7 @@ actor ArtworkManager {
             return nil
         }
 
-        imageCache.setObject(image, forKey: key, cost: maxPixelSize *
+        imageCache.setImage(image, forKey: key, cost: maxPixelSize *
             maxPixelSize * 4)
 
         return (image, hash)
@@ -97,7 +163,7 @@ actor ArtworkManager {
     func get(for file: String) async throws -> (Data, Int) {
         try Task.checkCancellation()
 
-        if let hash = fileToHash[file],
+        if let hash = fileToHash.withLock({ $0[file] }),
            let data = dataCache.object(forKey: NSNumber(value: hash))
         {
             return (data as Data, hash)
@@ -115,7 +181,7 @@ actor ArtworkManager {
             }
 
             let hash = data.hashValue
-            fileToHash[file] = hash
+            fileToHash.withLock { $0[file] = hash }
 
             if dataCache.object(forKey: NSNumber(value: hash)) == nil {
                 dataCache.setObject(data as NSData, forKey: NSNumber(value:

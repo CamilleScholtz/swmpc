@@ -50,6 +50,24 @@ extension Artworkable where Self: Mediable {
     }
 }
 
+extension Artworkable where Self: Mediable {
+    /// The artwork that has already been decoded for this media item at the
+    /// given size.
+    ///
+    /// Unlike ``artwork(fitting:)`` this never fetches, so a row can show
+    /// artwork it has shown before while it is being built instead of
+    /// filling it in a frame later.
+    ///
+    /// - Parameter pointSize: The largest dimension, in points, at which the
+    ///                        artwork will be displayed.
+    /// - Returns: The decoded image, or `nil` when it isn't cached.
+    nonisolated func cachedArtwork(fitting pointSize: CGFloat)
+        -> PlatformImage?
+    {
+        ArtworkManager.shared.cachedImage(for: file, fitting: pointSize)
+    }
+}
+
 extension Album: Artworkable {}
 extension Song: Artworkable {}
 

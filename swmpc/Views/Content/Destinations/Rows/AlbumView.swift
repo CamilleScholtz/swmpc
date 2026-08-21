@@ -14,15 +14,17 @@ struct AlbumView: View, Equatable {
 
     private let album: Album
 
+    @State private var artwork: PlatformImage?
+
     init(for album: Album) {
         self.album = album
+
+        _artwork = State(initialValue: album.cachedArtwork(fitting: Layout.RowHeight.album))
     }
 
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.album == rhs.album
     }
-
-    @State private var artwork: Artwork?
 
     #if os(iOS)
         @State private var isShowingContextMenu = false
@@ -51,7 +53,7 @@ struct AlbumView: View, Equatable {
                     }
                 } label: {
                     ZStack {
-                        ArtworkView(image: artwork?.image, aspectRatioMode: .fill)
+                        ArtworkView(image: artwork, aspectRatioMode: .fill)
                             .frame(width: Layout.RowHeight.album, height: Layout.RowHeight.album)
                             .clipShape(RoundedRectangle(cornerRadius: Layout.CornerRadius.small, style: .continuous))
                             .animation(.easeInOut(duration: 0.15), value: artwork != nil)
@@ -116,11 +118,11 @@ struct AlbumView: View, Equatable {
                 ContextMenuView(for: album)
             }
             .task(id: album, priority: .medium) {
-                guard !Task.isCancelled else {
+                guard artwork == nil, !Task.isCancelled else {
                     return
                 }
 
-                artwork = try? await album.artwork(fitting: Layout.RowHeight.album)
+                artwork = (try? await album.artwork(fitting: Layout.RowHeight.album))?.image
             }
     }
 }
