@@ -12,10 +12,19 @@ import SwiftUI
 struct RandomView: View {
     @Environment(MPD.self) private var mpd
 
+    @State private var feedback = ActionFeedback()
+
+    private var isRandom: Bool {
+        mpd.status.isRandom ?? false
+    }
+
     var body: some View {
         AsyncButton {
+            let value = !isRandom
+            feedback.play(.selection(value ? .on : .off))
+
             try await ConnectionManager.command {
-                try await $0.random(!(mpd.status.isRandom ?? false))
+                try await $0.random(value)
             }
         } label: {
             ZStack {
@@ -26,11 +35,12 @@ struct RandomView: View {
                     .fill(Color(.accent))
                     .frame(width: Layout.Size.dotIndicator, height: Layout.Size.dotIndicator)
                     .offset(y: 12)
-                    .opacity(mpd.status.isRandom ?? false ? 1 : 0)
+                    .opacity(isRandom ? 1 : 0)
             }
             .contentShape(Circle())
         }
         .styledButton()
         .help(mpd.status.isRandom ?? false ? "Disable shuffle mode" : "Enable shuffle mode")
+        .actionFeedback(feedback)
     }
 }

@@ -33,9 +33,13 @@ struct SongView: View, Equatable {
         let trackSize: CGFloat = 20
     #endif
 
+    @State private var feedback = ActionFeedback()
+
     var body: some View {
         ZStack(alignment: .trailing) {
             Button {
+                feedback.play(.impact(weight: .light))
+
                 Task(priority: .userInitiated) {
                     try? await ConnectionManager.command {
                         try await $0.play(song)
@@ -80,6 +84,7 @@ struct SongView: View, Equatable {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .actionFeedback(feedback)
             #if os(iOS)
                 .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 10, style: .continuous))
             #elseif os(macOS)

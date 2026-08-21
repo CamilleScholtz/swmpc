@@ -22,6 +22,7 @@ struct AlbumSongsView: View {
 
     @State private var artwork: Artwork?
     @State private var songs: [Int: [Song]]?
+    @State private var feedback = ActionFeedback()
 
     #if os(iOS)
         private static let artworkSize: CGFloat = 180
@@ -42,6 +43,8 @@ struct AlbumSongsView: View {
                             guard !(mpd.status.song?.isIn(album) ?? false) else {
                                 return
                             }
+
+                            feedback.play(.impact(weight: .light))
 
                             Task(priority: .userInitiated) {
                                 try? await ConnectionManager.command {
@@ -101,6 +104,7 @@ struct AlbumSongsView: View {
                                 }
                         }
                         .buttonStyle(.plain)
+                        .actionFeedback(feedback)
                         .contextMenu {
                             ContextMenuView(for: album)
                         }

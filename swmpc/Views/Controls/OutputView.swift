@@ -18,6 +18,7 @@ struct OutputView: View {
     @State private var isChangingVolume = false
     @State private var volume: Double = 0
     @State private var percentage = 0.5
+    @State private var feedback = ActionFeedback()
 
     var body: some View {
         Button {
@@ -64,6 +65,8 @@ struct OutputView: View {
                             volume = percentage * 100
 
                             if !editing {
+                                feedback.play(.release(.slider))
+
                                 Task {
                                     try? await ConnectionManager.command {
                                         try await $0.setVolume(Int(volume))
@@ -73,6 +76,7 @@ struct OutputView: View {
                         }
                         .controlSize(.mini)
                         .frame(minWidth: 150)
+                        .actionFeedback(feedback)
                     }
                 }
 

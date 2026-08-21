@@ -26,6 +26,8 @@ struct AlbumView: View, Equatable {
         lhs.album == rhs.album
     }
 
+    @State private var feedback = ActionFeedback()
+
     #if os(iOS)
         @State private var isShowingContextMenu = false
     #elseif os(macOS)
@@ -46,6 +48,8 @@ struct AlbumView: View, Equatable {
         } label: {
             HStack(spacing: Layout.Spacing.large) {
                 Button {
+                    feedback.play(.impact(weight: .light))
+
                     Task(priority: .userInitiated) {
                         try? await ConnectionManager.command {
                             try await $0.play(album)
@@ -108,6 +112,7 @@ struct AlbumView: View, Equatable {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .actionFeedback(feedback)
         #if os(macOS)
             .onHoverWithDebounce(handler: hoverHandler) { hovering in
                 isHovering = hovering

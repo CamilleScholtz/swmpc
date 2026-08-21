@@ -21,6 +21,7 @@ struct NextView: View {
     let size: CGFloat
 
     @State private var animating = false
+    @State private var feedback = ActionFeedback()
 
     private var value: CGFloat {
         animating ? 1 : 0
@@ -28,6 +29,8 @@ struct NextView: View {
 
     var body: some View {
         AsyncButton {
+            feedback.play(.impact(weight: .light))
+
             withAnimation(.interactiveSpring(duration: 0.4, extraBounce: 0.3)) {
                 animating = true
             }
@@ -64,5 +67,6 @@ struct NextView: View {
         .styledButton()
         .disabled(mpd.status.song == nil)
         .help("Skip to next track")
+        .actionFeedback(feedback)
     }
 }

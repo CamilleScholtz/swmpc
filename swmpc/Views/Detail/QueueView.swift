@@ -48,6 +48,12 @@ struct QueueView: View {
         @Environment(MPD.self) private var mpd
         @Environment(NavigationManager.self) private var navigator
 
+        @State private var feedback = ActionFeedback()
+
+        private var isConsume: Bool {
+            mpd.status.isConsume ?? false
+        }
+
         var body: some View {
             HStack(alignment: .center) {
                 Text("Queue")
@@ -58,11 +64,14 @@ struct QueueView: View {
                 GlassEffectContainer {
                     HStack(spacing: Layout.Spacing.medium) {
                         AsyncButton {
+                            let value = !isConsume
+                            feedback.play(.selection(value ? .on : .off))
+
                             try await ConnectionManager.command {
-                                try await $0.consume(!(mpd.status.isConsume ?? false))
+                                try await $0.consume(value)
                             }
                         } label: {
-                            Image(systemSymbol: mpd.status.isConsume ?? false ? .flameFill : .flame)
+                            Image(systemSymbol: isConsume ? .flameFill : .flame)
                                 .contentTransition(.symbolEffect(.replace))
                                 .animation(.snappy(duration: 0.25), value: mpd.status.isConsume)
                         }
@@ -84,6 +93,7 @@ struct QueueView: View {
                     }
                 }
                 .buttonStyle(.glass)
+                .actionFeedback(feedback)
             }
         }
     }

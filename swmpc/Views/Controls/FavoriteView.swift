@@ -13,6 +13,7 @@ struct FavoriteView: View {
     @Environment(MPD.self) private var mpd
 
     @State private var isFavorited = false
+    @State private var feedback = ActionFeedback()
 
     var body: some View {
         AsyncButton(id: ButtonNotification.favorite) {
@@ -21,6 +22,7 @@ struct FavoriteView: View {
             }
 
             isFavorited.toggle()
+            feedback.play(isFavorited ? .success : .selection(.off))
 
             if isFavorited {
                 try await ConnectionManager.command {
@@ -45,6 +47,7 @@ struct FavoriteView: View {
         .asyncButtonStyle(.pulse)
         .disabled(mpd.status.song == nil)
         .help(isFavorited ? "Remove from favorites" : "Add to favorites")
+        .actionFeedback(feedback)
         .onChange(of: mpd.status.song) { _, value in
             guard let song = value else {
                 return

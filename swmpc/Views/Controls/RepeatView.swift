@@ -12,10 +12,19 @@ import SwiftUI
 struct RepeatView: View {
     @Environment(MPD.self) private var mpd
 
+    @State private var feedback = ActionFeedback()
+
+    private var isRepeat: Bool {
+        mpd.status.isRepeat ?? false
+    }
+
     var body: some View {
         AsyncButton {
+            let value = !isRepeat
+            feedback.play(.selection(value ? .on : .off))
+
             try await ConnectionManager.command {
-                try await $0.repeat(!(mpd.status.isRepeat ?? false))
+                try await $0.repeat(value)
             }
         } label: {
             ZStack {
@@ -26,11 +35,12 @@ struct RepeatView: View {
                     .fill(Color(.accent))
                     .frame(width: Layout.Size.dotIndicator, height: Layout.Size.dotIndicator)
                     .offset(y: 12)
-                    .opacity(mpd.status.isRepeat ?? false ? 1 : 0)
+                    .opacity(isRepeat ? 1 : 0)
             }
             .contentShape(Circle())
         }
         .styledButton()
         .help(mpd.status.isRepeat ?? false ? "Disable repeat mode" : "Enable repeat mode")
+        .actionFeedback(feedback)
     }
 }

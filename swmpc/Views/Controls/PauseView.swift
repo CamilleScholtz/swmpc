@@ -15,8 +15,12 @@ struct PauseView: View {
     let size: CGFloat
     let button: Bool
 
+    @State private var feedback = ActionFeedback()
+
     var body: some View {
         AsyncButton {
+            feedback.play(.impact(weight: .medium))
+
             try await ConnectionManager.command {
                 try await $0.pause(mpd.status.isPlaying)
             }
@@ -33,5 +37,6 @@ struct PauseView: View {
         .styledButton(hoverScale: 1.2, pressScale: button ? 1.0 : 0.9)
         .disabled(mpd.status.song == nil)
         .help(mpd.status.isPlaying ? "Pause playback" : "Resume playback")
+        .actionFeedback(feedback)
     }
 }

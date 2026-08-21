@@ -18,6 +18,7 @@ struct PlayerProgressView: View {
 
     @State private var sliderValue: Double = 0
     @State private var isEditing = false
+    @State private var feedback = ActionFeedback()
 
     private var elapsed: Double {
         mpd.status.elapsed ?? 0
@@ -36,6 +37,8 @@ struct PlayerProgressView: View {
                     if editing {
                         isEditing = true
                     } else {
+                        feedback.play(.release(.slider))
+
                         Task(priority: .userInitiated) {
                             try? await ConnectionManager.command {
                                 try await $0.seek(sliderValue)
@@ -56,6 +59,7 @@ struct PlayerProgressView: View {
             #endif
                 .disabled(mpd.status.song == nil)
                 .help("Seek to position in track")
+                .actionFeedback(feedback)
                 .onChange(of: elapsed) { previous, value in
                     guard !isEditing else {
                         return
