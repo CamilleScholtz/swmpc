@@ -44,6 +44,74 @@ import WidgetKit
     /// The current volume level (0-100).
     private(set) var volume: Int?
 
+    /// The current decoded stream bitrate in kilobits per second.
+    private(set) var bitrate: Int?
+
+    /// MPD's raw `sampleRate:bits:channels` description for the current stream.
+    private(set) var audioFormat: String?
+
+    /// A compact, human-readable description of the current file and stream.
+    var technicalDetails: String? {
+        var details: [String] = []
+
+        if let fileFormat {
+            details.append(fileFormat)
+        }
+
+        if let audioFormat {
+            let fields = audioFormat.split(separator: ":", omittingEmptySubsequences: false)
+            if fields.count == 3 {
+                let sampleRate = Int(fields[0]).flatMap { $0 > 0 ? $0 : nil }
+                let bits = Int(fields[1]).flatMap { $0 > 0 ? $0 : nil }
+
+                switch (bits, sampleRate) {
+                case let (bits?, sampleRate?):
+                    details.append("\(bits)-bit/\(Self.format(sampleRate: sampleRate))")
+                case let (bits?, nil):
+                    details.append("\(bits)-bit")
+                case let (nil, sampleRate?):
+                    details.append(Self.format(sampleRate: sampleRate))
+                case (nil, nil):
+                    break
+                }
+
+                if let channels = Int(fields[2]), channels > 0 {
+                    details.append("\(channels) ch")
+                }
+            }
+        }
+
+        if let bitrate, bitrate > 0 {
+            details.append("\(bitrate) kbps")
+        }
+
+        return details.isEmpty ? nil : details.joined(separator: " • ")
+    }
+
+    /// The uppercase file extension for the current song or stream URL.
+    private var fileFormat: String? {
+        guard let file = song?.file else {
+            return nil
+        }
+
+        let path = URL(string: file)?.path.isEmpty == false
+            ? URL(string: file)?.path ?? file
+            : file
+        let fileExtension = URL(fileURLWithPath: path).pathExtension
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return fileExtension.isEmpty ? nil : fileExtension.uppercased()
+    }
+
+    /// Formats a sample rate without unnecessary decimal places.
+    private static func format(sampleRate: Int) -> String {
+        let kilohertz = Double(sampleRate) / 1_000
+        let value = kilohertz.rounded() == kilohertz
+            ? String(Int(kilohertz))
+            : kilohertz.formatted(.number.precision(.fractionLength(1)))
+        return "\(value) kHz"
+    }
+
     /// Whether elapsed time tracking is currently active.
     @ObservationIgnored private(set) var trackElapsed = false {
         didSet {
@@ -158,6 +226,8 @@ import WidgetKit
         }
 
         _ = volume.update(to: data.volume)
+        _ = bitrate.update(to: data.bitrate)
+        _ = audioFormat.update(to: data.audioFormat)
     }
 
     /// Starts tracking elapsed time for the current song.
