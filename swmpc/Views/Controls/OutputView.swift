@@ -145,6 +145,8 @@ struct OutputView: View {
                         }
                     }
                 }
+
+                FormatSection()
             }
             .padding()
             #if os(iOS)
@@ -194,6 +196,87 @@ private struct OutputRow: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.mini)
+        }
+    }
+}
+
+private struct FormatSection: View {
+    @Environment(MPD.self) private var mpd
+
+    var body: some View {
+        let codec = mpd.status.codec
+        let format = mpd.status.audioFormat
+        let bitrate = mpd.status.bitrate.flatMap { $0 > 0 ? $0 : nil }
+
+        if codec != nil || format != nil || bitrate != nil {
+            Divider()
+
+            VStack(alignment: .leading, spacing: Layout.Spacing.small) {
+                Text("Format")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+
+                if let codec {
+                    FormatRow(label: "Codec", value: codec)
+                }
+
+                if let sampleRate = format?.sampleRate {
+                    FormatRow(label: "Sample Rate", value: Self.description(sampleRate: sampleRate))
+                }
+
+                if let bits = format?.bits {
+                    FormatRow(label: "Bit Depth", value: String(localized: "\(bits)-bit"))
+                }
+
+                if let channels = format?.channels {
+                    FormatRow(label: "Channels", value: Self.description(channels: channels))
+                }
+
+                if let bitrate {
+                    FormatRow(label: "Bitrate", value: String(localized: "\(bitrate.formatted()) kbps"))
+                }
+            }
+        }
+    }
+
+    /// Formats a sample rate in kilohertz, without needless decimals.
+    private static func description(sampleRate: Int) -> String {
+        Measurement(value: Double(sampleRate), unit: UnitFrequency.hertz)
+            .converted(to: .kilohertz)
+            .formatted(.measurement(
+                width: .abbreviated,
+                usage: .asProvided,
+                numberFormatStyle: .number.precision(.fractionLength(0 ... 1)),
+            ))
+    }
+
+    /// Names the common channel layouts, and counts the rest.
+    private static func description(channels: Int) -> String {
+        switch channels {
+        case 1: String(localized: "Mono")
+        case 2: String(localized: "Stereo")
+        default: String(localized: "\(channels) channels")
+        }
+    }
+}
+
+private struct FormatRow: View {
+    let label: LocalizedStringResource
+    let value: String
+
+    var body: some View {
+        HStack(spacing: Layout.Spacing.medium) {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Text(value)
+                .font(.subheadline)
+                .monospacedDigit()
+                .lineLimit(1)
         }
     }
 }

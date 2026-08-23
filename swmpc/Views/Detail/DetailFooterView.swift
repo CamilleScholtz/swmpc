@@ -42,14 +42,6 @@ struct DetailFooterView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
-
-                    if let technicalDetails = mpd.status.technicalDetails {
-                        Text(technicalDetails)
-                            .font(.system(size: 11, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(1)
-                    }
                 }
                 .contextMenu {
                     if let songTitleForClipboard {
