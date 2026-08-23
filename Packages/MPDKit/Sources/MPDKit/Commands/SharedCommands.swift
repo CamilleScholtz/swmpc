@@ -25,12 +25,15 @@ public extension ConnectionManager {
     ///   - `elapsed`: The elapsed playback time in seconds.
     ///   - `song`: The currently playing song, if any.
     ///   - `volume`: The current volume level (0-100).
+    ///   - `bitrate`: The current decoded stream bitrate in kilobits per second.
+    ///   - `audioFormat`: MPD's `sampleRate:bits:channels` audio description.
     /// - Throws: An error if the response is malformed or if the underlying
     ///           command execution fails.
     func getStatusData() async throws -> (state: PlayerState?, isConsume: Bool?,
                                           isRandom: Bool?, isRepeat: Bool?,
                                           elapsed: Double?, song: Song?, volume:
-                                          Int?)
+                                          Int?, bitrate: Int?, audioFormat:
+                                          String?)
     {
         let lines = try await run(["status", "currentsong"])
 
@@ -60,6 +63,8 @@ public extension ConnectionManager {
         let isRepeat = fields["repeat"].map { $0 == "1" }
         let elapsed = fields["elapsed"].flatMap(Double.init)
         let volume = fields["volume"].flatMap(Int.init)
+        let bitrate = fields["bitrate"].flatMap(Int.init)
+        let audioFormat = fields["audio"]
 
         let song: Song? = if fields["file"] != nil {
             try Song.parse(fields: fields, index: nil)
@@ -67,7 +72,8 @@ public extension ConnectionManager {
             nil
         }
 
-        return (state, isConsume, isRandom, isRepeat, elapsed, song, volume)
+        return (state, isConsume, isRandom, isRepeat, elapsed, song, volume,
+                bitrate, audioFormat)
     }
 
     /// Retrieves statistics from the MPD server.
