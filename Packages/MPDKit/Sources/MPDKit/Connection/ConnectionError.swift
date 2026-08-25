@@ -21,6 +21,7 @@ public enum ConnectionManagerError: LocalizedError, Equatable {
     case protocolViolation(String)
     case malformedResponse(String)
     case unsupportedOperation(String)
+    case unsupportedByServer(String)
 
     public nonisolated var errorDescription: String? {
         switch self {
@@ -29,7 +30,7 @@ public enum ConnectionManagerError: LocalizedError, Equatable {
         case .invalidPort:
             "Invalid port provided. Port must be between 1 and 65535."
         case .unsupportedServerVersion:
-            "Unsupported MPD server version. Minimum required version is 0.21."
+            "Unsupported MPD server version. Minimum required version is \(ProtocolVersion.minimum)."
         case let .connectionFailure(details):
             "Network connection returned an error: \(details)"
         case .connectionUnexpectedClosure:
@@ -42,6 +43,8 @@ public enum ConnectionManagerError: LocalizedError, Equatable {
             "Received malformed or unexpected response format from server: \(details)"
         case let .unsupportedOperation(details):
             "Unsupported operation attempted: \(details)"
+        case let .unsupportedByServer(details):
+            "Your MPD server is too old for this feature: \(details)"
         }
     }
 }

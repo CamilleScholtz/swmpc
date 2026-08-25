@@ -25,5 +25,9 @@ let package = Package(
                 .product(name: "OrderedCollections", package: "swift-collections"),
             ],
         ),
+        .testTarget(
+            name: "MPDKitTests",
+            dependencies: ["MPDKit"],
+        ),
     ],
 )

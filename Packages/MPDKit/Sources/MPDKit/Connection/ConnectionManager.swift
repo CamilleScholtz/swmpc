@@ -40,7 +40,14 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     public private(set) var version: String?
 
     /// Creates a new connection manager.
-    public init() {}
+    ///
+    /// - Parameter version: A server version to start from. Normally left
+    ///                      unset, since `connect()` fills it in from the
+    ///                      greeting; supplying it lets the version-dependent
+    ///                      command dialects be exercised without a server.
+    public init(version: String? = nil) {
+        self.version = version
+    }
 
     /// Establishes a TCP connection to the MPD server.
     ///
@@ -157,13 +164,13 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// Ensures that the server version is supported.
     ///
     /// This function checks the version of the MPD server obtained after
-    /// connecting. The minimum supported version is 0.21. If the version is
-    /// `nil` (not yet known), the check passes.
+    /// connecting. The minimum supported version is `ProtocolVersion.minimum`.
+    /// If the version is `nil` (not yet known), the check passes.
     ///
     /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is older than the minimum required.
     public func ensureVersionSupported() throws {
-        if version != nil, !isVersionAtLeast("0.21") {
+        if version != nil, !isVersionAtLeast(ProtocolVersion.minimum) {
             throw ConnectionManagerError.unsupportedServerVersion
         }
     }
@@ -179,11 +186,16 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// - Returns: `true` if the server version is known and not older than
     ///            `minimum`.
     public func isVersionAtLeast(_ minimum: String) -> Bool {
-        guard let version else {
-            return false
-        }
+        ProtocolVersion.isAtLeast(minimum, in: version)
+    }
 
-        return version.compare(minimum, options: .numeric) != .orderedAscending
+    /// Returns whether the server announces a version new enough to provide
+    /// the given feature.
+    ///
+    /// - Parameter feature: The feature to check for.
+    /// - Returns: `true` if the server should support the feature.
+    public func supports(_ feature: ProtocolFeature) -> Bool {
+        isVersionAtLeast(feature.minimumVersion)
     }
 
     /// Ensures that the client is authenticated with the server.
@@ -311,31 +323,70 @@ public actor ConnectionManager<Mode: ConnectionMode> {
         return "\(quote)\(escaped)\(quote)"
     }
 
-    /// Constructs a filter clause for MPD query commands like `find` or
-    /// `search`.
+    /// Constructs the filter argument for MPD query commands like `find` or
+    /// `search`, from a set of tag conditions.
     ///
-    /// This function builds a filter clause suitable for an MPD command. The
-    /// provided `value` is escaped to handle special characters safely. The
-    /// resulting clause is typically of the form `"(key 'escapedValue')"`. The
-    /// entire clause is then escaped for safe inclusion in a command string.
+    /// MPD 0.21 introduced the expression syntax, in which each condition is
+    /// parenthesised as `(key == 'value')` and conditions are joined with
+    /// `AND`. Servers announcing an older protocol — Mopidy announces 0.19 —
+    /// take a flat sequence of `key "value"` pairs instead, which they
+    /// combine with an implicit `AND`. Values are escaped for safe inclusion
+    /// either way. Negation exists only in the newer syntax, so callers that
+    /// need `!=` have to branch themselves.
     ///
-    /// - Parameters:
-    ///   - key: The tag or attribute to filter on (e.g., "artist", "album").
-    ///   - value: The value to match against. It will be escaped.
-    ///   - comparator: The comparison operator (e.g., "==", "!="). Defaults
-    ///                 to "==".
-    ///   - quote: A Boolean indicating whether to enclose the final clause in
-    ///            double quotes. Defaults to `true`.
-    /// - Returns: A formatted and escaped string representing the filter
-    ///            clause.
-    nonisolated func filter(key: String, value: String, comparator:
-        String = "==", quote: Bool = true) -> String
-    {
-        let clause = "(\(key) \(comparator) \(escape(value, quote: "'")))"
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
+    /// - Parameter conditions: The tag/value pairs to match, all of which
+    ///                         must hold.
+    /// - Returns: The formatted and escaped filter argument, ready to be
+    ///            appended to a command.
+    func filters(_ conditions: [(key: String, value: String)]) -> String {
+        guard supports(.filterExpressions) else {
+            return conditions
+                .map { "\($0.key) \(escape($0.value))" }
+                .joined(separator: " ")
+        }
 
-        return quote ? "\"\(clause)\"" : clause
+        let clauses = conditions.map { condition in
+            "(\(condition.key) == \(escape(condition.value, quote: "'")))"
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+        }
+
+        guard clauses.count > 1 else {
+            return "\"\(clauses.joined())\""
+        }
+
+        return "\"(\(clauses.joined(separator: " AND ")))\""
+    }
+
+    /// Returns the `sort` suffix for a `find`-style command, or an empty
+    /// string when the server cannot sort the results itself.
+    ///
+    /// MPD gained the `sort` parameter in 0.21, and the `TitleSort` tag only
+    /// in 0.24, so a server can be new enough to sort and still not know the
+    /// tag being sorted on. Callers must order the results client-side
+    /// whenever this returns an empty string.
+    ///
+    /// - Parameter sort: The sort descriptor to apply.
+    /// - Returns: A leading-space suffix such as `" sort -albumsort"`, or an
+    ///            empty string.
+    func sortSuffix(_ sort: SortDescriptor) -> String {
+        guard supports(.sort),
+              isVersionAtLeast(sort.option.minimumVersion)
+        else {
+            return ""
+        }
+
+        return " sort \(sort.direction.rawValue)\(sort.option.rawValue)"
+    }
+
+    /// Returns the `sort` suffix for a `find`-style command sorted on a raw
+    /// tag, or an empty string when the server cannot sort.
+    ///
+    /// - Parameter tag: The tag to sort on, e.g. `"date"`.
+    /// - Returns: A leading-space suffix such as `" sort date"`, or an empty
+    ///            string.
+    func sortSuffix(tag: String) -> String {
+        supports(.sort) ? " sort \(tag)" : ""
     }
 
     // MARK: - Reading

@@ -95,9 +95,9 @@ struct LibrarySearchView<Placeholder: View>: View {
     }
 
     private var fields: SearchFieldSelection {
-        SearchFieldSelection(artists: artistSearchFields.resolved(for: .artist),
-                             albums: albumSearchFields.resolved(for: .album),
-                             songs: songSearchFields.resolved(for: .song))
+        SearchFieldSelection(artists: artistSearchFields.resolved(for: .artist, on: mpd.state),
+                             albums: albumSearchFields.resolved(for: .album, on: mpd.state),
+                             songs: songSearchFields.resolved(for: .song, on: mpd.state))
     }
 
     var body: some View {
@@ -279,6 +279,8 @@ struct LibrarySearchView<Placeholder: View>: View {
 /// Artists are left out: they can only be matched on their name, so there is
 /// nothing to choose.
 struct SearchFieldsMenu: View {
+    @Environment(MPD.self) private var mpd
+
     @AppStorage(Setting.albumSearchFields) private var albumSearchFields = SearchFields.default
     @AppStorage(Setting.songSearchFields) private var songSearchFields = SearchFields.default
 
@@ -314,13 +316,17 @@ struct SearchFieldsMenu: View {
     /// - Parameters:
     ///   - type: The media type whose fields are toggled.
     ///   - fields: The stored selection for that type.
-    /// - Returns: One toggle per available field.
+    /// - Returns: One toggle per available field, omitting fields whose tag
+    ///             the server is too old to send.
     private func toggles(for type: MediaType, fields: Binding<SearchFields>) -> some View {
-        ForEach(Source.database.availableSearchFields(for: type), id: \.self) { field in
+        let available = Source.database.availableSearchFields(for: type)
+            .filter { mpd.state.supports(minimumVersion: $0.minimumVersion) }
+
+        return ForEach(available, id: \.self) { field in
             Toggle(isOn: Binding(
-                get: { fields.wrappedValue.resolved(for: type).contains(field) },
+                get: { fields.wrappedValue.resolved(for: type, on: mpd.state).contains(field) },
                 set: { _ in
-                    var updated = fields.wrappedValue.resolved(for: type)
+                    var updated = fields.wrappedValue.resolved(for: type, on: mpd.state)
                     updated.toggle(field)
 
                     fields.wrappedValue = updated

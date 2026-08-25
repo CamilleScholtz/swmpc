@@ -128,7 +128,7 @@ public extension ConnectionManager {
     func getAlbums(sort: SortDescriptor = SortDescriptor.default) async throws
         -> [Album]
     {
-        let lines = try await run(["find \(filter(key: "track", value: "1")) sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
+        let lines = try await run(["find \(filters([(key: "track", value: "1")]))\(sortSuffix(sort))"])
 
         let albums = try parseArray(lines, as: Album.self)
         return Array(OrderedSet(albums))
@@ -136,9 +136,10 @@ public extension ConnectionManager {
 
     /// Retrieves all albums by a specific artist from the given source.
     ///
-    /// Database results are sorted by release date. Queue results are sorted
-    /// by release date on servers that support it (`playlistfind` only
-    /// supports `sort` since MPD 0.24) and keep their queue order otherwise.
+    /// Database results are sorted by release date, client-side on servers
+    /// that cannot sort `find` themselves. Queue results are sorted by
+    /// release date on servers that support it (`playlistfind` only supports
+    /// `sort` since MPD 0.24) and keep their queue order otherwise.
     ///
     /// - Parameters:
     ///   - artist: The `Artist` to find albums for.
@@ -150,14 +151,14 @@ public extension ConnectionManager {
     func getAlbums(by artist: Artist, from source: Source) async throws ->
         [Album]
     {
+        let query = filters([(key: "albumartist", value: artist.name)])
         let lines: [String]
 
         switch source {
         case .database:
-            lines = try await run(["find \(filter(key: "albumartist", value: artist.name)) sort date"])
+            lines = try await run(["find \(query)\(sortSuffix(tag: "date"))"])
         case .queue:
-            let sort = isVersionAtLeast("0.24") ? " sort date" : ""
-            lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))\(sort)"])
+            lines = try await run(["playlistfind \(query)\(supports(.queueSort) ? " sort date" : "")"])
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving albums by artist",
@@ -224,9 +225,14 @@ public extension ConnectionManager {
         .default) async throws -> [Song]
     {
         let lines: [String]
+
         switch source {
         case .database:
-            lines = try await run(["find \"(title != '')\" sort \(sort.direction.rawValue)\(sort.option.rawValue)"])
+            guard supports(.filterExpressions) else {
+                return try await getEntireDatabase()
+            }
+
+            lines = try await run(["find \"(title != '')\"\(sortSuffix(sort))"])
         case .queue:
             lines = try await run(["playlistinfo"])
         case .playlist, .favorites:
@@ -238,6 +244,28 @@ public extension ConnectionManager {
 
             lines = try await run(["listplaylistinfo \(escape(playlist.name))"])
         }
+
+        return try parseArray(lines, as: Song.self, indexed: true)
+    }
+
+    /// Retrieves every song in the database, for servers whose protocol
+    /// cannot express "every song that has a title".
+    ///
+    /// `listallinfo` is the only way to ask a pre-0.21 server for the whole
+    /// database. Servers may refuse it — Mopidy blacklists it by default, and
+    /// says so in the error it returns.
+    ///
+    /// Unlike the filter-based query this stands in for, it cannot exclude
+    /// untitled songs, so those show up as "Unknown Title" rather than being
+    /// left out.
+    ///
+    /// Results come back in database order, since `listallinfo` takes no
+    /// `sort` parameter.
+    ///
+    /// - Returns: An array of `Song` objects.
+    /// - Throws: An error if the command fails or the response is malformed.
+    private func getEntireDatabase() async throws -> [Song] {
+        let lines = try await run(["listallinfo"])
 
         return try parseArray(lines, as: Song.self, indexed: true)
     }
@@ -256,15 +284,16 @@ public extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(in album: Album, from source: Source) async throws -> [Song] {
-        let filters = "\"(\(filter(key: "album", value: album.title, quote: false)) AND \(filter(key: "albumartist", value: album.artist.name, quote: false)))\""
+        let query = filters([(key: "album", value: album.title),
+                             (key: "albumartist", value: album.artist.name)])
 
         switch source {
         case .database:
-            let lines = try await run(["find \(filters)"])
+            let lines = try await run(["find \(query)"])
             return try parseArray(lines, as: Song.self)
                 .sorted { ($0.disc, $0.track) < ($1.disc, $1.track) }
         case .queue:
-            let lines = try await run(["playlistfind \(filters)"])
+            let lines = try await run(["playlistfind \(query)"])
             return try parseArray(lines, as: Song.self)
         default:
             throw ConnectionManagerError.unsupportedOperation(
@@ -288,7 +317,7 @@ public extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(by artist: Artist) async throws -> [Song] {
-        let lines = try await run(["find \(filter(key: "artist", value: artist.name)) sort date"])
+        let lines = try await run(["find \(filters([(key: "artist", value: artist.name)]))\(sortSuffix(tag: "date"))"])
         let songs = try parseArray(lines, as: Song.self)
 
         return OrderedDictionary(grouping: songs, by: \.album.id)

@@ -5,6 +5,22 @@
 //  Created by Camille Scholtz on 20/06/2025.
 //
 
+/// An MPD command that returns artwork for a song.
+public enum ArtworkCommand: String, Sendable {
+    /// Reads artwork from the song's folder.
+    case albumArt = "albumart"
+    /// Reads artwork embedded in the song file.
+    case readPicture = "readpicture"
+
+    /// The protocol feature that provides this command.
+    var feature: ProtocolFeature {
+        switch self {
+        case .albumArt: .albumArt
+        case .readPicture: .readPicture
+        }
+    }
+}
+
 /// Specifies the method for retrieving artwork from MPD.
 public enum ArtworkGetter: String, Codable, Sendable {
     /// Retrieve artwork from the music library folder structure.
@@ -17,12 +33,12 @@ public enum ArtworkGetter: String, Codable, Sendable {
     case metadataThenLibrary = "readpicture_then_albumart"
 
     /// Returns the ordered list of MPD commands to try for artwork retrieval.
-    public var commands: [String] {
+    public var commands: [ArtworkCommand] {
         switch self {
-        case .library: ["albumart"]
-        case .metadata: ["readpicture"]
-        case .libraryThenMetadata: ["albumart", "readpicture"]
-        case .metadataThenLibrary: ["readpicture", "albumart"]
+        case .library: [.albumArt]
+        case .metadata: [.readPicture]
+        case .libraryThenMetadata: [.albumArt, .readPicture]
+        case .metadataThenLibrary: [.readPicture, .albumArt]
         }
     }
 }

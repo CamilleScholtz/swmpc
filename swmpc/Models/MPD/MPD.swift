@@ -119,9 +119,12 @@ import Observation
                     return false
                 }
 
+                state.protocolVersion = await ConnectionManager.idle.version
+
                 observeStates(states)
                 return true
             } catch {
+                state.protocolVersion = nil
                 state.error = error
 
                 try? await Task.sleep(for: .seconds(2))

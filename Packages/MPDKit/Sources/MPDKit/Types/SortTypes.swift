@@ -31,6 +31,18 @@ public enum SortOption: String, Sendable {
             "Last Modified"
         }
     }
+
+    /// The MPD version that introduced the tag this option sorts on.
+    ///
+    /// `ArtistSort` and `AlbumArtistSort` arrived in 0.16 and `AlbumSort` in
+    /// 0.19, but `TitleSort` only in 0.24, so sorting songs by title has to
+    /// happen client-side on anything older.
+    public var minimumVersion: String {
+        switch self {
+        case .song: "0.24"
+        case .artist, .album, .modified: ProtocolVersion.minimum
+        }
+    }
 }
 
 /// Represents the direction of sorting for media items.

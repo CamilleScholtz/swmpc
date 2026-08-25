@@ -37,14 +37,41 @@ extension SearchField {
 }
 
 extension SearchFields {
-    /// The fields to match a media type against, falling back to its
-    /// defaults when the user turned all of them off, which would otherwise
-    /// match nothing at all.
+    /// The fields to match a media type against, dropping any whose tag the
+    /// server is too old to send, and falling back to the type's defaults
+    /// when nothing usable is left, which would otherwise match nothing at
+    /// all.
     ///
-    /// - Parameter type: The media type the fields belong to.
+    /// - Parameters:
+    ///   - type: The media type the fields belong to.
+    ///   - state: The connection state, consulted for the server's protocol
+    ///            version.
     /// - Returns: The fields to search.
-    func resolved(for type: MediaType) -> SearchFields {
-        isEmpty ? Source.database.defaultSearchFields(for: type) : self
+    func resolved(for type: MediaType, on state: StateManager) -> SearchFields {
+        let usable = Source.database.availableSearchFields(for: type)
+            .filter { contains($0) }
+            .filter { state.supports(minimumVersion: $0.minimumVersion) }
+
+        guard !usable.isEmpty else {
+            return Source.database.defaultSearchFields(for: type)
+        }
+
+        return SearchFields(fields: Set(usable))
+    }
+}
+
+extension MPDKit.SortDescriptor {
+    /// The descriptor to sort by, falling back to the default when the server
+    /// is too old for the tag this one sorts on.
+    ///
+    /// Without this a stored option the server cannot honour would leave the
+    /// list in database order with nothing to explain why.
+    ///
+    /// - Parameter state: The connection state, consulted for the server's
+    ///                    protocol version.
+    /// - Returns: The descriptor to sort by.
+    func resolved(on state: StateManager) -> MPDKit.SortDescriptor {
+        state.supports(minimumVersion: option.minimumVersion) ? self : .default
     }
 }
 

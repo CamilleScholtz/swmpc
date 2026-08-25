@@ -52,10 +52,22 @@ public extension ConnectionManager where Mode == CommandMode {
     /// `name` and then immediately clears that new playlist, ensuring it exists
     /// but is empty.
     ///
+    /// Servers that implement `save` but not `playlistclear` — OwnTone is one —
+    /// would otherwise leave behind a playlist holding a copy of the queue, so
+    /// the half-made playlist is removed before the failure is reported.
+    ///
     /// - Parameter name: The name for the new playlist.
     /// - Throws: An error if the underlying command execution fails.
     func createPlaylist(named name: String) async throws {
-        try await run(["save \(escape(name))", "playlistclear \(escape(name))"])
+        try await run(["save \(escape(name))"])
+
+        do {
+            try await run(["playlistclear \(escape(name))"])
+        } catch {
+            _ = try? await run(["rm \(escape(name))"])
+
+            throw error
+        }
     }
 
     /// Renames a playlist.

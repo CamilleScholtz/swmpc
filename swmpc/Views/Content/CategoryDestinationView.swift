@@ -73,12 +73,29 @@ private struct CategoryDatabaseView: View {
     #endif
 
     private var sort: MPDKit.SortDescriptor {
-        switch navigator.category {
+        let stored: MPDKit.SortDescriptor = switch navigator.category {
         case .albums: albumSort
         case .artists: artistSort
         case .songs: songSort
         default: MPDKit.SortDescriptor.default
         }
+
+        return stored.resolved(on: mpd.state)
+    }
+
+    /// The sort options the server is new enough to apply.
+    ///
+    /// Empty when the server predates the `sort` parameter, which hides the
+    /// sort options rather than offering ones that do nothing.
+    private var sortOptions: [SortOption] {
+        guard navigator.category.source.isSortable, mpd.state.supports(.sort)
+        else {
+            return []
+        }
+
+        return navigator.category.source
+            .availableSortOptions(for: navigator.category.type)
+            .filter { mpd.state.supports(minimumVersion: $0.minimumVersion) }
     }
 
     /// Whether the user's scroll position is recorded.
@@ -243,8 +260,8 @@ private struct CategoryDatabaseView: View {
 
     private var sortMenu: some View {
         Menu {
-            if navigator.category.source.isSortable {
-                ForEach(navigator.category.source.availableSortOptions(for: navigator.category.type), id: \.self) { (option: SortOption) in
+            if !sortOptions.isEmpty {
+                ForEach(sortOptions, id: \.self) { (option: SortOption) in
                     Button {
                         let newSort = if sort.option == option {
                             MPDKit.SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)

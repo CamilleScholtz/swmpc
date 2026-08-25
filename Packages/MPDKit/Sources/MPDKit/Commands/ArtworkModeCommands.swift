@@ -35,7 +35,7 @@ public extension ConnectionManager where Mode == ArtworkMode {
     ///
     /// - Throws: An error if the command fails on a supporting server.
     private func raiseBinaryLimit() async throws {
-        guard isVersionAtLeast("0.22.4") else {
+        guard supports(.binaryLimit) else {
             return
         }
 
@@ -46,17 +46,26 @@ public extension ConnectionManager where Mode == ArtworkMode {
     /// artwork getter configuration.
     ///
     /// This method tries each configured MPD command in order (e.g., albumart
-    /// then readpicture) and returns the first successful result. The
-    /// `readpicture` command is only available since MPD 0.22 and is skipped
-    /// on older servers.
+    /// then readpicture) and returns the first successful result. Commands the
+    /// server is too old for are skipped: `albumart` arrived in MPD 0.21 and
+    /// `readpicture` in 0.22.
     ///
     /// - Parameter file: The file path representing the artwork resource.
     /// - Returns: A `Data` object containing the complete binary artwork data.
-    /// - Throws: An error if all configured methods fail to retrieve artwork.
+    /// - Throws: `ConnectionManagerError.unsupportedByServer` if the server
+    ///           has no artwork command at all, or an error if all available
+    ///           methods fail to retrieve artwork.
     func getArtworkData(for file: String) async throws -> Data {
         let commands = (ConnectionConfiguration.server?.artworkGetter.commands
-            ?? ["albumart"])
-            .filter { $0 != "readpicture" || isVersionAtLeast("0.22") }
+            ?? [.albumArt])
+            .filter { supports($0.feature) }
+
+        guard !commands.isEmpty else {
+            throw ConnectionManagerError.unsupportedByServer(
+                "artwork requires MPD \(ProtocolFeature.albumArt.minimumVersion) or later",
+            )
+        }
+
         var lastError: Error?
 
         for command in commands {
@@ -82,20 +91,19 @@ public extension ConnectionManager where Mode == ArtworkMode {
     ///
     /// - Parameters:
     ///   - file: The file path representing the artwork resource on the server.
-    ///   - command: The MPD command to use (either "albumart" or
-    ///              "readpicture").
+    ///   - command: The MPD command to use.
     /// - Returns: A `Data` object containing the complete binary artwork data.
     /// - Throws: An error if the server response is malformed, if the read
     ///           operation fails, or if other connection related errors occur.
-    private func fetchArtworkChunks(for file: String, using command: String)
-        async throws -> Data
+    private func fetchArtworkChunks(for file: String, using command:
+        ArtworkCommand) async throws -> Data
     {
         var data = Data()
         var offset = 0
         var totalSize: Int?
 
         while true {
-            try await writeLine("\(command) \(escape(file)) \(offset)")
+            try await writeLine("\(command.rawValue) \(escape(file)) \(offset)")
 
             var chunkSize: Int?
 

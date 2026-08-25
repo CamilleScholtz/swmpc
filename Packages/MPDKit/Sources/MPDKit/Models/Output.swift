@@ -18,8 +18,12 @@ public nonisolated struct Output: Identifiable, Equatable, Hashable, Sendable {
     /// The display name of the output.
     public let name: String
 
-    /// The plugin type (e.g., "alsa", "pulse", "httpd").
-    public let plugin: String
+    /// The plugin type (e.g., "alsa", "pulse", "httpd"), or `nil` on servers
+    /// that do not report it.
+    ///
+    /// MPD only started printing the plugin name in `outputs` in 0.21, so a
+    /// missing plugin is not a malformed output — it is an older server.
+    public let plugin: String?
 
     /// Whether the output is currently enabled.
     public let isEnabled: Bool
@@ -28,6 +32,9 @@ public nonisolated struct Output: Identifiable, Equatable, Hashable, Sendable {
     public let attributes: [String: String]
 
     /// Whether this output is an HTTP streaming output.
+    ///
+    /// Always `false` on servers that do not report the plugin name, which
+    /// leaves streaming switched off rather than wrongly switched on.
     public var isHttpd: Bool {
         plugin == "httpd"
     }
@@ -39,15 +46,14 @@ public nonisolated struct Output: Identifiable, Equatable, Hashable, Sendable {
     public init?(_ fields: [String: String]) {
         guard let idString = fields["outputid"],
               let id = Int(idString),
-              let name = fields["outputname"],
-              let plugin = fields["plugin"]
+              let name = fields["outputname"]
         else {
             return nil
         }
 
         self.id = id
         self.name = name
-        self.plugin = plugin
+        plugin = fields["plugin"]
         isEnabled = fields["outputenabled"] == "1"
 
         var attributes: [String: String] = [:]
@@ -69,7 +75,7 @@ public nonisolated struct Output: Identifiable, Equatable, Hashable, Sendable {
     public init(
         id: Int,
         name: String,
-        plugin: String,
+        plugin: String?,
         isEnabled: Bool,
         attributes: [String: String] = [:],
     ) {
