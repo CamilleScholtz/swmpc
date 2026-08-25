@@ -36,6 +36,15 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// response stream due to actor reentrancy.
     private(set) var isCommandInFlight = false
 
+    /// Whether an `idle` command is currently parked waiting for a subsystem
+    /// to change.
+    ///
+    /// Distinct from `isCommandInFlight`, which is also true while the
+    /// ordinary commands that run on the idle connection between idles are
+    /// awaiting their response. Only a parked `idle` may be cancelled with
+    /// `noidle`.
+    var isIdlePending = false
+
     /// The version of the MPD server obtained during connection handshake.
     public private(set) var version: String?
 
@@ -56,22 +65,26 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// returns an `AsyncStream` of high-level `ConnectionState` events that
     /// callers can observe to react to lifecycle changes.
     ///
-    /// The stream finishes when `disconnect()` is called. Returns `nil` if a
-    /// connection is already established — in that case the previously
-    /// returned stream remains the source of truth.
+    /// The stream finishes when `disconnect()` is called. A manager is
+    /// single-use: reconnecting means creating a new one, so that a read left
+    /// parked on a dead socket can never write into the buffer of its
+    /// replacement.
     ///
     /// - Returns: An `AsyncStream<ConnectionState>` of lifecycle events for
-    ///            the newly opened connection, or `nil` if already connected.
+    ///            the newly opened connection.
     /// - Throws: `ConnectionManagerError.invalidPort` if the port is
     ///           invalid, `ConnectionManagerError.connectionFailure` if the
-    ///           connection cannot be created, the connection fails to become
-    ///           ready, or the expected server greeting is not received,
+    ///           connection cannot be created, this manager is already
+    ///           connected, the connection fails to become ready, or the
+    ///           expected server greeting is not received,
     ///           `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is not supported.
     @discardableResult
-    public func connect() async throws -> AsyncStream<ConnectionState>? {
+    public func connect() async throws -> AsyncStream<ConnectionState> {
         guard connection == nil else {
-            return nil
+            throw ConnectionManagerError.connectionFailure(
+                "Connection already established",
+            )
         }
 
         guard let server = ConnectionConfiguration.server else {
@@ -152,8 +165,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// - Throws: `ConnectionManagerError.connectionUnexpectedClosure` if there
     ///           is no active connection.
     /// - Returns: A ready-to-use `NetworkConnection` instance.
-    @discardableResult
-    public func ensureConnection() throws -> NetworkConnection<TCP> {
+    private func ensureConnection() throws -> NetworkConnection<TCP> {
         guard let connection else {
             throw ConnectionManagerError.connectionUnexpectedClosure
         }
@@ -169,7 +181,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     ///
     /// - Throws: `ConnectionManagerError.unsupportedServerVersion` if the
     ///           server version is older than the minimum required.
-    public func ensureVersionSupported() throws {
+    private func ensureVersionSupported() throws {
         if version != nil, !isVersionAtLeast("0.21") {
             throw ConnectionManagerError.unsupportedServerVersion
         }
@@ -195,7 +207,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// authentication. If no password is set, the function returns immediately.
     ///
     /// - Throws: An error if the authentication command fails.
-    public func ensureAuthentication() async throws {
+    private func ensureAuthentication() async throws {
         guard let password = ConnectionConfiguration.server?.password,
               !password.isEmpty
         else {
@@ -203,13 +215,6 @@ public actor ConnectionManager<Mode: ConnectionMode> {
         }
 
         try await run(["password \(escape(password))"])
-    }
-
-    /// Sends a ping command to the server.
-    ///
-    /// - Throws: An error if the command fails.
-    public func ping() async throws {
-        try await run(["ping"])
     }
 
     /// Executes one or more commands asynchronously over the connection.

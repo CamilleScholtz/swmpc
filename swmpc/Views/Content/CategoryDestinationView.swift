@@ -207,7 +207,12 @@ private struct CategoryDatabaseView: View {
                 }
             #endif
 
-            try? await mpd.database.set(idle: false, type: navigator.category.type, sort: sort)
+            let database = mpd.database
+            let type = navigator.category.type
+
+            try? await ConnectionManager.command {
+                try await database.set(on: $0, type: type, sort: sort)
+            }
 
             #if os(macOS)
                 setSearchFieldExpanded(false)
@@ -439,8 +444,13 @@ struct CategoryPlaylistView: View {
         .task(id: playlist) {
             for await _ in NotificationCenter.default.notifications(named: .playlistModifiedNotification) {
                 if playlist.name == "Favorites" {
-                    try? await mpd.playlists.set(idle: false)
-                    songs = mpd.playlists.favorites
+                    let playlists = mpd.playlists
+
+                    try? await ConnectionManager.command {
+                        try await playlists.set(on: $0)
+                    }
+
+                    songs = playlists.favorites
                 } else {
                     songs = try? await mpd.playlists.getSongs(for: playlist)
                 }

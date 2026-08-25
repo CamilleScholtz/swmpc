@@ -38,15 +38,28 @@ import Observation
     /// The streaming manager, handling audio streaming from httpd output.
     let streaming = StreamingManager()
 
+    /// The subsystems the update loop listens for changes on.
+    private static let subsystems: [IdleEvent] = [
+        .database,
+        .playlists,
+        .queue,
+        .player,
+        .options,
+        .mixer,
+        .output,
+    ]
+
+    /// The connection the update loop is currently listening on, if one is
+    /// established.
+    ///
+    /// A connection manager is single-use: every attempt gets a fresh one, so
+    /// a loop that is abandoned while parked on a dead read can never write
+    /// into the buffer of its replacement.
+    @ObservationIgnored private var connection: ConnectionManager<IdleMode>?
+
     /// The background task that maintains the connection and listens for
     /// changes.
     @ObservationIgnored private var updateLoopTask: Task<Void, Never>?
-
-    /// The task handling the current reinitialization, if any.
-    @ObservationIgnored private var reinitializeTask: Task<Void, Never>?
-
-    /// The task forwarding connection-state events into `StateManager`.
-    @ObservationIgnored private var stateObservationTask: Task<Void, Never>?
 
     init() {
         database = DatabaseManager(state: state)
@@ -55,33 +68,29 @@ import Observation
 
         status.setupRemoteCommands()
 
-        updateLoopTask = Task { [weak self] in
-            await self?.updateLoop()
-        }
+        start()
     }
 
-    /// Reinitializes the MPD connection with new settings.
-    func reinitialize() async {
-        reinitializeTask?.cancel()
+    /// Discards the current connection and starts a fresh update loop.
+    ///
+    /// Nothing is awaited, so the swap is atomic on the main actor and two
+    /// callers cannot interleave into two live loops. The outgoing loop is
+    /// cancelled but not waited on: it may be parked on a read that never
+    /// returns, and since it no longer owns `connection` it can do no harm on
+    /// its way out.
+    func reinitialize() {
+        updateLoopTask?.cancel()
 
-        reinitializeTask = Task { [weak self] in
-            self?.updateLoopTask?.cancel()
-            self?.updateLoopTask = nil
-
-            await ConnectionManager.idle.disconnect()
-
-            self?.state.error = nil
-
-            try? await Task.sleep(for: .seconds(1))
-
-            guard !Task.isCancelled else { return }
-
-            self?.updateLoopTask = Task { [weak self] in
-                await self?.updateLoop()
-            }
+        if let connection {
+            self.connection = nil
+            Task { await connection.disconnect() }
         }
 
-        await reinitializeTask?.value
+        state.error = nil
+        state.connectionState = nil
+        state.protocolVersion = nil
+
+        start()
     }
 
     /// Brings all manager state up to date and verifies the idle connection
@@ -90,40 +99,95 @@ import Observation
     /// Intended for when the app returns to the foreground: while the app was
     /// suspended, the idle connection may have died without the socket ever
     /// reporting it, leaving the update loop parked on a read that never
-    /// completes. The managers are refreshed over the command connection
-    /// first, so the UI is current immediately, then `noidle` forces traffic
-    /// on the idle socket — if the connection is dead, that write (or the
-    /// pending read) fails and the update loop reconnects and re-syncs.
+    /// completes. The managers are refreshed over a single command connection
+    /// first, so the UI is current immediately, then the idle connection is
+    /// probed — and replaced outright if it fails to answer.
     func resync() async {
-        try? await status.set(idle: false)
-        try? await queue.set(idle: false)
-        try? await playlists.set(idle: false)
-        try? await outputs.set(idle: false)
+        guard let connection else {
+            return
+        }
 
-        try? await ConnectionManager.idle.noidle()
+        try? await ConnectionManager.command { [self] command in
+            try await status.set(on: command)
+            try await queue.set(on: command)
+            try await playlists.set(on: command)
+            try await outputs.set(on: command)
+        }
+
+        let isAlive = await connection.probe()
+
+        guard !isAlive, self.connection === connection else {
+            return
+        }
+
+        reinitialize()
     }
 
-    /// Establishes a connection to the MPD server.
+    /// Starts the task that owns the connection and listens for changes.
+    private func start() {
+        updateLoopTask = Task { [weak self] in
+            await self?.updateLoop()
+        }
+    }
+
+    /// The main update loop that maintains the MPD connection and state.
     ///
-    /// This method attempts to connect to the MPD server repeatedly until
-    /// successful or the task is cancelled. On failure, it waits 2 seconds
-    /// before retrying.
-    ///
-    /// - Returns: `true` if a new connection was established, `false` if a
-    ///            connection already existed or the task was cancelled.
-    private func connect() async -> Bool {
+    /// Each pass connects, brings every manager up to date — changes that
+    /// happened while disconnected are never reported by idle events — and
+    /// then listens until the connection breaks, at which point it backs off
+    /// and starts over.
+    private func updateLoop() async {
         while !Task.isCancelled {
+            guard let connection = await connect() else {
+                return
+            }
+
+            try? await database.set(on: connection)
+            try? await queue.set(on: connection)
+            try? await playlists.set(on: connection)
+            try? await status.set(on: connection)
+            try? await outputs.set(on: connection)
+
+            await listen(on: connection)
+
+            // A cancelled loop must not tear down the connection: a successor
+            // loop (see `reinitialize`) may already own a new one.
+            guard !Task.isCancelled else {
+                return
+            }
+
+            self.connection = nil
+            await connection.disconnect()
+
+            try? await Task.sleep(for: .seconds(2))
+        }
+    }
+
+    /// Opens a connection to the MPD server, retrying every two seconds until
+    /// it succeeds or the task is cancelled.
+    ///
+    /// - Returns: The connected manager, or `nil` if the task was cancelled.
+    private func connect() async -> ConnectionManager<IdleMode>? {
+        while !Task.isCancelled {
+            let connection = ConnectionManager<IdleMode>()
+
             do {
-                guard let states = try await ConnectionManager.idle.connect()
-                else {
-                    return false
+                let states = try await connection.connect()
+
+                guard !Task.isCancelled else {
+                    await connection.disconnect()
+                    return nil
                 }
 
-                state.protocolVersion = await ConnectionManager.idle.version
+                self.connection = connection
+                state.protocolVersion = await connection.version
 
-                observeStates(states)
-                return true
+                observeStates(states, of: connection)
+
+                return connection
             } catch {
+                await connection.disconnect()
+
                 state.protocolVersion = nil
                 state.error = error
 
@@ -131,80 +195,46 @@ import Observation
             }
         }
 
-        return false
+        return nil
     }
 
-    /// Forwards connection-state events from the idle connection's stream
-    /// into `StateManager`.
-    private func observeStates(_ states: AsyncStream<ConnectionState>) {
-        stateObservationTask?.cancel()
-        stateObservationTask = Task { [weak self] in
-            for await state in states {
-                guard let self else { return }
+    /// Forwards connection-state events from `connection`'s stream into
+    /// `StateManager`, for as long as it remains the current connection.
+    ///
+    /// The task needs no handle: `disconnect()` finishes the stream, so the
+    /// loop always ends on its own. Ownership is rechecked on every event
+    /// regardless, so that a replaced connection reporting its own teardown
+    /// cannot overwrite the state of the one that succeeded it.
+    private func observeStates(_ states: AsyncStream<ConnectionState>,
+                               of connection: ConnectionManager<IdleMode>)
+    {
+        Task { [weak self] in
+            for await connectionState in states {
+                guard let self, self.connection === connection else {
+                    return
+                }
 
-                self.state.connectionState = state
+                state.connectionState = connectionState
 
-                switch state {
-                case let .failed(reason):
-                    self.state.error = NSError(
-                        domain: "MPD",
-                        code: 0,
-                        userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(reason)"],
-                    )
-                case let .waiting(reason, _):
-                    self.state.error = NSError(
-                        domain: "MPD",
-                        code: 0,
-                        userInfo: [NSLocalizedDescriptionKey: "Trying to connect: \(reason)"],
-                    )
-                case .ready, .cancelled:
-                    self.state.error = nil
-                case .preparing, .setup:
-                    break
+                if connectionState == .ready {
+                    state.error = nil
                 }
             }
         }
     }
 
-    /// The main update loop that maintains the MPD connection and state.
-    ///
-    /// This method continuously listens for changes using the idle command
-    /// and updates the appropriate subsystems when changes are detected.
-    /// Whenever a new connection is established — initially or after a
-    /// reconnect — all managers are re-synced, since changes that happened
-    /// while disconnected are never reported by idle events.
-    private func updateLoop() async {
+    /// Listens for idle events on `connection`, applying each batch, until
+    /// the connection breaks or the task is cancelled.
+    private func listen(on connection: ConnectionManager<IdleMode>) async {
         while !Task.isCancelled {
-            if await connect() {
-                try? await database.set()
-                try? await queue.set()
-                try? await playlists.set()
-                try? await status.set()
-                try? await outputs.set()
-            }
-
             do {
-                let changes = try await ConnectionManager.idle.idleForEvents(mask: [
-                    .database,
-                    .playlists,
-                    .queue,
-                    .player,
-                    .options,
-                    .mixer,
-                    .output,
-                ])
+                let events = try await connection.idleForEvents(
+                    mask: Self.subsystems,
+                )
 
-                try? await performUpdates(for: changes)
+                try? await performUpdates(for: events, on: connection)
             } catch {
-                // A cancelled loop must not tear down the connection: a
-                // successor loop (see `reinitialize`) may already own a new
-                // one.
-                guard !Task.isCancelled else {
-                    return
-                }
-
-                await ConnectionManager.idle.disconnect()
-                try? await Task.sleep(for: .seconds(2))
+                return
             }
         }
     }
@@ -215,28 +245,32 @@ import Observation
     /// one is mapped to the manager that mirrors it. The status is refreshed
     /// at most once, even when several subsystems that affect it changed.
     ///
-    /// - Parameter events: The changed subsystems reported by the idle
-    ///                     command.
+    /// - Parameters:
+    ///   - events: The changed subsystems reported by the idle command.
+    ///   - connection: The connection to load over.
     /// - Throws: An error if any update operation fails.
-    private func performUpdates(for events: [IdleEvent]) async throws {
+    private func performUpdates(for events: [IdleEvent],
+                                on connection: ConnectionManager<IdleMode>)
+        async throws
+    {
         if events.contains(.playlists) {
-            try await playlists.set()
+            try await playlists.set(on: connection)
         }
 
         if events.contains(.database) {
-            try await database.set()
+            try await database.set(on: connection)
         }
 
         if events.contains(.queue) {
-            try await queue.set()
+            try await queue.set(on: connection)
         }
 
         if !Set(events).isDisjoint(with: [.queue, .player, .options, .mixer]) {
-            try await status.set()
+            try await status.set(on: connection)
         }
 
         if events.contains(.output) {
-            try await outputs.set()
+            try await outputs.set(on: connection)
         }
     }
 }

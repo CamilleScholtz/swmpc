@@ -182,7 +182,7 @@ struct ServerEditView: View {
         }
 
         if serverManager.selectedServerID == updatedServer.id {
-            await mpd.reinitialize()
+            mpd.reinitialize()
         }
 
         dismiss()

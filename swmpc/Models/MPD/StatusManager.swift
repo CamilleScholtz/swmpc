@@ -101,13 +101,12 @@ import WidgetKit
     /// song.  It also updates platform-specific UI elements like the macOS
     /// status bar.
     ///
+    /// - Parameter connection: The connection to load over.
     /// - Throws: An error if fetching the status fails.
-    func set(idle: Bool = true) async throws {
-        let data = try await idle
-            ? ConnectionManager.idle.getStatusData()
-            : ConnectionManager.command {
-                try await $0.getStatusData()
-            }
+    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>)
+        async throws
+    {
+        let data = try await connection.getStatusData()
 
         if state.update(to: data.state) {
             #if os(macOS)

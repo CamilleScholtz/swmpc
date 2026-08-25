@@ -44,8 +44,8 @@ struct ErrorView: View {
                         return .handled
                     })
 
-                if let error = mpd.state.error {
-                    Text(error.localizedDescription)
+                if let description = mpd.state.failureDescription {
+                    Text(description)
                         .font(.caption)
                         .monospaced()
                         .foregroundStyle(.secondary)

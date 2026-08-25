@@ -66,24 +66,22 @@ struct SearchResults: Sendable {
     /// Sets the media type and/or sort descriptor and fetches corresponding
     /// media from MPD.
     ///
-    /// This method only fetches new data if the type or sort has changed. It
-    /// uses either the idle connection (more efficient for background updates)
-    /// or creates a new command connection based on the `idle` parameter.
+    /// This method only fetches new data if the type or sort has changed.
     ///
     /// A refresh that passes neither a type nor a sort comes from a database
     /// change, which also invalidates the collections cached for searching.
     ///
     /// - Parameters:
-    ///   - idle: Whether to use the long-lived idle connection (default: true).
-    ///           Set to false for immediate user-initiated fetches.
+    ///   - connection: The connection to load over.
     ///   - type: The media type to fetch (album, artist, song, or playlist).
     ///           If `nil`, retains the current type.
     ///   - sort: The sort descriptor for ordering results.
     ///           If `nil`, retains the current sort.
     /// - Throws: An error if the MPD connection fails or the fetch is
     ///           cancelled.
-    func set(idle: Bool = true, type: MediaType? = nil, sort: MPDKit.SortDescriptor?
-        = nil)
+    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>,
+                                   type: MediaType? = nil,
+                                   sort: MPDKit.SortDescriptor? = nil)
         async throws
     {
         defer { state.isLoading = false }
@@ -99,29 +97,19 @@ struct SearchResults: Sendable {
 
         switch type ?? self.type {
         case .album:
-            let albums = try await idle
-                ? ConnectionManager.idle.getAlbums(sort: sortToUse)
-                : ConnectionManager.command {
-                    try await $0.getAlbums(sort: sortToUse)
-                }
+            let albums = try await connection.getAlbums(sort: sortToUse)
 
             newMedia = .albums(albums)
         case .artist:
-            let result = try await idle
-                ? ConnectionManager.idle.getArtistsWithAlbumCounts(sort: sortToUse)
-                : ConnectionManager.command {
-                    try await $0.getArtistsWithAlbumCounts(sort: sortToUse)
-                }
+            let result = try await connection.getArtistsWithAlbumCounts(
+                sort: sortToUse,
+            )
 
             newMedia = .artists(result.artists)
             newArtistAlbumCounts = result.albumCounts
         case .song:
-            let songs = try await idle
-                ? ConnectionManager.idle.getSongs(from: Source.database,
-                                                  sort: sortToUse)
-                : ConnectionManager.command {
-                    try await $0.getSongs(from: Source.database, sort: sortToUse)
-                }
+            let songs = try await connection.getSongs(from: Source.database,
+                                                      sort: sortToUse)
 
             newMedia = .songs(songs)
         case .playlist:

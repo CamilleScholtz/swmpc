@@ -167,10 +167,8 @@ struct SettingsView: View {
                             server: server,
                             isSelected: serverManager.selectedServerID == server.id,
                         ) {
-                            Task(priority: .userInitiated) {
-                                serverManager.select(server)
-                                await mpd.reinitialize()
-                            }
+                            serverManager.select(server)
+                            mpd.reinitialize()
                         } onEdit: {
                             serverToEdit = server
                         }
@@ -206,9 +204,11 @@ struct SettingsView: View {
 
         @ViewBuilder
         private var statusSection: some View {
-            if !mpd.state.isConnectionReady, let error = mpd.state.error {
+            if !mpd.state.isConnectionReady,
+               let description = mpd.state.failureDescription
+            {
                 Section("Error") {
-                    Text(error.localizedDescription)
+                    Text(description)
                         .font(.caption)
                         .monospaced()
                         .foregroundStyle(.secondary)

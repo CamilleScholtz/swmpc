@@ -65,25 +65,23 @@ import SwiftUI
         }
     }
 
-    /// A description of the current connection state.
-    var connectionDescription: String {
-        guard let state = connectionState else {
-            return "Connection not initialized"
+    /// A description of why the client is not connected, if it is not.
+    ///
+    /// Prefers the most recent thrown error, falling back to whatever the
+    /// underlying network connection last reported — a connection that is
+    /// merely retrying never throws, so it has no error to show.
+    var failureDescription: String? {
+        if let error {
+            return error.localizedDescription
         }
 
-        switch state {
-        case .ready:
-            return "Connected"
-        case .failed:
-            return "Connection failed"
-        case .waiting:
-            return "Trying to connect"
-        case .preparing:
-            return "Establishing connection"
-        case .setup:
-            return "Setting up connection"
-        case .cancelled:
-            return "Connection cancelled"
+        switch connectionState {
+        case let .failed(reason):
+            return "Connection failed: \(reason)"
+        case let .waiting(reason, _):
+            return "Trying to connect: \(reason)"
+        default:
+            return nil
         }
     }
 }

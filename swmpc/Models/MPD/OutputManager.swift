@@ -35,25 +35,21 @@ import Observation
             }
 
             Task(priority: .userInitiated) {
-                try? await ConnectionManager.command {
-                    try await $0.toggleOutput(output)
+                try? await ConnectionManager.command { [self] connection in
+                    try await connection.toggleOutput(output)
+                    try await set(on: connection)
                 }
-
-                try? await self.set(idle: false)
             }
         }
     }
 
     /// Updates the outputs list from the MPD server.
     ///
-    /// - Parameter idle: Whether to use the idle connection or a command
-    ///   connection.
+    /// - Parameter connection: The connection to load over.
     /// - Throws: An error if fetching the outputs fails.
-    func set(idle: Bool = true) async throws {
-        outputs = idle
-            ? try await ConnectionManager.idle.getOutputs()
-            : try await ConnectionManager.command {
-                try await $0.getOutputs()
-            }
+    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>)
+        async throws
+    {
+        outputs = try await connection.getOutputs()
     }
 }

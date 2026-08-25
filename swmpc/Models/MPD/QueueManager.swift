@@ -15,14 +15,11 @@ import Observation
 
     /// Sets/refreshes the queue contents.
     ///
-    /// - Parameters:
-    ///   - idle: Whether to use the idle connection.
+    /// - Parameter connection: The connection to load over.
     /// - Throws: An error if the queue could not be loaded.
-    func set(idle: Bool = false) async throws {
-        songs = try await idle
-            ? ConnectionManager.idle.getSongs(from: .queue)
-            : ConnectionManager.command {
-                try await $0.getSongs(from: .queue)
-            }
+    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>)
+        async throws
+    {
+        songs = try await connection.getSongs(from: .queue)
     }
 }

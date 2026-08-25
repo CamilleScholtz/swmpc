@@ -144,9 +144,12 @@ private nonisolated enum PlaylistSymbolCandidates {
     ///
     /// - Note: The `Favorites` playlist is filtered out of the playlists.
     ///
+    /// - Parameter connection: The connection to load over.
     /// - Throws: An error if the playlists could not be set.
-    func set(idle: Bool = true) async throws {
-        let (allPlaylists, favorites) = try await fetchPlaylists(idle: idle)
+    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>)
+        async throws
+    {
+        let (allPlaylists, favorites) = try await fetchPlaylists(on: connection)
 
         playlists = allPlaylists.filter { $0.name != "Favorites" }.map {
             Playlist(name: $0.name, symbolName: symbolCache[$0.name])
@@ -167,15 +170,13 @@ private nonisolated enum PlaylistSymbolCandidates {
 
     /// Fetches the playlists from the MPD server.
     ///
-    /// - Parameter idle: Whether to use the idle connection.
+    /// - Parameter connection: The connection to load over.
     /// - Returns: A tuple containing the playlists and the songs in the
     ///            `Favorites` playlist.
-    private func fetchPlaylists(idle: Bool) async throws -> ([Playlist], [Song]) {
-        let allPlaylists = try await idle
-            ? ConnectionManager.idle.getPlaylists()
-            : ConnectionManager.command {
-                try await $0.getPlaylists()
-            }
+    private func fetchPlaylists<Mode: ConnectionMode>(
+        on connection: ConnectionManager<Mode>,
+    ) async throws -> ([Playlist], [Song]) {
+        let allPlaylists = try await connection.getPlaylists()
 
         guard let favoritePlaylist = allPlaylists.first(where: {
             $0.name == "Favorites"
@@ -183,11 +184,9 @@ private nonisolated enum PlaylistSymbolCandidates {
             return (allPlaylists, [])
         }
 
-        let favorites = try await idle
-            ? ConnectionManager.idle.getSongs(from: .playlist(favoritePlaylist))
-            : ConnectionManager.command {
-                try await $0.getSongs(from: .playlist(favoritePlaylist))
-            }
+        let favorites = try await connection.getSongs(
+            from: .playlist(favoritePlaylist),
+        )
 
         return (allPlaylists, favorites)
     }
