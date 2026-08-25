@@ -32,15 +32,15 @@ public enum SortOption: String, Sendable {
         }
     }
 
-    /// The MPD version that introduced the tag this option sorts on.
+    /// The MPD version that introduced the tag this option sorts on, or
+    /// `nil` when it predates the minimum supported version.
     ///
-    /// `ArtistSort` and `AlbumArtistSort` arrived in 0.16 and `AlbumSort` in
-    /// 0.19, but `TitleSort` only in 0.24, so sorting songs by title has to
-    /// happen client-side on anything older.
-    public var minimumVersion: String {
+    /// Only `TitleSort` is recent enough to matter: it arrived in 0.24, so
+    /// sorting songs by title is offered only from there.
+    public var minimumVersion: String? {
         switch self {
         case .song: "0.24"
-        case .artist, .album, .modified: ProtocolVersion.minimum
+        case .artist, .album, .modified: nil
         }
     }
 }

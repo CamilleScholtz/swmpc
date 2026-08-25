@@ -85,11 +85,10 @@ private struct CategoryDatabaseView: View {
 
     /// The sort options the server is new enough to apply.
     ///
-    /// Empty when the server predates the `sort` parameter, which hides the
-    /// sort options rather than offering ones that do nothing.
+    /// Options whose tag the server does not know are hidden rather than
+    /// offered and quietly ignored.
     private var sortOptions: [SortOption] {
-        guard navigator.category.source.isSortable, mpd.state.supports(.sort)
-        else {
+        guard navigator.category.source.isSortable else {
             return []
         }
 

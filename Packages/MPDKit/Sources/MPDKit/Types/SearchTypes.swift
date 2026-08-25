@@ -46,18 +46,19 @@ public enum SearchField: String, CaseIterable, Sendable {
         }
     }
 
-    /// The MPD version that introduced the tag this field searches.
+    /// The MPD version that introduced the tag this field searches, or `nil`
+    /// when it predates the minimum supported version.
     ///
     /// Searching happens client-side, so an older server does not fail the
     /// query — it simply never sends the tag, leaving the field unable to
     /// match anything. Callers should hide fields the server cannot fill.
-    public var minimumVersion: String {
+    public var minimumVersion: String? {
         switch self {
         case .conductor: "0.22"
         case .ensemble: "0.23"
         case .mood: "0.24"
         case .title, .artist, .album, .genre, .composer, .performer, .comment:
-            ProtocolVersion.minimum
+            nil
         }
     }
 }

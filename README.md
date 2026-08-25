@@ -51,22 +51,25 @@ The latest version of `swmpc` is available on the [App Store](https://apps.apple
 
 - macOS 26.0 or later
 - iOS 26.0 or later
-- A server speaking **MPD protocol 0.19 or later**
+- A server speaking **MPD protocol 0.21 or later**
 
 
 ## Server compatibility
 
-`swmpc` speaks the MPD protocol, not one particular implementation. It reads the
-protocol version a server announces when it connects and adapts: newer servers
-get filter expressions, server-side sorting and artwork commands, while older
-ones get the legacy query syntax and are sorted client-side instead.
+`swmpc` speaks the MPD protocol, not one particular implementation. The floor is
+protocol 0.21, which is where everything the app relies on arrived: filter
+expressions, server-side sorting, `albumart`, and the plugin name in `outputs`.
+Newer versions unlock `readpicture` (0.22), larger artwork chunks (0.22.4), and
+sorting the queue and by song title (0.24).
 
-| Server | Protocol | Notes |
-| --- | --- | --- |
-| [MPD](https://www.musicpd.org) | 0.19+ | The reference implementation, and what `swmpc` is built against. 0.21 or later is recommended — album artwork and server-side sorting both arrived there. |
-| MPD appliances such as [moOde](https://moodeaudio.org) and [Volumio](https://volumio.com) | varies | Real MPD underneath, so they behave like the above. They often pin an older build than MPD's current release. |
-| [OwnTone](https://owntone.github.io/owntone-server/) | 0.23 | Browsing, playback, queue and artwork work. Playlists are add-only: it implements none of `playlistclear`, `playlistdelete`, `playlistmove` or `rename`, so creating, renaming, reordering and removing from playlists (including un-favouriting) all fail. Forced rescans are unavailable too. Reported as [owntone-server#2034](https://github.com/owntone/owntone-server/issues/2034). |
-| [Mopidy](https://mopidy.com) with [Mopidy-MPD](https://github.com/mopidy/mopidy-mpd) | 0.19 | Usable with local files. There is no `albumart` or `readpicture`, so no artwork ([mopidy-mpd#17](https://github.com/mopidy/mopidy-mpd/issues/17)). Songs within an album come back in an arbitrary order, because Mopidy sends track numbers as `3/12` where MPD sends `3` ([mopidy-mpd#83](https://github.com/mopidy/mopidy-mpd/issues/83)). Listing every song falls back to `listallinfo`, which Mopidy blacklists by default — drop it from `command_blacklist`. Backends with no track numbers and no enumerable catalogue, such as Spotify or YouTube, leave the library empty. |
+| | Server | Protocol | Notes |
+| --- | --- | --- | --- |
+| ✅ | [MPD](https://www.musicpd.org) | 0.21+ | The reference implementation, and what `swmpc` is built against. |
+| ✅ | MPD appliances such as [moOde](https://moodeaudio.org) and [Volumio](https://volumio.com) | varies | Real MPD underneath, so they behave like the above. They often pin an older build than MPD's current release. |
+| ⚠️ | [OwnTone](https://owntone.github.io/owntone-server/) | 0.23 | Browsing, playback, queue and artwork work. Playlists are add-only: it implements none of `playlistclear`, `playlistdelete`, `playlistmove` or `rename`, so creating, renaming, reordering and removing from playlists (including un-favouriting) all fail. Forced rescans are unavailable too. Reported as [owntone-server#2034](https://github.com/owntone/owntone-server/issues/2034). |
+| ❌ | [Mopidy](https://mopidy.com) with [Mopidy-MPD](https://github.com/mopidy/mopidy-mpd) | 0.19 | Below the floor, so `swmpc` refuses to connect. Mopidy-MPD targets the 0.19 protocol: no filter expressions, no `sort`, and no `albumart` or `readpicture`, so no album artwork ([mopidy-mpd#17](https://github.com/mopidy/mopidy-mpd/issues/17)). It also sends track numbers as `3/12` where MPD sends `3` ([mopidy-mpd#83](https://github.com/mopidy/mopidy-mpd/issues/83)). |
+
+✅ supported &nbsp;·&nbsp; ⚠️ works with limitations &nbsp;·&nbsp; ❌ not supported
 
 Compatibility is judged purely on the version a server announces. A server that
 announces a version whose commands it does not actually implement is a bug worth

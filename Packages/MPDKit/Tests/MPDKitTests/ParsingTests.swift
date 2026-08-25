@@ -11,27 +11,17 @@ import Testing
 
 @Suite("Song parsing")
 struct SongParsingTests {
-    @Test("The fractional duration is preferred when the server sends it")
-    func prefersDuration() throws {
+    @Test("Duration is read at full precision")
+    func duration() throws {
         let song = try Song.parse(
-            fields: ["file": "a.flac", "duration": "245.533", "time": "245"],
+            fields: ["file": "a.flac", "duration": "245.533"],
             index: nil,
         )
 
         #expect(song.duration == 245.533)
     }
 
-    @Test("Servers older than 0.20 fall back to the integer Time field")
-    func fallsBackToTime() throws {
-        let song = try Song.parse(
-            fields: ["file": "a.flac", "time": "245"],
-            index: nil,
-        )
-
-        #expect(song.duration == 245)
-    }
-
-    @Test("A song with neither field has no duration rather than failing")
+    @Test("A song without a duration gets zero rather than failing")
     func missingDuration() throws {
         let song = try Song.parse(fields: ["file": "a.flac"], index: nil)
 
@@ -60,22 +50,11 @@ struct OutputParsingTests {
         #expect(output.isEnabled)
     }
 
-    @Test("Servers older than 0.21 omit the plugin and still yield an output")
-    func withoutPlugin() throws {
-        let output = try #require(Output([
-            "outputid": "1", "outputname": "Speakers", "outputenabled": "0",
-        ]))
-
-        #expect(output.plugin == nil)
-        #expect(!output.isHttpd)
-        #expect(!output.isEnabled)
-        #expect(output.name == "Speakers")
-    }
-
-    @Test("An output without an id or name is not an output")
+    @Test("An output missing any required field is not an output")
     func incomplete() {
-        #expect(Output(["outputname": "Nameless"]) == nil)
-        #expect(Output(["outputid": "0"]) == nil)
+        #expect(Output(["outputname": "Nameless", "plugin": "alsa"]) == nil)
+        #expect(Output(["outputid": "0", "plugin": "alsa"]) == nil)
+        #expect(Output(["outputid": "0", "outputname": "No plugin"]) == nil)
     }
 }
 

@@ -61,8 +61,7 @@ extension Song: ParsableMedia {
             artistSort: fields["artistsort"],
             title: title,
             titleSort: fields["titlesort"],
-            duration: fields["duration"].flatMap { Double($0) }
-                ?? fields["time"].flatMap { Double($0) } ?? 0,
+            duration: fields["duration"].flatMap { Double($0) } ?? 0,
             disc: fields["disc"].flatMap { Int($0) } ?? 1,
             track: fields["track"].flatMap { Int($0) } ?? 1,
             genre: fields["genre"],

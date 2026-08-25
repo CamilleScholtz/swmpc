@@ -34,21 +34,12 @@ import SwiftUI
     ///
     /// - Parameter minimum: The version to compare against, e.g. `"0.24"`.
     /// - Returns: `true` if the version is unknown or new enough.
-    func supports(minimumVersion minimum: String) -> Bool {
-        guard protocolVersion != nil else {
+    func supports(minimumVersion minimum: String?) -> Bool {
+        guard let minimum, protocolVersion != nil else {
             return true
         }
 
         return ProtocolVersion.isAtLeast(minimum, in: protocolVersion)
-    }
-
-    /// Returns whether the connected server announces a version new enough to
-    /// provide the given feature.
-    ///
-    /// - Parameter feature: The feature to check for.
-    /// - Returns: `true` if the version is unknown or new enough.
-    func supports(_ feature: ProtocolFeature) -> Bool {
-        supports(minimumVersion: feature.minimumVersion)
     }
 
     /// Whether the connection is ready and connected.
