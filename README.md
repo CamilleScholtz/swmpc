@@ -49,9 +49,9 @@ The latest version of `swmpc` is available on the [App Store](https://apps.apple
 
 ## Requirements
 
-- macOS 26.0 or later
-- iOS 26.0 or later
-- A server speaking **MPD protocol 0.21 or later**
+- macOS 27.0 or later
+- iOS 27.0 or later
+- A server speaking MPD protocol 0.21 or later
 
 
 ## Server compatibility

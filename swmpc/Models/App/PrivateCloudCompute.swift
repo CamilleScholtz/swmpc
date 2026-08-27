@@ -25,21 +25,11 @@ private nonisolated struct PrivateCloudComputeResponse {
 /// Requires the `com.apple.developer.private-cloud-compute` entitlement and a
 /// device that supports Apple Intelligence. No API token is needed.
 nonisolated enum PrivateCloudCompute {
-    /// Wrapper for the model handle, since `PrivateCloudComputeLanguageModel`
-    /// only exists on OS 27 while this namespace stays available on OS 26.
-    @available(iOS 27.0, macOS 27.0, *)
-    private nonisolated enum Model {
-        static let shared = PrivateCloudComputeLanguageModel()
-    }
+    private static let model = PrivateCloudComputeLanguageModel()
 
-    /// Whether the device and system are ready to serve PCC requests. Always
-    /// `false` below iOS/macOS 27.
+    /// Whether the device and system are ready to serve PCC requests.
     static var isAvailable: Bool {
-        guard #available(iOS 27.0, macOS 27.0, *) else {
-            return false
-        }
-
-        return Model.shared.isAvailable
+        model.isAvailable
     }
 
     /// Generates a playlist by prompting the Private Cloud Compute model.
@@ -49,16 +39,10 @@ nonisolated enum PrivateCloudCompute {
     ///   - prompt: The user prompt containing the playlist description and
     ///             available albums.
     /// - Returns: Array of album names in "Artist - Album" format.
-    /// - Throws: `IntelligenceManagerError.appleIntelligenceUnavailable` below
-    ///           iOS/macOS 27, `PrivateCloudComputeLanguageModel.Error` or
-    ///           generation errors.
+    /// - Throws: `PrivateCloudComputeLanguageModel.Error` or generation errors.
     static func generatePlaylist(instructions: String, prompt: String) async throws -> [String] {
-        guard #available(iOS 27.0, macOS 27.0, *) else {
-            throw IntelligenceManagerError.appleIntelligenceUnavailable
-        }
-
         let session = LanguageModelSession(
-            model: Model.shared,
+            model: model,
             instructions: Instructions(instructions),
         )
 
