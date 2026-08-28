@@ -46,6 +46,8 @@ The latest version of `swmpc` is available on the [App Store](https://apps.apple
 
 `swmpc` is an universal app, meaning you only need to purchase it once to get it on both macOS and iOS.
 
+If you built it yourself and still want to chip in, you can [sponsor me on GitHub](https://github.com/sponsors/CamilleScholtz) instead.
+
 
 ## Requirements
 
