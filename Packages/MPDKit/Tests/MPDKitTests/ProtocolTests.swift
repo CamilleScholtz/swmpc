@@ -80,6 +80,77 @@ struct QueryBuildingTests {
         #expect(await manager("0.23").sortSuffix(SortDescriptor(option: .artist))
             == " sort albumartistsort")
     }
+}
 
+@Suite("Tag narrowing")
+struct TagNarrowingTests {
+    /// A manager with no connection behind it, since narrowing a command is
+    /// pure string building once the server's tag list is known.
+    private let connection = ConnectionManager<CommandMode>(version: "0.24")
 
+    /// What a current server reports from `tagtypes`.
+    private let modern: Set<String> = Set(TagType.allCases.map(\.identifier))
+        .union(["date", "originaldate", "label", "work", "grouping",
+                "composersort", "movement", "movementnumber", "showmovement",
+                "location", "musicbrainz_artistid", "musicbrainz_albumid",
+                "musicbrainz_albumartistid", "musicbrainz_trackid",
+                "musicbrainz_releasetrackid", "musicbrainz_workid"])
+
+    /// What a server at the supported floor reports: no Conductor (0.22),
+    /// Ensemble (0.23), Mood or TitleSort (0.24).
+    private let floor: Set<String> = [
+        "artist", "artistsort", "album", "albumsort", "albumartist",
+        "albumartistsort", "title", "track", "name", "genre", "date",
+        "originaldate", "composer", "performer", "comment", "disc", "label",
+        "musicbrainz_artistid", "musicbrainz_albumid",
+        "musicbrainz_albumartistid", "musicbrainz_trackid",
+        "musicbrainz_releasetrackid", "musicbrainz_workid",
+    ]
+
+    @Test("The mask is set and restored around the command it narrows")
+    func narrowsAlbums() {
+        #expect(connection.narrowing("find x", to: Album.tags, available: modern)
+            == ["tagtypes clear",
+                "tagtypes enable Album AlbumArtist AlbumArtistSort AlbumSort Artist",
+                "find x",
+                "tagtypes all"])
+    }
+
+    @Test("Tags the server has not got yet are never asked for")
+    func skipsUnknownTags() {
+        #expect(connection.narrowing("find x", to: Song.tags, available: floor)
+            == ["tagtypes clear",
+                "tagtypes enable Album AlbumArtist AlbumArtistSort AlbumSort Artist ArtistSort Comment Composer Disc Genre Name Performer Title Track",
+                "find x",
+                "tagtypes all"])
+    }
+
+    @Test("A current server is asked for every tag a song reads")
+    func narrowsSongs() {
+        #expect(connection.narrowing("find x", to: Song.tags, available: modern)
+            == ["tagtypes clear",
+                "tagtypes enable Album AlbumArtist AlbumArtistSort AlbumSort Artist ArtistSort Comment Composer Conductor Disc Ensemble Genre Mood Name Performer Title TitleSort Track",
+                "find x",
+                "tagtypes all"])
+    }
+
+    @Test("A server that will not say what it supports is queried as before")
+    func skipsWhenUnknown() {
+        #expect(connection.narrowing("find x", to: Song.tags, available: [])
+            == ["find x"])
+    }
+
+    @Test("Asking for everything the server has is not worth a mask")
+    func skipsWhenNothingToSave() {
+        let exact = Set(Album.tags.map(\.identifier))
+
+        #expect(connection.narrowing("find x", to: Album.tags, available: exact)
+            == ["find x"])
+    }
+
+    @Test("A result type that reads no tags narrows to nothing")
+    func skipsWithoutTags() {
+        #expect(connection.narrowing("find x", to: [], available: modern)
+            == ["find x"])
+    }
 }

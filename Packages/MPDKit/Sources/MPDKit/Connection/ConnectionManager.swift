@@ -669,6 +669,37 @@ public actor ConnectionManager<Mode: ConnectionMode> {
             return try M.parse(fields: fields, index: indexed ? offset : nil)
         }
     }
+
+    /// Runs a command that answers with songs and parses the response.
+    ///
+    /// The server is asked for only the tags `M` reads, so a query covering
+    /// the whole library does not carry metadata that parsing would discard,
+    /// see ``narrowing(_:to:)``.
+    ///
+    /// - Parameters:
+    ///   - command: The command to run.
+    ///   - type: The concrete `ParsableMedia` type to construct.
+    ///   - indexed: If `true`, uses each chunk's enumeration index as the
+    ///              song's position fallback.
+    /// - Returns: An array of `M` instances.
+    /// - Throws: An error if the command fails or the response is malformed.
+    func query<M: ParsableMedia>(_ command: String, as type: M.Type,
+                                 indexed: Bool = false) async throws -> [M]
+    {
+        let commands = await narrowing(command, to: M.tags)
+
+        do {
+            let lines = try await run(commands)
+
+            return try parseArray(lines, as: type, indexed: indexed)
+        } catch {
+            if commands.count > 1 {
+                _ = try? await run(["tagtypes all"])
+            }
+
+            throw error
+        }
+    }
 }
 
 public extension ConnectionManager {

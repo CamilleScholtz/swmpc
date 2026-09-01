@@ -11,6 +11,14 @@
 /// layer dispatch parsing through the type system rather than a generic
 /// runtime cast.
 public protocol ParsableMedia: Mediable {
+    /// The tag types `parse(fields:index:)` reads.
+    ///
+    /// A query asks the server for just these, so it does not carry tags that
+    /// would only be discarded, see ``ConnectionManager/narrowing(_:to:)``.
+    /// Response fields that are not tags — `file`, `Id`, `Pos`, `duration` —
+    /// are sent whatever the mask, and so are left out here.
+    static var tags: Set<TagType> { get }
+
     /// Builds an instance from a parsed key/value field map.
     ///
     /// - Parameters:
@@ -23,6 +31,12 @@ public protocol ParsableMedia: Mediable {
 }
 
 extension Song: ParsableMedia {
+    public static let tags: Set<TagType> = [
+        .album, .albumArtist, .albumArtistSort, .albumSort, .artist,
+        .artistSort, .comment, .composer, .conductor, .disc, .ensemble,
+        .genre, .mood, .name, .performer, .title, .titleSort, .track,
+    ]
+
     public static func parse(fields: [String: String], index: Int?) throws
         -> Song
     {
@@ -86,6 +100,10 @@ extension Song: ParsableMedia {
 }
 
 extension Album: ParsableMedia {
+    public static let tags: Set<TagType> = [
+        .album, .albumArtist, .albumArtistSort, .albumSort, .artist,
+    ]
+
     public static func parse(fields: [String: String], index _: Int?) throws
         -> Album
     {
@@ -112,6 +130,10 @@ extension Album: ParsableMedia {
 }
 
 extension Artist: ParsableMedia {
+    public static let tags: Set<TagType> = [
+        .albumArtist, .albumArtistSort, .artist,
+    ]
+
     public static func parse(fields: [String: String], index _: Int?) throws
         -> Artist
     {

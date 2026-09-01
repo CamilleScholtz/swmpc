@@ -128,9 +128,11 @@ public extension ConnectionManager {
     func getAlbums(sort: SortDescriptor = SortDescriptor.default) async throws
         -> [Album]
     {
-        let lines = try await run(["find \(filter(key: "track", value: "1"))\(sortSuffix(sort))"])
+        let albums = try await query(
+            "find \(filter(key: "track", value: "1"))\(sortSuffix(sort))",
+            as: Album.self,
+        )
 
-        let albums = try parseArray(lines, as: Album.self)
         return Array(OrderedSet(albums))
     }
 
@@ -150,21 +152,22 @@ public extension ConnectionManager {
     func getAlbums(by artist: Artist, from source: Source) async throws ->
         [Album]
     {
-        let lines: [String]
+        let command: String
 
         switch source {
         case .database:
-            lines = try await run(["find \(filter(key: "albumartist", value: artist.name)) sort date"])
+            command = "find \(filter(key: "albumartist", value: artist.name)) sort date"
         case .queue:
             let sort = isVersionAtLeast("0.24") ? " sort date" : ""
-            lines = try await run(["playlistfind \(filter(key: "albumartist", value: artist.name))\(sort)"])
+            command = "playlistfind \(filter(key: "albumartist", value: artist.name))\(sort)"
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving albums by artist",
             )
         }
 
-        let albums = try parseArray(lines, as: Album.self)
+        let albums = try await query(command, as: Album.self)
+
         return Array(OrderedSet(albums))
     }
 
@@ -223,12 +226,12 @@ public extension ConnectionManager {
     func getSongs(from source: Source, sort: SortDescriptor = SortDescriptor
         .default) async throws -> [Song]
     {
-        let lines: [String]
+        let command: String
         switch source {
         case .database:
-            lines = try await run(["find \"(title != '')\"\(sortSuffix(sort))"])
+            command = "find \"(title != '')\"\(sortSuffix(sort))"
         case .queue:
-            lines = try await run(["playlistinfo"])
+            command = "playlistinfo"
         case .playlist, .favorites:
             guard let playlist = source.playlist else {
                 throw ConnectionManagerError.unsupportedOperation(
@@ -236,10 +239,10 @@ public extension ConnectionManager {
                 )
             }
 
-            lines = try await run(["listplaylistinfo \(escape(playlist.name))"])
+            command = "listplaylistinfo \(escape(playlist.name))"
         }
 
-        return try parseArray(lines, as: Song.self, indexed: true)
+        return try await query(command, as: Song.self, indexed: true)
     }
 
     /// Retrieves songs from the database or queue that match a specific album.
@@ -260,12 +263,10 @@ public extension ConnectionManager {
 
         switch source {
         case .database:
-            let lines = try await run(["find \(filters)"])
-            return try parseArray(lines, as: Song.self)
+            return try await query("find \(filters)", as: Song.self)
                 .sorted { ($0.disc, $0.track) < ($1.disc, $1.track) }
         case .queue:
-            let lines = try await run(["playlistfind \(filters)"])
-            return try parseArray(lines, as: Song.self)
+            return try await query("playlistfind \(filters)", as: Song.self)
         default:
             throw ConnectionManagerError.unsupportedOperation(
                 "Only database and queue sources are supported for retrieving songs in an album",
@@ -288,8 +289,10 @@ public extension ConnectionManager {
     /// - Throws: An error if the command execution fails or if the response is
     ///           malformed.
     func getSongs(by artist: Artist) async throws -> [Song] {
-        let lines = try await run(["find \(filter(key: "artist", value: artist.name)) sort date"])
-        let songs = try parseArray(lines, as: Song.self)
+        let songs = try await query(
+            "find \(filter(key: "artist", value: artist.name)) sort date",
+            as: Song.self,
+        )
 
         return OrderedDictionary(grouping: songs, by: \.album.id)
             .values
