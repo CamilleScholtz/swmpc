@@ -33,10 +33,20 @@ public nonisolated struct Output: Identifiable, Equatable, Hashable, Sendable {
     }
 
     /// Creates a new output from parsed MPD response fields.
-    /// - Parameter fields: Dictionary of parsed key-value pairs from MPD response.
-    ///                     Keys should be lowercased (as returned by `parseLine`).
+    ///
+    /// Attributes are passed separately because the server sends one
+    /// `attribute: NAME=VALUE` line per attribute, which a field map keyed by
+    /// response key cannot hold more than one of, see
+    /// ``ConnectionManager/getOutputs()``.
+    ///
+    /// - Parameters:
+    ///   - fields: Dictionary of parsed key-value pairs from MPD response.
+    ///             Keys should be lowercased (as returned by `parseLine`).
+    ///   - attributes: The output's attributes, keyed by name.
     /// - Returns: An `Output` if required fields are present, nil otherwise.
-    public init?(_ fields: [String: String]) {
+    public init?(_ fields: [String: String],
+                 attributes: [String: String] = [:])
+    {
         guard let idString = fields["outputid"],
               let id = Int(idString),
               let name = fields["outputname"],
@@ -48,15 +58,8 @@ public nonisolated struct Output: Identifiable, Equatable, Hashable, Sendable {
         self.id = id
         self.name = name
         self.plugin = plugin
-        isEnabled = fields["outputenabled"] == "1"
-
-        var attributes: [String: String] = [:]
-        for (key, value) in fields where key.hasPrefix("attribute:") {
-            let attrKey = String(key.dropFirst("attribute:".count))
-                .trimmingCharacters(in: .whitespaces)
-            attributes[attrKey] = value
-        }
         self.attributes = attributes
+        isEnabled = fields["outputenabled"] == "1"
     }
 
     /// Creates a new output.

@@ -37,6 +37,68 @@ struct ProtocolVersionTests {
         #expect(!ProtocolVersion.isAtLeast("0.21", in: "0.19.0"))
         #expect(ProtocolVersion.isAtLeast("0.21", in: "0.23.0"))
     }
+
+    @Test("A double-digit patch level is not mistaken for a lower one")
+    func doubleDigits() {
+        #expect(ProtocolVersion.isAtLeast("0.23.5", in: "0.23.15"))
+        #expect(ProtocolVersion.isAtLeast("0.9", in: "0.10"))
+    }
+
+    @Test("A manager gates on the version its greeting reported")
+    func managerGating() async {
+        let connection = ConnectionManager<CommandMode>(version: "0.23")
+
+        #expect(await connection.isVersionAtLeast("0.22.4"))
+        #expect(await connection.isVersionAtLeast("0.24") == false)
+        #expect(await ConnectionManager<CommandMode>()
+            .isVersionAtLeast("0.21") == false)
+    }
+}
+
+@Suite("Command escaping")
+struct EscapingTests {
+    /// A manager with no connection behind it, since escaping an argument is
+    /// pure string building.
+    private let connection = ConnectionManager<CommandMode>(version: "0.24")
+
+    @Test("An argument is wrapped in double quotes by default")
+    func wraps() {
+        #expect(connection.escape("Kid A") == "\"Kid A\"")
+    }
+
+    @Test("Double quotes inside an argument are escaped")
+    func escapesQuotes() {
+        #expect(connection.escape("Say \"Hi\"") == "\"Say \\\"Hi\\\"\"")
+    }
+
+    @Test("Backslashes are doubled before anything else is escaped")
+    func escapesBackslashes() {
+        #expect(connection.escape("AC\\DC") == "\"AC\\\\DC\"")
+    }
+
+    @Test("Newlines cannot be represented, so they become spaces")
+    func flattensNewlines() {
+        #expect(connection.escape("drop\nthese\r\nlines", quote: nil)
+            == "drop these  lines")
+    }
+
+    @Test("An unquoted argument is neither wrapped nor quote-escaped")
+    func unquoted() {
+        #expect(connection.escape("Kid A", quote: nil) == "Kid A")
+        #expect(connection.escape("Say \"Hi\"", quote: nil) == "Say \"Hi\"")
+    }
+
+    @Test("Single-quoted arguments escape single quotes instead")
+    func singleQuoted() {
+        #expect(connection.escape("it's", quote: "'") == "'it\\'s'")
+        #expect(connection.escape("say \"hi\"", quote: "'")
+            == "'say \"hi\"'")
+    }
+
+    @Test("An empty argument is still a well-formed one")
+    func empty() {
+        #expect(connection.escape("") == "\"\"")
+    }
 }
 
 @Suite("Query building")
@@ -47,19 +109,47 @@ struct QueryBuildingTests {
     }
 
     @Test("A filter clause is parenthesised, and quoted unless composed")
-    func filter() async {
+    func filter() {
         let connection = manager("0.24")
 
-        #expect(await connection.filter(key: "album", value: "Kid A")
+        #expect(connection.filter(key: "album", value: "Kid A")
             == "\"(album == 'Kid A')\"")
-        #expect(await connection.filter(key: "album", value: "Kid A", quote: false)
+        #expect(connection.filter(key: "album", value: "Kid A", quote: false)
             == "(album == 'Kid A')")
     }
 
     @Test("Quotes in values are escaped")
-    func filterEscaping() async {
-        #expect(await manager("0.24").filter(key: "album", value: "Rock 'n' Roll")
+    func filterEscaping() {
+        #expect(manager("0.24").filter(key: "album", value: "Rock 'n' Roll")
             == "\"(album == 'Rock \\\\'n\\\\' Roll')\"")
+    }
+
+    @Test("Double quotes in values are escaped for the outer quoting")
+    func filterDoubleQuoteEscaping() {
+        #expect(manager("0.24").filter(key: "album", value: "Say \"Hello\"")
+            == "\"(album == 'Say \\\"Hello\\\"')\"")
+    }
+
+    @Test("The comparator is the caller's to choose")
+    func filterComparator() {
+        #expect(manager("0.24").filter(key: "title", value: "",
+                                       comparator: "!=")
+            == "\"(title != '')\"")
+        #expect(manager("0.24").filter(key: "artist", value: "Autechre",
+                                       comparator: "contains")
+            == "\"(artist contains 'Autechre')\"")
+    }
+
+    @Test("Unquoted clauses compose into a single quoted expression")
+    func filterComposition() {
+        let connection = manager("0.24")
+        let album = connection.filter(key: "album", value: "Kid A",
+                                      quote: false)
+        let artist = connection.filter(key: "albumartist", value: "Radiohead",
+                                       quote: false)
+
+        #expect("\"(\(album) AND \(artist))\""
+            == "\"((album == 'Kid A') AND (albumartist == 'Radiohead'))\"")
     }
 
     @Test("Sorts carry the tag, and a minus prefix when descending")
@@ -79,6 +169,36 @@ struct QueryBuildingTests {
         #expect(await manager("0.23").sortSuffix(descriptor) == "")
         #expect(await manager("0.23").sortSuffix(SortDescriptor(option: .artist))
             == " sort albumartistsort")
+    }
+
+    @Test("A descending title sort is dropped whole on an older server")
+    func titleSortTagDescending() async {
+        let descriptor = SortDescriptor(option: .song, direction: .descending)
+
+        #expect(await manager("0.24").sortSuffix(descriptor)
+            == " sort -titlesort")
+        #expect(await manager("0.23").sortSuffix(descriptor) == "")
+    }
+
+    @Test("A server that has not greeted us yet sorts on nothing recent")
+    func sortWithoutVersion() async {
+        let connection = ConnectionManager<CommandMode>()
+
+        #expect(await connection.sortSuffix(SortDescriptor(option: .song))
+            == "")
+        #expect(await connection.sortSuffix(SortDescriptor(option: .album))
+            == " sort albumsort")
+    }
+
+    @Test("The last modified sort uses the tag as the protocol spells it")
+    func modifiedSort() async {
+        #expect(await manager("0.24")
+            .sortSuffix(SortDescriptor(option: .modified))
+            == " sort Last-Modified")
+        #expect(await manager("0.21")
+            .sortSuffix(SortDescriptor(option: .modified,
+                                       direction: .descending))
+            == " sort -Last-Modified")
     }
 }
 
@@ -134,9 +254,26 @@ struct TagNarrowingTests {
                 "tagtypes all"])
     }
 
+    @Test("An artist listing asks for the three tags that name one")
+    func narrowsArtists() {
+        #expect(connection.narrowing("find x", to: Artist.tags,
+                                     available: modern)
+            == ["tagtypes clear",
+                "tagtypes enable AlbumArtist AlbumArtistSort Artist",
+                "find x",
+                "tagtypes all"])
+    }
+
     @Test("A server that will not say what it supports is queried as before")
     func skipsWhenUnknown() {
         #expect(connection.narrowing("find x", to: Song.tags, available: [])
+            == ["find x"])
+    }
+
+    @Test("A server sharing no tag with the query is queried as before")
+    func skipsWhenDisjoint() {
+        #expect(connection.narrowing("find x", to: Album.tags,
+                                     available: ["date", "label"])
             == ["find x"])
     }
 
@@ -152,5 +289,21 @@ struct TagNarrowingTests {
     func skipsWithoutTags() {
         #expect(connection.narrowing("find x", to: [], available: modern)
             == ["find x"])
+    }
+
+    @Test("The command is passed through untouched, whatever it is")
+    func keepsCommand() {
+        let command = "playlistfind \"(album == 'Kid A')\" sort date"
+
+        #expect(connection.narrowing(command, to: Album.tags,
+                                     available: modern)[2] == command)
+    }
+
+    @Test("The enabled tags are listed in a stable order")
+    func stableOrder() {
+        #expect(connection.narrowing("find x", to: Album.tags,
+                                     available: modern)
+            == connection.narrowing("find x", to: Album.tags,
+                                    available: modern))
     }
 }

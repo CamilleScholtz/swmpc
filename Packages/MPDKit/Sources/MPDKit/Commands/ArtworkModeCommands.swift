@@ -50,6 +50,11 @@ public extension ConnectionManager where Mode == ArtworkMode {
     /// `readpicture` command is only available since MPD 0.22 and is skipped
     /// on older servers.
     ///
+    /// A command can fail with an error — `albumart` does when the song's
+    /// directory holds no cover — or succeed while reporting no picture,
+    /// which is how `readpicture` answers for a song carrying no embedded
+    /// art. Both move on to the next command.
+    ///
     /// - Parameter file: The file path representing the artwork resource.
     /// - Returns: A `Data` object containing the complete binary artwork data.
     /// - Throws: An error if all configured methods fail to retrieve artwork.
@@ -61,7 +66,11 @@ public extension ConnectionManager where Mode == ArtworkMode {
 
         for command in commands {
             do {
-                return try await fetchArtworkChunks(for: file, using: command)
+                if let data = try await fetchArtworkChunks(for: file,
+                                                           using: command)
+                {
+                    return data
+                }
             } catch let error as ConnectionManagerError {
                 if case .protocolViolation = error {
                     lastError = error
@@ -84,11 +93,14 @@ public extension ConnectionManager where Mode == ArtworkMode {
     ///   - file: The file path representing the artwork resource on the server.
     ///   - command: The MPD command to use (either "albumart" or
     ///              "readpicture").
-    /// - Returns: A `Data` object containing the complete binary artwork data.
+    /// - Returns: A `Data` object containing the complete binary artwork data,
+    ///            or `nil` if the server recognised the song but has no
+    ///            picture for it, which it reports as an otherwise empty
+    ///            success.
     /// - Throws: An error if the server response is malformed, if the read
     ///           operation fails, or if other connection related errors occur.
     private func fetchArtworkChunks(for file: String, using command: String)
-        async throws -> Data
+        async throws -> Data?
     {
         var data = Data()
         var offset = 0
@@ -101,6 +113,17 @@ public extension ConnectionManager where Mode == ArtworkMode {
 
             while chunkSize == nil {
                 let line = try await readLine()
+
+                guard !line.hasPrefix("OK") else {
+                    guard data.isEmpty else {
+                        throw ConnectionManagerError.malformedResponse(
+                            "Binary response ended before its stated size",
+                        )
+                    }
+
+                    return nil
+                }
+
                 let (key, value) = try parseLine(line)
 
                 switch key {

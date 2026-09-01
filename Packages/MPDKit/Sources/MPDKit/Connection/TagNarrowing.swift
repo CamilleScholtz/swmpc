@@ -70,7 +70,10 @@ extension ConnectionManager {
     ///
     /// The answer is cached for the selected server rather than per
     /// connection, since command-mode connections last a single operation and
-    /// would otherwise each pay a round trip to ask the same question.
+    /// would otherwise each pay a round trip to ask the same question. A
+    /// server that names no tags is remembered too, so a query does not keep
+    /// asking a question that has already been answered; only a command that
+    /// failed outright is left to be asked again.
     ///
     /// - Returns: The supported tag identifiers, or an empty set if the
     ///            server would not say, which disables narrowing.
@@ -91,10 +94,6 @@ extension ConnectionManager {
             }
 
             identifiers.insert(value.lowercased())
-        }
-
-        guard !identifiers.isEmpty else {
-            return []
         }
 
         ConnectionConfiguration.availableTags = identifiers

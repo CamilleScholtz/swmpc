@@ -117,6 +117,24 @@ public extension ConnectionManager where Mode == CommandMode {
             return
         }
 
+        let command: String
+        switch source {
+        case .queue:
+            command = "add"
+        case .playlist, .favorites:
+            guard let playlist = source.playlist else {
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Playlist is required for this operation",
+                )
+            }
+
+            command = "playlistadd \(escape(playlist.name))"
+        case .database:
+            throw ConnectionManagerError.unsupportedOperation(
+                "Cannot add songs to the database",
+            )
+        }
+
         let existingSongs = try await getSongs(from: source)
         let songsToAdd = songs.filter { song in
             !existingSongs.contains { $0.file == song.file }
@@ -126,29 +144,7 @@ public extension ConnectionManager where Mode == CommandMode {
             return
         }
 
-        let commands: [String]
-        switch source {
-        case .queue:
-            commands = songsToAdd.map {
-                "add \(escape($0.file))"
-            }
-        case .playlist, .favorites:
-            guard let playlist = source.playlist else {
-                throw ConnectionManagerError.unsupportedOperation(
-                    "Playlist is required for this operation",
-                )
-            }
-
-            commands = songsToAdd.map {
-                "playlistadd \(escape(playlist.name)) \(escape($0.file))"
-            }
-        case .database:
-            throw ConnectionManagerError.unsupportedOperation(
-                "Cannot add songs to the database",
-            )
-        }
-
-        try await run(commands)
+        try await run(songsToAdd.map { "\(command) \(escape($0.file))" })
     }
 
     /// Removes songs from the specified source (queue or playlist).
@@ -160,6 +156,24 @@ public extension ConnectionManager where Mode == CommandMode {
     func remove(songs: [Song], from source: Source) async throws {
         guard !songs.isEmpty else {
             return
+        }
+
+        let playlist: Playlist?
+        switch source {
+        case .queue:
+            playlist = nil
+        case .playlist, .favorites:
+            guard let target = source.playlist else {
+                throw ConnectionManagerError.unsupportedOperation(
+                    "Playlist is required for this operation",
+                )
+            }
+
+            playlist = target
+        case .database:
+            throw ConnectionManagerError.unsupportedOperation(
+                "Only queue and playlist sources are supported for removing songs",
+            )
         }
 
         let sourceSongs = try await getSongs(from: source)
@@ -186,34 +200,18 @@ public extension ConnectionManager where Mode == CommandMode {
                 end = positions[i]
             }
 
-            switch source {
-            case .queue:
-                if start == end {
-                    commands.append("delete \(start)")
-                } else {
-                    commands.append("delete \(end):\(start + 1)")
-                }
-            case .playlist, .favorites:
-                guard let playlist = source.playlist else {
-                    continue
-                }
-                if start == end {
+            if let playlist {
+                for position in stride(from: Int(start), through: Int(end),
+                                       by: -1)
+                {
                     commands.append(
-                        "playlistdelete \(escape(playlist.name)) \(start)",
+                        "playlistdelete \(escape(playlist.name)) \(position)",
                     )
-                } else {
-                    for pos in stride(from: Int(start), through: Int(end), by:
-                        -1)
-                    {
-                        commands.append(
-                            "playlistdelete \(escape(playlist.name)) \(pos)",
-                        )
-                    }
                 }
-            default:
-                throw ConnectionManagerError.unsupportedOperation(
-                    "Only queue and playlist sources are supported for removing songs",
-                )
+            } else if start == end {
+                commands.append("delete \(start)")
+            } else {
+                commands.append("delete \(end):\(start + 1)")
             }
 
             i += 1

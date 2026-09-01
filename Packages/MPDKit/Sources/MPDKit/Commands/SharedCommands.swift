@@ -328,6 +328,10 @@ public extension ConnectionManager {
 
     /// Gets the list of available audio outputs.
     ///
+    /// An output can carry any number of `attribute: NAME=VALUE` lines, which
+    /// are collected apart from the rest so that more than one of them
+    /// survives.
+    ///
     /// - Returns: An array of `Output` objects representing available outputs.
     /// - Throws: An error if the underlying command execution fails.
     func getOutputs() async throws -> [Output] {
@@ -336,12 +340,26 @@ public extension ConnectionManager {
 
         return try chunks.compactMap { chunk in
             var fields: [String: String] = [:]
+            var attributes: [String: String] = [:]
+
             for line in chunk where line != "OK" {
                 let (key, value) = try parseLine(line)
-                fields[key] = value
+
+                guard key == "attribute" else {
+                    fields[key] = value
+
+                    continue
+                }
+
+                guard let separator = value.firstIndex(of: "=") else {
+                    continue
+                }
+
+                attributes[String(value[..<separator])] =
+                    String(value[value.index(after: separator)...])
             }
 
-            return Output(fields)
+            return Output(fields, attributes: attributes)
         }
     }
 }
