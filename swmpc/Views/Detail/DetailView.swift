@@ -92,7 +92,7 @@ struct DetailView: View {
                             try await $0.consume(!(mpd.status.isConsume ?? false))
                         }
                     }
-                    .contentTransition(.symbolEffect(.replace))
+                    .contentTransition(.symbolEffect(.replace.magic(fallback: .offUp)))
                     .animation(.snappy(duration: 0.25), value: mpd.status.isConsume)
                 }
 
@@ -127,6 +127,8 @@ struct DetailView: View {
                         showQueuePanel.toggle()
                     }
                 }
+                .contentTransition(.symbolEffect(.replace.magic(fallback: .offUp)))
+                .animation(.snappy(duration: 0.25), value: showQueuePanel)
             }
         }
         #endif

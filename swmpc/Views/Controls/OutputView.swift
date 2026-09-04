@@ -20,6 +20,13 @@ struct OutputView: View {
     @State private var percentage = 0.5
     @State private var feedback = ActionFeedback()
 
+    private var isStreaming: Bool {
+        switch mpd.streaming.state {
+        case .loading, .playing: true
+        case .stopped, .error: false
+        }
+    }
+
     private var streamingLabel: LocalizedStringResource {
         #if os(iOS)
             "Stream to iPhone"
@@ -119,6 +126,7 @@ struct OutputView: View {
                         HStack(spacing: Layout.Spacing.medium) {
                             Image(systemSymbol: .antennaRadiowavesLeftAndRight)
                                 .foregroundStyle(.secondary)
+                                .symbolEffect(.variableColor.iterative, isActive: isStreaming)
                                 .frame(width: 40)
                                 .accessibilityHidden(true)
 

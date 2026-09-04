@@ -29,6 +29,7 @@ struct RandomView: View {
         } label: {
             ZStack {
                 Image(systemSymbol: .shuffle)
+                    .symbolEffect(.bounce, value: isRandom)
                     .padding(Layout.Padding.medium)
 
                 Circle()
@@ -37,6 +38,7 @@ struct RandomView: View {
                     .offset(y: 12)
                     .opacity(isRandom ? 1 : 0)
             }
+            .animation(.snappy(duration: 0.25), value: isRandom)
             .contentShape(Circle())
         }
         .styledButton()

@@ -185,6 +185,7 @@ private struct CategoryDatabaseView: View {
                         setSearchFieldExpanded(!isSearchFieldExpanded)
                     } label: {
                         Image(systemSymbol: isSearchFieldExpanded ? .xmark : .magnifyingglass)
+                            .contentTransition(.symbolEffect(.replace.magic(fallback: .offUp)))
                             .frame(width: Layout.Size.toolbarSymbol)
                     }
                     .accessibilityLabel(Text("Search"))
@@ -418,6 +419,8 @@ struct CategoryPlaylistView: View {
     @State private var scrollTarget: ScrollTarget?
     @State private var showReplaceQueueAlert = false
 
+    @State private var scrollPresses = 0
+
     var body: some View {
         Group {
             if let songs, !songs.isEmpty {
@@ -458,9 +461,12 @@ struct CategoryPlaylistView: View {
             } else {
                 ToolbarItem {
                     Button("Scroll to Current Song", systemSymbol: .dotViewfinder) {
+                        scrollPresses += 1
+
                         navigator.clearScrollOffset(for: .playlist(playlist))
                         scrollToCurrentSong(animated: true)
                     }
+                    .symbolEffect(.bounce, value: scrollPresses)
                     .disabled(mpd.status.song == nil || !songIsInPlaylist(mpd.status.song))
                 }
 

@@ -175,7 +175,7 @@ struct AppView: View {
                                             .frame(width: 1)
                                             .foregroundStyle(colorScheme == .dark ? .black : Color(.secondarySystemFill))
                                     }
-                                    .transition(.move(edge: .trailing))
+                                    .transition(.move(edge: .trailing).combined(with: .opacity))
                             }
                         }
                     #endif

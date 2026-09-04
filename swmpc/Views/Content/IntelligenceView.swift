@@ -110,6 +110,7 @@ struct IntelligenceView: View {
             Image(systemSymbol: IntelligenceManager.symbol)
                 .accessibilityHidden(true)
                 .font(.system(size: isLoading ? loadingSymbolSize : symbolSize))
+                .symbolEffect(.breathe, isActive: isLoading)
                 .foregroundStyle(
                     LinearGradient(
                         colors: colors.map { $0.opacity(0.8) },

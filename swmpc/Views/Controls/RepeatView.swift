@@ -29,6 +29,7 @@ struct RepeatView: View {
         } label: {
             ZStack {
                 Image(systemSymbol: .repeat)
+                    .symbolEffect(.bounce, value: isRepeat)
                     .padding(Layout.Padding.medium)
 
                 Circle()
@@ -37,6 +38,7 @@ struct RepeatView: View {
                     .offset(y: 12)
                     .opacity(isRepeat ? 1 : 0)
             }
+            .animation(.snappy(duration: 0.25), value: isRepeat)
             .contentShape(Circle())
         }
         .styledButton()

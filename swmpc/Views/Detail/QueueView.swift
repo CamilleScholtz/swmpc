@@ -72,7 +72,7 @@ struct QueueView: View {
                             }
                         } label: {
                             Image(systemSymbol: isConsume ? .flameFill : .flame)
-                                .contentTransition(.symbolEffect(.replace))
+                                .contentTransition(.symbolEffect(.replace.magic(fallback: .offUp)))
                                 .animation(.snappy(duration: 0.25), value: mpd.status.isConsume)
                         }
                         .accessibilityLabel(Text("Consume"))

@@ -85,6 +85,7 @@ private struct CurrentSongSnippetView: View {
                         Image(systemSymbol: isFavorited ? .heartFill : .heart)
                             .foregroundStyle(isFavorited ? AnyShapeStyle(.red)
                                 : AnyShapeStyle(.secondary))
+                            .contentTransition(.symbolEffect(.replace.magic(fallback: .offUp)))
                     }
                     .buttonStyle(.plain)
                 }

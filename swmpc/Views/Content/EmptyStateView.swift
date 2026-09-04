@@ -29,11 +29,14 @@ struct EmptyStateView: View {
     /// What the user can do about it.
     let description: LocalizedStringResource
 
+    @State private var hasAppeared = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: Layout.Spacing.medium) {
                 Image(systemSymbol: symbol)
                     .font(.largeTitle)
+                    .symbolEffect(.drawOff, isActive: !hasAppeared)
                     .accessibilityHidden(true)
 
                 VStack(spacing: Layout.Spacing.small / 2) {
@@ -51,5 +54,8 @@ struct EmptyStateView: View {
             .containerRelativeFrame(.vertical)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .task {
+            hasAppeared = true
+        }
     }
 }
