@@ -107,14 +107,6 @@ private struct CategoryDatabaseView: View {
         mpd.database.type == navigator.category.type
     }
 
-    private var scrollToCurrentMediaButton: some View {
-        Button("Scroll to Current Media", systemSymbol: .dotViewfinder) {
-            navigator.clearScrollOffset(for: navigator.category)
-            scrollToCurrentMedia(animated: true)
-        }
-        .disabled(mpd.status.song == nil)
-    }
-
     /// The list of media in the current category.
     ///
     /// The scroll position is restored whenever the list appears, so that
@@ -161,24 +153,30 @@ private struct CategoryDatabaseView: View {
         .toolbar {
             #if os(iOS)
                 ToolbarItem {
-                    scrollToCurrentMediaButton
+                    ScrollToCurrentMediaButton {
+                        navigator.clearScrollOffset(for: navigator.category)
+                        scrollToCurrentMedia(animated: true)
+                    }
                 }
 
                 ToolbarSpacer(.fixed)
 
                 ToolbarItem {
-                    sortMenu
+                    CategorySortMenu(sort: sort, options: sortOptions, onSelect: selectSort)
                 }
             #elseif os(macOS)
                 ToolbarItem {
-                    scrollToCurrentMediaButton
+                    ScrollToCurrentMediaButton {
+                        navigator.clearScrollOffset(for: navigator.category)
+                        scrollToCurrentMedia(animated: true)
+                    }
                 }
 
                 ToolbarSpacer(.fixed)
 
                 if navigator.category.source.isSortable {
                     ToolbarItem {
-                        sortMenu
+                        CategorySortMenu(sort: sort, options: sortOptions, onSelect: selectSort)
                     }
                 }
 
@@ -222,15 +220,9 @@ private struct CategoryDatabaseView: View {
                 scrollToCurrentMedia()
             }
         }
-        .onChange(of: mpd.status.song) { old, new in
-            guard old == nil, new != nil,
-                  navigator.scrollOffset(for: navigator.category) == nil
-            else {
-                return
-            }
-
+        .modifier(FirstSongAutoScrollModifier {
             scrollToCurrentMedia()
-        }
+        })
         .onChange(of: LoadParameters(category: navigator.category, sort: sort)) { old, new in
             // Only react to sort changes within the same category: `sort` is
             // computed from the category, so it also changes when switching
@@ -262,61 +254,19 @@ private struct CategoryDatabaseView: View {
         }
     #endif
 
-    private var sortMenu: some View {
-        Menu {
-            if !sortOptions.isEmpty {
-                ForEach(sortOptions, id: \.self) { (option: SortOption) in
-                    Button {
-                        let newSort = if sort.option == option {
-                            MPDKit.SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)
-                        } else {
-                            MPDKit.SortDescriptor(option: option)
-                        }
-
-                        switch navigator.category {
-                        case .albums: albumSort = newSort
-                        case .artists: artistSort = newSort
-                        case .songs: songSort = newSort
-                        default: break
-                        }
-                    } label: {
-                        if sort.option == option {
-                            Image(systemSymbol: .checkmark)
-                        }
-
-                        Text(option.label)
-
-                        if sort.option == option {
-                            Text(sort.direction.label)
-                        }
-                    }
-                }
-
-                #if os(iOS)
-                    Divider()
-                #endif
-            }
-
-            #if os(iOS)
-                Button {
-                    navigator.showSettingsSheet = true
-                } label: {
-                    Label("Settings", systemSymbol: .gearshape)
-                }
-            #endif
-        } label: {
-            #if os(iOS)
-                Image(systemSymbol: .ellipsis)
-            #elseif os(macOS)
-                Image(systemSymbol: .line3HorizontalDecrease)
-            #endif
+    private func selectSort(_ option: SortOption) {
+        let newSort = if sort.option == option {
+            MPDKit.SortDescriptor(option: option, direction: sort.direction == .ascending ? .descending : .ascending)
+        } else {
+            MPDKit.SortDescriptor(option: option)
         }
-        .menuIndicator(.hidden)
-        #if os(iOS)
-        .accessibilityLabel(Text("More Options"))
-        #elseif os(macOS)
-        .accessibilityLabel(Text("Sort"))
-        #endif
+
+        switch navigator.category {
+        case .albums: albumSort = newSort
+        case .artists: artistSort = newSort
+        case .songs: songSort = newSort
+        default: break
+        }
     }
 
     /// Restores the scroll position the user last browsed to in the current
@@ -364,6 +314,96 @@ private struct CategoryDatabaseView: View {
         }
 
         scrollTarget = ScrollTarget(id: id, animated: animated)
+    }
+}
+
+private struct ScrollToCurrentMediaButton: View {
+    @Environment(MPD.self) private var mpd
+
+    let action: () -> Void
+
+    @State private var presses = 0
+
+    var body: some View {
+        Button("Scroll to Current Media", systemSymbol: .dotViewfinder) {
+            presses += 1
+            action()
+        }
+        .symbolEffect(.bounce, value: presses)
+        .disabled(mpd.status.song == nil)
+    }
+}
+
+private struct CategorySortMenu: View {
+    @Environment(NavigationManager.self) private var navigator
+
+    let sort: MPDKit.SortDescriptor
+    let options: [SortOption]
+    let onSelect: (SortOption) -> Void
+
+    var body: some View {
+        Menu {
+            if !options.isEmpty {
+                ForEach(options, id: \.self) { (option: SortOption) in
+                    Button {
+                        onSelect(option)
+                    } label: {
+                        if sort.option == option {
+                            Image(systemSymbol: .checkmark)
+                        }
+
+                        Text(option.label)
+
+                        if sort.option == option {
+                            Text(sort.direction.label)
+                        }
+                    }
+                }
+
+                #if os(iOS)
+                    Divider()
+                #endif
+            }
+
+            #if os(iOS)
+                Button {
+                    navigator.showSettingsSheet = true
+                } label: {
+                    Label("Settings", systemSymbol: .gearshape)
+                }
+            #endif
+        } label: {
+            #if os(iOS)
+                Image(systemSymbol: .ellipsis)
+            #elseif os(macOS)
+                Image(systemSymbol: .line3HorizontalDecrease)
+            #endif
+        }
+        .menuIndicator(.hidden)
+        #if os(iOS)
+        .accessibilityLabel(Text("More Options"))
+        #elseif os(macOS)
+        .accessibilityLabel(Text("Sort"))
+        #endif
+    }
+}
+
+private struct FirstSongAutoScrollModifier: ViewModifier {
+    @Environment(MPD.self) private var mpd
+    @Environment(NavigationManager.self) private var navigator
+
+    let action: () -> Void
+
+    func body(content: Content) -> some View {
+        content.onChange(of: mpd.status.song) { old, new in
+            guard old == nil, new != nil,
+                  navigator.scrollOffset(for: navigator.category) == nil
+            else {
+                return
+            }
+
+            action()
+        }
     }
 }
 
