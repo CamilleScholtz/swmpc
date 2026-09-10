@@ -50,7 +50,7 @@ struct SetPlaybackModeIntent: AppIntent, AudioPlaybackIntent {
             }
         }
 
-        let dialog: IntentDialog = switch (mode, newState) {
+        let dialog = switch (mode, newState) {
         case (.shuffle, true): IntentDialog("Shuffle enabled")
         case (.shuffle, false): IntentDialog("Shuffle disabled")
         case (.repeat, true): IntentDialog("Repeat enabled")

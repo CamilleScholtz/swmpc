@@ -32,7 +32,7 @@ extension ConnectionManager {
     /// - Returns: The commands to run, which is `command` alone when
     ///            narrowing would gain nothing.
     func narrowing(_ command: String, to tags: Set<TagType>) async -> [String] {
-        narrowing(command, to: tags, available: await availableTags())
+        await narrowing(command, to: tags, available: availableTags())
     }
 
     /// Wraps `command` so the server sends back only those of `tags` that

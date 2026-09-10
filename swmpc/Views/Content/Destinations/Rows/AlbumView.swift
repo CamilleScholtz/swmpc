@@ -129,7 +129,7 @@ struct AlbumView: View, Equatable {
                     return
                 }
 
-                artwork = (try? await album.artwork(fitting: Layout.RowHeight.album))?.image
+                artwork = await (try? album.artwork(fitting: Layout.RowHeight.album))?.image
             }
     }
 }

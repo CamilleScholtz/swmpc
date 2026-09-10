@@ -47,7 +47,7 @@ import Observation
     ///
     /// - Parameter connection: The connection to load over.
     /// - Throws: An error if fetching the outputs fails.
-    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>)
+    func set(on connection: ConnectionManager<some ConnectionMode>)
         async throws
     {
         outputs = try await connection.getOutputs()

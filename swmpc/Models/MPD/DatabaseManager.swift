@@ -79,9 +79,9 @@ struct SearchResults: Sendable {
     ///           If `nil`, retains the current sort.
     /// - Throws: An error if the MPD connection fails or the fetch is
     ///           cancelled.
-    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>,
-                                   type: MediaType? = nil,
-                                   sort: MPDKit.SortDescriptor? = nil)
+    func set(on connection: ConnectionManager<some ConnectionMode>,
+             type: MediaType? = nil,
+             sort: MPDKit.SortDescriptor? = nil)
         async throws
     {
         defer { state.isLoading = false }

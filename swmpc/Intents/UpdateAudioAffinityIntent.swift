@@ -56,7 +56,7 @@ struct UpdateAudioAffinityIntent {
             return .result(dialog: IntentDialog(stringLiteral: "No songs found for \(name)"))
         }
 
-        let favorites = (try? await command {
+        let favorites = await (try? command {
             try await $0.getSongs(from: Source.favorites)
         }) ?? []
         let files = Set(favorites.map(\.file))

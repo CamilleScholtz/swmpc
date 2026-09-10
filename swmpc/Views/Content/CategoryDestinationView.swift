@@ -382,9 +382,9 @@ private struct CategorySortMenu: View {
         }
         .menuIndicator(.hidden)
         #if os(iOS)
-        .accessibilityLabel(Text("More Options"))
+            .accessibilityLabel(Text("More Options"))
         #elseif os(macOS)
-        .accessibilityLabel(Text("Sort"))
+            .accessibilityLabel(Text("Sort"))
         #endif
     }
 }

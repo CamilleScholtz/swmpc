@@ -21,7 +21,7 @@ struct FavoriteSongIntent: AppIntent {
             return .result(dialog: IntentDialog("Nothing is currently playing"))
         }
 
-        let favorites = (try? await command {
+        let favorites = await (try? command {
             try await $0.getSongs(from: Source.favorites)
         }) ?? []
         let isFavorited = favorites.contains { $0.file == song.file }

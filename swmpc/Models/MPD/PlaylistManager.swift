@@ -146,7 +146,7 @@ private nonisolated enum PlaylistSymbolCandidates {
     ///
     /// - Parameter connection: The connection to load over.
     /// - Throws: An error if the playlists could not be set.
-    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>)
+    func set(on connection: ConnectionManager<some ConnectionMode>)
         async throws
     {
         let (allPlaylists, favorites) = try await fetchPlaylists(on: connection)
@@ -160,7 +160,8 @@ private nonisolated enum PlaylistSymbolCandidates {
 
         Task {
             try? await CSSearchableIndex.default().indexAppEntities(
-                allPlaylists.map { PlaylistEntity(id: $0.name) })
+                allPlaylists.map { PlaylistEntity(id: $0.name) },
+            )
         }
 
         Task {
@@ -173,8 +174,8 @@ private nonisolated enum PlaylistSymbolCandidates {
     /// - Parameter connection: The connection to load over.
     /// - Returns: A tuple containing the playlists and the songs in the
     ///            `Favorites` playlist.
-    private func fetchPlaylists<Mode: ConnectionMode>(
-        on connection: ConnectionManager<Mode>,
+    private func fetchPlaylists(
+        on connection: ConnectionManager<some ConnectionMode>,
     ) async throws -> ([Playlist], [Song]) {
         let allPlaylists = try await connection.getPlaylists()
 

@@ -17,7 +17,7 @@ import Observation
     ///
     /// - Parameter connection: The connection to load over.
     /// - Throws: An error if the queue could not be loaded.
-    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>)
+    func set(on connection: ConnectionManager<some ConnectionMode>)
         async throws
     {
         songs = try await connection.getSongs(from: .queue)

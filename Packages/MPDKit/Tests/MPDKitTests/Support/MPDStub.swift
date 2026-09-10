@@ -6,9 +6,8 @@
 //
 
 import Foundation
-import Synchronization
-
 @testable import MPDKit
+import Synchronization
 
 /// A stand-in for an MPD server.
 ///
@@ -348,15 +347,33 @@ extension MPDStub {
     {
         var lines = ["file: \(file)"]
 
-        if let title { lines.append("Title: \(title)") }
-        if let artist { lines.append("Artist: \(artist)") }
-        if let album { lines.append("Album: \(album)") }
-        if let albumArtist { lines.append("AlbumArtist: \(albumArtist)") }
-        if let disc { lines.append("Disc: \(disc)") }
-        if let track { lines.append("Track: \(track)") }
-        if let duration { lines.append("duration: \(duration)") }
-        if let position { lines.append("Pos: \(position)") }
-        if let identifier { lines.append("Id: \(identifier)") }
+        if let title {
+            lines.append("Title: \(title)")
+        }
+        if let artist {
+            lines.append("Artist: \(artist)")
+        }
+        if let album {
+            lines.append("Album: \(album)")
+        }
+        if let albumArtist {
+            lines.append("AlbumArtist: \(albumArtist)")
+        }
+        if let disc {
+            lines.append("Disc: \(disc)")
+        }
+        if let track {
+            lines.append("Track: \(track)")
+        }
+        if let duration {
+            lines.append("duration: \(duration)")
+        }
+        if let position {
+            lines.append("Pos: \(position)")
+        }
+        if let identifier {
+            lines.append("Id: \(identifier)")
+        }
 
         return lines
     }

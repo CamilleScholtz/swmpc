@@ -6,9 +6,8 @@
 //
 
 import Foundation
-import Testing
-
 @testable import MPDKit
+import Testing
 
 /// Builds an artist, since only the name distinguishes one.
 private func artist(_ name: String, sort: String? = nil,
@@ -43,14 +42,14 @@ private func song(_ file: String, title: String = "Idioteque",
 
 @Suite("Album identity")
 struct AlbumIdentityTests {
-    @Test("An album is identified by its artist and title together")
-    func identifier() {
+    @Test
+    func `An album is identified by its artist and title together`() {
         #expect(album("Kid A").id == "Radiohead - Kid A")
         #expect(album("Kid A").description == "Radiohead - Kid A")
     }
 
-    @Test("The same release found through a different file is the same album")
-    func equalityIgnoresFile() {
+    @Test
+    func `The same release found through a different file is the same album`() {
         let first = album("Kid A", file: "a.flac")
         let second = album("Kid A", file: "b.flac")
 
@@ -59,15 +58,15 @@ struct AlbumIdentityTests {
         #expect(Set([first, second]).count == 1)
     }
 
-    @Test("Albums of the same name by different artists stay apart")
-    func equalityRespectsArtist() {
+    @Test
+    func `Albums of the same name by different artists stay apart`() {
         #expect(album("Greatest Hits", by: "Queen")
             != album("Greatest Hits", by: "ABBA"))
         #expect(album("Kid A") != album("Amnesiac"))
     }
 
-    @Test("The identifier survives a round trip, though it is never encoded")
-    func codable() throws {
+    @Test
+    func `The identifier survives a round trip, though it is never encoded`() throws {
         let original = Album(file: "a.flac", title: "Kid A",
                              titleSort: "Kid A",
                              artist: artist("Radiohead", sort: "Radiohead"))
@@ -80,8 +79,8 @@ struct AlbumIdentityTests {
         #expect(decoded.artist.nameSort == "Radiohead")
     }
 
-    @Test("An encoded album carries no identifier of its own")
-    func decodesWithoutIdentifier() throws {
+    @Test
+    func `An encoded album carries no identifier of its own`() throws {
         let json = """
         {"file": "a.flac", "title": "Kid A",
          "artist": {"file": "a.flac", "name": "Radiohead"}}
@@ -97,13 +96,13 @@ struct AlbumIdentityTests {
 
 @Suite("Artist identity")
 struct ArtistIdentityTests {
-    @Test("An artist is identified by name alone")
-    func identifier() {
+    @Test
+    func `An artist is identified by name alone`() {
         #expect(artist("Radiohead").id == "Radiohead")
     }
 
-    @Test("The same name found through a different file is the same artist")
-    func equalityIgnoresFile() {
+    @Test
+    func `The same name found through a different file is the same artist`() {
         let first = artist("Radiohead", file: "a.flac")
         let second = artist("Radiohead", sort: "Radiohead", file: "b.flac")
 
@@ -111,13 +110,13 @@ struct ArtistIdentityTests {
         #expect(first.hashValue == second.hashValue)
     }
 
-    @Test("Different names are different artists")
-    func equalityRespectsName() {
+    @Test
+    func `Different names are different artists`() {
         #expect(artist("Radiohead") != artist("Thom Yorke"))
     }
 
-    @Test("An artist survives a round trip")
-    func codable() throws {
+    @Test
+    func `An artist survives a round trip`() throws {
         let original = artist("The Beatles", sort: "Beatles, The")
         let decoded = try JSONDecoder()
             .decode(Artist.self, from: JSONEncoder().encode(original))
@@ -129,14 +128,14 @@ struct ArtistIdentityTests {
 
 @Suite("Song identity")
 struct SongIdentityTests {
-    @Test("A song is identified by its path")
-    func identifier() {
+    @Test
+    func `A song is identified by its path`() {
         #expect(song("music/a.flac").id == "music/a.flac")
         #expect(song("music/a.flac").description == "Radiohead - Idioteque")
     }
 
-    @Test("The same file in the queue and the database is the same song")
-    func equalityIgnoresPlacement() {
+    @Test
+    func `The same file in the queue and the database is the same song`() {
         let queued = song("a.flac", position: 3, identifier: 9)
         let stored = song("a.flac")
 
@@ -144,8 +143,8 @@ struct SongIdentityTests {
         #expect(queued.hashValue == stored.hashValue)
     }
 
-    @Test("Songs know the album and artist they belong to")
-    func membership() {
+    @Test
+    func `Songs know the album and artist they belong to`() {
         let track = song("a.flac", by: "Radiohead", on: "Kid A")
 
         #expect(track.isIn(album("Kid A", by: "Radiohead")))
@@ -154,8 +153,8 @@ struct SongIdentityTests {
         #expect(!track.isBy(artist("Thom Yorke")))
     }
 
-    @Test("Membership follows the album artist, not the performing one")
-    func membershipUsesAlbumArtist() throws {
+    @Test
+    func `Membership follows the album artist, not the performing one`() throws {
         let track = try Song.parse(
             fields: ["file": "a.flac", "artist": "Kanye West",
                      "albumartist": "Various Artists", "album": "Compilation"],
@@ -166,8 +165,8 @@ struct SongIdentityTests {
         #expect(!track.isBy(artist("Kanye West")))
     }
 
-    @Test("A song survives a round trip, album and all")
-    func codable() throws {
+    @Test
+    func `A song survives a round trip, album and all`() throws {
         let original = song("a.flac", position: 2, identifier: 7, disc: 2,
                             track: 11)
         let decoded = try JSONDecoder()
@@ -181,8 +180,8 @@ struct SongIdentityTests {
         #expect(decoded.album == original.album)
     }
 
-    @Test("Sorting by disc then track puts a multi-disc album in order")
-    func discAndTrackOrdering() {
+    @Test
+    func `Sorting by disc then track puts a multi-disc album in order`() {
         let songs = [
             song("d2t1.flac", disc: 2, track: 1),
             song("d1t2.flac", disc: 1, track: 2),
@@ -199,13 +198,13 @@ struct SongIdentityTests {
 
 @Suite("Playlists")
 struct PlaylistTests {
-    @Test("A playlist is identified by its name")
-    func identifier() {
+    @Test
+    func `A playlist is identified by its name`() {
         #expect(Playlist(name: "Favorites").id == "Favorites")
     }
 
-    @Test("The symbol is metadata, and never part of identity")
-    func equalityIgnoresSymbol() {
+    @Test
+    func `The symbol is metadata, and never part of identity`() {
         let plain = Playlist(name: "Focus")
         let decorated = Playlist(name: "Focus", symbolName: "brain")
 
@@ -214,13 +213,13 @@ struct PlaylistTests {
         #expect(Set([plain, decorated]).count == 1)
     }
 
-    @Test("Different names are different playlists")
-    func equalityRespectsName() {
+    @Test
+    func `Different names are different playlists`() {
         #expect(Playlist(name: "Focus") != Playlist(name: "Sleep"))
     }
 
-    @Test("A playlist survives a round trip, symbol and all")
-    func codable() throws {
+    @Test
+    func `A playlist survives a round trip, symbol and all`() throws {
         let original = Playlist(name: "Focus", symbolName: "brain")
         let decoded = try JSONDecoder()
             .decode(Playlist.self, from: JSONEncoder().encode(original))
@@ -232,27 +231,27 @@ struct PlaylistTests {
 
 @Suite("Servers")
 struct ServerTests {
-    @Test("A server without a name shows its host instead")
-    func displayName() {
+    @Test
+    func `A server without a name shows its host instead`() {
         #expect(Server(host: "nas.local").displayName == "nas.local")
         #expect(Server(name: "Living room", host: "nas.local").displayName
             == "Living room")
     }
 
-    @Test("A server that is not streaming has no stream to play")
-    func withoutStream() {
+    @Test
+    func `A server that is not streaming has no stream to play`() {
         #expect(Server(host: "nas.local").streamURL == nil)
     }
 
-    @Test("The stream URL is built from the host and the streaming port")
-    func streamURL() {
+    @Test
+    func `The stream URL is built from the host and the streaming port`() {
         let server = Server(host: "nas.local", streamingPort: 8000)
 
         #expect(server.streamURL?.absoluteString == "http://nas.local:8000/")
     }
 
-    @Test("The defaults point at a local server on the protocol's port")
-    func defaults() {
+    @Test
+    func `The defaults point at a local server on the protocol's port`() {
         let server = Server()
 
         #expect(server.host == "localhost")
@@ -262,8 +261,8 @@ struct ServerTests {
         #expect(server.streamingPort == nil)
     }
 
-    @Test("A server survives a round trip, identity and all")
-    func codable() throws {
+    @Test
+    func `A server survives a round trip, identity and all`() throws {
         let original = Server(name: "Living room", host: "nas.local",
                               port: 6601, password: "hunter2",
                               artworkGetter: .metadata, streamingPort: 8000)
@@ -276,16 +275,16 @@ struct ServerTests {
         #expect(decoded.streamingPort == 8000)
     }
 
-    @Test("Two servers configured alike are still two servers")
-    func identity() {
+    @Test
+    func `Two servers configured alike are still two servers`() {
         #expect(Server(host: "nas.local") != Server(host: "nas.local"))
     }
 }
 
 @Suite("Outputs")
 struct OutputTests {
-    @Test("An output is identified by the number the server gave it")
-    func identifier() {
+    @Test
+    func `An output is identified by the number the server gave it`() {
         let output = Output(id: 3, name: "Speakers", plugin: "alsa",
                             isEnabled: true)
 
@@ -293,8 +292,8 @@ struct OutputTests {
         #expect(output.attributes.isEmpty)
     }
 
-    @Test("Toggling an output changes it")
-    func equality() {
+    @Test
+    func `Toggling an output changes it`() {
         let enabled = Output(id: 0, name: "Speakers", plugin: "alsa",
                              isEnabled: true)
         let disabled = Output(id: 0, name: "Speakers", plugin: "alsa",
@@ -305,8 +304,8 @@ struct OutputTests {
                                   isEnabled: true))
     }
 
-    @Test("Only the httpd plugin is a stream")
-    func httpd() {
+    @Test
+    func `Only the httpd plugin is a stream`() {
         #expect(Output(id: 0, name: "Stream", plugin: "httpd",
                        isEnabled: true).isHttpd)
         #expect(!Output(id: 0, name: "Speakers", plugin: "pulse",

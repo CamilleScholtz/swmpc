@@ -6,9 +6,8 @@
 //
 
 import Foundation
-import Testing
-
 @testable import MPDKit
+import Testing
 
 /// What MPDKit puts on the wire, and what it makes of what comes back,
 /// checked against the MPD protocol documentation by driving a real
@@ -20,8 +19,8 @@ import Testing
 struct MPDProtocolTests {
     @Suite("Handshake")
     struct HandshakeTests {
-        @Test("The greeting names the protocol version commands are gated on")
-        func greeting() async throws {
+        @Test
+        func `The greeting names the protocol version commands are gated on`() async throws {
             try await MPDStub.withServer(greeting: "OK MPD 0.24.0") { _ in
                 let version = try await ConnectionManager<CommandMode>
                     .command { await $0.version }
@@ -30,8 +29,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A server below the supported floor is turned away")
-        func belowFloor() async throws {
+        @Test
+        func `A server below the supported floor is turned away`() async throws {
             try await MPDStub.withServer(greeting: "OK MPD 0.19.0") { _ in
                 await #expect(throws: ConnectionManagerError
                     .unsupportedServerVersion)
@@ -41,8 +40,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A server at the floor is accepted")
-        func atFloor() async throws {
+        @Test
+        func `A server at the floor is accepted`() async throws {
             try await MPDStub.withServer(greeting: "OK MPD 0.21.0") { _ in
                 let version = try await ConnectionManager<CommandMode>
                     .command { await $0.version }
@@ -51,8 +50,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Anything but the documented greeting is refused")
-        func withoutGreeting() async throws {
+        @Test
+        func `Anything but the documented greeting is refused`() async throws {
             try await MPDStub.withServer(greeting: "OK") { _ in
                 await #expect(throws: ConnectionManagerError.self) {
                     try await ConnectionManager<CommandMode>.command { _ in }
@@ -60,8 +59,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A configured password is sent, quoted, before anything else")
-        func password() async throws {
+        @Test
+        func `A configured password is sent, quoted, before anything else`() async throws {
             try await MPDStub.withServer(password: "hunter2") { stub in
                 try await ConnectionManager<CommandMode>.command { _ in }
 
@@ -69,8 +68,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A password with protocol punctuation in it is escaped")
-        func awkwardPassword() async throws {
+        @Test
+        func `A password with protocol punctuation in it is escaped`() async throws {
             try await MPDStub.withServer(password: "say \"hi\"\\") { stub in
                 try await ConnectionManager<CommandMode>.command { _ in }
 
@@ -78,8 +77,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Without a password nothing is sent before the first command")
-        func withoutPassword() async throws {
+        @Test
+        func `Without a password nothing is sent before the first command`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command { _ in }
 
@@ -87,8 +86,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A manager serves one connection and will not open a second")
-        func singleUse() async throws {
+        @Test
+        func `A manager serves one connection and will not open a second`() async throws {
             try await MPDStub.withServer { _ in
                 let connection = ConnectionManager<CommandMode>()
                 try await connection.connect()
@@ -104,8 +103,8 @@ struct MPDProtocolTests {
 
     @Suite("Requests")
     struct RequestTests {
-        @Test("A single command is sent on its own line")
-        func singleCommand() async throws {
+        @Test
+        func `A single command is sent on its own line`() async throws {
             try await MPDStub.withServer { stub in
                 _ = try await ConnectionManager<CommandMode>.command {
                     try await $0.run(["status"])
@@ -115,8 +114,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Several commands are wrapped in a command list")
-        func commandList() async throws {
+        @Test
+        func `Several commands are wrapped in a command list`() async throws {
             try await MPDStub.withServer { stub in
                 _ = try await ConnectionManager<CommandMode>.command {
                     try await $0.run(["clear", "add /", "play"])
@@ -128,8 +127,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A command list answers as one response, ending in a single OK")
-        func commandListResponse() async throws {
+        @Test
+        func `A command list answers as one response, ending in a single OK`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["volume: 42", "state: play"]),
             ]) { _ in
@@ -141,8 +140,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An ACK is a protocol violation carrying the server's words")
-        func acknowledgedError() async throws {
+        @Test
+        func `An ACK is a protocol violation carrying the server's words`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.failure(code: 50, command: "load",
                                 message: "No such playlist"),
@@ -157,8 +156,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A server that hangs up mid-command is reported, not awaited")
-        func hangUp() async throws {
+        @Test
+        func `A server that hangs up mid-command is reported, not awaited`() async throws {
             try await MPDStub.withServer(replies: [MPDStub.hangUp]) { _ in
                 await #expect(throws: (any Error).self) {
                     try await ConnectionManager<CommandMode>.command {
@@ -182,8 +181,8 @@ struct MPDProtocolTests {
                          album: "Kid A", duration: 245.533, position: 1,
                          identifier: 9))
 
-        @Test("Status and the current song are asked for in one round trip")
-        func request() async throws {
+        @Test
+        func `Status and the current song are asked for in one round trip`() async throws {
             try await MPDStub.withServer(replies: [Self.full]) { stub in
                 _ = try await ConnectionManager<CommandMode>.command {
                     try await $0.getStatusData()
@@ -193,8 +192,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Every status field MPDKit reads is read")
-        func fields() async throws {
+        @Test
+        func `Every status field MPDKit reads is read`() async throws {
             try await MPDStub.withServer(replies: [Self.full]) { _ in
                 let status = try await ConnectionManager<CommandMode>
                     .command { try await $0.getStatusData() }
@@ -213,8 +212,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Each documented player state is understood")
-        func states() async throws {
+        @Test
+        func `Each documented player state is understood`() async throws {
             for (value, state) in [("play", PlayerState.play),
                                    ("pause", .pause), ("stop", .stop)]
             {
@@ -229,8 +228,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A state the protocol does not define is malformed")
-        func unknownState() async throws {
+        @Test
+        func `A state the protocol does not define is malformed`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["state: playing"]),
             ]) { _ in
@@ -242,8 +241,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A stopped player reports no current song")
-        func stopped() async throws {
+        @Test
+        func `A stopped player reports no current song`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["state: stop", "volume: 0"]),
             ]) { _ in
@@ -255,8 +254,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Fields the server left out are left unknown")
-        func missingFields() async throws {
+        @Test
+        func `Fields the server left out are left unknown`() async throws {
             try await MPDStub.withServer(replies: [MPDStub.reply()]) { _ in
                 let status = try await ConnectionManager<CommandMode>
                     .command { try await $0.getStatusData() }
@@ -273,8 +272,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A server with no mixer reports its volume as minus one")
-        func withoutMixer() async throws {
+        @Test
+        func `A server with no mixer reports its volume as minus one`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["state: play", "volume: -1"]),
             ]) { _ in
@@ -285,8 +284,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("The one-shot modes MPD 0.24 added read as off, not on")
-        func oneShot() async throws {
+        @Test
+        func `The one-shot modes MPD 0.24 added read as off, not on`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["state: play", "consume: oneshot",
                                "single: oneshot"]),
@@ -298,8 +297,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A DSD stream reports a rate and channels but no bit depth")
-        func dsd() async throws {
+        @Test
+        func `A DSD stream reports a rate and channels but no bit depth`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["state: play", "audio: 2822400:dsd:2"]),
             ]) { _ in
@@ -315,8 +314,8 @@ struct MPDProtocolTests {
 
     @Suite("Database statistics")
     struct StatsTests {
-        @Test("Statistics are asked for with one command")
-        func request() async throws {
+        @Test
+        func `Statistics are asked for with one command`() async throws {
             try await MPDStub.withServer(replies: [MPDStub.reply()]) { stub in
                 _ = try await ConnectionManager<CommandMode>.command {
                     try await $0.getStatsData()
@@ -326,8 +325,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Every documented statistic MPDKit reads is read")
-        func fields() async throws {
+        @Test
+        func `Every documented statistic MPDKit reads is read`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["artists: 12", "albums: 34", "songs: 567",
                                "uptime: 890", "db_playtime: 12345",
@@ -348,8 +347,8 @@ struct MPDProtocolTests {
 
     @Suite("Argument escaping")
     struct EscapingTests {
-        @Test("The protocol's own escaping example goes out as documented")
-        func documentedExample() async throws {
+        @Test
+        func `The protocol's own escaping example goes out as documented`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -364,8 +363,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A backslash is doubled twice over, for value and for protocol")
-        func backslashes() async throws {
+        @Test
+        func `A backslash is doubled twice over, for value and for protocol`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -380,8 +379,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A newline cannot ride along on a line-based protocol")
-        func newlines() async throws {
+        @Test
+        func `A newline cannot ride along on a line-based protocol`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -395,8 +394,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Values outside ASCII survive both ways, as UTF-8")
-        func unicode() async throws {
+        @Test
+        func `Values outside ASCII survive both ways, as UTF-8`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("坂本龍一/async.flac", title: "音楽",
@@ -417,8 +416,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A response line that is not UTF-8 is malformed")
-        func invalidEncoding() async throws {
+        @Test
+        func `A response line that is not UTF-8 is malformed`() async throws {
             var reply = Data("file: ".utf8)
             reply.append(contentsOf: [0xFF, 0xFE, 0x0A])
             reply.append(Data("OK\n".utf8))
@@ -432,8 +431,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A quoted argument keeps its spaces in one argument")
-        func spaces() async throws {
+        @Test
+        func `A quoted argument keeps its spaces in one argument`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command {
                     try await $0.renamePlaylist(Playlist(name: "Old name"),
@@ -448,14 +447,14 @@ struct MPDProtocolTests {
 
     @Suite("Database queries")
     struct QueryTests {
-        @Test("Albums are found through the first track of each")
-        func albums() async throws {
+        @Test
+        func `Albums are found through the first track of each`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", album: "Kid A",
                                            albumArtist: "Radiohead")
-                    + MPDStub.song("b.flac", album: "Amnesiac",
-                                   albumArtist: "Radiohead")),
+                        + MPDStub.song("b.flac", album: "Amnesiac",
+                                       albumArtist: "Radiohead")),
             ]) { stub in
                 let albums = try await ConnectionManager<CommandMode>
                     .command { try await $0.getAlbums() }
@@ -467,14 +466,14 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An album found twice is listed once")
-        func albumsAreUnique() async throws {
+        @Test
+        func `An album found twice is listed once`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", album: "Kid A",
                                            albumArtist: "Radiohead")
-                    + MPDStub.song("b.flac", album: "Kid A",
-                                   albumArtist: "Radiohead")),
+                        + MPDStub.song("b.flac", album: "Kid A",
+                                       albumArtist: "Radiohead")),
             ]) { _ in
                 let albums = try await ConnectionManager<CommandMode>
                     .command { try await $0.getAlbums() }
@@ -483,8 +482,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("The sort argument carries the descriptor asked for")
-        func albumSort() async throws {
+        @Test
+        func `The sort argument carries the descriptor asked for`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -499,8 +498,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An artist's albums are found by album artist, in release order")
-        func albumsByArtist() async throws {
+        @Test
+        func `An artist's albums are found by album artist, in release order`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -517,8 +516,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("The queue is sorted only on a server whose playlistfind can")
-        func albumsByArtistInQueue() async throws {
+        @Test
+        func `The queue is sorted only on a server whose playlistfind can`() async throws {
             let artist = Artist(file: "a.flac", name: "Radiohead",
                                 nameSort: nil)
 
@@ -545,8 +544,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Only the database and the queue can be asked for an artist")
-        func albumsByArtistElsewhere() async throws {
+        @Test
+        func `Only the database and the queue can be asked for an artist`() async throws {
             try await MPDStub.withServer { _ in
                 await #expect(throws: ConnectionManagerError.self) {
                     try await ConnectionManager<CommandMode>.command {
@@ -560,16 +559,16 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Artists and their album counts come from the album listing")
-        func artists() async throws {
+        @Test
+        func `Artists and their album counts come from the album listing`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", album: "Kid A",
                                            albumArtist: "Radiohead")
-                    + MPDStub.song("b.flac", album: "Amnesiac",
-                                   albumArtist: "Radiohead")
-                    + MPDStub.song("c.flac", album: "Untrue",
-                                   albumArtist: "Burial")),
+                        + MPDStub.song("b.flac", album: "Amnesiac",
+                                       albumArtist: "Radiohead")
+                        + MPDStub.song("c.flac", album: "Untrue",
+                                       albumArtist: "Burial")),
             ]) { _ in
                 let listing = try await ConnectionManager<CommandMode>
                     .command { try await $0.getArtistsWithAlbumCounts() }
@@ -579,8 +578,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Each source is read with the command the protocol gives it")
-        func songSources() async throws {
+        @Test
+        func `Each source is read with the command the protocol gives it`() async throws {
             let sources: [(Source, String)] = [
                 (.database, "find \"(title != '')\" sort albumartistsort"),
                 (.queue, "playlistinfo"),
@@ -602,8 +601,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Songs from a list are numbered when the server gives no position")
-        func songPositions() async throws {
+        @Test
+        func `Songs from a list are numbered when the server gives no position`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac")
@@ -616,13 +615,13 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A position the queue reported is kept as the queue's own")
-        func queuePositions() async throws {
+        @Test
+        func `A position the queue reported is kept as the queue's own`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", position: 4,
                                            identifier: 9)
-                    + MPDStub.song("b.flac", position: 5, identifier: 10)),
+                        + MPDStub.song("b.flac", position: 5, identifier: 10)),
             ]) { _ in
                 let songs = try await ConnectionManager<CommandMode>
                     .command { try await $0.getSongs(from: .queue) }
@@ -632,8 +631,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An album's songs are asked for with one conjoined filter")
-        func songsInAlbum() async throws {
+        @Test
+        func `An album's songs are asked for with one conjoined filter`() async throws {
             let album = Album(file: "a.flac", title: "Kid A", titleSort: nil,
                               artist: Artist(file: "a.flac",
                                              name: "Radiohead",
@@ -662,8 +661,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An album's songs come back by disc and then by track")
-        func albumOrdering() async throws {
+        @Test
+        func `An album's songs come back by disc and then by track`() async throws {
             let album = Album(file: "a.flac", title: "Kid A", titleSort: nil,
                               artist: Artist(file: "a.flac",
                                              name: "Radiohead",
@@ -684,8 +683,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("The queue keeps its own order, whatever the tags say")
-        func queueOrdering() async throws {
+        @Test
+        func `The queue keeps its own order, whatever the tags say`() async throws {
             let album = Album(file: "a.flac", title: "Kid A", titleSort: nil,
                               artist: Artist(file: "a.flac",
                                              name: "Radiohead",
@@ -704,16 +703,16 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An artist's songs come back album by album, each in order")
-        func songsByArtist() async throws {
+        @Test
+        func `An artist's songs come back album by album, each in order`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("kid-a-2.flac", album: "Kid A",
                                            albumArtist: "Radiohead", track: 2)
-                    + MPDStub.song("amnesiac-1.flac", album: "Amnesiac",
-                                   albumArtist: "Radiohead", track: 1)
-                    + MPDStub.song("kid-a-1.flac", album: "Kid A",
-                                   albumArtist: "Radiohead", track: 1)),
+                        + MPDStub.song("amnesiac-1.flac", album: "Amnesiac",
+                                       albumArtist: "Radiohead", track: 1)
+                        + MPDStub.song("kid-a-1.flac", album: "Kid A",
+                                       albumArtist: "Radiohead", track: 1)),
             ]) { stub in
                 let songs = try await ConnectionManager<CommandMode>.command {
                     try await $0.getSongs(by: Artist(file: "a.flac",
@@ -728,8 +727,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Playlists are listed by name, ignoring their timestamps")
-        func playlists() async throws {
+        @Test
+        func `Playlists are listed by name, ignoring their timestamps`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["playlist: Focus",
                                "Last-Modified: 2026-08-01T12:00:00Z",
@@ -744,8 +743,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Outputs are listed with the fields the protocol names")
-        func outputs() async throws {
+        @Test
+        func `Outputs are listed with the fields the protocol names`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["outputid: 0", "outputname: Speakers",
                                "plugin: alsa", "outputenabled: 1",
@@ -780,8 +779,8 @@ struct MPDProtocolTests {
             "Ensemble", "Date", "MUSICBRAINZ_ARTISTID",
         ])
 
-        @Test("The mask is set and put back inside the query's own list")
-        func narrows() async throws {
+        @Test
+        func `The mask is set and put back inside the query's own list`() async throws {
             try await MPDStub.withServer(replies: [
                 Self.available, MPDStub.reply(),
             ]) { stub in
@@ -800,8 +799,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("The server is asked what it supports once, then remembered")
-        func caches() async throws {
+        @Test
+        func `The server is asked what it supports once, then remembered`() async throws {
             try await MPDStub.withServer(replies: [
                 Self.available, MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -816,8 +815,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A server that names no tags is queried without a mask")
-        func withoutTagTypes() async throws {
+        @Test
+        func `A server that names no tags is queried without a mask`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -831,8 +830,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A server that names no tags is not asked a second time")
-        func remembersSilence() async throws {
+        @Test
+        func `A server that names no tags is not asked a second time`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -848,8 +847,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A query that fails takes the mask off again")
-        func restoresAfterFailure() async throws {
+        @Test
+        func `A query that fails takes the mask off again`() async throws {
             try await MPDStub.withServer(replies: [
                 Self.available,
                 MPDStub.failure(code: 2, index: 2, command: "find",
@@ -883,16 +882,16 @@ struct MPDProtocolTests {
                                              nameSort: nil)))
         }
 
-        @Test("Only songs the queue has not got are added")
-        func addsMissingSongs() async throws {
+        @Test
+        func `Only songs the queue has not got are added`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", position: 0)),
                 MPDStub.reply(),
             ]) { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.add(songs: [self.song("a.flac"),
-                                             self.song("b.flac")],
+                    try await $0.add(songs: [song("a.flac"),
+                                             song("b.flac")],
                                      to: .queue)
                 }
 
@@ -900,14 +899,14 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Adding nothing new sends nothing at all")
-        func addsNothing() async throws {
+        @Test
+        func `Adding nothing new sends nothing at all`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", position: 0)),
             ]) { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.add(songs: [self.song("a.flac")], to: .queue)
+                    try await $0.add(songs: [song("a.flac")], to: .queue)
                 }
 
                 #expect(stub.commands.last != ["add \"a.flac\""])
@@ -915,14 +914,14 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A playlist is added to by name, song by song")
-        func addsToPlaylist() async throws {
+        @Test
+        func `A playlist is added to by name, song by song`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.add(songs: [self.song("a.flac"),
-                                             self.song("b.flac")],
+                    try await $0.add(songs: [song("a.flac"),
+                                             song("b.flac")],
                                      to: .playlist(Playlist(name: "Focus")))
                 }
 
@@ -931,8 +930,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("The database cannot be added to, and is not read to find out")
-        func cannotAddToDatabase() async throws {
+        @Test
+        func `The database cannot be added to, and is not read to find out`() async throws {
             try await MPDStub.withServer { stub in
                 await #expect(throws: ConnectionManagerError.self) {
                     try await ConnectionManager<CommandMode>.command {
@@ -945,8 +944,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("The database cannot be removed from either")
-        func cannotRemoveFromDatabase() async throws {
+        @Test
+        func `The database cannot be removed from either`() async throws {
             try await MPDStub.withServer { stub in
                 await #expect(throws: ConnectionManagerError.self) {
                     try await ConnectionManager<CommandMode>.command {
@@ -959,8 +958,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A run of queue positions is deleted as one half-open range")
-        func deletesRange() async throws {
+        @Test
+        func `A run of queue positions is deleted as one half-open range`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", position: 0)
@@ -971,9 +970,9 @@ struct MPDProtocolTests {
                 MPDStub.reply(),
             ]) { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.remove(songs: [self.song("b.flac"),
-                                                self.song("c.flac"),
-                                                self.song("d.flac")],
+                    try await $0.remove(songs: [song("b.flac"),
+                                                song("c.flac"),
+                                                song("d.flac")],
                                         from: .queue)
                 }
 
@@ -981,8 +980,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A single position is deleted by position alone")
-        func deletesOne() async throws {
+        @Test
+        func `A single position is deleted by position alone`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", position: 0)
@@ -990,7 +989,7 @@ struct MPDProtocolTests {
                 MPDStub.reply(),
             ]) { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.remove(songs: [self.song("b.flac")],
+                    try await $0.remove(songs: [song("b.flac")],
                                         from: .queue)
                 }
 
@@ -998,8 +997,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Scattered positions are deleted from the back forwards")
-        func deletesScattered() async throws {
+        @Test
+        func `Scattered positions are deleted from the back forwards`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", position: 0)
@@ -1010,8 +1009,8 @@ struct MPDProtocolTests {
                 MPDStub.reply(),
             ]) { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.remove(songs: [self.song("e.flac"),
-                                                self.song("c.flac")],
+                    try await $0.remove(songs: [song("e.flac"),
+                                                song("c.flac")],
                                         from: .queue)
                 }
 
@@ -1019,8 +1018,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A playlist is deleted from one position at a time, descending")
-        func deletesFromPlaylist() async throws {
+        @Test
+        func `A playlist is deleted from one position at a time, descending`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", position: 0)
@@ -1029,8 +1028,8 @@ struct MPDProtocolTests {
                 MPDStub.reply(),
             ]) { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.remove(songs: [self.song("b.flac"),
-                                                self.song("c.flac")],
+                    try await $0.remove(songs: [song("b.flac"),
+                                                song("c.flac")],
                                         from: .playlist(
                                             Playlist(name: "Focus"),
                                         ))
@@ -1041,14 +1040,14 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Removing songs the source has not got sends nothing")
-        func removesNothing() async throws {
+        @Test
+        func `Removing songs the source has not got sends nothing`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.reply(MPDStub.song("a.flac", position: 0)),
             ]) { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.remove(songs: [self.song("z.flac")],
+                    try await $0.remove(songs: [song("z.flac")],
                                         from: .queue)
                 }
 
@@ -1056,24 +1055,24 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A move names where the song is now and where it should go")
-        func moves() async throws {
+        @Test
+        func `A move names where the song is now and where it should go`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.move(self.song("a.flac", position: 3),
+                    try await $0.move(song("a.flac", position: 3),
                                       to: 1, in: .queue)
-                    try await $0.move(self.song("a.flac", position: 3),
+                    try await $0.move(song("a.flac", position: 3),
                                       to: 1,
                                       in: .playlist(Playlist(name: "Focus")))
                 }
 
-                #expect(stub.commands.flatMap { $0 }
+                #expect(stub.commands.flatMap(\.self)
                     == ["move 3 1", "playlistmove \"Focus\" 3 1"])
             }
         }
 
-        @Test("A song that is nowhere cannot be moved")
-        func movesWithoutPosition() async throws {
+        @Test
+        func `A song that is nowhere cannot be moved`() async throws {
             try await MPDStub.withServer { _ in
                 await #expect(throws: ConnectionManagerError.self) {
                     try await ConnectionManager<CommandMode>.command {
@@ -1084,20 +1083,20 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A queued song is played by the identity the queue gave it")
-        func playsQueuedSong() async throws {
+        @Test
+        func `A queued song is played by the identity the queue gave it`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command {
-                    try await $0.play(self.song("a.flac", position: 0,
-                                                identifier: 9))
+                    try await $0.play(song("a.flac", position: 0,
+                                           identifier: 9))
                 }
 
                 #expect(stub.lastCommands == ["playid 9"])
             }
         }
 
-        @Test("An album is queued with addid, then played by the id given back")
-        func playsAlbum() async throws {
+        @Test
+        func `An album is queued with addid, then played by the id given back`() async throws {
             let album = Album(file: "a.flac", title: "Kid A", titleSort: nil,
                               artist: Artist(file: "a.flac",
                                              name: "Radiohead",
@@ -1125,8 +1124,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An album already in the queue is played where it stands")
-        func playsAlbumInQueue() async throws {
+        @Test
+        func `An album already in the queue is played where it stands`() async throws {
             let album = Album(file: "a.flac", title: "Kid A", titleSort: nil,
                               artist: Artist(file: "a.flac",
                                              name: "Radiohead",
@@ -1147,8 +1146,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An album with no songs behind it cannot be played")
-        func playsNothing() async throws {
+        @Test
+        func `An album with no songs behind it cannot be played`() async throws {
             let album = Album(file: "a.flac", title: "Kid A", titleSort: nil,
                               artist: Artist(file: "a.flac",
                                              name: "Radiohead",
@@ -1168,8 +1167,8 @@ struct MPDProtocolTests {
 
     @Suite("Stored playlists")
     struct PlaylistTests {
-        @Test("Loading a playlist replaces the queue and starts it")
-        func loads() async throws {
+        @Test
+        func `Loading a playlist replaces the queue and starts it`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command {
                     try await $0.loadPlaylist(Playlist(name: "Focus"))
@@ -1180,8 +1179,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Loading everything adds the whole music directory")
-        func loadsEverything() async throws {
+        @Test
+        func `Loading everything adds the whole music directory`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command {
                     try await $0.loadPlaylist()
@@ -1191,8 +1190,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A new playlist is saved and then emptied")
-        func creates() async throws {
+        @Test
+        func `A new playlist is saved and then emptied`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command {
                     try await $0.createPlaylist(named: "Focus")
@@ -1203,8 +1202,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A playlist that cannot be emptied is taken away again")
-        func createRollback() async throws {
+        @Test
+        func `A playlist that cannot be emptied is taken away again`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.failure(code: 5, command: "playlistclear",
@@ -1223,8 +1222,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Renaming and removing name the playlist as the protocol does")
-        func renamesAndRemoves() async throws {
+        @Test
+        func `Renaming and removing name the playlist as the protocol does`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command {
                     try await $0.renamePlaylist(Playlist(name: "Focus"),
@@ -1232,7 +1231,7 @@ struct MPDProtocolTests {
                     try await $0.removePlaylist(Playlist(name: "Sleep"))
                 }
 
-                #expect(stub.commands.flatMap { $0 }
+                #expect(stub.commands.flatMap(\.self)
                     == ["rename \"Focus\" \"Deep focus\"", "rm \"Sleep\""])
             }
         }
@@ -1240,8 +1239,8 @@ struct MPDProtocolTests {
 
     @Suite("Playback and options")
     struct PlaybackTests {
-        @Test("Every command is spelled the way the protocol spells it")
-        func commands() async throws {
+        @Test
+        func `Every command is spelled the way the protocol spells it`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command { connection in
                     try await connection.pause(true)
@@ -1261,7 +1260,7 @@ struct MPDProtocolTests {
                     )
                 }
 
-                #expect(stub.commands.flatMap { $0 } == [
+                #expect(stub.commands.flatMap(\.self) == [
                     "pause 1", "pause 0", "previous", "next", "stop",
                     "consume 1", "random 0", "repeat 1", "seekcur 12.5",
                     "setvol 80", "clear", "toggleoutput 3",
@@ -1269,15 +1268,15 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A database update rescans only when forced to")
-        func updates() async throws {
+        @Test
+        func `A database update rescans only when forced to`() async throws {
             try await MPDStub.withServer { stub in
                 try await ConnectionManager<CommandMode>.command {
                     try await $0.update()
                     try await $0.update(force: true)
                 }
 
-                #expect(stub.commands.flatMap { $0 } == ["update", "rescan"])
+                #expect(stub.commands.flatMap(\.self) == ["update", "rescan"])
             }
         }
     }
@@ -1296,12 +1295,12 @@ struct MPDProtocolTests {
             return try await body(connection)
         }
 
-        @Test("The subsystems asked for are named as the protocol names them")
-        func mask() async throws {
+        @Test
+        func `The subsystems asked for are named as the protocol names them`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["changed: player"]),
             ]) { stub in
-                _ = try await self.idling {
+                _ = try await idling {
                     try await $0.idleForEvents(mask: [.player, .queue,
                                                       .playlists, .options,
                                                       .mixer, .output,
@@ -1313,12 +1312,12 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Every subsystem that changed is reported")
-        func events() async throws {
+        @Test
+        func `Every subsystem that changed is reported`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["changed: player", "changed: mixer"]),
             ]) { _ in
-                let events = try await self.idling {
+                let events = try await idling {
                     try await $0.idleForEvents(mask: [.player, .mixer])
                 }
 
@@ -1326,13 +1325,13 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("The queue and stored playlists are told apart")
-        func queueAndPlaylists() async throws {
+        @Test
+        func `The queue and stored playlists are told apart`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["changed: playlist",
                                "changed: stored_playlist"]),
             ]) { _ in
-                let events = try await self.idling {
+                let events = try await idling {
                     try await $0.idleForEvents(mask: [.queue, .playlists])
                 }
 
@@ -1340,12 +1339,12 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A subsystem MPDKit does not watch is passed over")
-        func unknownSubsystem() async throws {
+        @Test
+        func `A subsystem MPDKit does not watch is passed over`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(["changed: sticker", "changed: player"]),
             ]) { _ in
-                let events = try await self.idling {
+                let events = try await idling {
                     try await $0.idleForEvents(mask: [.player])
                 }
 
@@ -1353,8 +1352,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A parked idle is cancelled by noidle, which answers it")
-        func noidle() async throws {
+        @Test
+        func `A parked idle is cancelled by noidle, which answers it`() async throws {
             try await MPDStub.withServer(replies: [MPDStub.reply()],
                                          parksIdle: true)
             { stub in
@@ -1380,10 +1379,10 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("An idle that was cancelled reports no change")
-        func cancelled() async throws {
+        @Test
+        func `An idle that was cancelled reports no change`() async throws {
             try await MPDStub.withServer(replies: [MPDStub.reply()]) { _ in
-                let events = try await self.idling {
+                let events = try await idling {
                     try await $0.idleForEvents(mask: [.player])
                 }
 
@@ -1397,8 +1396,8 @@ struct MPDProtocolTests {
         /// Four bytes standing in for an image.
         private static let payload = Data([0xFF, 0xD8, 0xFF, 0xE0])
 
-        @Test("The binary chunk limit is raised on a server that has it")
-        func raisesLimit() async throws {
+        @Test
+        func `The binary chunk limit is raised on a server that has it`() async throws {
             try await MPDStub.withServer(greeting: "OK MPD 0.24.0") { stub in
                 try await ConnectionManager<ArtworkMode>.artwork { _ in }
 
@@ -1406,8 +1405,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A server without binarylimit is not asked to raise it")
-        func withoutLimit() async throws {
+        @Test
+        func `A server without binarylimit is not asked to raise it`() async throws {
             try await MPDStub.withServer(greeting: "OK MPD 0.22.0") { stub in
                 try await ConnectionManager<ArtworkMode>.artwork { _ in }
 
@@ -1415,8 +1414,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Artwork is asked for from the offset reached so far")
-        func fetches() async throws {
+        @Test
+        func `Artwork is asked for from the offset reached so far`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.binary(Self.payload, file: "cover.jpg"),
@@ -1429,8 +1428,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A picture longer than one chunk is read until its size is met")
-        func fetchesChunks() async throws {
+        @Test
+        func `A picture longer than one chunk is read until its size is met`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.binary(Self.payload, size: 8),
@@ -1446,8 +1445,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A song with no cover beside it falls back to its own tags")
-        func fallsBack() async throws {
+        @Test
+        func `A song with no cover beside it falls back to its own tags`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.failure(command: "albumart"),
@@ -1463,8 +1462,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Embedded pictures are not asked of a server too old for them")
-        func withoutReadPicture() async throws {
+        @Test
+        func `Embedded pictures are not asked of a server too old for them`() async throws {
             try await MPDStub.withServer(greeting: "OK MPD 0.21.0",
                                          artworkGetter: .metadata)
             { stub in
@@ -1478,8 +1477,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Nothing found anywhere is reported as no artwork")
-        func nothingFound() async throws {
+        @Test
+        func `Nothing found anywhere is reported as no artwork`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(),
                 MPDStub.failure(command: "albumart"),
@@ -1496,8 +1495,8 @@ struct MPDProtocolTests {
         /// The protocol says a song with no embedded picture answers
         /// successfully with an otherwise empty response, which is not a
         /// failure and so must not end the search.
-        @Test("A song with no embedded picture falls through to the next source")
-        func emptyPictureResponse() async throws {
+        @Test
+        func `A song with no embedded picture falls through to the next source`() async throws {
             try await MPDStub.withServer(
                 replies: [MPDStub.reply(), MPDStub.reply(),
                           MPDStub.binary(Self.payload)],
@@ -1513,8 +1512,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A song no source has a picture for is reported as having none")
-        func noPictureAnywhere() async throws {
+        @Test
+        func `A song no source has a picture for is reported as having none`() async throws {
             try await MPDStub.withServer(replies: [
                 MPDStub.reply(), MPDStub.reply(), MPDStub.reply(),
             ]) { stub in
@@ -1532,8 +1531,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A binary response that stops short of its size is malformed")
-        func truncated() async throws {
+        @Test
+        func `A binary response that stops short of its size is malformed`() async throws {
             var truncated = Data("size: 8\nbinary: 4\n".utf8)
             truncated.append(Self.payload)
             truncated.append(0x0A)
@@ -1557,8 +1556,8 @@ struct MPDProtocolTests {
 
     @Suite("Connection configuration")
     struct ConnectionConfigurationTests {
-        @Test("Selecting a server discards the previous one's tag list")
-        func selectingServerClearsTags() {
+        @Test
+        func `Selecting a server discards the previous one's tag list`() {
             defer { ConnectionConfiguration.server = nil }
 
             ConnectionConfiguration.availableTags = ["artist", "album"]
@@ -1567,8 +1566,8 @@ struct MPDProtocolTests {
             #expect(ConnectionConfiguration.availableTags == nil)
         }
 
-        @Test("Deselecting a server discards its tag list too")
-        func deselectingServerClearsTags() {
+        @Test
+        func `Deselecting a server discards its tag list too`() {
             ConnectionConfiguration.server = Server(host: "nas.local")
             ConnectionConfiguration.availableTags = ["artist"]
             ConnectionConfiguration.server = nil
@@ -1576,8 +1575,8 @@ struct MPDProtocolTests {
             #expect(ConnectionConfiguration.availableTags == nil)
         }
 
-        @Test("The selected server is what a later reader sees")
-        func storesServer() {
+        @Test
+        func `The selected server is what a later reader sees`() {
             defer { ConnectionConfiguration.server = nil }
 
             ConnectionConfiguration.server = Server(name: "Living room",
@@ -1587,8 +1586,8 @@ struct MPDProtocolTests {
             #expect(ConnectionConfiguration.server?.port == 6601)
         }
 
-        @Test("Connecting without a server to connect to fails")
-        func withoutServer() async {
+        @Test
+        func `Connecting without a server to connect to fails`() async {
             ConnectionConfiguration.server = nil
 
             await #expect(throws: ConnectionManagerError.invalidHost) {
@@ -1596,8 +1595,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("Connecting to an empty host fails before any socket is opened")
-        func emptyHost() async {
+        @Test
+        func `Connecting to an empty host fails before any socket is opened`() async {
             defer { ConnectionConfiguration.server = nil }
 
             ConnectionConfiguration.server = Server(host: "")
@@ -1607,8 +1606,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A port outside the range a socket has is rejected")
-        func invalidPort() async {
+        @Test
+        func `A port outside the range a socket has is rejected`() async {
             defer { ConnectionConfiguration.server = nil }
 
             for port in [0, -1, 65536, 70000] {
@@ -1621,8 +1620,8 @@ struct MPDProtocolTests {
             }
         }
 
-        @Test("A rejected connection leaves the manager unconnected")
-        func failureLeavesNothingBehind() async {
+        @Test
+        func `A rejected connection leaves the manager unconnected`() async {
             defer { ConnectionConfiguration.server = nil }
 
             ConnectionConfiguration.server = Server(host: "nas.local", port: 0)

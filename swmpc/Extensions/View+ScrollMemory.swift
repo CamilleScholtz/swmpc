@@ -101,7 +101,7 @@ extension ScrollTarget {
     init?(restoring offset: CGFloat, in media: MediaCollection, rowContentHeight: CGFloat) {
         guard let index = Self.index(restoring: offset, count: media.count,
                                      rowContentHeight: rowContentHeight),
-              let id = media.id(at: index)
+            let id = media.id(at: index)
         else {
             return nil
         }

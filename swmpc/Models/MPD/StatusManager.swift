@@ -103,7 +103,7 @@ import WidgetKit
     ///
     /// - Parameter connection: The connection to load over.
     /// - Throws: An error if fetching the status fails.
-    func set<Mode: ConnectionMode>(on connection: ConnectionManager<Mode>)
+    func set(on connection: ConnectionManager<some ConnectionMode>)
         async throws
     {
         let data = try await connection.getStatusData()

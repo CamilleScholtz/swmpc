@@ -305,10 +305,10 @@ struct SearchFieldsMenu: View {
         }
         .menuIndicator(.hidden)
         #if os(macOS)
-        .menuStyle(.borderlessButton)
-        .fixedSize()
+            .menuStyle(.borderlessButton)
+            .fixedSize()
         #endif
-        .accessibilityLabel(Text("Search Fields"))
+            .accessibilityLabel(Text("Search Fields"))
     }
 
     /// Toggles for the fields a media type can be matched against.

@@ -6,14 +6,13 @@
 //
 
 import Foundation
-import Testing
-
 @testable import MPDKit
+import Testing
 
 @Suite("Command guards")
 struct CommandGuardTests {
-    @Test("An empty command list is never sent")
-    func emptyList() async throws {
+    @Test
+    func `An empty command list is never sent`() async throws {
         let connection = ConnectionManager<CommandMode>()
         let lines = try await connection.run([])
 
@@ -21,8 +20,8 @@ struct CommandGuardTests {
         #expect(await connection.isCommandInFlight == false)
     }
 
-    @Test("A command without a connection reports the connection is gone")
-    func withoutConnection() async {
+    @Test
+    func `A command without a connection reports the connection is gone`() async {
         let connection = ConnectionManager<CommandMode>()
 
         await #expect(throws: ConnectionManagerError
@@ -32,8 +31,8 @@ struct CommandGuardTests {
         }
     }
 
-    @Test("A failed command does not leave the connection marked as busy")
-    func releasesAfterFailure() async {
+    @Test
+    func `A failed command does not leave the connection marked as busy`() async {
         let connection = ConnectionManager<CommandMode>()
 
         _ = try? await connection.run(["status"])
@@ -45,8 +44,8 @@ struct CommandGuardTests {
         #expect(await connection.isCommandInFlight == false)
     }
 
-    @Test("Nothing is in flight on a fresh connection")
-    func freshConnection() async {
+    @Test
+    func `Nothing is in flight on a fresh connection`() async {
         let connection = ConnectionManager<CommandMode>()
 
         #expect(await connection.isCommandInFlight == false)
@@ -57,16 +56,16 @@ struct CommandGuardTests {
 
 @Suite("Buffered reads")
 struct BufferedReadTests {
-    @Test("A read of nothing needs no connection and returns nothing")
-    func zeroLength() async throws {
+    @Test
+    func `A read of nothing needs no connection and returns nothing`() async throws {
         let connection = ConnectionManager<CommandMode>()
         let data = try await connection.readFixedLengthData(0)
 
         #expect(data.isEmpty)
     }
 
-    @Test("A negative length is malformed rather than a hung read")
-    func negativeLength() async {
+    @Test
+    func `A negative length is malformed rather than a hung read`() async {
         let connection = ConnectionManager<CommandMode>()
 
         await #expect(throws: ConnectionManagerError.self) {
@@ -74,8 +73,8 @@ struct BufferedReadTests {
         }
     }
 
-    @Test("A read that needs bytes off a dead connection gives up")
-    func withoutConnection() async {
+    @Test
+    func `A read that needs bytes off a dead connection gives up`() async {
         let connection = ConnectionManager<CommandMode>()
 
         await #expect(throws: ConnectionManagerError
@@ -88,8 +87,8 @@ struct BufferedReadTests {
 
 @Suite("Connection lifecycle")
 struct ConnectionLifecycleTests {
-    @Test("Disconnecting a connection that never opened is harmless")
-    func disconnectWithoutConnection() async {
+    @Test
+    func `Disconnecting a connection that never opened is harmless`() async {
         let connection = ConnectionManager<CommandMode>()
 
         await connection.disconnect()
@@ -97,8 +96,8 @@ struct ConnectionLifecycleTests {
         #expect(await connection.version == nil)
     }
 
-    @Test("Disconnecting forgets the version the greeting reported")
-    func disconnectForgetsVersion() async {
+    @Test
+    func `Disconnecting forgets the version the greeting reported`() async {
         let connection = ConnectionManager<CommandMode>(version: "0.24")
 
         #expect(await connection.isVersionAtLeast("0.24"))
@@ -109,8 +108,8 @@ struct ConnectionLifecycleTests {
         #expect(await connection.isVersionAtLeast("0.21") == false)
     }
 
-    @Test("Probing an idle connection with nothing parked succeeds at once")
-    func probeWithoutIdle() async {
+    @Test
+    func `Probing an idle connection with nothing parked succeeds at once`() async {
         #expect(await ConnectionManager<IdleMode>().probe())
     }
 }

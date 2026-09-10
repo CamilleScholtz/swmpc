@@ -26,12 +26,12 @@ struct CurrentSongSnippetIntent: SnippetIntent {
         var isFavorited = false
         var artwork: PlatformImage?
         if let song = data.song {
-            let favorites = (try? await command {
+            let favorites = await (try? command {
                 try await $0.getSongs(from: Source.favorites)
             }) ?? []
 
             isFavorited = favorites.contains { $0.file == song.file }
-            artwork = (try? await ArtworkManager.shared.image(
+            artwork = await (try? ArtworkManager.shared.image(
                 for: song.file,
                 fitting: Self.artworkSize,
             ))?.image
