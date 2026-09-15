@@ -97,9 +97,9 @@ nonisolated enum IntelligenceProvider: String, Identifiable, CaseIterable {
         case .apple: ""
         case .openAI: "gpt-5-mini"
         case .anthropic: "claude-haiku-4-5"
-        case .gemini: "gemini-2.5-flash-lite"
-        case .openRouter: "openai/gpt-5-mini"
-        case .grok: "grok-4-1-fast-non-reasoning"
+        case .gemini: "gemini-3.1-flash-lite"
+        case .openRouter: "google/gemini-3.1-flash-lite"
+        case .grok: "grok-4.6"
         case .custom: ""
         }
     }
