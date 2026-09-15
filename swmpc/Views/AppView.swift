@@ -67,6 +67,7 @@ struct AppView: View {
                                 }
                             }
                         }
+                        .tabViewStyle(.sidebarAdaptable)
                         .tabViewSearchActivation(.searchTabSelection)
                         .background {
                             SearchShortcut()
@@ -82,43 +83,22 @@ struct AppView: View {
                             .matchedTransitionSource(id: 1, in: namespace)
                         }
                         .fullScreenCover(isPresented: $navigator.showNowPlaying) {
-                            List {
-                                Capsule()
-                                    .fill(.tertiary)
-                                    .frame(width: 64, height: 5)
-                                    .frame(maxWidth: .infinity)
-                                    .listRowSeparator(.hidden)
-                                    .listRowInsets(.init())
-                                    .listRowBackground(Color.clear)
-
-                                DetailView()
-                                    .frame(height: 580)
-                                    .listRowSeparator(.hidden)
-                                    .listRowInsets(.horizontal, Layout.Padding.large)
-
-                                QueueView()
-                            }
-                            .reorderContainer(for: Song.self) { difference in
-                                Task {
-                                    await difference.perform(on: mpd.queue.songs, in: .queue)
+                            NowPlayingView()
+                                .navigationTransition(.zoom(sourceID: 1, in: namespace))
+                                .sheet(item: $navigator.intelligenceTarget) { target in
+                                    IntelligenceView(target: target)
                                 }
-                            }
-                            .mediaListStyle()
-                            .navigationTransition(.zoom(sourceID: 1, in: namespace))
-                            .sheet(item: $navigator.intelligenceTarget) { target in
-                                IntelligenceView(target: target)
-                            }
-                            .confirmationDialog("Clear Queue", isPresented: $navigator.showClearQueueAlert, titleVisibility: .visible) {
-                                AsyncButton("Clear", role: .destructive) {
-                                    try await ConnectionManager.command {
-                                        try await $0.clearQueue()
+                                .confirmationDialog("Clear Queue", isPresented: $navigator.showClearQueueAlert, titleVisibility: .visible) {
+                                    AsyncButton("Clear", role: .destructive) {
+                                        try await ConnectionManager.command {
+                                            try await $0.clearQueue()
+                                        }
                                     }
-                                }
 
-                                Button("Cancel", role: .cancel) {}
-                            } message: {
-                                Text("Are you sure you want to clear the queue?")
-                            }
+                                    Button("Cancel", role: .cancel) {}
+                                } message: {
+                                    Text("Are you sure you want to clear the queue?")
+                                }
                         }
                     #elseif os(macOS)
                         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -217,6 +197,64 @@ struct AppView: View {
 }
 
 #if os(iOS)
+    private struct NowPlayingView: View {
+        @Environment(MPD.self) private var mpd
+        @Environment(\.dismiss) private var dismiss
+
+        var body: some View {
+            GeometryReader { geometry in
+                let showsPlayerBesideQueue = geometry.size.width >= 800
+
+                HStack(spacing: 0) {
+                    if showsPlayerBesideQueue {
+                        VStack {
+                            HStack {
+                                Button("Done") {
+                                    dismiss()
+                                }
+                                .buttonStyle(.glass)
+
+                                Spacer()
+                            }
+                            .padding()
+
+                            ScrollView {
+                                DetailView()
+                                    .frame(height: 580)
+                            }
+                        }
+                        .frame(width: min(geometry.size.width * 0.5, 500))
+                    }
+
+                    List {
+                        if !showsPlayerBesideQueue {
+                            Capsule()
+                                .fill(.tertiary)
+                                .frame(width: 64, height: 5)
+                                .frame(maxWidth: .infinity)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(.init())
+                                .listRowBackground(Color.clear)
+
+                            DetailView()
+                                .frame(height: 580)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(.horizontal, Layout.Padding.large)
+                        }
+
+                        QueueView()
+                    }
+                    .reorderContainer(for: Song.self) { difference in
+                        Task {
+                            await difference.perform(on: mpd.queue.songs, in: .queue)
+                        }
+                    }
+                    .mediaListStyle()
+                }
+            }
+        }
+    }
+
     /// An invisible button that maps command-F to the search tab, so that a
     /// hardware keyboard can start a search the way the menu bar command does
     /// on macOS.
