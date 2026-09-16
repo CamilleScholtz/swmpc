@@ -184,19 +184,31 @@ import WidgetKit
     /// Starts tracking elapsed time for the current song.
     ///
     /// This method initiates real-time elapsed time tracking. Multiple
-    /// omponents can request tracking, and tracking will continue until all
+    /// components can request tracking, and tracking will continue until all
     /// requesters have called `stopTrackingElapsed()`.
     ///
-    /// - Throws: An error if fetching the current status fails.
+    /// - Throws: An error if fetching the current status fails. The tracking
+    ///           request remains active so later status updates can recover.
     func startTrackingElapsed() async throws {
-        if !trackElapsed {
+        let wasTracking = trackElapsed
+
+        // Register before fetching: the server may be unavailable when the view appears.
+        activeTrackingCount += 1
+
+        if !wasTracking {
             let data = try await ConnectionManager.command {
                 try await $0.getStatusData()
             }
-            _ = elapsed.update(to: data.elapsed ?? 0)
-        }
 
-        activeTrackingCount += 1
+            guard trackElapsed else {
+                return
+            }
+
+            _ = elapsed.update(to: data.elapsed ?? 0)
+            if state == .play {
+                startTrackingElapsedTask()
+            }
+        }
     }
 
     /// Stops tracking elapsed time for the current song.
@@ -212,9 +224,7 @@ import WidgetKit
     /// This method creates a timer that updates the elapsed time every second
     /// while the player is in the play state.
     private func startTrackingElapsedTask() {
-        if let trackingTask, !trackingTask.isCancelled {
-            stopTrackingElapsed()
-        }
+        stopTrackingElapsedTask()
 
         startTime = Date() - (elapsed ?? 0)
 
