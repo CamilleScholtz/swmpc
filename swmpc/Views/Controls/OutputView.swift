@@ -212,11 +212,11 @@ private struct FormatSection: View {
     @Environment(MPD.self) private var mpd
 
     var body: some View {
-        let codec = mpd.status.codec
+        let fileType = mpd.status.fileType
         let format = mpd.status.audioFormat
         let bitrate = mpd.status.bitrate.flatMap { $0 > 0 ? $0 : nil }
 
-        if codec != nil || format != nil || bitrate != nil {
+        if fileType != nil || format != nil || bitrate != nil {
             Divider()
 
             VStack(alignment: .leading, spacing: Layout.Spacing.small) {
@@ -225,8 +225,8 @@ private struct FormatSection: View {
                     .fontWeight(.medium)
                     .foregroundStyle(.secondary)
 
-                if let codec {
-                    FormatRow(label: "Codec", value: codec)
+                if let fileType {
+                    FormatRow(label: "File Type", value: fileType)
                 }
 
                 if let sampleRate = format?.sampleRate {

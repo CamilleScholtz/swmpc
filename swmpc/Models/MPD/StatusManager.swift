@@ -50,8 +50,8 @@ import WidgetKit
     /// The format of the audio the server is currently decoding.
     private(set) var audioFormat: AudioFormat?
 
-    /// The uppercased file extension of the current song, such as `FLAC`.
-    var codec: String? {
+    /// The uppercased file extension, not the codec inside the container.
+    var fileType: String? {
         guard let file = song?.file else {
             return nil
         }

@@ -10163,34 +10163,6 @@
       },
       "comment" : "Header of the audio format section in the volume and outputs popover."
     },
-    "Codec" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Codec"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Códec"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Codec"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Codec"
-          }
-        }
-      }
-    },
     "Sample Rate" : {
       "localizations" : {
         "de" : {
@@ -10446,6 +10418,41 @@
           }
         }
       }
+    },
+    "File Type" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dateityp"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipo de archivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type de fichier"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestandstype"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File Type"
+          }
+        }
+      },
+      "comment" : "Label for the current song’s file extension (such as M4A), not its audio codec, in the volume and outputs popover."
     }
   },
   "version" : "1.1"
