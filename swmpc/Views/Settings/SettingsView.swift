@@ -22,6 +22,10 @@ import SwiftUI
 #endif
 
 struct SettingsView: View {
+    #if os(iOS)
+        @Environment(MPD.self) private var mpd
+    #endif
+
     #if os(macOS)
         @State private var selection: SettingCategory = .connections
     #endif
@@ -98,6 +102,15 @@ struct SettingsView: View {
                                 Image(systemSymbol: category.image)
                             }
                         }
+                    }
+
+                    Section {
+                        AsyncButton("Reload Library", systemSymbol: .arrowClockwise) {
+                            try await ConnectionManager.command {
+                                try await $0.update()
+                            }
+                        }
+                        .disabled(!mpd.state.isConnectionReady)
                     }
 
                     Section {
