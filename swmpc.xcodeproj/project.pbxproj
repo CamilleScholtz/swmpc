@@ -661,7 +661,7 @@
 			repositoryURL = "https://github.com/huggingface/AnyLanguageModel";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.0;
+				minimumVersion = 0.16.0;
 			};
 		};
 		91F55B382CFE5D300027BBFE /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
@@ -669,7 +669,7 @@
 			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.5;
+				minimumVersion = 1.1.7;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
