@@ -417,17 +417,35 @@ struct MPDProtocolTests {
         }
 
         @Test
-        func `A response line that is not UTF-8 is malformed`() async throws {
+        func `A response line that is not UTF-8 is decoded with replacements`() async throws {
             var reply = Data("file: ".utf8)
             reply.append(contentsOf: [0xFF, 0xFE, 0x0A])
             reply.append(Data("OK\n".utf8))
 
             try await MPDStub.withServer(replies: [reply]) { _ in
-                await #expect(throws: ConnectionManagerError.self) {
-                    try await ConnectionManager<CommandMode>.command {
-                        try await $0.run(["playlistinfo"])
-                    }
+                let lines = try await ConnectionManager<CommandMode>.command {
+                    try await $0.run(["playlistinfo"])
                 }
+
+                #expect(lines == ["file: \u{FFFD}\u{FFFD}", "OK"])
+            }
+        }
+
+        @Test
+        func `A song whose tag MPD let through as UTF-8 does not fail the rest`() async throws {
+            // An encoded surrogate, as libid3tag can produce from a broken
+            // UTF-16 ID3 frame, which MPD's validation lets through.
+            var reply = Data("file: a.dsf\nTitle: Bad ".utf8)
+            reply.append(contentsOf: [0xED, 0xA0, 0x80, 0x0A])
+            reply.append(Data("file: b.flac\nTitle: Good\nOK\n".utf8))
+
+            try await MPDStub.withServer(replies: [MPDStub.reply(), reply]) { _ in
+                let songs = try await ConnectionManager<CommandMode>.command {
+                    try await $0.getSongs(from: .database)
+                }
+
+                #expect(songs.map(\.file) == ["a.dsf", "b.flac"])
+                #expect(songs.last?.title == "Good")
             }
         }
 

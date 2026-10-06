@@ -383,7 +383,7 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     ///           I/O operations fail.
     func readLine() async throws -> String {
         while true {
-            if let line = try extractLineFromBuffer() {
+            if let line = extractLineFromBuffer() {
                 if line.hasPrefix("ACK") {
                     throw ConnectionManagerError.protocolViolation(line)
                 }
@@ -450,27 +450,26 @@ public actor ConnectionManager<Mode: ConnectionMode> {
     /// This function searches for the first newline character (0x0A) in the
     /// buffer, and if found, it extracts all data up to (but not including) the
     /// newline. The extracted data is then removed from the buffer and
-    /// converted into a UTF-8 encoded string. If the conversion fails, it
-    /// throws a `ConnectionManagerError.malformedResponse`.
+    /// decoded as UTF-8.
+    ///
+    /// Decoding is lenient: ill-formed sequences are replaced with U+FFFD
+    /// rather than failing the line. MPD's own UTF-8 validation only checks
+    /// the shape of each sequence, so it passes on encoded surrogates,
+    /// overlong forms, and 5- and 6-byte sequences, which libid3tag can
+    /// produce from a badly encoded ID3 frame (DSF files, for one, carry
+    /// their tags as ID3). A single such tag would otherwise fail every
+    /// query that includes its song, the whole library among them.
     ///
     /// - Returns: A string representing the extracted line, or `nil` if no
     ///            complete line (terminated by a newline) is available.
-    /// - Throws: `ConnectionManagerError.malformedResponse` if the extracted
-    ///           data cannot be converted to a valid UTF-8 string.
-    private func extractLineFromBuffer() throws -> String? {
+    private func extractLineFromBuffer() -> String? {
         guard let index = buffer.firstIndex(of: 0x0A) else {
             return nil
         }
 
-        let data = Data(buffer[..<index])
+        let string = String(decoding: buffer[..<index], as: UTF8.self)
 
         buffer.removeFirst(index + 1)
-
-        guard let string = String(data: data, encoding: .utf8) else {
-            throw ConnectionManagerError.malformedResponse(
-                "Failed to decode line from buffer (invalid UTF-8)",
-            )
-        }
 
         return string
     }
