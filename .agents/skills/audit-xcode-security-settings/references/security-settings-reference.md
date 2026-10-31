@@ -47,8 +47,8 @@ Clang-tidy-integrated checks that are part of the clang static analyzer; they fi
 | Build Setting | Value | CLI Flag / Effect | Note |
 |---|---|---|---|
 | `ENABLE_ENHANCED_SECURITY` | `YES` | Enables the Enhanced Security capability (build-setting + entitlements) | See `enhanced-security.md` |
-| `ENABLE_POINTER_AUTHENTICATION` | `YES` | Adds an `arm64e` slice — builds both `arm64` and `arm64e` (no compiler flag; appends `arm64e` to `ARCHS_STANDARD`) | Set at project level. The simulator needs no override — the build system drops `arm64e` for simulator SDKs automatically (they define no `arm64e`). |
-| `ARCHS` | `arm64 arm64e` | Pins both slices explicitly | Optional belt-and-suspenders on distributed library/framework targets — pointer authentication already builds both slices automatically. Use it to keep the binary universal independent of the enhanced-security cascade. See `universal-binaries-for-libraries.md`. |
+| `ENABLE_POINTER_AUTHENTICATION` | `YES` | Appends `arm64e` to `ARCHS_STANDARD` — builds both `arm64` and `arm64e` slices | Set at project level. |
+| `ENABLE_HARDWARE_CHECKED_POINTER_ARITHMETIC_SLICE` | `YES` | Appends `arm64e.x1` to `ARCHS_STANDARD`, with checked pointer arithmetic instructions and other features. | Defaults to `NO` and is **not** cascaded by `ENABLE_ENHANCED_SECURITY` — set it explicitly, per target. |
 
 **Cascaded by `ENABLE_ENHANCED_SECURITY` (do not set manually):**
 
@@ -82,6 +82,7 @@ These are managed per-target in each target's `.entitlements` file. See `enhance
 - [`com.apple.security.hardened-process.checked-allocations.soft-mode`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.checked-allocations.soft-mode) — simulated crash reports without termination
 - [`com.apple.security.hardened-process.checked-allocations.enable-pure-data`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.checked-allocations.enable-pure-data) — tag non-pointer heap allocations
 - [`com.apple.security.hardened-process.checked-allocations.no-tagged-receive`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.checked-allocations.no-tagged-receive) — opt out of receiving tagged pointers via Mach IPC
+- [`com.apple.security.hardened-process.checked-allocations.enforce-checked-pointer-arithmetic-overflow`](doc://com.apple.documentation/documentation/BundleResources/Entitlements/com.apple.security.hardened-process.checked-allocations.enforce-checked-pointer-arithmetic-overflow) — checked pointer arithmetic; needs the `arm64e.x1` slice from `ENABLE_HARDWARE_CHECKED_POINTER_ARITHMETIC_SLICE` and other requisites
 
 ## Additional Settings — Potentially More False Positives
 

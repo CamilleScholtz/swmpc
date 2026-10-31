@@ -125,6 +125,7 @@ The `interactionCommand` parameter accepts a command syntax:
 | `w duration` | Wait for a duration without any work |
 | `orientation faceDown/faceUp/landscapeLeft/landscapeRight/portrait/portraitUpsideDown` | Set device orientation (iOS only) |
 | `c <rotations>` | **watchOS only.** Rotate the Digital Crown; sign sets direction, 1.0 = one full revolution |
+| `r up/down/left/right/select/menu/playpause/home` | **tvOS only.** Press a Siri Remote button to move focus, select, or go to the Home screen |
 
 **Examples:**
 - `"t 100 200"` - Tap at (100, 200)
@@ -148,6 +149,9 @@ The `interactionCommand` parameter accepts a command syntax:
 - `"orientation landscapeLeft"` - Rotate device to landscape
 - `"c 1.0"` - watchOS: rotate the Digital Crown one full turn (e.g. scroll a list)
 - `"c -0.5"` - watchOS: rotate the crown half a turn the other way
+- `"r down"` - tvOS: move focus down
+- `"r select"` - tvOS: press Select on the focused element
+- `"r home"` - tvOS: go to the Home screen
 
 ## Standard Subagent Workflow
 
@@ -156,6 +160,14 @@ Before any interaction, always capture and read the hierarchy (and screenshot). 
 - To capture without interacting, use DeviceEventSynthesize with an empty interactionCommand.
 - Never guess positions from screenshots alone — use hierarchy hitPoint coordinates; screenshot estimation is only a fallback after a hitPoint is tried and fails.
 - If not confident or thumbnail resolution is insufficient, analyze the full-size screenshot.
+
+## tvOS (Apple TV)
+
+tvOS is **focus-based**: there is no touchscreen, so coordinate taps/swipes do not apply. Exactly one element is focused at a time, and you can only activate whatever currently has focus. Drive it with the Siri Remote instead:
+
+- Read the hierarchy to see all focusable elements and which one is marked `Focused`.
+- Move focus toward the target with `r up`/`r down`/`r left`/`r right`, then activate it with `r select`. Use `r menu` to go back.
+- **Chain multiple presses in one command and capture once**, rather than capturing after every single press. The hierarchy lists element order, so compute how many steps to the target and send them together, e.g. `r right r right r right`, then capture to confirm focus landed.
 
 ## Timing and Retries
 

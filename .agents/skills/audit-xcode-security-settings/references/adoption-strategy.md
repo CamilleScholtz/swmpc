@@ -46,13 +46,16 @@ These require specific hardware and OS versions.
 
 | Feature | Requirement | Reference |
 |---------|------------|-----------|
-| **Hardware Memory Tagging** | iPhone/iPad with an A19 chip or later; Mac/Vision Pro with an M5 chip or later | `hardware-memory-tagging.md` |
+| **Hardware Memory Tagging** | iPhone/iPad with an A19 chip or later; Mac/Vision Pro with an M5 chip or later; Apple Watch with an S11 chip or later | `hardware-memory-tagging.md` |
+| **Checked Pointer Arithmetic** | device running iOS with an A20 Pro chip or later; device running watchOS with an S11 chip or later. | `checked-pointer-arithmetic.md` |
 
-**Action:**
+**Action for Hardware Memory Tagging:**
 1. Enable with soft mode first — this generates simulated crash reports without terminating the app
 2. Deploy soft mode to internal testers
 3. Review simulated crash reports and fix memory bugs
 4. Disable soft mode for production enforcement
+
+**Action for Checked Pointer Arithmetic:** enable hardware memory tagging first — run time enforcement requires it — and finish that rollout before adding this. Then build the `arm64e.x1` slice, add the enforcement entitlement, and test on capable hardware. There is no soft mode here, and memory tagging's soft mode does not cover these faults: a latent pointer-arithmetic bug terminates the app. Read `checked-pointer-arithmetic.md` for instructions on how to enable checked pointer arithmetic and additional notes about adoption.
 
 ## Decision Matrix
 
@@ -63,15 +66,17 @@ Use this to decide which features to prioritize based on your codebase:
 | Is pure Swift | Phase 1 + Runtime Restrictions + Read-Only Memory |
 | Has C code | All of Phase 1-3, plus consider C Bounds Safety (separate skill) |
 | Has C++ code | All of Phase 1-3, especially C++ Hardening |
-| Processes untrusted input | All features, prioritize bounds checking and memory tagging |
+| Processes untrusted input | All features, prioritize bounds checking, memory tagging, and checked pointer arithmetic |
 | Uses Mach IPC | Review runtime restrictions carefully before enabling |
-| Targets MTE-capable hardware (iPhone/iPad with A19+, Mac/Vision Pro with M5+) | Consider hardware memory tagging (start with soft mode) |
+| Targets MTE-capable hardware (iPhone/iPad with chip A19 or later, Mac/Vision Pro with chip M5 or later, Apple Watch with chip S11 or later) | Consider hardware memory tagging (start with soft mode) |
+| Runs on devices running iOS with an A20 Pro chip or later, or devices running watchOS with an S11 chip or later | Consider checked pointer arithmetic — it requires hardware memory tagging for run time enforcement |
 | Is a DriverKit extension | All applicable features — elevated privilege means higher stakes |
 
 ## General Principles
 
 1. **Enable Enhanced Security as a capability first** — this turns on all cascaded features at once
 2. **Fix warnings before testing runtime protections** — compiler warnings often reveal the same bugs that runtime protections would crash on
-3. **Test in soft mode before hard mode** — applies to hardware memory tagging
-4. **Prioritize security-critical code** — parsers, network handlers, IPC, auth logic
-5. **Don't skip testing** — Enhanced Security features turn latent bugs into crashes, which is the point, but you want to find them before your users do
+3. **Fix undefined behavior in pointer arithmetic** — most checked pointer arithmetic failures are a consequence of undefined behavior, such as subtracting pointers into different objects
+4. **Test in soft mode before hard mode** — applies to hardware memory tagging
+5. **Prioritize security-critical code** — parsers, network handlers, IPC, auth logic
+6. **Don't skip testing** — Enhanced Security features turn latent bugs into crashes, which is the point, but you want to find them before your users do

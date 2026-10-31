@@ -8,6 +8,8 @@ Hardware memory tagging (Memory Integrity Enforcement) uses ARM Memory Tagging E
 
 Each memory allocation and pointer receives an embedded **tag** value. When your app accesses memory through a pointer, the hardware checks that the pointer's tag matches the allocation's tag. If the tags don't match — because of a use-after-free, buffer overflow, or other memory corruption — the app crashes instead of performing the unsafe access.
 
+Checked pointer arithmetic is the companion protection on platforms that support it: it stops pointer arithmetic from overflowing into the tag in the first place. See `checked-pointer-arithmetic.md`.
+
 ## What Vulnerabilities It Mitigates
 
 - **Use-after-free** — accessing memory after it has been freed (the freed memory gets a new tag)
@@ -52,7 +54,7 @@ Remove the `com.apple.security.hardened-process.checked-allocations` entitlement
 
 ## Platform Availability
 
-- **Hardware:** Available on iPhone and iPad with an A19 chip or later, and Mac and Apple Vision Pro with an M5 chip or later. (The iPhone 17 family is the first A19 generation.)
+- **Hardware:** Available on iPhone and iPad with an A19 chip or later, Mac and Apple Vision Pro with an M5 chip or later, and Apple Watch with an S11 chip or later. (The iPhone 17 family is the first A19 generation.)
 
 ## Performance and Stability Impact
 
